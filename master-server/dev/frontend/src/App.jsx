@@ -1,113 +1,53 @@
-import { useState } from 'react'
-import './App.css'
+import React, { useState } from 'react';
+import TaskVisualizer from './components/TaskVisualizer';
+import ConfigForm from './components/ConfigForm';
+import './App.css';
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [showConfig, setShowConfig] = useState(false);
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
+    <div style={{ minHeight: '100vh', background: '#ffffff', color: '#09090b', fontFamily: 'system-ui, sans-serif' }}>
+      
+      <header style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        padding: '0 24px', 
+        height: '60px',
+        borderBottom: '1px solid #e4e4e7',
+      }}>
+        <h1 style={{ margin: 0, fontSize: '16px', fontWeight: '600' }}>数据解析控制台</h1>
+        <button 
+          onClick={() => setShowConfig(!showConfig)}
+          style={{ 
+            padding: '6px 12px', 
+            cursor: 'pointer', 
+            background: showConfig ? '#f4f4f5' : '#18181b', 
+            color: showConfig ? '#18181b' : '#fafafa', 
+            border: '1px solid #e4e4e7', 
+            borderRadius: '4px',
+            fontSize: '13px',
+            fontWeight: '500',
+          }}
         >
-          Count is {count}
+          {showConfig ? '收起配置' : 'API 配置'}
         </button>
-      </section>
+      </header>
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                Learn more
-              </a>
-            </li>
-          </ul>
+      <main style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 60px)' }}>
+        {showConfig && (
+          <div style={{ borderBottom: '1px solid #e4e4e7', background: '#fafafa' }}>
+            <ConfigForm />
+          </div>
+        )}
+        <div style={{ flex: 1, overflow: 'hidden' }}>
+          <TaskVisualizer />
         </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+      </main>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+    </div>
+  );
 }
 
-export default App
+export default App;

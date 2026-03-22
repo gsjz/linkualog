@@ -25,8 +25,18 @@ dist-ssr
 
 # Python and uv
 .venv/
+__pycache__/
 
 # Zensical
 site/
 .cache/
 website-template/docs/dictionary/
+
+# LLM service key
+llm_config.json
+
+# repomix
+repomix-output.xml
+
+# Local Data for master-server
+master-server/dev/data/
