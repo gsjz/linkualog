@@ -1,0 +1,38 @@
+{
+  "word": "abandon",
+  "createdAt": "2026-03-22",
+  "reviews": [
+    {
+      "date": "2026-03-23",
+      "score": 5
+    },
+    {
+      "date": "2026-03-26",
+      "score": 3
+    }
+  ],
+  "pronunciation": "/əˈbæn.dən/",
+  "definitions": [
+    "vt. 放弃，抛弃（计划、信念等）",
+    "vt. 离弃，遗弃（人、物或地方）"
+  ],
+  "examples": [
+    {
+      "text": "The captain gave the order to abandon ship.",
+      "explanation": "船长下达了弃船的命令。",
+      "focusWords": ["abandon"],
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "timestamp": 125
+      }
+    },
+    {
+      "text": "As a baby he was abandoned by his mother.",
+      "focusWords": ["abandoned"],
+      "source": {
+        "text": "剑桥词典 (Cambridge Dictionary)",
+        "url": "https://dictionary.cambridge.org/dictionary/english/abandon"
+      }
+    }
+  ]
+}

@@ -1,0 +1,170 @@
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+  backdrop-filter: blur(2px);
+}
+
+.modal-box {
+  background: #fff;
+  border-radius: 12px;
+  width: 380px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  animation: slideIn 0.2s ease-out;
+}
+
+@keyframes slideIn {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.modal-header {
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 16px;
+  color: #333;
+}
+
+.close-btn {
+  font-size: 24px;
+  line-height: 1;
+  color: #999;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.close-btn:hover {
+  color: #333;
+}
+
+/* Tab 样式 */
+.tabs {
+  display: flex;
+  background: #fafafa;
+  border-bottom: 1px solid #eee;
+}
+
+.tab {
+  flex: 1;
+  text-align: center;
+  padding: 12px 0;
+  font-size: 14px;
+  color: #666;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.tab:hover {
+  color: #333;
+  background: rgba(0,0,0,0.02);
+}
+
+.tab.active {
+  color: var(--linkual-theme, #6a1b9a);
+  font-weight: bold;
+  border-bottom: 2px solid var(--linkual-theme, #6a1b9a);
+  background: #fff;
+}
+
+.tab-content {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* 表单项样式 */
+.setting-row { 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  margin-bottom: 16px; 
+}
+.setting-row label { font-size: 13px; font-weight: bold; flex: 1; color: #444; }
+.setting-row input[type="color"] { 
+  width: 50px; 
+  height: 32px; 
+  padding: 0; 
+  cursor: pointer; 
+  border: 1px solid #ddd; 
+  border-radius: 4px;
+}
+
+.setting-col { margin-bottom: 16px; }
+.setting-col label { 
+  font-size: 13px; 
+  font-weight: bold; 
+  display: block; 
+  margin-bottom: 6px; 
+  color: #444;
+}
+.setting-col input, .setting-col textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: 13px;
+  transition: border-color 0.2s;
+}
+.setting-col input:focus, .setting-col textarea:focus {
+  outline: none;
+  border-color: var(--linkual-theme, #6a1b9a);
+}
+.setting-col textarea { 
+  resize: vertical; 
+  min-height: 80px; 
+  line-height: 1.5; 
+}
+
+/* 底部按钮 */
+.modal-footer {
+  padding: 16px 20px;
+  display: flex;
+  gap: 12px;
+  border-top: 1px solid #eee;
+  background: #fafafa;
+}
+
+.btn { 
+  flex: 1; 
+  padding: 10px; 
+  border: none; 
+  border-radius: 6px; 
+  cursor: pointer; 
+  font-weight: bold; 
+  font-size: 14px;
+  transition: opacity 0.2s;
+}
+.btn:hover { opacity: 0.9; }
+.reset-btn { background: #e0e0e0; color: #555; }
+.save-btn { box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
