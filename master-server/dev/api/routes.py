@@ -15,6 +15,7 @@ router = APIRouter()
 
 @router.get("/api/config")
 def get_config():
+    """获取当前 LLM 配置信息"""
     config = get_config_data()
     return {
         "provider": config["provider"],
@@ -24,21 +25,28 @@ def get_config():
 
 @router.post("/api/config")
 def update_config(provider: str = Form(...), model: str = Form(...), api_key: str = Form("")):
+    """更新 LLM 配置信息"""
     save_config_data(provider, model, api_key)
     return {"status": "success", "message": "配置已保存"}
 
 
 def process_task_background(task_id: str):
-    """后台任务运行器：支持跳过已完成项实现断点续传"""
+    """
+    后台任务运行器：支持跳过已完成项实现断点续传。
+    配合优化后的 llm.py，此处读取的原始字节（包括 HEIC）将被正确处理。
+    """
     tasks = load_tasks()
     task = tasks.get(task_id)
-    if not task: return
+    if not task: 
+        return
     
     task["status"] = "processing"
     save_tasks(tasks)
 
     for sub in task["sub_tasks"]:
-        if sub.get("status") == "completed": continue
+        # 如果该子任务已完成，则跳过（支持断点续传）
+        if sub.get("status") == "completed": 
+            continue
         
         try:
             if not os.path.exists(sub["path"]):
@@ -46,6 +54,7 @@ def process_task_background(task_id: str):
                 
             with open(sub["path"], "rb") as f: 
                 image_bytes = f.read()
+            
             mime = mimetypes.guess_type(sub["path"])[0] or "image/jpeg"
             
             reply = process_image(image_bytes, os.path.basename(sub["path"]), mime)
@@ -55,6 +64,7 @@ def process_task_background(task_id: str):
             sub.pop("error", None)
             task["completed"] += 1
             save_tasks(tasks)
+            
         except Exception as e:
             print(f"\n❌ [后台任务] 任务 {task_id} 处理子项异常!")
             print(f"📄 异常文件: {sub.get('path')}")
@@ -78,6 +88,7 @@ async def upload_resource(
     taskName: str = Form(""),    
     startPage: int = Form(1)     
 ):
+    """上传资源并创建处理任务，支持图片和 PDF"""
     sub_tasks_paths = []
     
     try:
@@ -95,7 +106,7 @@ async def upload_resource(
                         sub_tasks_paths.append(img_path)
                 except Exception as pdf_error:
                     print(f"❌ PDF 解析失败: {pdf_error}")
-                    raise Exception(f"PDF 解析失败，请检查是否在服务器安装了 poppler 组件: {str(pdf_error)}")
+                    raise Exception(f"PDF 解析失败，请检查服务器 poppler 配置: {str(pdf_error)}")
             else:
                 sub_tasks_paths.append(saved_path)
 
@@ -103,6 +114,7 @@ async def upload_resource(
         
         task_id = create_task(final_name, sub_tasks_paths, startPage)
         background_tasks.add_task(process_task_background, task_id)
+        
         return {"status": "success", "task_id": task_id}
         
     except Exception as e:
@@ -112,18 +124,21 @@ async def upload_resource(
 
 @router.get("/api/task/{task_id}")
 def get_task_status(task_id: str):
+    """获取指定任务的详细状态"""
     tasks = load_tasks()
     return tasks.get(task_id, {"error": "任务不存在"})
 
 
 @router.post("/api/task/{task_id}/resume")
 def resume_task(task_id: str, background_tasks: BackgroundTasks):
+    """恢复执行已暂停的任务"""
     background_tasks.add_task(process_task_background, task_id)
     return {"status": "resumed"}
 
 
 @router.get("/api/tasks")
 def list_all_tasks():
+    """获取所有任务的历史列表"""
     tasks_dict = load_tasks()
     task_list = []
     for task_id, task_info in tasks_dict.items():
@@ -140,6 +155,7 @@ def list_all_tasks():
 
 @router.get("/api/image")
 def get_image(path: str):
+    """根据路径返回图片文件，供前端预览使用"""
     abs_path = os.path.abspath(path)
     if os.path.exists(abs_path):
         return FileResponse(abs_path)
@@ -148,6 +164,7 @@ def get_image(path: str):
 
 @router.delete("/api/task/{task_id}")
 def delete_task(task_id: str):
+    """删除任务记录"""
     tasks = load_tasks()
     if task_id in tasks:
         del tasks[task_id]
@@ -161,6 +178,7 @@ class RegenerateRequest(BaseModel):
 
 @router.post("/api/task/{task_id}/regenerate")
 def regenerate_task_item(task_id: str, req: RegenerateRequest, background_tasks: BackgroundTasks):
+    """重新生成任务中特定的某一项（例如某张图片识别不满意时）"""
     tasks = load_tasks()
     task = tasks.get(task_id)
     if not task:
