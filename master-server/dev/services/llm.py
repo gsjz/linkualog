@@ -65,7 +65,7 @@ def process_image(image_bytes: bytes, filename: str, content_type: str) -> str:
     max_retries = 3
     for attempt in range(max_retries):
         try:
-            response = requests.post(api_url, headers=headers, json=payload, timeout=90)
+            response = requests.post(api_url, headers=headers, json=payload, timeout=300)
             response.raise_for_status()
             
             result_data = response.json()
