@@ -3,10 +3,10 @@ import os
 import uuid
 from filelock import FileLock  
 
-TASKS_FILE = "data/tasks_db.json"
-LOCK_FILE = "data/tasks_db.json.lock"  
+TASKS_FILE = "local_data/tasks_db.json"
+LOCK_FILE = "local_data/tasks_db.json.lock"  
 
-os.makedirs("data", exist_ok=True)
+os.makedirs("local_data", exist_ok=True)
 
 def load_tasks():
     if not os.path.exists(TASKS_FILE): 

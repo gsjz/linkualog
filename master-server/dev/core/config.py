@@ -1,7 +1,7 @@
 import os
 import json
 
-CONFIG_FILE = "llm_config.json"
+CONFIG_FILE = "local_data/llm_config.json"
 DEFAULT_PROVIDER = "https://api.siliconflow.cn/v1/chat/completions"
 DEFAULT_MODEL = "Qwen/Qwen3.5-4B"
 

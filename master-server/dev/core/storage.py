@@ -1,6 +1,6 @@
 import os
 
-STORAGE_DIR = "data/temp_storage"
+STORAGE_DIR = "local_data/temp_storage"
 MAX_SIZE_BYTES = 1 * 1024 * 1024 * 1024
 
 def get_dir_size(path=STORAGE_DIR):

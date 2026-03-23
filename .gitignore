@@ -39,4 +39,4 @@ llm_config.json
 repomix-output.xml
 
 # Local Data for master-server
-master-server/dev/data/
+local_data/
