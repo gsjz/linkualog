@@ -35,13 +35,13 @@ function App() {
         </button>
       </header>
 
-      <main style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 60px)' }}>
+      <main className="app-main" style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 60px)' }}>
         {showConfig && (
           <div style={{ borderBottom: '1px solid #e4e4e7', background: '#fafafa' }}>
             <ConfigForm />
           </div>
         )}
-        <div style={{ flex: 1, overflow: 'hidden' }}>
+        <div className="task-container-wrapper" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0 }}>
           <TaskVisualizer />
         </div>
       </main>

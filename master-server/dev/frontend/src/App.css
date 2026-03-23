@@ -182,3 +182,107 @@
     border-right-color: var(--border);
   }
 }
+
+@media screen and (max-width: 768px) {
+  header {
+    padding: 0 16px !important;
+  }
+  header h1 {
+    font-size: 15px !important;
+  }
+  
+  .config-form {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 16px !important;
+  }
+  .config-label {
+    width: 100% !important;
+  }
+
+  .task-layout {
+    flex-direction: column !important;
+  }
+  
+  .task-sidebar {
+    width: 100% !important;
+    height: auto !important;
+    max-height: 160px !important;
+    overflow-y: auto !important;
+    border-right: none !important;
+    border-bottom: 2px solid #e4e4e7 !important;
+  }
+
+  .task-toolbar {
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: 12px;
+  }
+  .task-toolbar input,
+  .task-toolbar button {
+    width: 100% !important;
+    margin-left: 0 !important;
+    box-sizing: border-box;
+  }
+
+  .task-status-bar {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px;
+  }
+
+  .task-content-area {
+    padding: 12px 0 !important; 
+    overflow-y: visible !important;
+  }
+  
+  .result-item-container {
+    margin-bottom: 16px !important;
+  }
+
+  .result-layout {
+    flex-direction: column !important;
+  }
+  
+  .result-image-box {
+    width: 100% !important;
+    border-right: none !important;
+    border-bottom: 1px solid #e4e4e7;
+    padding: 8px !important;
+    box-sizing: border-box;
+  }
+
+  .result-image-box img {
+    max-height: 220px !important;
+  }
+
+  .result-json-box {
+    width: 100% !important;
+    padding: 12px !important;
+    box-sizing: border-box !important;
+  }
+
+  .result-json-box pre,
+  .result-json-box span,
+  .result-json-box div {
+    white-space: pre-wrap !important;
+    word-break: break-all !important; 
+    overflow-wrap: anywhere !important;
+  }
+
+  .app-main {
+    height: auto !important;
+    min-height: calc(100vh - 60px) !important;
+  }
+  .task-container-wrapper {
+    overflow: visible !important;
+    height: auto !important;
+  }
+
+  .task-layout,
+  .task-main-area,
+  .task-detail-wrapper {
+    height: auto !important;
+    overflow: visible !important;
+  }
+}

@@ -177,9 +177,9 @@ export default function TaskVisualizer() {
   };
 
   return (
-    <div style={{ display: 'flex', height: '100%', width: '100%' }}>
+    <div className="task-layout" style={{ display: 'flex', height: '100%', width: '100%' }}>
       
-      <div style={{ width: '280px', borderRight: '1px solid #e4e4e7', background: '#fafafa', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
+      <div className="task-sidebar" style={{ width: '280px', borderRight: '1px solid #e4e4e7', background: '#fafafa', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
         <div style={{ padding: '12px 16px', borderBottom: '1px solid #e4e4e7', fontSize: '12px', fontWeight: '600', color: '#71717a' }}>
           历史任务
         </div>
@@ -210,9 +210,9 @@ export default function TaskVisualizer() {
         </div>
       </div>
 
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, background: '#ffffff' }}>
+      <div className="task-main-area" style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: 0, background: '#ffffff' }}>
         
-        <div style={{ padding: '16px 24px', borderBottom: '1px solid #e4e4e7', display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+        <div className="task-toolbar" style={{ padding: '16px 24px', borderBottom: '1px solid #e4e4e7', display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
           <span style={{ fontSize: '13px', fontWeight: '600', color: '#09090b' }}>新建任务:</span>
           <input type="text" placeholder="任务名称 (选填)" value={taskName} onChange={e => setTaskName(e.target.value)} style={{ ...inputClass, width: '200px' }} />
           <span style={{ fontSize: '13px', color: '#71717a' }}>起始页:</span>
@@ -234,8 +234,8 @@ export default function TaskVisualizer() {
         </div>
 
         {taskData ? (
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            <div style={{ padding: '12px 24px', borderBottom: '1px solid #e4e4e7', background: '#fafafa', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div className="task-detail-wrapper" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0 }}>
+            <div className="task-status-bar" style={{ padding: '12px 24px', borderBottom: '1px solid #e4e4e7', background: '#fafafa', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ fontSize: '13px', color: '#09090b', display: 'flex', alignItems: 'center', gap: '16px' }}>
                 <strong style={{ fontSize: '14px' }}>{taskData.name}</strong>
                 <span>进度: {taskData.completed} / {taskData.total}</span>
@@ -249,15 +249,15 @@ export default function TaskVisualizer() {
               </div>
             </div>
 
-            <div style={{ height: '2px', background: '#e4e4e7', width: '100%' }}>
+            <div style={{ height: '2px', background: '#e4e4e7', width: '100%', flexShrink: 0 }}>
               <div style={{ width: `${(taskData.completed / taskData.total) * 100}%`, height: '100%', background: taskData.status === 'paused' ? '#ef4444' : '#18181b', transition: 'width 0.3s' }} />
             </div>
 
-            <div style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
+            <div className="task-content-area" style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
               {getFormattedResults().map((item, idx) => {
                  const isRegenerating = regeneratingPages[idx];
                  return (
-                 <div key={idx} style={{ marginBottom: '32px', border: '1px solid #e4e4e7', borderRadius: '6px', overflow: 'hidden' }}>
+                 <div key={idx} className="result-item-container" style={{ marginBottom: '32px', border: '1px solid #e4e4e7', borderRadius: '6px', overflow: 'hidden' }}>
                     
                     <div style={{ padding: '8px 16px', background: '#fafafa', borderBottom: '1px solid #e4e4e7', fontSize: '12px', color: '#71717a', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -290,8 +290,8 @@ export default function TaskVisualizer() {
                       </button>
                     </div>
 
-                    <div style={{ display: 'flex' }}>
-                      <div style={{ width: '350px', borderRight: '1px solid #e4e4e7', padding: '16px', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div className="result-layout" style={{ display: 'flex' }}>
+                      <div className="result-image-box" style={{ width: '350px', borderRight: '1px solid #e4e4e7', padding: '16px', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <img 
                           src={getImageUrl(item.image_path)} 
                           alt={`第 ${item.page_number} 页预览`} 
@@ -303,7 +303,7 @@ export default function TaskVisualizer() {
                         />
                       </div>
                       
-                      <div style={{ flex: 1, padding: '16px', background: '#fafafa', overflowX: 'auto', fontSize: '13px', lineHeight: '1.6', fontFamily: 'ui-monospace, Consolas, monospace' }}>
+                      <div className="result-json-box" style={{ flex: 1, padding: '16px', background: '#fafafa', overflowX: 'auto', fontSize: '13px', lineHeight: '1.6', fontFamily: 'ui-monospace, Consolas, monospace' }}>
                         {item.status === 'failed' ? (
                           <div style={{ color: '#ef4444', padding: '10px', background: '#fee2e2', borderRadius: '4px' }}>
                             <strong>错误详情:</strong> {item.error}
