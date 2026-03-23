@@ -108,7 +108,7 @@ def process_image(image_bytes: bytes, filename: str, content_type: str) -> str:
                             "你是一个专业的 OCR 和语言处理引擎。"
                             "请提取这张图片中的主要文字，并找出其中的英文被用户用笔做下划线标记的生词或重点词。"
                             "必须严格以 JSON 格式输出，不要包含任何额外的 markdown 标记或解释说明。"
-                            "JSON 结构：{ \"extracted_text\": \"带换行的提取文字...\", \"marked_text\": [ { \"word\": \"...\", \"context\": \"...\" } ] }"
+                            "JSON 结构：{ \"extracted_text\": \"带换行的提取文字...\", \"marked_text\": [ { \"word\": \"用笔迹划出的词...\", \"context\": \"词所在的语义完整句子...\" } ] }"
                         ) 
                     },
                     {
@@ -125,7 +125,7 @@ def process_image(image_bytes: bytes, filename: str, content_type: str) -> str:
     max_retries = 3
     for attempt in range(max_retries):
         try:
-            response = requests.post(api_url, headers=headers, json=payload, timeout=60)
+            response = requests.post(api_url, headers=headers, json=payload, timeout=120)
             response.raise_for_status()
             
             result_data = response.json()
