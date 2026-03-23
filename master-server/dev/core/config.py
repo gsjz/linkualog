@@ -2,8 +2,8 @@ import os
 import json
 
 CONFIG_FILE = "local_data/llm_config.json"
-DEFAULT_PROVIDER = "https://api.siliconflow.cn/v1/chat/completions"
-DEFAULT_MODEL = "Qwen/Qwen3.5-4B"
+DEFAULT_PROVIDER = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
+DEFAULT_MODEL = "qwen3.5-27b"
 
 def get_config_data():
     """读取并返回配置"""
