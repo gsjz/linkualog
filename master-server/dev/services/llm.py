@@ -26,7 +26,7 @@ def process_image(image_bytes: bytes, filename: str, content_type: str) -> str:
     
     payload = {
         "model": model_name,
-        "max_tokens": 2048 * 4,
+        "max_tokens": 2048 * 8,
         "temperature": 0.1,
         "top_p": 0.5,
         "messages": [
