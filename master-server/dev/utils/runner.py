@@ -17,9 +17,10 @@ def start_frontend_dev(frontend_port=8888, backend_port=8000):
     custom_env = os.environ.copy()
     custom_env["VITE_BACKEND_PORT"] = str(backend_port)
     
-    cmd = ["npm", "run", "dev", "--", "--host", "--port", str(frontend_port), "--strictPort"]
-
     try:
+        cmd = ["npm", "install"]
+        subprocess.run(cmd, cwd=frontend_dir, shell=is_windows, env=custom_env, check=True)
+        cmd = ["npm", "run", "dev", "--", "--host", "--port", str(frontend_port), "--strictPort"]
         subprocess.Popen(cmd, cwd=frontend_dir, shell=is_windows, env=custom_env)
     except Exception as e:
         print(f"❌ 启动前端失败: {e}")
