@@ -1,6 +1,126 @@
 import React, { useState, useEffect } from 'react';
 import { uploadResource, getTaskStatus, resumeTask, getAllTasks, deleteTask, getImageUrl, regenerateTaskPage } from '../api/client';
 
+const JsonNode = ({ val, nodeKey, foldedKeys, isRoot = false }) => {
+  const isFoldedByDefault = nodeKey && foldedKeys.includes(nodeKey);
+  const [isExpanded, setIsExpanded] = useState(!isFoldedByDefault);
+
+  const renderPrimitive = (v) => {
+    if (typeof v === 'string') {
+      if (v.includes('\n')) {
+        return (
+          <div style={{ color: '#0550ae', whiteSpace: 'pre-wrap', wordBreak: 'break-word', padding: '8px 12px', background: '#f3f4f6', borderRadius: '4px', marginTop: '4px', marginBottom: '4px', fontFamily: 'system-ui, sans-serif', borderLeft: '3px solid #d1d5db' }}>
+            {v}
+          </div>
+        );
+      }
+      return <span style={{ color: '#0550ae', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>"{v}"</span>;
+    }
+    if (typeof v === 'number' || typeof v === 'boolean') {
+      return <span style={{ color: '#cf222e' }}>{String(v)}</span>;
+    }
+    return <span style={{ color: '#a1a1aa' }}>null</span>;
+  };
+
+  const isObjectOrArray = typeof val === 'object' && val !== null;
+  const isArray = Array.isArray(val);
+  const isEmpty = isObjectOrArray && (isArray ? val.length === 0 : Object.keys(val).length === 0);
+
+
+  if (isRoot && isObjectOrArray && !isEmpty) {
+    return (
+      <div style={{ marginLeft: 0, marginTop: 0 }}>
+        {isArray ? (
+          val.map((item, i) => (
+            <div key={i} style={{ display: 'flex', marginTop: '4px' }}>
+              <span style={{ marginRight: '8px', color: '#a1a1aa' }}>-</span>
+              <div style={{ flex: 1 }}>
+                <JsonNode val={item} nodeKey={null} foldedKeys={foldedKeys} isRoot={false} />
+              </div>
+            </div>
+          ))
+        ) : (
+          Object.entries(val).map(([k, v]) => (
+            <JsonNode key={k} val={v} nodeKey={k} foldedKeys={foldedKeys} isRoot={false} />
+          ))
+        )}
+      </div>
+    );
+  }
+
+  if (isObjectOrArray && isEmpty) {
+    return (
+      <div style={{ marginBottom: '4px' }}>
+         {nodeKey && <strong style={{ color: '#24292f' }}>{nodeKey}: </strong>}
+         <span style={{ color: '#6e7781' }}>{isArray ? '[]' : '{}'}</span>
+      </div>
+    );
+  }
+
+  const isFoldableString = typeof val === 'string' && (val.includes('\n') || val.length > 30 || isFoldedByDefault);
+  const canFold = isObjectOrArray || isFoldableString;
+
+  if (!canFold) {
+    return (
+      <div style={{ marginBottom: '4px' }}>
+        {nodeKey && <strong style={{ color: '#24292f' }}>{nodeKey}: </strong>}
+        {renderPrimitive(val)}
+      </div>
+    );
+  }
+
+  let typeLabel = '';
+  if (isArray) typeLabel = `Array (${val.length})`;
+  else if (isObjectOrArray) typeLabel = 'Object';
+  else typeLabel = 'Text'; 
+
+  return (
+    <div style={{ marginLeft: nodeKey ? '16px' : '0', marginTop: '4px', marginBottom: '4px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap' }}>
+        {nodeKey && <strong style={{ color: '#24292f', marginRight: '4px' }}>{nodeKey}: </strong>}
+        <span
+          onClick={() => setIsExpanded(!isExpanded)}
+          style={{ 
+            cursor: 'pointer', userSelect: 'none', color: '#71717a', 
+            fontSize: '12px', padding: '2px 6px', background: '#f4f4f5', 
+            borderRadius: '4px', border: '1px solid #e4e4e7',
+            display: 'inline-flex', alignItems: 'center', gap: '4px'
+          }}
+        >
+          <span style={{ transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s', fontSize: '10px' }}>▶</span>
+          {typeLabel}
+        </span>
+        {!isExpanded && <span style={{ color: '#a1a1aa', marginLeft: '8px', fontSize: '12px' }}>...</span>}
+      </div>
+
+      {isExpanded && (
+        <div style={{ marginLeft: '12px', paddingLeft: '12px', borderLeft: '1px dashed #d1d5db', marginTop: '4px' }}>
+          {isObjectOrArray ? (
+            isArray ? (
+              val.map((item, i) => (
+                <div key={i} style={{ display: 'flex', marginTop: '4px' }}>
+                  <span style={{ marginRight: '8px', color: '#a1a1aa' }}>-</span>
+                  <div style={{ flex: 1 }}>
+                    <JsonNode val={item} nodeKey={null} foldedKeys={foldedKeys} isRoot={false} />
+                  </div>
+                </div>
+              ))
+            ) : (
+              Object.entries(val).map(([k, v]) => (
+                <JsonNode key={k} val={v} nodeKey={k} foldedKeys={foldedKeys} isRoot={false} />
+              ))
+            )
+          ) : (
+            <div style={{ marginTop: '4px' }}>
+              {renderPrimitive(val)}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default function TaskVisualizer() {
   const [historyTasks, setHistoryTasks] = useState([]);
   const [selectedTaskId, setSelectedTaskId] = useState(null);
@@ -11,6 +131,14 @@ export default function TaskVisualizer() {
   const [startPage, setStartPage] = useState(1);
   const [isUploading, setIsUploading] = useState(false);
   const [regeneratingPages, setRegeneratingPages] = useState({});
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  const foldedKeysConfig = (localStorage.getItem('defaultFoldedKeys') !== null 
+      ? localStorage.getItem('defaultFoldedKeys') 
+      : 'extracted_text')
+    .split(',')
+    .map(s => s.trim())
+    .filter(s => s);
 
   const fetchTasksList = async () => {
     try {
@@ -123,47 +251,6 @@ export default function TaskVisualizer() {
     });
   };
 
-  const renderJsonValue = (val) => {
-    if (typeof val === 'string') {
-      if (val.includes('\n')) {
-        return (
-          <div style={{ 
-            color: '#0550ae', whiteSpace: 'pre-wrap', wordBreak: 'break-word', 
-            padding: '8px 12px', background: '#f3f4f6', borderRadius: '4px', 
-            marginTop: '4px', marginBottom: '4px', fontFamily: 'system-ui, sans-serif',
-            borderLeft: '3px solid #d1d5db'
-          }}>
-            {val}
-          </div>
-        );
-      }
-      return <span style={{ color: '#0550ae', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>"{val}"</span>;
-    }
-    if (typeof val === 'number' || typeof val === 'boolean') {
-      return <span style={{ color: '#cf222e' }}>{String(val)}</span>;
-    }
-    if (Array.isArray(val)) {
-      return (
-        <div style={{ marginLeft: '16px', marginTop: '4px' }}>
-          {val.map((item, i) => <div key={i} style={{ marginBottom: '4px' }}>- {renderJsonValue(item)}</div>)}
-        </div>
-      );
-    }
-    if (typeof val === 'object' && val !== null) {
-      return (
-        <div style={{ marginLeft: '16px', marginTop: '4px' }}>
-          {Object.entries(val).map(([k, v]) => (
-            <div key={k} style={{ marginBottom: '4px' }}>
-              <strong style={{ color: '#24292f' }}>{k}: </strong>
-              {renderJsonValue(v)}
-            </div>
-          ))}
-        </div>
-      );
-    }
-    return null;
-  };
-
   const getStatusText = (status) => {
     if (status === 'finished') return <span style={{ color: '#10b981' }}>完成</span>;
     if (status === 'processing') return <span style={{ color: '#3b82f6' }}>处理中</span>;
@@ -179,7 +266,58 @@ export default function TaskVisualizer() {
   return (
     <div className="task-layout" style={{ display: 'flex', height: '100%', width: '100%' }}>
       
-      <div className="task-sidebar" style={{ width: '280px', borderRight: '1px solid #e4e4e7', background: '#fafafa', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
+      <style>{`
+        .task-sidebar {
+          width: 280px;
+          border-right: 1px solid #e4e4e7;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .task-sidebar.collapsed {
+          width: 0px !important;
+          border-right: none !important;
+        }
+        .result-image-box {
+          width: 500px; /* 默认宽度增大 */
+          min-width: 200px;
+          max-width: 70%;
+          resize: horizontal;
+          border-right: 1px solid #e4e4e7;
+        }
+        .result-image-box img {
+          max-width: 100%;
+          max-height: 750px; /* 默认高度极大放宽 */
+          object-fit: contain;
+        }
+        
+        /* 移动端适配覆盖 */
+        @media screen and (max-width: 768px) {
+          .task-sidebar {
+            width: 100% !important;
+            max-height: 250px !important;
+            border-right: none !important;
+          }
+          /* 移动端的折叠逻辑变为上下收起 */
+          .task-sidebar.collapsed {
+            width: 100% !important;
+            max-height: 0px !important;
+            border-bottom: none !important;
+            opacity: 0;
+            padding: 0 !important;
+          }
+          .result-image-box {
+            width: 100% !important;
+            max-width: 100% !important;
+            border-right: none !important;
+            resize: none !important; /* 手机上关闭横向拉伸功能 */
+            padding: 8px !important;
+          }
+          .result-image-box img {
+            max-height: 450px !important; /* 手机端适当放大允许的高度 */
+          }
+        }
+      `}</style>
+
+      <div className={`task-sidebar ${isSidebarCollapsed ? 'collapsed' : ''}`} style={{ overflow: 'hidden', whiteSpace: 'nowrap', background: '#fafafa', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
         <div style={{ padding: '12px 16px', borderBottom: '1px solid #e4e4e7', fontSize: '12px', fontWeight: '600', color: '#71717a' }}>
           历史任务
         </div>
@@ -197,7 +335,7 @@ export default function TaskVisualizer() {
                   background: isSelected ? '#e4e4e7' : 'transparent',
                 }}
               >
-                <div style={{ fontSize: '13px', fontWeight: isSelected ? '600' : '400', color: '#09090b', marginBottom: '4px', wordBreak: 'break-all' }}>
+                <div style={{ fontSize: '13px', fontWeight: isSelected ? '600' : '400', color: '#09090b', marginBottom: '4px', wordBreak: 'break-all', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {task.name}
                 </div>
                 <div style={{ fontSize: '12px', color: '#71717a', display: 'flex', justifyContent: 'space-between' }}>
@@ -213,6 +351,19 @@ export default function TaskVisualizer() {
       <div className="task-main-area" style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: 0, background: '#ffffff' }}>
         
         <div className="task-toolbar" style={{ padding: '16px 24px', borderBottom: '1px solid #e4e4e7', display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <button 
+            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+            style={{ 
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: '40px', height: '28px', padding: 0,
+              background: '#fff', border: '1px solid #e4e4e7', borderRadius: '4px', 
+              fontSize: '12px', cursor: 'pointer', color: '#71717a'
+            }}
+            title={isSidebarCollapsed ? "展开任务栏" : "收起任务栏"}
+          >
+            {isSidebarCollapsed ? '展开' : '收起'}
+          </button>
+
           <span style={{ fontSize: '13px', fontWeight: '600', color: '#09090b' }}>新建任务:</span>
           <input type="text" placeholder="任务名称 (选填)" value={taskName} onChange={e => setTaskName(e.target.value)} style={{ ...inputClass, width: '200px' }} />
           <span style={{ fontSize: '13px', color: '#71717a' }}>起始页:</span>
@@ -291,11 +442,10 @@ export default function TaskVisualizer() {
                     </div>
 
                     <div className="result-layout" style={{ display: 'flex' }}>
-                      <div className="result-image-box" style={{ width: '350px', borderRight: '1px solid #e4e4e7', padding: '16px', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <div className="result-image-box" style={{ overflow: 'hidden', flexShrink: 0, padding: '16px', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <img 
                           src={getImageUrl(item.image_path)} 
                           alt={`第 ${item.page_number} 页预览`} 
-                          style={{ maxWidth: '100%', maxHeight: '500px', objectFit: 'contain' }}
                           onError={(e) => { 
                             e.target.style.display = 'none'; 
                             e.target.parentElement.innerHTML = '<span style="color:#a1a1aa;font-size:12px;">图片不可用</span>'; 
@@ -303,14 +453,14 @@ export default function TaskVisualizer() {
                         />
                       </div>
                       
-                      <div className="result-json-box" style={{ flex: 1, padding: '16px', background: '#fafafa', overflowX: 'auto', fontSize: '13px', lineHeight: '1.6', fontFamily: 'ui-monospace, Consolas, monospace' }}>
+                      <div className="result-json-box" style={{ flex: 1, padding: '16px', background: '#fafafa', overflowX: 'auto', overflowY: 'auto', maxHeight: '532px', fontSize: '13px', lineHeight: '1.6', fontFamily: 'ui-monospace, Consolas, monospace' }}>
                         {item.status === 'failed' ? (
                           <div style={{ color: '#ef4444', padding: '10px', background: '#fee2e2', borderRadius: '4px' }}>
                             <strong>错误详情:</strong> {item.error}
                           </div>
                         ) : item.content ? (
                           typeof item.content === 'object' 
-                            ? renderJsonValue(item.content) 
+                            ? <JsonNode val={item.content} nodeKey={null} foldedKeys={foldedKeysConfig} isRoot={true} /> 
                             : <pre style={{ whiteSpace: 'pre-wrap', color: '#24292f', margin: 0, fontFamily: 'inherit' }}>{item.content}</pre>
                         ) : (
                           <div style={{ color: '#a1a1aa' }}>等待处理...</div>

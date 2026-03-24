@@ -3,14 +3,18 @@ import { fetchConfig, saveConfig } from '../api/client';
 
 export default function ConfigForm() {
   const [config, setConfig] = useState({
-    provider: 'https://api.siliconflow.cn/v1/chat/completions',
-    model: 'Qwen/Qwen3.5-4B',
+    provider: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
+    model: 'qwen3.5-27b',
     apiKey: '',
     hasKey: false
   });
+  const [foldedKeysStr, setFoldedKeysStr] = useState('');
   const [statusMsg, setStatusMsg] = useState('');
 
   useEffect(() => {
+    const localKeys = localStorage.getItem('defaultFoldedKeys');
+    setFoldedKeysStr(localKeys !== null ? localKeys : 'extracted_text');
+
     fetchConfig()
       .then(data => {
         setConfig(prev => ({ ...prev, provider: data.provider || prev.provider, model: data.model || prev.model, hasKey: data.hasKey }));
@@ -20,6 +24,9 @@ export default function ConfigForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    localStorage.setItem('defaultFoldedKeys', foldedKeysStr);
+
     const formData = new FormData();
     formData.append('provider', config.provider);
     formData.append('model', config.model);
@@ -27,7 +34,7 @@ export default function ConfigForm() {
 
     try {
       const data = await saveConfig(formData);
-      setStatusMsg(data.message);
+      setStatusMsg(data.message || "保存配置成功！");
       setConfig(prev => ({ ...prev, apiKey: '', hasKey: true }));
       setTimeout(() => setStatusMsg(''), 3000);
     } catch (err) {
@@ -57,6 +64,11 @@ export default function ConfigForm() {
         <label className="config-label" style={labelStyle}>
           API Key {config.hasKey && <span style={{ color: '#71717a', fontSize: '12px', fontWeight: '400' }}>(已缓存)</span>}
           <input type="password" value={config.apiKey} onChange={e => setConfig({ ...config, apiKey: e.target.value })} placeholder={config.hasKey ? "留空则保持原密钥" : "输入 API Key"} style={inputStyle} />
+        </label>
+
+        <label className="config-label" style={labelStyle}>
+          默认折叠的 JSON 键名 (逗号分隔):
+          <input type="text" value={foldedKeysStr} onChange={e => setFoldedKeysStr(e.target.value)} placeholder="如: extracted_text" style={inputStyle} />
         </label>
         
         <button type="submit" style={{ padding: '7px 16px', background: '#18181b', color: '#fff', border: '1px solid transparent', borderRadius: '4px', fontSize: '13px', cursor: 'pointer', height: 'fit-content' }}>
