@@ -1,6 +1,7 @@
 import os
 import mimetypes
 import traceback
+import glob
 from typing import List
 from fastapi import APIRouter, UploadFile, File, Form, BackgroundTasks, HTTPException
 from fastapi.responses import FileResponse
@@ -9,7 +10,8 @@ from pydantic import BaseModel
 from core.config import get_config_data, save_config_data
 from core.storage import save_temp_file
 from core.tasks import load_tasks, save_tasks, create_task
-from services.llm import process_image
+from services.llm import process_image, process_vocabulary
+from core.vocabulary import merge_or_create_vocab, VOCAB_DIR, load_vocab
 
 router = APIRouter()
 
@@ -56,7 +58,6 @@ def process_task_background(task_id: str):
                 image_bytes = f.read()
             
             mime = mimetypes.guess_type(sub["path"])[0] or "image/jpeg"
-            
             reply = process_image(image_bytes, os.path.basename(sub["path"]), mime)
             
             sub["result"] = reply
@@ -70,7 +71,6 @@ def process_task_background(task_id: str):
             print(f"📄 异常文件: {sub.get('path')}")
             print(f"⚠️ 错误信息: {str(e)}")
             traceback.print_exc()
-            
             sub["status"] = "failed"
             sub["error"] = str(e)
             task["status"] = "paused"
@@ -90,7 +90,6 @@ async def upload_resource(
 ):
     """上传资源并创建处理任务，支持图片和 PDF"""
     sub_tasks_paths = []
-    
     try:
         for file in files:
             bytes_data = await file.read()
@@ -111,16 +110,13 @@ async def upload_resource(
                 sub_tasks_paths.append(saved_path)
 
         final_name = taskName.strip() if taskName.strip() else "资源解析任务"
-        
         task_id = create_task(final_name, sub_tasks_paths, startPage)
         background_tasks.add_task(process_task_background, task_id)
         
         return {"status": "success", "task_id": task_id}
-        
     except Exception as e:
         print(f"❌ 资源上传阶段异常: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
-
 
 @router.get("/api/task/{task_id}")
 def get_task_status(task_id: str):
@@ -128,13 +124,11 @@ def get_task_status(task_id: str):
     tasks = load_tasks()
     return tasks.get(task_id, {"error": "任务不存在"})
 
-
 @router.post("/api/task/{task_id}/resume")
 def resume_task(task_id: str, background_tasks: BackgroundTasks):
     """恢复执行已暂停的任务"""
     background_tasks.add_task(process_task_background, task_id)
     return {"status": "resumed"}
-
 
 @router.get("/api/tasks")
 def list_all_tasks():
@@ -152,7 +146,6 @@ def list_all_tasks():
     task_list.reverse()
     return {"status": "success", "tasks": task_list}
 
-
 @router.get("/api/image")
 def get_image(path: str):
     """根据路径返回图片文件，供前端预览使用"""
@@ -160,7 +153,6 @@ def get_image(path: str):
     if os.path.exists(abs_path):
         return FileResponse(abs_path)
     return {"error": "图片文件不存在或已被清理"}
-
 
 @router.delete("/api/task/{task_id}")
 def delete_task(task_id: str):
@@ -171,7 +163,6 @@ def delete_task(task_id: str):
         save_tasks(tasks)
         return {"status": "success"}
     return {"error": "任务不存在"}
-
 
 class RegenerateRequest(BaseModel):
     index: int 
@@ -189,7 +180,6 @@ def regenerate_task_item(task_id: str, req: RegenerateRequest, background_tasks:
         return {"error": "参数错误，索引越界"}
         
     sub = sub_tasks[req.index]
-    
     if sub.get("status") == "completed":
         task["completed"] = max(0, task.get("completed", 1) - 1)
         
@@ -203,3 +193,42 @@ def regenerate_task_item(task_id: str, req: RegenerateRequest, background_tasks:
     
     background_tasks.add_task(process_task_background, task_id)
     return {"status": "success", "message": f"已将第 {req.index} 项加入重新生成队列"}
+
+
+class VocabAddRequest(BaseModel):
+    word: str
+    context: str
+    source: str = ""
+    fetch_llm: bool = False
+
+@router.post("/api/vocabulary/add")
+def add_vocabulary(req: VocabAddRequest):
+    """处理生词加入或合并"""
+    try:
+        llm_result = {}
+        if req.fetch_llm:
+            llm_result = process_vocabulary(req.word, req.context) 
+        
+        final_data = merge_or_create_vocab(req.word, req.context, req.source, llm_result)
+        return {"status": "success", "data": final_data}
+    except Exception as e:
+        print(f"❌ 生词处理失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/api/vocabulary/list")
+def list_vocabulary():
+    words = []
+    if os.path.exists(VOCAB_DIR):
+        files = glob.glob(f"{VOCAB_DIR}/*.json")
+        for f in files:
+            word = os.path.basename(f).replace(".json", "")
+            words.append(word)
+    words.sort()
+    return {"status": "success", "words": words}
+
+@router.get("/api/vocabulary/detail/{word}")
+def get_vocab_detail(word: str):
+    data = load_vocab(word)
+    if not data:
+        return {"error": "单词不存在或已删除"}
+    return {"status": "success", "data": data}

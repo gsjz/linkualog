@@ -1,5 +1,4 @@
 const backendPort = import.meta.env.VITE_BACKEND_PORT || '8000';
-
 const BACKEND_URL = `http://${window.location.hostname}:${backendPort}`;
 
 console.log("当前连接的后端地址:", BACKEND_URL);
@@ -18,18 +17,12 @@ export const fetchConfig = async () => {
 };
 
 export const saveConfig = async (formData) => {
-  const res = await fetch(`${BACKEND_URL}/api/config`, {
-    method: 'POST',
-    body: formData,
-  });
+  const res = await fetch(`${BACKEND_URL}/api/config`, { method: 'POST', body: formData });
   return handleResponse(res);
 };
 
 export const uploadImage = async (formData) => {
-  const res = await fetch(`${BACKEND_URL}/api/upload_image`, {
-    method: 'POST',
-    body: formData,
-  });
+  const res = await fetch(`${BACKEND_URL}/api/upload_image`, { method: 'POST', body: formData });
   return handleResponse(res);
 };
 
@@ -66,10 +59,27 @@ export const getImageUrl = (imagePath) => {
 export const regenerateTaskPage = async (taskId, index) => {
   const res = await fetch(`${BACKEND_URL}/api/task/${taskId}/regenerate`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ index: index })
   });
+  return handleResponse(res);
+};
+
+export const addVocabulary = async (word, context, source = '', fetchLlm = false) => {
+  const res = await fetch(`${BACKEND_URL}/api/vocabulary/add`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ word, context, source, fetch_llm: fetchLlm })
+  });
+  return handleResponse(res);
+};
+
+export const getVocabularyList = async () => {
+  const res = await fetch(`${BACKEND_URL}/api/vocabulary/list`);
+  return handleResponse(res);
+};
+
+export const getVocabularyDetail = async (word) => {
+  const res = await fetch(`${BACKEND_URL}/api/vocabulary/detail/${encodeURIComponent(word)}`);
   return handleResponse(res);
 };

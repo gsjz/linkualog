@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { uploadResource, getTaskStatus, resumeTask, getAllTasks, deleteTask, getImageUrl, regenerateTaskPage } from '../api/client';
 
-const JsonNode = ({ val, nodeKey, foldedKeys, isRoot = false }) => {
+const JsonNode = ({ val, nodeKey, foldedKeys, isRoot = false, taskName = '' }) => {
   const isFoldedByDefault = nodeKey && foldedKeys.includes(nodeKey);
   const [isExpanded, setIsExpanded] = useState(!isFoldedByDefault);
 
@@ -26,6 +26,14 @@ const JsonNode = ({ val, nodeKey, foldedKeys, isRoot = false }) => {
   const isArray = Array.isArray(val);
   const isEmpty = isObjectOrArray && (isArray ? val.length === 0 : Object.keys(val).length === 0);
 
+  const handleDispatchTask = (word, context, fetchLlm, e) => {
+    e.stopPropagation();
+    window.dispatchEvent(new CustomEvent('add-vocab-task', {
+      detail: { word, context, source: taskName, fetchLlm }
+    }));
+  };
+
+  const isVocabItem = isObjectOrArray && !isArray && val.word && (val.context || val.example || val.text);
 
   if (isRoot && isObjectOrArray && !isEmpty) {
     return (
@@ -35,13 +43,13 @@ const JsonNode = ({ val, nodeKey, foldedKeys, isRoot = false }) => {
             <div key={i} style={{ display: 'flex', marginTop: '4px' }}>
               <span style={{ marginRight: '8px', color: '#a1a1aa' }}>-</span>
               <div style={{ flex: 1 }}>
-                <JsonNode val={item} nodeKey={null} foldedKeys={foldedKeys} isRoot={false} />
+                <JsonNode val={item} nodeKey={null} foldedKeys={foldedKeys} isRoot={false} taskName={taskName} />
               </div>
             </div>
           ))
         ) : (
           Object.entries(val).map(([k, v]) => (
-            <JsonNode key={k} val={v} nodeKey={k} foldedKeys={foldedKeys} isRoot={false} />
+            <JsonNode key={k} val={v} nodeKey={k} foldedKeys={foldedKeys} isRoot={false} taskName={taskName} />
           ))
         )}
       </div>
@@ -76,8 +84,8 @@ const JsonNode = ({ val, nodeKey, foldedKeys, isRoot = false }) => {
 
   return (
     <div style={{ marginLeft: nodeKey ? '16px' : '0', marginTop: '4px', marginBottom: '4px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap' }}>
-        {nodeKey && <strong style={{ color: '#24292f', marginRight: '4px' }}>{nodeKey}: </strong>}
+      <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+        {nodeKey && <strong style={{ color: '#24292f' }}>{nodeKey}: </strong>}
         <span
           onClick={() => setIsExpanded(!isExpanded)}
           style={{ 
@@ -90,7 +98,25 @@ const JsonNode = ({ val, nodeKey, foldedKeys, isRoot = false }) => {
           <span style={{ transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s', fontSize: '10px' }}>▶</span>
           {typeLabel}
         </span>
-        {!isExpanded && <span style={{ color: '#a1a1aa', marginLeft: '8px', fontSize: '12px' }}>...</span>}
+        
+        {isVocabItem && (
+          <div style={{ display: 'flex', gap: '4px' }}>
+            <button 
+              onClick={(e) => handleDispatchTask(val.word, val.context || val.example || val.text, false, e)}
+              style={{ padding: '2px 8px', fontSize: '12px', background: '#e4e4e7', color: '#09090b', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+            >
+              ⚡️ 保存
+            </button>
+            <button 
+              onClick={(e) => handleDispatchTask(val.word, val.context || val.example || val.text, true, e)}
+              style={{ padding: '2px 8px', fontSize: '12px', background: '#10b981', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+            >
+              🧠 解析
+            </button>
+          </div>
+        )}
+
+        {!isExpanded && <span style={{ color: '#a1a1aa', fontSize: '12px' }}>...</span>}
       </div>
 
       {isExpanded && (
@@ -101,13 +127,13 @@ const JsonNode = ({ val, nodeKey, foldedKeys, isRoot = false }) => {
                 <div key={i} style={{ display: 'flex', marginTop: '4px' }}>
                   <span style={{ marginRight: '8px', color: '#a1a1aa' }}>-</span>
                   <div style={{ flex: 1 }}>
-                    <JsonNode val={item} nodeKey={null} foldedKeys={foldedKeys} isRoot={false} />
+                    <JsonNode val={item} nodeKey={null} foldedKeys={foldedKeys} isRoot={false} taskName={taskName} />
                   </div>
                 </div>
               ))
             ) : (
               Object.entries(val).map(([k, v]) => (
-                <JsonNode key={k} val={v} nodeKey={k} foldedKeys={foldedKeys} isRoot={false} />
+                <JsonNode key={k} val={v} nodeKey={k} foldedKeys={foldedKeys} isRoot={false} taskName={taskName} />
               ))
             )
           ) : (
@@ -228,7 +254,7 @@ export default function TaskVisualizer() {
   const getFormattedResults = () => {
     if (!taskData || !taskData.sub_tasks) return [];
     
-    const finalTaskName = taskData.name || '未命名任务';
+    const finalTaskName = taskData.name || '';
     const basePage = taskData.start_page !== undefined ? parseInt(taskData.start_page, 10) : 1;
 
     return taskData.sub_tasks.map((sub, index) => {
@@ -265,79 +291,27 @@ export default function TaskVisualizer() {
 
   return (
     <div className="task-layout" style={{ display: 'flex', height: '100%', width: '100%' }}>
-      
       <style>{`
-        .task-sidebar {
-          width: 280px;
-          border-right: 1px solid #e4e4e7;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .task-sidebar.collapsed {
-          width: 0px !important;
-          border-right: none !important;
-        }
-        .result-image-box {
-          width: 500px; /* 默认宽度增大 */
-          min-width: 200px;
-          max-width: 70%;
-          resize: horizontal;
-          border-right: 1px solid #e4e4e7;
-        }
-        .result-image-box img {
-          max-width: 100%;
-          max-height: 750px; /* 默认高度极大放宽 */
-          object-fit: contain;
-        }
-        
-        /* 移动端适配覆盖 */
+        .task-sidebar { width: 280px; border-right: 1px solid #e4e4e7; transition: all 0.3s; }
+        .task-sidebar.collapsed { width: 0px !important; border-right: none !important; }
+        .result-image-box { width: 500px; min-width: 200px; max-width: 70%; resize: horizontal; border-right: 1px solid #e4e4e7; }
+        .result-image-box img { max-width: 100%; max-height: 750px; object-fit: contain; }
         @media screen and (max-width: 768px) {
-          .task-sidebar {
-            width: 100% !important;
-            max-height: 250px !important;
-            border-right: none !important;
-          }
-          /* 移动端的折叠逻辑变为上下收起 */
-          .task-sidebar.collapsed {
-            width: 100% !important;
-            max-height: 0px !important;
-            border-bottom: none !important;
-            opacity: 0;
-            padding: 0 !important;
-          }
-          .result-image-box {
-            width: 100% !important;
-            max-width: 100% !important;
-            border-right: none !important;
-            resize: none !important; /* 手机上关闭横向拉伸功能 */
-            padding: 8px !important;
-          }
-          .result-image-box img {
-            max-height: 450px !important; /* 手机端适当放大允许的高度 */
-          }
+          .task-sidebar { width: 100% !important; max-height: 250px !important; border-right: none !important; }
+          .task-sidebar.collapsed { width: 100% !important; max-height: 0px !important; border-bottom: none !important; opacity: 0; padding: 0 !important; }
+          .result-image-box { width: 100% !important; max-width: 100% !important; border-right: none !important; resize: none !important; padding: 8px !important; }
+          .result-image-box img { max-height: 450px !important; }
         }
       `}</style>
 
       <div className={`task-sidebar ${isSidebarCollapsed ? 'collapsed' : ''}`} style={{ overflow: 'hidden', whiteSpace: 'nowrap', background: '#fafafa', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
-        <div style={{ padding: '12px 16px', borderBottom: '1px solid #e4e4e7', fontSize: '12px', fontWeight: '600', color: '#71717a' }}>
-          历史任务
-        </div>
+        <div style={{ padding: '12px 16px', borderBottom: '1px solid #e4e4e7', fontSize: '12px', fontWeight: '600', color: '#71717a' }}>历史任务</div>
         <div style={{ flex: 1, overflowY: 'auto' }}>
           {historyTasks.map(task => {
             const isSelected = selectedTaskId === task.id;
             return (
-              <div 
-                key={task.id} 
-                onClick={() => handleSelectTask(task.id)}
-                style={{ 
-                  padding: '12px 16px', 
-                  borderBottom: '1px solid #e4e4e7',
-                  cursor: 'pointer',
-                  background: isSelected ? '#e4e4e7' : 'transparent',
-                }}
-              >
-                <div style={{ fontSize: '13px', fontWeight: isSelected ? '600' : '400', color: '#09090b', marginBottom: '4px', wordBreak: 'break-all', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {task.name}
-                </div>
+              <div key={task.id} onClick={() => handleSelectTask(task.id)} style={{ padding: '12px 16px', borderBottom: '1px solid #e4e4e7', cursor: 'pointer', background: isSelected ? '#e4e4e7' : 'transparent' }}>
+                <div style={{ fontSize: '13px', fontWeight: isSelected ? '600' : '400', color: '#09090b', marginBottom: '4px', wordBreak: 'break-all', overflow: 'hidden', textOverflow: 'ellipsis' }}>{task.name || '未命名'}</div>
                 <div style={{ fontSize: '12px', color: '#71717a', display: 'flex', justifyContent: 'space-between' }}>
                   <span>{task.completed} / {task.total}</span>
                   {getStatusText(task.status)}
@@ -349,53 +323,26 @@ export default function TaskVisualizer() {
       </div>
 
       <div className="task-main-area" style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: 0, background: '#ffffff' }}>
-        
         <div className="task-toolbar" style={{ padding: '16px 24px', borderBottom: '1px solid #e4e4e7', display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <button 
-            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-            style={{ 
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              width: '40px', height: '28px', padding: 0,
-              background: '#fff', border: '1px solid #e4e4e7', borderRadius: '4px', 
-              fontSize: '12px', cursor: 'pointer', color: '#71717a'
-            }}
-            title={isSidebarCollapsed ? "展开任务栏" : "收起任务栏"}
-          >
-            {isSidebarCollapsed ? '展开' : '收起'}
-          </button>
-
+          <button onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '40px', height: '28px', padding: 0, background: '#fff', border: '1px solid #e4e4e7', borderRadius: '4px', fontSize: '12px', cursor: 'pointer', color: '#71717a' }}>{isSidebarCollapsed ? '展开' : '收起'}</button>
           <span style={{ fontSize: '13px', fontWeight: '600', color: '#09090b' }}>新建任务:</span>
           <input type="text" placeholder="任务名称 (选填)" value={taskName} onChange={e => setTaskName(e.target.value)} style={{ ...inputClass, width: '200px' }} />
           <span style={{ fontSize: '13px', color: '#71717a' }}>起始页:</span>
           <input type="number" min="1" value={startPage} onChange={e => setStartPage(e.target.value)} style={{ ...inputClass, width: '80px' }} />
           <input type="file" multiple accept="image/*,application/pdf" onChange={e => setFiles(e.target.files)} style={{ fontSize: '13px', marginLeft: '12px' }} />
-          
-          <button 
-            onClick={handleUpload} 
-            disabled={isUploading}
-            style={{ 
-              padding: '6px 16px', background: isUploading ? '#e4e4e7' : '#18181b', 
-              color: isUploading ? '#71717a' : '#fff', border: '1px solid transparent', 
-              borderRadius: '4px', fontSize: '13px', cursor: isUploading ? 'not-allowed' : 'pointer',
-              marginLeft: 'auto'
-            }}
-          >
-            {isUploading ? '处理中...' : '开始处理'}
-          </button>
+          <button onClick={handleUpload} disabled={isUploading} style={{ padding: '6px 16px', background: isUploading ? '#e4e4e7' : '#18181b', color: isUploading ? '#71717a' : '#fff', border: '1px solid transparent', borderRadius: '4px', fontSize: '13px', cursor: isUploading ? 'not-allowed' : 'pointer', marginLeft: 'auto' }}>{isUploading ? '处理中...' : '开始处理'}</button>
         </div>
 
         {taskData ? (
           <div className="task-detail-wrapper" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0 }}>
             <div className="task-status-bar" style={{ padding: '12px 24px', borderBottom: '1px solid #e4e4e7', background: '#fafafa', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ fontSize: '13px', color: '#09090b', display: 'flex', alignItems: 'center', gap: '16px' }}>
-                <strong style={{ fontSize: '14px' }}>{taskData.name}</strong>
+                <strong style={{ fontSize: '14px' }}>{taskData.name || '未命名'}</strong>
                 <span>进度: {taskData.completed} / {taskData.total}</span>
                 <span>状态: {getStatusText(taskData.status)}</span>
               </div>
               <div style={{ display: 'flex', gap: '12px' }}>
-                {taskData.status === 'paused' && (
-                  <button onClick={handleResume} style={{ padding: '4px 12px', background: '#fff', border: '1px solid #e4e4e7', borderRadius: '4px', fontSize: '12px', cursor: 'pointer' }}>从失败处继续</button>
-                )}
+                {taskData.status === 'paused' && <button onClick={handleResume} style={{ padding: '4px 12px', background: '#fff', border: '1px solid #e4e4e7', borderRadius: '4px', fontSize: '12px', cursor: 'pointer' }}>从失败处继续</button>}
                 <button onClick={handleDeleteTask} style={{ padding: '4px 12px', background: '#fff', color: '#ef4444', border: '1px solid #fca5a5', borderRadius: '4px', fontSize: '12px', cursor: 'pointer' }}>删除任务</button>
               </div>
             </div>
@@ -409,74 +356,40 @@ export default function TaskVisualizer() {
                  const isRegenerating = regeneratingPages[idx];
                  return (
                  <div key={idx} className="result-item-container" style={{ marginBottom: '32px', border: '1px solid #e4e4e7', borderRadius: '6px', overflow: 'hidden' }}>
-                    
                     <div style={{ padding: '8px 16px', background: '#fafafa', borderBottom: '1px solid #e4e4e7', fontSize: '12px', color: '#71717a', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
                         <span style={{ fontWeight: '500', color: '#09090b' }}>页码: {item.page_number}</span>
                         <span>状态: {item.status === 'completed' ? '解析成功' : item.status === 'failed' ? '解析失败' : '处理中...'}</span>
-                        
-                        {item.error && (
-                          <span style={{ color: '#ef4444', fontSize: '12px', background: '#fee2e2', padding: '4px 8px', borderRadius: '4px', maxWidth: '400px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={item.error}>
-                            原因: {item.error}
-                          </span>
-                        )}
+                        {item.error && <span style={{ color: '#ef4444', fontSize: '12px', background: '#fee2e2', padding: '4px 8px', borderRadius: '4px', maxWidth: '400px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={item.error}>原因: {item.error}</span>}
                       </div>
-                      
-                      <button 
-                        onClick={() => handleRegenerate(idx)}
-                        disabled={isRegenerating || item.status === 'processing'}
-                        style={{ 
-                          padding: '4px 10px', 
-                          background: '#fff', 
-                          border: '1px solid #e4e4e7', 
-                          borderRadius: '4px', 
-                          fontSize: '12px', 
-                          cursor: (isRegenerating || item.status === 'processing') ? 'not-allowed' : 'pointer',
-                          color: (isRegenerating || item.status === 'processing') ? '#a1a1aa' : '#09090b',
-                          transition: 'all 0.2s',
-                          flexShrink: 0
-                        }}
-                      >
+                      <button onClick={() => handleRegenerate(idx)} disabled={isRegenerating || item.status === 'processing'} style={{ padding: '4px 10px', background: '#fff', border: '1px solid #e4e4e7', borderRadius: '4px', fontSize: '12px', cursor: (isRegenerating || item.status === 'processing') ? 'not-allowed' : 'pointer', color: (isRegenerating || item.status === 'processing') ? '#a1a1aa' : '#09090b', flexShrink: 0 }}>
                         {isRegenerating ? '🔄 请求中...' : '🔄 重新生成'}
                       </button>
                     </div>
 
                     <div className="result-layout" style={{ display: 'flex' }}>
                       <div className="result-image-box" style={{ overflow: 'hidden', flexShrink: 0, padding: '16px', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <img 
-                          src={getImageUrl(item.image_path)} 
-                          alt={`第 ${item.page_number} 页预览`} 
-                          onError={(e) => { 
-                            e.target.style.display = 'none'; 
-                            e.target.parentElement.innerHTML = '<span style="color:#a1a1aa;font-size:12px;">图片不可用</span>'; 
-                          }}
-                        />
+                        <img src={getImageUrl(item.image_path)} alt={`第 ${item.page_number} 页预览`} onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.innerHTML = '<span style="color:#a1a1aa;font-size:12px;">图片不可用</span>'; }} />
                       </div>
-                      
                       <div className="result-json-box" style={{ flex: 1, padding: '16px', background: '#fafafa', overflowX: 'auto', overflowY: 'auto', maxHeight: '532px', fontSize: '13px', lineHeight: '1.6', fontFamily: 'ui-monospace, Consolas, monospace' }}>
                         {item.status === 'failed' ? (
-                          <div style={{ color: '#ef4444', padding: '10px', background: '#fee2e2', borderRadius: '4px' }}>
-                            <strong>错误详情:</strong> {item.error}
-                          </div>
+                          <div style={{ color: '#ef4444', padding: '10px', background: '#fee2e2', borderRadius: '4px' }}><strong>错误详情:</strong> {item.error}</div>
                         ) : item.content ? (
                           typeof item.content === 'object' 
-                            ? <JsonNode val={item.content} nodeKey={null} foldedKeys={foldedKeysConfig} isRoot={true} /> 
+                            ? <JsonNode val={item.content} nodeKey={null} foldedKeys={foldedKeysConfig} isRoot={true} taskName={item.task_name} /> 
                             : <pre style={{ whiteSpace: 'pre-wrap', color: '#24292f', margin: 0, fontFamily: 'inherit' }}>{item.content}</pre>
                         ) : (
                           <div style={{ color: '#a1a1aa' }}>等待处理...</div>
                         )}
                       </div>
                     </div>
-
                  </div>
                  );
               })}
             </div>
           </div>
         ) : (
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#a1a1aa', fontSize: '14px' }}>
-            请在左侧选择一个任务查看，或在上方新建任务。
-          </div>
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#a1a1aa', fontSize: '14px' }}>请在左侧选择一个任务查看，或在上方新建任务。</div>
         )}
       </div>
     </div>

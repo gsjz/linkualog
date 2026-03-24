@@ -141,3 +141,70 @@ def process_image(image_bytes: bytes, filename: str, content_type: str) -> str:
                 time.sleep(2) 
             else:
                 raise Exception(f"请求大模型处理图片失败: {e}")
+            
+
+def process_vocabulary(word: str, context: str) -> dict:
+    """
+    调用 LLM 根据单词和上下文生成音标、释义和例句翻译。
+    """
+    import json as standard_json
+    config = get_config_data()
+    api_key = config.get("api_key")
+    api_url = config.get("provider")
+    model_name = config.get("model")
+
+    if not api_key:
+        raise ValueError("未找到 API Key，请先配置")
+
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json"
+    }
+    
+    prompt = (
+        "你是一个专业的英文词典 API 引擎。\n"
+        f"请根据用户提供的生词 '{word}' 及其出现的上下文 '{context}'，生成该词的音标、适合该语境的中文释义数组，以及该上下文句子的中文翻译。\n"
+        "必须严格以纯 JSON 格式输出，不要包含 markdown 代码块（```json）或其他说明文字。\n"
+        "JSON 结构示例：\n"
+        "{\n"
+        '  "pronunciation": "/əˈbæn.dən/",\n'
+        '  "definitions": ["vt. 放弃", "n. 放任"],\n'
+        '  "context_translation": "他决定放弃这个项目。"\n'
+        "}"
+    )
+
+    payload = {
+        "model": model_name,
+        "max_tokens": 1024,
+        "temperature": 0.1,
+        "messages": [
+            {
+                "role": "system",
+                "content": "你是一个严格的 JSON 响应机器。"
+            },
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ]
+    }
+
+    print(f"🔄 正在向 LLM 请求生词补全: {word}")
+    
+    for attempt in range(3):
+        try:
+            response = requests.post(api_url, headers=headers, json=payload, timeout=30)
+            response.raise_for_status()
+            llm_reply = response.json()['choices'][0]['message']['content']
+            
+            llm_reply = llm_reply.replace("```json", "").replace("```", "").strip()
+            result_data = standard_json.loads(llm_reply)
+            
+            print(f"✅ LLM 成功补全生词信息: {word}")
+            return result_data
+        except Exception as e:
+            print(f"⚠️ 第 {attempt + 1} 次请求单词补全失败: {e}")
+            if attempt < 2:
+                time.sleep(1)
+            else:
+                raise Exception(f"请求大模型处理单词失败: {e}")
