@@ -2,172 +2,150 @@
 icon: lucide/rocket
 ---
 
-# Get started
+# 获得开始
 
-For full documentation visit [zensical.org](https://zensical.org/docs/).
+## 前言 (Overall Preface)
 
-## Commands
-
-* [`zensical new`][new] - Create a new project
-* [`zensical serve`][serve] - Start local web server
-* [`zensical build`][build] - Build your site
-
-  [new]: https://zensical.org/docs/usage/new/
-  [serve]: https://zensical.org/docs/usage/preview/
-  [build]: https://zensical.org/docs/usage/build/
-
-## Examples
-
-### Admonitions
-
-> Go to [documentation](https://zensical.org/docs/authoring/admonitions/)
-
-!!! note
-
-    This is a **note** admonition. Use it to provide helpful information.
-
-!!! warning
-
-    This is a **warning** admonition. Be careful!
-
-### Details
-
-> Go to [documentation](https://zensical.org/docs/authoring/admonitions/#collapsible-blocks)
-
-???+ info "Click to expand for more info"
-
-    This content is hidden until you click to expand it.
-    Great for FAQs or long explanations.
-
-## Code Blocks
-
-> Go to [documentation](https://zensical.org/docs/authoring/code-blocks/)
-
-``` python hl_lines="2" title="Code blocks"
-def greet(name):
-    print(f"Hello, {name}!") # (1)!
-
-greet("Python")
-```
-
-1.  > Go to [documentation](https://zensical.org/docs/authoring/code-blocks/#code-annotations)
-
-    Code annotations allow to attach notes to lines of code.
-
-Code can also be highlighted inline: `#!python print("Hello, Python!")`.
-
-## Content tabs
-
-> Go to [documentation](https://zensical.org/docs/authoring/content-tabs/)
-
-=== "Python"
-
-    ``` python
-    print("Hello from Python!")
-    ```
-
-=== "Rust"
-
-    ``` rs
-    println!("Hello from Rust!");
-    ```
-
-## Diagrams
-
-> Go to [documentation](https://zensical.org/docs/authoring/diagrams/)
-
-``` mermaid
-graph LR
-  A[Start] --> B{Error?};
-  B -->|Yes| C[Hmm...];
-  C --> D[Debug];
-  D --> B;
-  B ---->|No| E[Yay!];
-```
-
-## Footnotes
-
-> Go to [documentation](https://zensical.org/docs/authoring/footnotes/)
-
-Here's a sentence with a footnote.[^1]
-
-Hover it, to see a tooltip.
-
-[^1]: This is the footnote.
+本站是一个个人词典网站，同时也是 <a href="https://github.com/gsjz/linkualog" target="_blank">这个仓库</a> 的官方演示站。这个页面是仓库的文档。
 
 
-## Formatting
+### 目标用户 (Target User)
 
-> Go to [documentation](https://zensical.org/docs/authoring/formatting/)
+本项目基于 Ubuntu 构建。基础环境管理涉及 `npm` 和 `uv`，你需要提前了解它们的工作原理。
 
-- ==This was marked (highlight)==
-- ^^This was inserted (underline)^^
-- ~~This was deleted (strikethrough)~~
-- H~2~O
-- A^T^A
-- ++ctrl+alt+del++
+如果你不具备这些基础知识，配置过程对你来说可能会有些挑战。但我相信本项目对目标用户而言是非常实用的。
 
-## Icons, Emojis
+如果你满足以下条件：
 
-> Go to [documentation](https://zensical.org/docs/authoring/icons-emojis/)
+- 具备计算机相关背景（约本科水平）
+- 有搭建个人静态网站的经验（特别是使用 GitHub Pages 部署 `material-for-mkdocs`）
+- 有强烈的需求，希望利用技术手段以一种更可持续的方式学习英语 
 
-* :sparkles: `:sparkles:`
-* :rocket: `:rocket:`
-* :tada: `:tada:`
-* :memo: `:memo:`
-* :eyes: `:eyes:`
+本项目为你提供：
 
-## Maths
+- 一个**浏览器插件**，用于增强你在视频网站上的学习体验； 
+- 一个**主服务器 (master-server)**，用于收集来自你手机的数据（特别是你想要进行 OCR 识别并结构化整理的图片），同时也接收来自浏览器插件的数据； 
+- 一个**辅助服务器 (second-server)**，提供一个用于辅助记忆的玩具级应用 (toy application)； 
+- 一个**网站模板**，提供了一个静态网站的实现案例。
 
-> Go to [documentation](https://zensical.org/docs/authoring/math/)
+### 快速开始？(Quick Start?)
 
-$$
-\cos x=\sum_{k=0}^{\infty}\frac{(-1)^k}{(2k)!}x^{2k}
-$$
+本项目包含多个模块，你可以根据不同需求让它们独立运行。查看各个“模块设置 (Set Up)”下的“面向用户 (For User)”部分，可以帮助你相对快速地开始使用。
 
-!!! warning "Needs configuration"
-    Note that MathJax is included via a `script` tag on this page and is not
-    configured in the generated default configuration to avoid including it
-    in a pages that do not need it. See the documentation for details on how
-    to configure it on all your pages if they are more Maths-heavy than these
-    simple starter pages.
+### 项目动机 (Motivation)
 
-<script id="MathJax-script" src="https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js"></script>
-<script>
-  window.MathJax = {
-    tex: {
-      inlineMath: [["\\(", "\\)"]],
-      displayMath: [["\\[", "\\]"]],
-      processEscapes: true,
-      processEnvironments: true
-    },
-    options: {
-      ignoreHtmlClass: ".*|",
-      processHtmlClass: "arithmatex"
-    }
-  };
+我个人维护着一个英语学习知识库，部署在一个静态网站上。即使有 LLM（大语言模型）的帮助，以下重复性的工作流依然存在：
 
-  document$.subscribe(() => {
-    MathJax.startup.output.clearCache()
-    MathJax.typesetClear()
-    MathJax.texReset()
-    MathJax.typesetPromise()
-  })
-</script>
+1. 将非文本数据转化为文本数据
+2. 打开 LLM 网站，复制粘贴原始素材，并与模型对话
+3. 创建或查找对应文件
+4. 合并内容、打标签并添加引用
 
-## Task Lists
+这些繁琐的步骤让学习效率未能达到我的预期。因此，我开发了这个系统，旨在让学习体验更加直观和可持续：
 
-> Go to [documentation](https://zensical.org/docs/authoring/lists/#using-task-lists)
+1. **专注力分离 (Focus Splitting)**：我希望能在很长一段时间内，完全脱离这套系统独立进行英语学习。之后，我再将学习素材集中发送给系统。系统将自动完成大部分繁杂的脏活累活。
+2. **存储友好 (Storage Friendly)**：我们不希望过多的非文本素材（其核心信息其实仅仅是文字）占用设备大量存储空间。因此，它们在提交后应该被直接清理丢弃。
+3. **便于复习与合并 (Review & Merge Friendly)**：这些重复性工作是由智能体 (agent) 完成的，所以我必须手动检查其质量，这也正好作为语言习得过程中的重要一环。此外，还存在将新内容合并到现有文件中的问题。这部分手动介入环节是故意保留的，但我也希望它能尽可能轻松简单。
 
-* [x] Install Zensical
-* [x] Configure `zensical.toml`
-* [x] Write amazing documentation
-* [ ] Deploy anywhere
+---
 
-## Tooltips
+P.S. 'Link-ual' 听起来像 'lingual'（语言的）。系统的输出结果正是我们刚刚所学内容的 'lingual log'（语言日志）。
 
-> Go to [documentation](https://zensical.org/docs/authoring/tooltips/)
+## 工作流 (Workflow)
 
-[Hover me][example]
+### 概览 (Overview)
 
-  [example]: https://example.com "I'm a tooltip!"
+![workflow](assets/workflow.svg)
+
+### 数据采集 (Data Acquisition)
+
+本项目需要局域网 (LAN) 环境，这为数据传输提供了便利。例如，你可以将 PC 作为主服务器托管后端，用手机收集照片并从前端发送数据。
+
+具体来说，我设计了两种主要的数据收集方式：
+
+1. 你可以使用托管在局域网中的前端将文本或图片发送到服务器。这主要针对**图片素材**。（如果需要，你可以为图片命名，这将有助于未来的引用和追溯。）
+2. 你可以使用浏览器插件将视频网站上的字幕以及相应的提示词 (prompt) 发送到服务器。这主要针对**视频素材**。（引用信息是自动生成的。）
+
+### 数据处理 (Data Processing)
+
+对于图片素材，系统会尝试对内容进行 OCR（光学字符识别），并默认尝试提取关键词及其上下文。为了获得更好的效果，此步骤需要人工监督介入：
+
+- 如果 OCR 识别内容较差，你可以尝试重新识别 (re-OCR)
+- 如果 OCR 识别内容无误，你可以删除系统的推荐内容，或者自己手动选择句子和单词。
+
+推荐算法方面：一方面，如果你在图片素材中标记了下划线，推荐内容将通过 OCR 和 LLM 处理生成；另一方面，我们将提供一种简单的 RAG（检索增强生成）方法，用于检索你自定义列表中的词典（底层模型**不是**向量数据库，而是基于 AC 自动机的简单字符串匹配）。
+
+接下来，这一步将把源素材转换为 JSON 格式。它们的命名通常是一个单词，或者是用 `-` 连接的短语。例如 `run.json`、`in-a-long-run.json`。
+
+该 JSON 文件会记录视频的来源引用（或你设置的图片名称），并包含日期信息。
+
+### 合并与复习 (Merge and Review)
+
+你需要在主服务器中指定并保存数据库的目录。随后，此步骤会尝试在你的数据库中查找文件，以决定是进行合并操作还是创建新文件。系统将为你提供一个类似 Git 的差异对比视图 (comparison view)。
+
+### 使用与部署 (Enjoy or Deploy)
+
+我设计了两种主要方式来利用这些产出结果：
+
+1. **辅助服务器 (Second-server)** 提供了一个实例，通过在局域网内托管，利用这些 JSON 文件构建一个“背单词”(RECITE WORDS) 应用。
+2. **以我的网站为例**。处理结果应该被转换为 Markdown 格式。因此，如果你愿意，我们可以配置一个程序来自动 hook（触发接管）它。
+
+## 主服务器配置 (Master-server Set Up)
+
+### 前言 (Preface)
+
+### 面向用户 (For User)
+
+### 面向开发者 (For Devloper)
+
+### 未来计划 (Future Plan)
+
+
+## 辅助服务器配置 (Second-server Set Up)
+
+### 前言 (Preface)
+
+### 面向用户 (For User)
+
+### 面向开发者 (For Devloper)
+
+### 未来计划 (Future Plan)
+
+## 浏览器插件配置 (Browser-plugin Set Up)
+
+### 前言 (Preface)
+
+这是一个用于增强字幕体验的 GMonkey 浏览器插件。 
+
+首先你需要了解什么是 GreaseMonkey（油猴），以及它与 TamperMonkey（篡改猴）的关系。我倾向于将这类浏览器插件统称为 GMonkey，就像它们提供的统一 API 前缀 'GM' 一样。 
+
+### 面向用户 (For User)
+
+如果你只是想尝试这个插件，你**仅需**用到 `browser-plugin/user/linkualog.user.js` 这个文件。
+
+在你的 TamperMonkey 中新建一个脚本，将该文件中的全部内容复制进去，然后保存 (`Ctrl + S`)。期间可能会提示要求授予一些权限。
+
+- 享受你在 `youtube.com` 上带有侧边栏的体验吧。观看带字幕的视频时，开启字幕，直到侧边栏成功接收到数据。
+- 通过局域网将字幕片段和相应的提示词（也可以留空）发送给主机端，以便进行进一步处理。
+
+### 面向开发者 (For Devloper)
+
+如果你想以开发者的视角了解本项目，可以查看 `browser-plugin/dev/` 目录。在你的终端中切换到该路径。
+
+这部分是基于 `Vite`（`vite-plugin-monkey`）和 `React` 构建的。因此，和常规项目一样，使用 `npm install` 来生成（被 git 忽略的）`node_modules` 依赖文件夹。
+
+然后你可以使用 `npm run dev` 来体验 HMR（模块热替换）。在装有 TamperMonkey 的浏览器中打开 localhost 链接，点击给出的 `install the plugin`（安装插件）按钮。如果你的网站没有任何反应，你可以尝试安装一个解除 CSP 限制的插件 (CSP-unblock plugin) 来绕过 CSP 策略。
+
+如果你想自己打包生成 `user.js`，请使用 `npm run build`。
+
+### 未来计划 (Future Plan)
+
+- 适配 `bilibili.com`
+  
+## 网站模板配置 (Website-template Set Up)
+
+### 前言 (Preface)
+
+### 本地构建 (Local Build)
+
+### 通过 Github 部署 (Deploy by Github)
