@@ -1,9 +1,9 @@
 import os
 import json
 
-CONFIG_FILE = "local_data/llm_config.json"
-DEFAULT_PROVIDER = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
-DEFAULT_MODEL = "qwen3.5-27b"
+CONFIG_FILE = os.environ.get("CONFIG_FILE")
+DEFAULT_PROVIDER = os.environ.get("DEFAULT_PROVIDER")
+DEFAULT_MODEL = os.environ.get("DEFAULT_MODEL")
 
 def get_config_data():
     """读取并返回配置"""
@@ -32,6 +32,8 @@ def save_config_data(provider: str, model: str, api_key: str = ""):
     
     if api_key.strip():
         config["api_key"] = api_key.strip()
-        
+    
+    os.makedirs(os.path.dirname(CONFIG_FILE), exist_ok=True)
+    
     with open(CONFIG_FILE, "w", encoding="utf-8") as f:
         json.dump(config, f, indent=2)

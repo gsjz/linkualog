@@ -1,14 +1,25 @@
+import os
 import time
 import threading
+import logging
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+os.environ.setdefault("CONFIG_FILE", "local_data/llm_config.json")
+os.environ.setdefault("DEFAULT_PROVIDER", "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions")
+os.environ.setdefault("DEFAULT_MODEL", "qwen3.5-flash")
+
+os.environ.setdefault("STORAGE_DIR", "local_data/temp_storage")
+os.environ.setdefault("MAX_SIZE_BYTES", str(1 * 1024 * 1024 * 1024)) # 1GB 限制
+
+os.environ.setdefault("TASKS_FILE", "local_data/tasks_db.json")
+os.environ.setdefault("LOCK_FILE", "local_data/tasks_db.json.lock")
+
+os.environ.setdefault("VOCAB_DIR", "../../data/cet/")
+
 from api.routes import router
 from utils.runner import start_frontend_dev
-
-import logging
-from fastapi import FastAPI
 
 class EndpointFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:

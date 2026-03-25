@@ -1,7 +1,7 @@
 import os
 
-STORAGE_DIR = "local_data/temp_storage"
-MAX_SIZE_BYTES = 1 * 1024 * 1024 * 1024
+STORAGE_DIR = os.environ.get("STORAGE_DIR")
+MAX_SIZE_BYTES = int(os.environ.get("MAX_SIZE_BYTES"))
 
 def get_dir_size(path=STORAGE_DIR):
     """计算文件夹总体积"""

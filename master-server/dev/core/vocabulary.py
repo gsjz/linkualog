@@ -4,7 +4,7 @@ import re
 from datetime import datetime
 from filelock import FileLock
 
-VOCAB_DIR = "local_data/vocabulary"
+VOCAB_DIR = os.environ.get("VOCAB_DIR")
 os.makedirs(VOCAB_DIR, exist_ok=True)
 
 def get_vocab_path(word: str) -> str:
