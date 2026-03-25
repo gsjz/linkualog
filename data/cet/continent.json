@@ -1,0 +1,22 @@
+{
+  "word": "continent",
+  "createdAt": "2026-03-25",
+  "reviews": [],
+  "pronunciation": "/kənˈtɪn.ənt/",
+  "definitions": [
+    "大陆 (指地球上的主要陆地板块)"
+  ],
+  "examples": [
+    {
+      "text": "Africa only represents 2% of global greenhouse-gas emissions but it is the continent that is expected to suffer the most from climate impacts,",
+      "explanation": "非洲仅占全球温室气体排放量的2%，但它却是预计将遭受气候变化影响最严重的大陆。",
+      "focusWords": [
+        "continent"
+      ],
+      "source": {
+        "text": "cet6 23 12 1 匹配",
+        "url": ""
+      }
+    }
+  ]
+}
