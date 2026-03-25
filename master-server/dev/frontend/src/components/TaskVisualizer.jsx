@@ -294,13 +294,21 @@ export default function TaskVisualizer() {
       <style>{`
         .task-sidebar { width: 280px; border-right: 1px solid #e4e4e7; transition: all 0.3s; }
         .task-sidebar.collapsed { width: 0px !important; border-right: none !important; }
-        .result-image-box { width: 500px; min-width: 200px; max-width: 70%; resize: horizontal; border-right: 1px solid #e4e4e7; }
-        .result-image-box img { max-width: 100%; max-height: 750px; object-fit: contain; }
+        
+        .result-image-box { 
+          width: 500px;
+          min-width: 250px;
+          max-width: 70%;
+          flex-shrink: 0;
+          border-right: 1px solid #e4e4e7;
+          resize: horizontal;
+          overflow: hidden; 
+        }
+        
         @media screen and (max-width: 768px) {
           .task-sidebar { width: 100% !important; max-height: 250px !important; border-right: none !important; }
           .task-sidebar.collapsed { width: 100% !important; max-height: 0px !important; border-bottom: none !important; opacity: 0; padding: 0 !important; }
-          .result-image-box { width: 100% !important; max-width: 100% !important; border-right: none !important; resize: none !important; padding: 8px !important; }
-          .result-image-box img { max-height: 450px !important; }
+          .result-image-box { width: 100% !important; max-width: 100% !important; border-right: none !important; resize: none !important; padding: 8px !important; border-bottom: 1px solid #e4e4e7; }
         }
       `}</style>
 
@@ -367,11 +375,18 @@ export default function TaskVisualizer() {
                       </button>
                     </div>
 
-                    <div className="result-layout" style={{ display: 'flex' }}>
-                      <div className="result-image-box" style={{ overflow: 'hidden', flexShrink: 0, padding: '16px', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <img src={getImageUrl(item.image_path)} alt={`第 ${item.page_number} 页预览`} onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.innerHTML = '<span style="color:#a1a1aa;font-size:12px;">图片不可用</span>'; }} />
+                    <div className="result-layout" style={{ display: 'flex', alignItems: 'stretch', maxHeight: '750px' }}>
+                      
+                      <div className="result-image-box" style={{ background: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+                        <img 
+                          src={getImageUrl(item.image_path)} 
+                          alt={`第 ${item.page_number} 页预览`} 
+                          style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                          onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.innerHTML = '<span style="color:#a1a1aa;font-size:12px;">图片不可用</span>'; }} 
+                        />
                       </div>
-                      <div className="result-json-box" style={{ flex: 1, padding: '16px', background: '#fafafa', overflowX: 'auto', overflowY: 'auto', maxHeight: '532px', fontSize: '13px', lineHeight: '1.6', fontFamily: 'ui-monospace, Consolas, monospace' }}>
+
+                      <div className="result-json-box" style={{ flex: 1, minWidth: 0, padding: '16px', background: '#fafafa', overflowY: 'auto', overflowX: 'auto', fontSize: '13px', lineHeight: '1.6', fontFamily: 'ui-monospace, Consolas, monospace' }}>
                         {item.status === 'failed' ? (
                           <div style={{ color: '#ef4444', padding: '10px', background: '#fee2e2', borderRadius: '4px' }}><strong>错误详情:</strong> {item.error}</div>
                         ) : item.content ? (
@@ -382,6 +397,7 @@ export default function TaskVisualizer() {
                           <div style={{ color: '#a1a1aa' }}>等待处理...</div>
                         )}
                       </div>
+
                     </div>
                  </div>
                  );

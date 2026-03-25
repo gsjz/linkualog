@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from core.config import get_config_data, save_config_data
 from core.storage import save_temp_file
 from core.tasks import load_tasks, save_tasks, create_task
-from services.llm import process_image, process_vocabulary
+from services.llm import process_image, process_word_definition, process_context_analysis
 from core.vocabulary import merge_or_create_vocab, VOCAB_DIR, load_vocab
 
 router = APIRouter()
@@ -197,9 +197,10 @@ def regenerate_task_item(task_id: str, req: RegenerateRequest, background_tasks:
 
 class VocabAddRequest(BaseModel):
     word: str
-    context: str
+    context: str = ""
     source: str = ""
     fetch_llm: bool = False
+    fetch_type: str = "all" 
 
 @router.post("/api/vocabulary/add")
 def add_vocabulary(req: VocabAddRequest):
@@ -207,7 +208,12 @@ def add_vocabulary(req: VocabAddRequest):
     try:
         llm_result = {}
         if req.fetch_llm:
-            llm_result = process_vocabulary(req.word, req.context) 
+            print(f"正在处理 {req.word} | 类型: {req.fetch_type}")            
+            
+            if req.fetch_type == "def" or not req.context:
+                llm_result = process_word_definition(req.word)
+            else:
+                llm_result = process_context_analysis(req.word, req.context) 
         
         final_data = merge_or_create_vocab(req.word, req.context, req.source, llm_result)
         return {"status": "success", "data": final_data}

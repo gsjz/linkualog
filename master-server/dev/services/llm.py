@@ -73,7 +73,6 @@ def process_image(image_bytes: bytes, filename: str, content_type: str) -> str:
     if not test_llm_connection(api_url, api_key, model_name):
         raise ConnectionError("LLM 连通性测试未通过，请检查网络、API 地址或 API Key 是否正确。")
 
-
     print(f"收到图片: {filename}, 准备进行预处理...")
 
     try:
@@ -141,11 +140,11 @@ def process_image(image_bytes: bytes, filename: str, content_type: str) -> str:
                 time.sleep(2) 
             else:
                 raise Exception(f"请求大模型处理图片失败: {e}")
-            
 
-def process_vocabulary(word: str, context: str) -> dict:
+
+def process_word_definition(word: str) -> dict:
     """
-    调用 LLM 根据单词和上下文生成音标、释义和例句翻译。
+    单独请求单词的基础音标和通用释义
     """
     import json as standard_json
     config = get_config_data()
@@ -153,58 +152,90 @@ def process_vocabulary(word: str, context: str) -> dict:
     api_url = config.get("provider")
     model_name = config.get("model")
 
-    if not api_key:
-        raise ValueError("未找到 API Key，请先配置")
+    if not api_key: raise ValueError("未找到 API Key，请先配置")
 
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json"
-    }
+    headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
     
     prompt = (
         "你是一个专业的英文词典 API 引擎。\n"
-        f"请根据用户提供的生词 '{word}' 及其出现的上下文 '{context}'，生成该词的音标、适合该语境的中文释义数组，以及该上下文句子的中文翻译。\n"
-        "必须严格以纯 JSON 格式输出，不要包含 markdown 代码块（```json）或其他说明文字。\n"
+        f"请为英文生词 '{word}' 提供音标和全面的中文释义数组。\n"
+        "必须严格以纯 JSON 格式输出，不要包含 markdown 代码块或其他说明文字。\n"
         "JSON 结构示例：\n"
         "{\n"
         '  "pronunciation": "/əˈbæn.dən/",\n'
-        '  "definitions": ["vt. 放弃", "n. 放任"],\n'
-        '  "context_translation": "他决定放弃这个项目。"\n'
+        '  "definitions": [\n'
+        '    "vt. 放弃，抛弃（计划、信念等）",\n'
+        '    "vt. 离弃，遗弃（人、物或地方）"\n'
+        '  ]\n'
         "}"
     )
 
     payload = {
-        "model": model_name,
-        "max_tokens": 1024,
-        "temperature": 0.1,
-        "messages": [
-            {
-                "role": "system",
-                "content": "你是一个严格的 JSON 响应机器。"
-            },
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ]
+        "model": model_name, "max_tokens": 1024, "temperature": 0.1,
+        "messages": [{"role": "system", "content": "你是一个严格的 JSON 响应机器。"}, {"role": "user", "content": prompt}]
     }
 
-    print(f"🔄 正在向 LLM 请求生词补全: {word}")
-    
+    print(f"🔄 正在向 LLM 请求基础释义: {word}")
     for attempt in range(3):
         try:
             response = requests.post(api_url, headers=headers, json=payload, timeout=30)
             response.raise_for_status()
             llm_reply = response.json()['choices'][0]['message']['content']
-            
             llm_reply = llm_reply.replace("```json", "").replace("```", "").strip()
-            result_data = standard_json.loads(llm_reply)
-            
-            print(f"✅ LLM 成功补全生词信息: {word}")
-            return result_data
+            return standard_json.loads(llm_reply)
         except Exception as e:
-            print(f"⚠️ 第 {attempt + 1} 次请求单词补全失败: {e}")
-            if attempt < 2:
-                time.sleep(1)
-            else:
-                raise Exception(f"请求大模型处理单词失败: {e}")
+            if attempt == 2: raise Exception(f"请求大模型处理基础释义失败: {e}")
+            time.sleep(1)
+
+
+def process_context_analysis(word: str, context: str) -> dict:
+    """
+    专门调用 LLM 进行特定语境下的例句解析、语境释义生成，并严格对齐标准 Schema。
+    """
+    import json as standard_json
+    config = get_config_data()
+    api_key = config.get("api_key")
+    api_url = config.get("provider")
+    model_name = config.get("model")
+
+    if not api_key: raise ValueError("未找到 API Key，请先配置")
+
+    headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+    
+    prompt = (
+        "你是一个专业的英文翻译和词典 API 引擎。\n"
+        f"请根据生词 '{word}' 及其出现的上下文句子 '{context}'，生成：\n"
+        "1. 该词的音标 (pronunciation)\n"
+        "2. 该词在这句话中具体、贴切的中文释义（将其作为字符串放入 definitions 数组中）\n"
+        "3. 将该上下文句子作为例句对象放入 examples 数组中，并提供精准的中文翻译 (explanation) 和焦点词 (focusWords)。\n"
+        "必须严格以纯 JSON 格式输出，不要包含 Markdown 代码块标记（如 ```json）。\n"
+        "JSON 结构示例：\n"
+        "{\n"
+        '  "pronunciation": "/əˈbæn.dən/",\n'
+        '  "definitions": ["vt. 放弃 (在此语境下的释义)"],\n'
+        '  "examples": [\n'
+        '    {\n'
+        f'      "text": "{context}",\n'
+        '      "explanation": "船长下达了弃船的命令。",\n'
+        f'      "focusWords": ["{word}"]\n'
+        '    }\n'
+        '  ]\n'
+        "}"
+    )
+
+    payload = {
+        "model": model_name, "max_tokens": 1024, "temperature": 0.1,
+        "messages": [{"role": "system", "content": "你是一个严格的 JSON 响应机器。"}, {"role": "user", "content": prompt}]
+    }
+
+    print(f"🔄 正在向 LLM 请求例句解析: {word}")
+    for attempt in range(3):
+        try:
+            response = requests.post(api_url, headers=headers, json=payload, timeout=30)
+            response.raise_for_status()
+            llm_reply = response.json()['choices'][0]['message']['content']
+            llm_reply = llm_reply.replace("```json", "").replace("```", "").strip()
+            return standard_json.loads(llm_reply)
+        except Exception as e:
+            if attempt == 2: raise Exception(f"请求大模型处理例句解析失败: {e}")
+            time.sleep(1)

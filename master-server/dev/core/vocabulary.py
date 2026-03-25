@@ -35,40 +35,73 @@ def merge_or_create_vocab(word: str, context: str, source_name: str, llm_generat
     existing_data = load_vocab(word)
     today = datetime.now().strftime("%Y-%m-%d")
     
-    new_example = {
-        "text": context,
-        "explanation": llm_generated_data.get("context_translation", ""),
-        "focusWords": [word],
-        "source": {
-            "text": source_name if source_name else "",
-            "url": ""
-        }
-    }
+    extracted_explanation = ""
+    focus_words = [word]
+    
+    if "examples" in llm_generated_data and isinstance(llm_generated_data["examples"], list):
+        for llm_ex in llm_generated_data["examples"]:
+            if not context or llm_ex.get("text") == context:
+                extracted_explanation = llm_ex.get("explanation", "")
+                if "focusWords" in llm_ex:
+                    focus_words = llm_ex.get("focusWords", [word])
+                break
+                
+    if not extracted_explanation:
+        extracted_explanation = llm_generated_data.get("explanation", llm_generated_data.get("context_translation", ""))
 
     if existing_data:
-        existing_texts = [ex.get("text") for ex in existing_data.get("examples", [])]
-        if context not in existing_texts:
-            existing_data["examples"].append(new_example)
+        if context:
+            existing_examples = existing_data.setdefault("examples", [])
+            matched_ex = next((ex for ex in existing_examples if ex.get("text") == context), None)
+            
+            if matched_ex:
+                if extracted_explanation:
+                    matched_ex["explanation"] = extracted_explanation
+                if focus_words != [word] and focus_words:
+                    matched_ex["focusWords"] = focus_words
+                if source_name and not matched_ex.get("source", {}).get("text"):
+                    matched_ex["source"] = {"text": source_name, "url": matched_ex.get("source", {}).get("url", "")}
+            else:
+                existing_examples.append({
+                    "text": context,
+                    "explanation": extracted_explanation,
+                    "focusWords": focus_words,
+                    "source": {
+                        "text": source_name if source_name else "",
+                        "url": ""
+                    }
+                })
         
         if llm_generated_data.get("pronunciation") and not existing_data.get("pronunciation"):
             existing_data["pronunciation"] = llm_generated_data["pronunciation"]
             
         if llm_generated_data.get("definitions"):
-            existing_defs = set(existing_data.get("definitions", []))
+            existing_defs = existing_data.setdefault("definitions", [])
             for d in llm_generated_data["definitions"]:
                 if d not in existing_defs:
-                    existing_data.setdefault("definitions", []).append(d)
+                    existing_defs.append(d)
         
         save_vocab(word, existing_data)
         return existing_data
+        
     else:
+        new_example = {
+            "text": context,
+            "explanation": extracted_explanation,
+            "focusWords": focus_words,
+            "source": {
+                "text": source_name if source_name else "",
+                "url": ""
+            }
+        } if context else None
+
         new_data = {
             "word": word,
             "createdAt": today,
             "reviews": [],
             "pronunciation": llm_generated_data.get("pronunciation", ""),
             "definitions": llm_generated_data.get("definitions", []),
-            "examples": [new_example]
+            "examples": [new_example] if new_example else []
         }
         save_vocab(word, new_data)
         return new_data

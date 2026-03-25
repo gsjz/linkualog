@@ -6,11 +6,10 @@ export default function VocabularyReview() {
   const [selectedWord, setSelectedWord] = useState(null);
   const [detailData, setDetailData] = useState(null);
   
-  const [generatingMap, setGeneratingMap] = useState({});
+  const [generatingWordMap, setGeneratingWordMap] = useState({});
+  const [generatingContextMap, setGeneratingContextMap] = useState({});
 
-  useEffect(() => {
-    loadWords();
-  }, []);
+  useEffect(() => { loadWords(); }, []);
 
   const loadWords = async () => {
     try {
@@ -27,38 +26,53 @@ export default function VocabularyReview() {
     try {
       const res = await getVocabularyDetail(word);
       if (res.data) setDetailData(res.data);
-    } catch (e) {
-      alert("加载详情失败");
-    }
+    } catch (e) { alert("加载详情失败"); }
   };
 
-  const handleRegenerateLlm = async () => {
+  const handleRegenerateDef = async () => {
     if (!detailData) return;
     const currentWord = detailData.word;
     
-    setGeneratingMap(prev => ({ ...prev, [currentWord]: true }));
+    setGeneratingWordMap(prev => ({ ...prev, [currentWord]: true }));
     try {
-      const context = detailData.examples && detailData.examples.length > 0 ? detailData.examples[0].text : '';
-      const source = detailData.examples && detailData.examples.length > 0 ? (detailData.examples[0].source?.text || '') : '';
-      
-      await addVocabulary(currentWord, context, source, true);
+      await addVocabulary(currentWord, '', '', true, 'def');
       
       if (selectedWord === currentWord) {
         const res = await getVocabularyDetail(currentWord);
         if (res.data) setDetailData(res.data);
       }
     } catch (e) {
-      alert("请求 LLM 失败: " + e.message);
+      alert("请求 LLM 基础释义失败: " + e.message);
     } finally {
-      setGeneratingMap(prev => ({ ...prev, [currentWord]: false }));
+      setGeneratingWordMap(prev => ({ ...prev, [currentWord]: false }));
     }
   };
 
-  const isCurrentRegenerating = detailData ? (generatingMap[detailData.word] || false) : false;
+  const handleRegenerateContext = async (exText, exSource) => {
+    if (!detailData) return;
+    const currentWord = detailData.word;
+    const ctxKey = `${currentWord}-${exText}`; 
+    
+    setGeneratingContextMap(prev => ({ ...prev, [ctxKey]: true }));
+    try {
+      await addVocabulary(currentWord, exText, exSource || '', true, 'context');
+      
+      if (selectedWord === currentWord) {
+        const res = await getVocabularyDetail(currentWord);
+        if (res.data) setDetailData(res.data);
+      }
+    } catch (e) {
+      alert("请求例句解析失败: " + e.message);
+    } finally {
+      setGeneratingContextMap(prev => ({ ...prev, [ctxKey]: false }));
+    }
+  };
+
+  const isDefRegenerating = detailData ? (generatingWordMap[detailData.word] || false) : false;
 
   return (
     <div style={{ display: 'flex', height: '100%', width: '100%', background: '#fff' }}>
-      <div style={{ width: '280px', borderRight: '1px solid #e4e4e7', background: '#fafafa', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ width: '280px', borderRight: '1px solid #e4e4e7', background: '#fafafa', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
         <div style={{ padding: '16px', borderBottom: '1px solid #e4e4e7', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <strong style={{ fontSize: '14px', color: '#09090b' }}>生词本 ({words.length})</strong>
           <button onClick={loadWords} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#3b82f6', fontSize: '12px' }}>刷新</button>
@@ -76,7 +90,9 @@ export default function VocabularyReview() {
               }}
             >
               <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{w}</span>
-              {generatingMap[w] && <span style={{ fontSize: '12px', color: '#3b82f6', flexShrink: 0 }}>更新中...</span>}
+              {(generatingWordMap[w] || Object.keys(generatingContextMap).some(k => k.startsWith(w+'-') && generatingContextMap[k])) && (
+                <span style={{ fontSize: '12px', color: '#3b82f6', flexShrink: 0 }}>更新中...</span>
+              )}
             </li>
           ))}
           {words.length === 0 && <div style={{ padding: '20px', textAlign: 'center', color: '#a1a1aa', fontSize: '13px' }}>暂无生词</div>}
@@ -90,20 +106,27 @@ export default function VocabularyReview() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '8px', flexWrap: 'wrap' }}>
               <h1 style={{ fontSize: '32px', margin: 0, color: '#09090b' }}>{detailData.word}</h1>
               <button 
-                onClick={handleRegenerateLlm}
-                disabled={isCurrentRegenerating}
+                onClick={handleRegenerateDef}
+                disabled={isDefRegenerating}
                 style={{
-                  padding: '6px 12px', background: isCurrentRegenerating ? '#e4e4e7' : '#10b981',
-                  color: isCurrentRegenerating ? '#a1a1aa' : '#fff', border: 'none', borderRadius: '6px',
-                  fontSize: '13px', fontWeight: '500', cursor: isCurrentRegenerating ? 'not-allowed' : 'pointer',
+                  padding: '6px 12px', background: isDefRegenerating ? '#e4e4e7' : '#10b981',
+                  color: isDefRegenerating ? '#a1a1aa' : '#fff', border: 'none', borderRadius: '6px',
+                  fontSize: '13px', fontWeight: '500', cursor: isDefRegenerating ? 'not-allowed' : 'pointer',
                   transition: 'background 0.2s', display: 'flex', alignItems: 'center', gap: '4px'
                 }}
               >
-                {isCurrentRegenerating ? '生成中...' : '更新释义'}
+                {isDefRegenerating ? '获取中...' : '获取基础释义'}
               </button>
             </div>
             
-            <div style={{ fontSize: '18px', color: '#71717a', marginBottom: '24px', fontFamily: 'serif' }}>{detailData.pronunciation || '暂无发音'}</div>
+            <div style={{ fontSize: '18px', color: '#71717a', marginBottom: '24px', fontFamily: 'serif' }}>
+              {detailData.pronunciation || '暂无发音'}
+              {detailData.reviews && detailData.reviews.length > 0 && (
+                <span style={{ fontSize: '12px', color: '#a1a1aa', marginLeft: '16px', background: '#f4f4f5', padding: '2px 8px', borderRadius: '12px' }}>
+                  已复习 {detailData.reviews.length} 次
+                </span>
+              )}
+            </div>
 
             <h3 style={{ borderBottom: '2px solid #e4e4e7', paddingBottom: '8px', marginTop: '32px' }}>释义</h3>
             <ul style={{ paddingLeft: '20px', fontSize: '15px', lineHeight: '1.8' }}>
@@ -118,23 +141,63 @@ export default function VocabularyReview() {
 
             <h3 style={{ borderBottom: '2px solid #e4e4e7', paddingBottom: '8px', marginTop: '32px' }}>例句</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {detailData.examples && detailData.examples.map((ex, idx) => (
-                <div key={idx} style={{ background: '#f4f4f5', padding: '16px', borderRadius: '8px', borderLeft: '4px solid #3b82f6' }}>
-                  <div style={{ fontSize: '16px', fontWeight: '500', color: '#09090b', marginBottom: '8px' }}>{ex.text}</div>
-                  {ex.explanation && <div style={{ fontSize: '14px', color: '#52525b', marginBottom: '8px' }}>释义: {ex.explanation}</div>}
-                  
-                  {ex.source && ex.source.text && (
-                    <div style={{ 
-                      fontSize: '12px', color: '#a1a1aa', marginTop: '12px', 
-                      display: 'inline-flex', alignItems: 'center', gap: '6px',
-                      background: '#e4e4e7', padding: '2px 8px', borderRadius: '12px'
-                    }}>
-                      <span>🏷️</span>
-                      <span>{ex.source.text}</span>
+              {detailData.examples && detailData.examples.map((ex, idx) => {
+                const isCtxRegenerating = generatingContextMap[`${detailData.word}-${ex.text}`] || false;
+                
+                let renderedText = ex.text;
+                if (ex.focusWords && ex.focusWords.length > 0) {
+                  ex.focusWords.forEach(fw => {
+                    const regex = new RegExp(`(${fw})`, 'gi');
+                    renderedText = renderedText.replace(regex, '<strong>$1</strong>');
+                  });
+                }
+                
+                return (
+                  <div key={idx} style={{ background: '#f4f4f5', padding: '16px', borderRadius: '8px', borderLeft: '4px solid #3b82f6' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
+                      <div 
+                        style={{ fontSize: '16px', color: '#09090b', marginBottom: '8px' }}
+                        dangerouslySetInnerHTML={{ __html: renderedText }}
+                      />
+                      <button 
+                        onClick={() => handleRegenerateContext(ex.text, ex.source?.text)}
+                        disabled={isCtxRegenerating}
+                        style={{ 
+                          padding: '4px 10px', fontSize: '12px', borderRadius: '4px', border: 'none', flexShrink: 0,
+                          background: isCtxRegenerating ? '#e4e4e7' : '#3b82f6', 
+                          color: isCtxRegenerating ? '#a1a1aa' : '#fff', cursor: isCtxRegenerating ? 'not-allowed' : 'pointer'
+                        }}
+                      >
+                        {isCtxRegenerating ? '解析中...' : '解析此例句'}
+                      </button>
                     </div>
-                  )}
-                </div>
-              ))}
+
+                    {ex.explanation && <div style={{ fontSize: '14px', color: '#52525b', marginBottom: '8px' }}>翻译: {ex.explanation}</div>}
+                    
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '12px' }}>
+                      {ex.source && ex.source.text && (
+                        <a href={ex.source.url || '#'} target="_blank" rel="noreferrer" style={{ 
+                          fontSize: '12px', color: '#71717a', textDecoration: 'none',
+                          display: 'inline-flex', alignItems: 'center', gap: '4px',
+                          background: '#e4e4e7', padding: '2px 8px', borderRadius: '12px'
+                        }}>
+                          🏷️ {ex.source.text}
+                        </a>
+                      )}
+                      
+                      {ex.youtube && ex.youtube.url && (
+                        <a href={`${ex.youtube.url}&t=${ex.youtube.timestamp || 0}s`} target="_blank" rel="noreferrer" style={{ 
+                          fontSize: '12px', color: '#ef4444', textDecoration: 'none',
+                          display: 'inline-flex', alignItems: 'center', gap: '4px',
+                          background: '#fee2e2', padding: '2px 8px', borderRadius: '12px'
+                        }}>
+                          ▶ YouTube
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
             </div>
             
             <div style={{ marginTop: '48px', fontSize: '12px', color: '#a1a1aa' }}>

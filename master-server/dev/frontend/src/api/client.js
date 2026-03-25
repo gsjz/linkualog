@@ -65,11 +65,11 @@ export const regenerateTaskPage = async (taskId, index) => {
   return handleResponse(res);
 };
 
-export const addVocabulary = async (word, context, source = '', fetchLlm = false) => {
+export const addVocabulary = async (word, context, source = '', fetchLlm = false, fetchType = 'all') => {
   const res = await fetch(`${BACKEND_URL}/api/vocabulary/add`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ word, context, source, fetch_llm: fetchLlm })
+    body: JSON.stringify({ word, context, source, fetch_llm: fetchLlm, fetch_type: fetchType })
   });
   return handleResponse(res);
 };
