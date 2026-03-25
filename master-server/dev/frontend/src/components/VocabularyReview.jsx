@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { getVocabularyList, getVocabularyDetail, addVocabulary } from '../api/client';
 
 export default function VocabularyReview() {
@@ -8,6 +8,11 @@ export default function VocabularyReview() {
   
   const [generatingWordMap, setGeneratingWordMap] = useState({});
   const [generatingContextMap, setGeneratingContextMap] = useState({});
+
+  const selectedWordRef = useRef(selectedWord);
+  useEffect(() => {
+    selectedWordRef.current = selectedWord;
+  }, [selectedWord]);
 
   useEffect(() => { loadWords(); }, []);
 
@@ -37,9 +42,11 @@ export default function VocabularyReview() {
     try {
       await addVocabulary(currentWord, '', '', true, 'def');
       
-      if (selectedWord === currentWord) {
+      if (selectedWordRef.current === currentWord) {
         const res = await getVocabularyDetail(currentWord);
-        if (res.data) setDetailData(res.data);
+        if (res.data) {
+          setDetailData(prev => (prev && prev.word === currentWord) ? res.data : prev);
+        }
       }
     } catch (e) {
       alert("请求 LLM 基础释义失败: " + e.message);
@@ -57,14 +64,42 @@ export default function VocabularyReview() {
     try {
       await addVocabulary(currentWord, exText, exSource || '', true, 'context');
       
-      if (selectedWord === currentWord) {
+      if (selectedWordRef.current === currentWord) {
         const res = await getVocabularyDetail(currentWord);
-        if (res.data) setDetailData(res.data);
+        if (res.data) {
+          setDetailData(prev => (prev && prev.word === currentWord) ? res.data : prev);
+        }
       }
     } catch (e) {
       alert("请求例句解析失败: " + e.message);
     } finally {
       setGeneratingContextMap(prev => ({ ...prev, [ctxKey]: false }));
+    }
+  };
+
+  const playAudio = async (text, type = 2, isSequential = false) => {
+    try {
+      if (isSequential) {
+        const wordArray = text.replace(/-/g, ' ').split(/\s+/).filter(Boolean);
+        
+        for (const w of wordArray) {
+          await new Promise((resolve) => {
+            const audio = new Audio(`https://dict.youdao.com/dictvoice?audio=${encodeURIComponent(w)}&type=${type}`);
+            audio.onended = resolve; 
+            audio.onerror = resolve; 
+            audio.play().catch((err) => {
+              console.error("播放音频失败:", err);
+              resolve(); 
+            });
+          });
+        }
+      } else {
+        const formattedText = text.replace(/-/g, ' ');
+        const audio = new Audio(`https://dict.youdao.com/dictvoice?audio=${encodeURIComponent(formattedText)}&type=${type}`);
+        audio.play().catch(err => console.error("播放音频失败:", err));
+      }
+    } catch (error) {
+      console.error("音频播放流程出错:", error);
     }
   };
 
@@ -119,8 +154,23 @@ export default function VocabularyReview() {
               </button>
             </div>
             
-            <div style={{ fontSize: '18px', color: '#71717a', marginBottom: '24px', fontFamily: 'serif' }}>
-              {detailData.pronunciation || '暂无发音'}
+            <div style={{ fontSize: '18px', color: '#71717a', marginBottom: '24px', fontFamily: 'serif', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span>{detailData.pronunciation || '暂无发音'}</span>
+              
+              <button 
+                onClick={() => playAudio(detailData.word, 2, true)}
+                title="逐词播放美音"
+                style={{
+                  background: 'none', border: 'none', cursor: 'pointer', 
+                  fontSize: '18px', padding: '0 4px', display: 'flex', alignItems: 'center',
+                  transition: 'transform 0.1s'
+                }}
+                onMouseDown={e => e.currentTarget.style.transform = 'scale(0.9)'}
+                onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
+              >
+                🔊
+              </button>
+
               {detailData.reviews && detailData.reviews.length > 0 && (
                 <span style={{ fontSize: '12px', color: '#a1a1aa', marginLeft: '16px', background: '#f4f4f5', padding: '2px 8px', borderRadius: '12px' }}>
                   已复习 {detailData.reviews.length} 次
@@ -155,10 +205,27 @@ export default function VocabularyReview() {
                 return (
                   <div key={idx} style={{ background: '#f4f4f5', padding: '16px', borderRadius: '8px', borderLeft: '4px solid #3b82f6' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
-                      <div 
-                        style={{ fontSize: '16px', color: '#09090b', marginBottom: '8px' }}
-                        dangerouslySetInnerHTML={{ __html: renderedText }}
-                      />
+                      
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', marginBottom: '8px', flex: 1 }}>
+                        <div 
+                          style={{ fontSize: '16px', color: '#09090b', flex: 1 }}
+                          dangerouslySetInnerHTML={{ __html: renderedText }}
+                        />
+                        <button 
+                          onClick={() => playAudio(ex.text, 2, false)}
+                          title="朗读完整例句"
+                          style={{
+                            background: 'none', border: 'none', cursor: 'pointer', 
+                            fontSize: '16px', padding: '0 4px', flexShrink: 0,
+                            transition: 'transform 0.1s'
+                          }}
+                          onMouseDown={e => e.currentTarget.style.transform = 'scale(0.9)'}
+                          onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
+                        >
+                          🔊
+                        </button>
+                      </div>
+
                       <button 
                         onClick={() => handleRegenerateContext(ex.text, ex.source?.text)}
                         disabled={isCtxRegenerating}
