@@ -99,24 +99,24 @@ export default function VocabularyReview() {
                   transition: 'background 0.2s', display: 'flex', alignItems: 'center', gap: '4px'
                 }}
               >
-                {isCurrentRegenerating ? '🧠 生成中...' : '🧠 请求/更新 LLM 释义'}
+                {isCurrentRegenerating ? '生成中...' : '更新释义'}
               </button>
             </div>
             
             <div style={{ fontSize: '18px', color: '#71717a', marginBottom: '24px', fontFamily: 'serif' }}>{detailData.pronunciation || '暂无发音'}</div>
 
-            <h3 style={{ borderBottom: '2px solid #e4e4e7', paddingBottom: '8px', marginTop: '32px' }}>📖 释义</h3>
+            <h3 style={{ borderBottom: '2px solid #e4e4e7', paddingBottom: '8px', marginTop: '32px' }}>释义</h3>
             <ul style={{ paddingLeft: '20px', fontSize: '15px', lineHeight: '1.8' }}>
               {detailData.definitions && detailData.definitions.length > 0 ? (
                 detailData.definitions.map((def, idx) => (
                   <li key={idx} style={{ marginBottom: '8px' }}>{def}</li>
                 ))
               ) : (
-                <li style={{ color: '#a1a1aa', listStyle: 'none', marginLeft: '-20px' }}>暂无释义 (请点击上方按钮请求 LLM 补全)</li>
+                <li style={{ color: '#a1a1aa', listStyle: 'none', marginLeft: '-20px' }}>暂无释义</li>
               )}
             </ul>
 
-            <h3 style={{ borderBottom: '2px solid #e4e4e7', paddingBottom: '8px', marginTop: '32px' }}>📝 上下文例句</h3>
+            <h3 style={{ borderBottom: '2px solid #e4e4e7', paddingBottom: '8px', marginTop: '32px' }}>例句</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {detailData.examples && detailData.examples.map((ex, idx) => (
                 <div key={idx} style={{ background: '#f4f4f5', padding: '16px', borderRadius: '8px', borderLeft: '4px solid #3b82f6' }}>
@@ -143,7 +143,7 @@ export default function VocabularyReview() {
           </div>
         ) : (
           <div style={{ display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center', color: '#a1a1aa' }}>
-            👈 在左侧选择一个单词查看，或前往数据解析控制台快捷制卡。
+            在左侧选择一个单词查看，或前往数据解析控制台快捷制卡。
           </div>
         )}
       </div>

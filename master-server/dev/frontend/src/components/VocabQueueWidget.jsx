@@ -168,13 +168,13 @@ export default function VocabQueueWidget() {
                     </div>
                     
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '11px', background: '#e4e4e7', padding: '2px 6px', borderRadius: '4px' }}>{t.fetchLlm ? '🧠 深度解析' : '⚡️ 仅保存'}</span>
+                      <span style={{ fontSize: '11px', background: '#e4e4e7', padding: '2px 6px', borderRadius: '4px' }}>{t.fetchLlm ? '解析' : '仅保存'}</span>
                       <div style={{ display: 'flex', gap: '8px' }}>
                         {t.status === 'failed' && (
                           <button onClick={() => handleRetry(t.id)} style={{ padding: '2px 8px', fontSize: '12px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>重试</button>
                         )}
                         {(t.status === 'success' && !t.fetchLlm) && (
-                          <button onClick={() => handleRequireLlm(t)} style={{ padding: '2px 8px', fontSize: '12px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>请求释义(LLM)</button>
+                          <button onClick={() => handleRequireLlm(t)} style={{ padding: '2px 8px', fontSize: '12px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>请求释义</button>
                         )}
                       </div>
                     </div>

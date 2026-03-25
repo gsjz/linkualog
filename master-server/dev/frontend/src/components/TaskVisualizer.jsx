@@ -105,13 +105,13 @@ const JsonNode = ({ val, nodeKey, foldedKeys, isRoot = false, taskName = '' }) =
               onClick={(e) => handleDispatchTask(val.word, val.context || val.example || val.text, false, e)}
               style={{ padding: '2px 8px', fontSize: '12px', background: '#e4e4e7', color: '#09090b', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
             >
-              ⚡️ 保存
+              保存
             </button>
             <button 
               onClick={(e) => handleDispatchTask(val.word, val.context || val.example || val.text, true, e)}
               style={{ padding: '2px 8px', fontSize: '12px', background: '#10b981', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
             >
-              🧠 解析
+              解析
             </button>
           </div>
         )}
