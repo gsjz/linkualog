@@ -1,0 +1,26 @@
+{
+  "word": "lactose",
+  "createdAt": "2026-03-26",
+  "reviews": [],
+  "pronunciation": "/ˈlæk.toʊs/",
+  "definitions": [
+    "乳糖（牛奶中的糖分）"
+  ],
+  "examples": [
+    {
+      "text": "when our digestive systems are immature and small. Basically, it's power food to kick-start our bodies and help us grow. Milk is rich in fat, vitamins, minerals, and milk-sugar: lactose. On top of that, for a while after birth, it also contains antibodies and proteins that protect us from infections and regulate our immune system.",
+      "explanation": "当我们的消化系统和身体尚未发育成熟时。本质上，这是启动身体机能并促进生长的能量食物。牛奶富含脂肪、维生素、矿物质以及乳糖：乳糖。此外，出生后的初期阶段还含有抗体和蛋白质，能保护我们免受感染并调节免疫系统。",
+      "focusWords": [
+        "lactose"
+      ],
+      "source": {
+        "text": "牛奶。白毒还是健康饮品？",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=oakWgLqCwUc",
+        "timestamp": 37
+      }
+    }
+  ]
+}
