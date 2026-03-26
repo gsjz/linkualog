@@ -77,29 +77,25 @@ export default function VocabularyReview() {
     }
   };
 
-  const playAudio = async (text, type = 2, isSequential = false) => {
+  const playAudio = (text, type = 2) => {
+    if (!('speechSynthesis' in window)) {
+      alert("您的浏览器不支持语音朗读功能");
+      return;
+    }
+
     try {
-      if (isSequential) {
-        const wordArray = text.replace(/-/g, ' ').split(/\s+/).filter(Boolean);
-        
-        for (const w of wordArray) {
-          await new Promise((resolve) => {
-            const audio = new Audio(`https://dict.youdao.com/dictvoice?audio=${encodeURIComponent(w)}&type=${type}`);
-            audio.onended = resolve; 
-            audio.onerror = resolve; 
-            audio.play().catch((err) => {
-              console.error("播放音频失败:", err);
-              resolve(); 
-            });
-          });
-        }
-      } else {
-        const formattedText = text.replace(/-/g, ' ');
-        const audio = new Audio(`https://dict.youdao.com/dictvoice?audio=${encodeURIComponent(formattedText)}&type=${type}`);
-        audio.play().catch(err => console.error("播放音频失败:", err));
-      }
+      window.speechSynthesis.cancel();
+      const formattedText = text.replace(/-/g, ' ');
+      
+      const utterance = new SpeechSynthesisUtterance(formattedText);
+      
+      utterance.lang = type === 2 ? 'en-US' : 'en-GB';
+      
+      utterance.rate = 0.9; 
+
+      window.speechSynthesis.speak(utterance);
     } catch (error) {
-      console.error("音频播放流程出错:", error);
+      console.error("本地语音播放失败:", error);
     }
   };
 
@@ -158,8 +154,8 @@ export default function VocabularyReview() {
               <span>{detailData.pronunciation || '暂无发音'}</span>
               
               <button 
-                onClick={() => playAudio(detailData.word, 2, true)}
-                title="逐词播放美音"
+                onClick={() => playAudio(detailData.word, 2)}
+                title="播放发音"
                 style={{
                   background: 'none', border: 'none', cursor: 'pointer', 
                   fontSize: '18px', padding: '0 4px', display: 'flex', alignItems: 'center',
@@ -212,7 +208,7 @@ export default function VocabularyReview() {
                           dangerouslySetInnerHTML={{ __html: renderedText }}
                         />
                         <button 
-                          onClick={() => playAudio(ex.text, 2, false)}
+                          onClick={() => playAudio(ex.text, 2)}
                           title="朗读完整例句"
                           style={{
                             background: 'none', border: 'none', cursor: 'pointer', 
