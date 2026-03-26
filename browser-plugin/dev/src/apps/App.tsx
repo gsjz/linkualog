@@ -2,12 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useVideoSync } from '../hooks/useVideoSync';
 import SubtitleItem from '../components/SubtitleItem';
 import Settings from '../components/Settings';
-import LanSync from '../components/LanSync';
+import VocabQueue from '../components/VocabQueue';
 import { Subtitle } from '../types';
 import { IVideoAdapter } from '../adapters/BaseAdapter';
 import { ConfigService } from '../services/configService';
 import './App.css';
-
 
 interface AppProps {
   adapter: IVideoAdapter;
@@ -22,7 +21,6 @@ const App: React.FC<AppProps> = ({ adapter }) => {
   const [errorColor, setErrorColor] = useState(ConfigService.get('error_color') as string);
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-
   const [renderLimit, setRenderLimit] = useState(50);
 
   const activeIndex = useVideoSync(subs, adapter);
@@ -97,30 +95,31 @@ const App: React.FC<AppProps> = ({ adapter }) => {
   } as React.CSSProperties;
 
   return (
-    <div className="linkual-wrap" style={wrapStyle}>
-      <div className="resizer" onMouseDown={startResize} title="左右拖拽调整宽度" />
+    <>
+      <div className="linkual-wrap" style={wrapStyle}>
+        <div className="resizer" onMouseDown={startResize} title="左右拖拽调整宽度" />
 
-      <div className="header">
-        <span>Link-ual Log [{adapter.platformName}]</span>
-        <div>
-          <span className="settings-icon" onClick={() => setIsSettingsOpen(true)} title="全局设置">⚙️</span>
+        <div className="header">
+          <span>Link-ual Log [{adapter.platformName}]</span>
+          <div>
+            <span className="settings-icon" onClick={() => setIsSettingsOpen(true)} title="全局设置">⚙️</span>
+          </div>
         </div>
+
+        <div className="list">
+          {subs.length === 0 ? (
+            <div className="empty-tip">等待字幕数据...</div>
+          ) : (
+            subs.slice(0, renderLimit).map((sub, index) => (
+              <SubtitleItem key={index} data={sub} index={index} allSubs={subs} isActive={index === activeIndex} adapter={adapter} />
+            ))
+          )}
+        </div>
+
+        {isSettingsOpen && <Settings onClose={() => setIsSettingsOpen(false)} />}
       </div>
-
-      <div className="list">
-        {subs.length === 0 ? (
-          <div className="empty-tip">⏳ 等待字幕数据...</div>
-        ) : (
-          subs.slice(0, renderLimit).map((sub, index) => (
-            <SubtitleItem key={index} data={sub} index={index} allSubs={subs} isActive={index === activeIndex} adapter={adapter} />
-          ))
-        )}
-      </div>
-
-      <LanSync subs={subs} activeIndex={activeIndex} />
-
-      {isSettingsOpen && <Settings onClose={() => setIsSettingsOpen(false)} />}
-    </div>
+      <VocabQueue />
+    </>
   );
 };
 

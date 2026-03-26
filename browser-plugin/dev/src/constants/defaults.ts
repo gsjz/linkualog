@@ -1,19 +1,14 @@
-const defaultTzOffset = String(0 - new Date().getTimezoneOffset() / 60);
-
 export const DEFAULTS = {
-  theme_color: '#6a1b9a',
+  theme_color: '#000000',
   done_color: '#e8f5e9',
   error_color: '#ffebee',
   api_timeout: '15',
-  api_url: 'https://api.siliconflow.cn/v1/chat/completions',
-  api_model: 'Qwen/Qwen3-8B',
+  api_url: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
+  api_model: 'qwen3.5-flash',
   api_ctxSize: '2',
-  api_prompt: '请先给出【目标字幕】所在的完整句子，然后结合上下文解释【目标字幕】中的较难词汇（带上音标），尽量简短。',
+  api_prompt: '请结合上下文，准确翻译并解释【目标字幕】这句话的含义。尽量简明扼要，帮助理解整个句子的语境。',
   api_key: '',
   sidebar_width: '500',
-  lan_sync_url: 'http://127.0.0.1:5000/api/sync',
-  lan_action: 'sync',
-  lan_message: '来自 Linkual 的字幕同步数据',
-  lan_timezone: defaultTzOffset,
-  lan_textarea_height: '200'
+  lan_sync_url: 'http://localhost:13345/api/vocabulary/add',
+  lan_action: 'daily'
 };

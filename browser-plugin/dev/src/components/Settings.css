@@ -101,7 +101,6 @@
   to { opacity: 1; }
 }
 
-/* 表单项样式 */
 .setting-row { 
   display: flex; 
   justify-content: space-between; 
@@ -146,7 +145,6 @@
   line-height: 1.5; 
 }
 
-/* 底部按钮 */
 .modal-footer {
   padding: 16px 20px;
   display: flex;

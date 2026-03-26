@@ -6,12 +6,6 @@ interface SettingsProps { onClose: () => void; }
 
 const Settings: React.FC<SettingsProps> = ({ onClose }) => {
   const [activeTab, setActiveTab] = useState<'api' | 'ui' | 'lan'>('api');
-  
-  const localTzOffset = String(0 - new Date().getTimezoneOffset() / 60);
-  let savedTz = ConfigService.get('lan_timezone') as string;
-  if (savedTz === 'UTC' || savedTz === 'Local' || isNaN(Number(savedTz))) {
-    savedTz = localTzOffset;
-  }
 
   const [cfg, setCfg] = useState({
     color: ConfigService.get('theme_color') as string,
@@ -26,9 +20,6 @@ const Settings: React.FC<SettingsProps> = ({ onClose }) => {
     ctxSize: ConfigService.get('api_ctxSize') as string,
     lanUrl: ConfigService.get('lan_sync_url') as string,
     lanAction: ConfigService.get('lan_action') as string,
-    lanMessage: ConfigService.get('lan_message') as string,
-    lanTimezone: savedTz, 
-    lanHeight: ConfigService.get('lan_textarea_height') as string,
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -49,9 +40,6 @@ const Settings: React.FC<SettingsProps> = ({ onClose }) => {
     ConfigService.set('api_ctxSize', cfg.ctxSize);
     ConfigService.set('lan_sync_url', cfg.lanUrl); 
     ConfigService.set('lan_action', cfg.lanAction);
-    ConfigService.set('lan_message', cfg.lanMessage);
-    ConfigService.set('lan_timezone', cfg.lanTimezone);
-    ConfigService.set('lan_textarea_height', cfg.lanHeight);
     
     onClose();
     window.dispatchEvent(new Event('linkual_settings_updated'));
@@ -67,10 +55,6 @@ const Settings: React.FC<SettingsProps> = ({ onClose }) => {
 
   const handleBackdropMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) onClose();
-  };
-
-  const handleAutoCaptureTz = () => {
-    setCfg(prev => ({ ...prev, lanTimezone: localTzOffset }));
   };
 
   return (
@@ -135,48 +119,18 @@ const Settings: React.FC<SettingsProps> = ({ onClose }) => {
                 <label>侧边栏宽度 (px)</label>
                 <input type="number" name="sidebarWidth" value={cfg.sidebarWidth} onChange={handleChange} min="250" max="1000" />
               </div>
-              
-              <div className="setting-col">
-                <label>Payload 输入框高度 (px)</label>
-                <input type="number" name="lanHeight" value={cfg.lanHeight} onChange={handleChange} min="50" max="600" />
-              </div>
             </div>
           )}
 
           {activeTab === 'lan' && (
             <div className="tab-pane fade-in">
               <div className="setting-col">
-                <label>局域网后端通信地址</label>
-                <input name="lanUrl" value={cfg.lanUrl} onChange={handleChange} placeholder="http://127.0.0.1:5000/api/sync" />
+                <label>后端生词添加 API 地址</label>
+                <input name="lanUrl" value={cfg.lanUrl} onChange={handleChange} placeholder="http://127.0.0.1:8000/api/vocabulary/add" />
               </div>
               <div className="setting-col">
-                <label>Action 标识 (action)</label>
-                <input name="lanAction" value={cfg.lanAction} onChange={handleChange} />
-              </div>
-              <div className="setting-col">
-                <label>默认信息 (message)</label>
-                <input name="lanMessage" value={cfg.lanMessage} onChange={handleChange} />
-              </div>
-              
-              <div className="setting-col">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                  <label style={{ margin: 0 }}>Timestamp 时区偏移 (UTC)</label>
-                  <span 
-                    onClick={handleAutoCaptureTz}
-                    style={{ fontSize: '12px', color: cfg.color || '#6a1b9a', cursor: 'pointer', fontWeight: 'bold' }}
-                    title="点击自动获取本机时区"
-                  >
-                    ⚡ 捕获本机时区
-                  </span>
-                </div>
-                <input 
-                  type="number" 
-                  name="lanTimezone" 
-                  value={cfg.lanTimezone} 
-                  onChange={handleChange} 
-                  placeholder="例如: 8 或 -5"
-                  step="0.5" 
-                />
+                <label>默认生词本目录 (Category)</label>
+                <input name="lanAction" value={cfg.lanAction} onChange={handleChange} placeholder="例如: Video_Sync" />
               </div>
             </div>
           )}
