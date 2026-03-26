@@ -1,11 +1,12 @@
 // ==UserScript==
 // @name       Linkual Log
 // @namespace  npm/vite-plugin-monkey
-// @version    0.0.1
+// @version    0.0.2
 // @author     Sergio Gao
 // @icon       https://vitejs.dev/logo.svg
 // @match      *://*.youtube.com/*
 // @match      *://youtube.com/*
+// @connect    dashscope.aliyuncs.com
 // @connect    api.siliconflow.cn
 // @connect    cdn.jsdelivr.net
 // @grant      GM_addStyle
@@ -12677,23 +12678,19 @@
   var _GM_deleteValue = /* @__PURE__ */ (() => typeof GM_deleteValue != "undefined" ? GM_deleteValue : void 0)();
   var _GM_getValue = /* @__PURE__ */ (() => typeof GM_getValue != "undefined" ? GM_getValue : void 0)();
   var _GM_setValue = /* @__PURE__ */ (() => typeof GM_setValue != "undefined" ? GM_setValue : void 0)();
-  const defaultTzOffset = String(0 - (/* @__PURE__ */ new Date()).getTimezoneOffset() / 60);
   const DEFAULTS = {
-    theme_color: "#6a1b9a",
+    theme_color: "#000000",
     done_color: "#e8f5e9",
     error_color: "#ffebee",
     api_timeout: "15",
-    api_url: "https://api.siliconflow.cn/v1/chat/completions",
-    api_model: "Qwen/Qwen3-8B",
+    api_url: "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
+    api_model: "qwen3.5-flash",
     api_ctxSize: "2",
-    api_prompt: "请先给出【目标字幕】所在的完整句子，然后结合上下文解释【目标字幕】中的较难词汇（带上音标），尽量简短。",
+    api_prompt: "请结合上下文，准确翻译并解释【目标字幕】这句话的含义。尽量简明扼要，帮助理解整个句子的语境。",
     api_key: "",
     sidebar_width: "500",
-    lan_sync_url: "http://127.0.0.1:5000/api/sync",
-    lan_action: "sync",
-    lan_message: "来自 Linkual 的字幕同步数据",
-    lan_timezone: defaultTzOffset,
-    lan_textarea_height: "200"
+    lan_sync_url: "http://localhost:13345/api/vocabulary/add",
+    lan_action: "daily"
   };
   const ConfigService = {
     get(key) {
@@ -12741,6 +12738,7 @@
     const [isGenerating, setIsGenerating] = reactExports.useState(false);
     const [aiContent, setAiContent] = reactExports.useState("");
     const [isError, setIsError] = reactExports.useState(false);
+    const [selectionBox, setSelectionBox] = reactExports.useState(null);
     const itemRef = reactExports.useRef(null);
     const abortRef = reactExports.useRef(null);
     reactExports.useEffect(() => {
@@ -12752,7 +12750,9 @@
       };
     }, []);
     reactExports.useEffect(() => {
-      if (isActive && itemRef.current) itemRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+      if (isActive && itemRef.current) {
+        itemRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
     }, [isActive]);
     const handlePlay = (e) => {
       e.stopPropagation();
@@ -12763,6 +12763,61 @@
       e.stopPropagation();
       adapter.seekTo(data.start);
       adapter.pause();
+    };
+    const handleMouseUp = (e) => {
+      e.stopPropagation();
+      const selection = window.getSelection();
+      const text = selection == null ? void 0 : selection.toString().trim();
+      if (text && text.length > 0 && text.length < 50) {
+        const range = selection.getRangeAt(0);
+        const rect = range.getBoundingClientRect();
+        setSelectionBox({
+          text,
+          top: rect.top - 35,
+          left: rect.left + rect.width / 2
+        });
+      } else {
+        setSelectionBox(null);
+      }
+    };
+    reactExports.useEffect(() => {
+      const closeBox = () => setSelectionBox(null);
+      window.addEventListener("mousedown", closeBox);
+      return () => window.removeEventListener("mousedown", closeBox);
+    }, []);
+    const handleAddVocab = (e, word) => {
+      var _a, _b;
+      e.preventDefault();
+      e.stopPropagation();
+      let cleanUrl = window.location.href;
+      try {
+        const urlObj = new URL(cleanUrl);
+        urlObj.searchParams.delete("t");
+        cleanUrl = urlObj.toString();
+      } catch (err) {
+      }
+      let videoTitle = (_a = document.querySelector("h1.ytd-watch-metadata yt-formatted-string")) == null ? void 0 : _a.textContent;
+      if (!videoTitle) {
+        videoTitle = document.title.replace(/^\(\d+\)\s+/, "").replace(/ - YouTube$/, "");
+      }
+      const ctxSize = parseInt(ConfigService.get("api_ctxSize"), 10) || 2;
+      const startIdx = Math.max(0, index2 - ctxSize);
+      const endIdx = Math.min(allSubs.length - 1, index2 + ctxSize);
+      let contextBlock = "";
+      for (let i = startIdx; i <= endIdx; i++) {
+        contextBlock += allSubs[i].text + " ";
+      }
+      window.dispatchEvent(new CustomEvent("linkual-add-vocab", {
+        detail: {
+          word,
+          context: contextBlock.trim(),
+          source: videoTitle == null ? void 0 : videoTitle.trim(),
+          youtube: { url: cleanUrl, timestamp: Math.floor(data.start) },
+          autoOpen: true
+        }
+      }));
+      setSelectionBox(null);
+      (_b = window.getSelection()) == null ? void 0 : _b.removeAllRanges();
     };
     const handleParse = (e, forceExpand = false) => {
       e.stopPropagation();
@@ -12779,19 +12834,19 @@
       const timeout = parseInt(ConfigService.get("api_timeout"), 10) || 15;
       if (!apiKey) {
         setIsError(true);
-        setAiContent("⚠️ 请在设置中填入 API Key！");
+        setAiContent("请在设置中填入 API Key！");
         setIsExpanded(true);
         return;
       }
       setIsGenerating(true);
       setIsError(false);
-      setAiContent("🧠 分析中...\n");
+      setAiContent("解析语境中...\n");
       setIsExpanded(true);
       const startIdx = Math.max(0, index2 - ctxSize);
       const endIdx = Math.min(allSubs.length - 1, index2 + ctxSize);
       let contextBlock = "";
       for (let i = startIdx; i <= endIdx; i++) {
-        if (i === index2) contextBlock += `👉 【目标字幕】：${allSubs[i].text}
+        if (i === index2) contextBlock += `【目标字幕】：${allSubs[i].text}
 `;
         else contextBlock += `（上下文）：${allSubs[i].text}
 `;
@@ -12803,7 +12858,7 @@
         apiModel,
         systemPrompt,
         timeoutSec: timeout,
-        userPrompt: `请根据以下字幕片段进行分析：
+        userPrompt: `请根据以下字幕片段进行解释：
 
 ${contextBlock}`,
         onData: (chunk) => setAiContent((prev) => prev + chunk),
@@ -12822,12 +12877,49 @@ ${contextBlock}`,
     };
     const handleToggle = (e) => {
       e.stopPropagation();
-      if (!aiContent && !isGenerating && !isError) handleParse(e, true);
-      else setIsExpanded(!isExpanded);
+      if (!aiContent && !isGenerating && !isError) {
+        handleParse(e, true);
+      } else {
+        setIsExpanded(!isExpanded);
+      }
     };
     const itemClass = `item ${isActive ? "active" : ""}`;
     const ctrlClass = `ctrl-bar ${isError ? "error" : aiContent ? "done" : ""}`;
     return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: itemClass, ref: itemRef, children: [
+      selectionBox && /* @__PURE__ */ jsxRuntimeExports.jsxs(
+        "button",
+        {
+          onMouseDown: (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          },
+          onClick: (e) => handleAddVocab(e, selectionBox.text),
+          style: {
+            position: "fixed",
+            top: selectionBox.top,
+            left: selectionBox.left,
+            transform: "translateX(-50%)",
+            zIndex: 999999,
+            padding: "6px 12px",
+            background: "var(--linkual-theme, #6a1b9a)",
+            color: "#fff",
+            border: "none",
+            borderRadius: "6px",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
+            cursor: "pointer",
+            fontSize: "13px",
+            fontWeight: "bold",
+            display: "flex",
+            alignItems: "center",
+            gap: "4px"
+          },
+          children: [
+            '+ "',
+            selectionBox.text,
+            '"'
+          ]
+        }
+      ),
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: ctrlClass, children: [
         /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "tag-btn tag-play", onClick: handlePlay, title: "点击跳转并播放", children: [
           "▶ ",
@@ -12835,21 +12927,16 @@ ${contextBlock}`,
           ":",
           Math.floor(data.start % 60).toString().padStart(2, "0")
         ] }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "tag-btn tag-pin", onClick: handlePin, title: "定位到此处并暂停", children: "📌 Pin" }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "btn-parse", onClick: handleParse, children: isGenerating ? "🔄 解析中" : aiContent ? "🤖 重新解析" : "🤖 点击解析" }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "tag-btn tag-pin", onClick: handlePin, title: "定位到此处并暂停", children: "📌" }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "btn-parse", onClick: handleParse, children: isGenerating ? "解析中" : aiContent ? "重新解析" : "解析" }),
         /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "btn-chevron", onClick: handleToggle, children: isExpanded ? "▼" : "◀" })
       ] }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "text-content", children: data.text }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "text-content", onMouseUp: handleMouseUp, children: data.text }),
       isExpanded && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "ai-box", style: { color: isError ? "#c62828" : "#444" }, children: aiContent })
     ] });
   };
   const Settings = ({ onClose }) => {
     const [activeTab, setActiveTab] = reactExports.useState("api");
-    const localTzOffset = String(0 - (/* @__PURE__ */ new Date()).getTimezoneOffset() / 60);
-    let savedTz = ConfigService.get("lan_timezone");
-    if (savedTz === "UTC" || savedTz === "Local" || isNaN(Number(savedTz))) {
-      savedTz = localTzOffset;
-    }
     const [cfg, setCfg] = reactExports.useState({
       color: ConfigService.get("theme_color"),
       doneColor: ConfigService.get("done_color"),
@@ -12862,10 +12949,7 @@ ${contextBlock}`,
       timeout: ConfigService.get("api_timeout"),
       ctxSize: ConfigService.get("api_ctxSize"),
       lanUrl: ConfigService.get("lan_sync_url"),
-      lanAction: ConfigService.get("lan_action"),
-      lanMessage: ConfigService.get("lan_message"),
-      lanTimezone: savedTz,
-      lanHeight: ConfigService.get("lan_textarea_height")
+      lanAction: ConfigService.get("lan_action")
     });
     const handleChange = (e) => {
       const { name, value } = e.target;
@@ -12884,9 +12968,6 @@ ${contextBlock}`,
       ConfigService.set("api_ctxSize", cfg.ctxSize);
       ConfigService.set("lan_sync_url", cfg.lanUrl);
       ConfigService.set("lan_action", cfg.lanAction);
-      ConfigService.set("lan_message", cfg.lanMessage);
-      ConfigService.set("lan_timezone", cfg.lanTimezone);
-      ConfigService.set("lan_textarea_height", cfg.lanHeight);
       onClose();
       window.dispatchEvent(new Event("linkual_settings_updated"));
     };
@@ -12899,9 +12980,6 @@ ${contextBlock}`,
     };
     const handleBackdropMouseDown = (e) => {
       if (e.target === e.currentTarget) onClose();
-    };
-    const handleAutoCaptureTz = () => {
-      setCfg((prev) => ({ ...prev, lanTimezone: localTzOffset }));
     };
     return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "modal", onMouseDown: handleBackdropMouseDown, children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "modal-box", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "modal-header", children: [
@@ -12956,49 +13034,16 @@ ${contextBlock}`,
           /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-col", children: [
             /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "侧边栏宽度 (px)" }),
             /* @__PURE__ */ jsxRuntimeExports.jsx("input", { type: "number", name: "sidebarWidth", value: cfg.sidebarWidth, onChange: handleChange, min: "250", max: "1000" })
-          ] }),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-col", children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "Payload 输入框高度 (px)" }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("input", { type: "number", name: "lanHeight", value: cfg.lanHeight, onChange: handleChange, min: "50", max: "600" })
           ] })
         ] }),
         activeTab === "lan" && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "tab-pane fade-in", children: [
           /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-col", children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "局域网后端通信地址" }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("input", { name: "lanUrl", value: cfg.lanUrl, onChange: handleChange, placeholder: "http://127.0.0.1:5000/api/sync" })
+            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "后端生词添加 API 地址" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("input", { name: "lanUrl", value: cfg.lanUrl, onChange: handleChange, placeholder: "http://127.0.0.1:8000/api/vocabulary/add" })
           ] }),
           /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-col", children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "Action 标识 (action)" }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("input", { name: "lanAction", value: cfg.lanAction, onChange: handleChange })
-          ] }),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-col", children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "默认信息 (message)" }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("input", { name: "lanMessage", value: cfg.lanMessage, onChange: handleChange })
-          ] }),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-col", children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }, children: [
-              /* @__PURE__ */ jsxRuntimeExports.jsx("label", { style: { margin: 0 }, children: "Timestamp 时区偏移 (UTC)" }),
-              /* @__PURE__ */ jsxRuntimeExports.jsx(
-                "span",
-                {
-                  onClick: handleAutoCaptureTz,
-                  style: { fontSize: "12px", color: cfg.color || "#6a1b9a", cursor: "pointer", fontWeight: "bold" },
-                  title: "点击自动获取本机时区",
-                  children: "⚡ 捕获本机时区"
-                }
-              )
-            ] }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx(
-              "input",
-              {
-                type: "number",
-                name: "lanTimezone",
-                value: cfg.lanTimezone,
-                onChange: handleChange,
-                placeholder: "例如: 8 或 -5",
-                step: "0.5"
-              }
-            )
+            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "默认生词本目录 (Category)" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("input", { name: "lanAction", value: cfg.lanAction, onChange: handleChange, placeholder: "例如: Video_Sync" })
           ] })
         ] })
       ] }),
@@ -13008,211 +13053,261 @@ ${contextBlock}`,
       ] })
     ] }) });
   };
-  const LanSync = ({ subs, activeIndex }) => {
-    const [status, setStatus] = reactExports.useState("idle");
-    const [payloadStr, setPayloadStr] = reactExports.useState("");
-    const [metaInfo, setMetaInfo] = reactExports.useState({ targetIndex: 0, totalContext: 0 });
-    const textareaRef = reactExports.useRef(null);
-    const [textareaHeight, setTextareaHeight] = reactExports.useState(() => Number(ConfigService.get("lan_textarea_height")) || 200);
-    reactExports.useEffect(() => {
-      const syncHeight = () => {
-        setTextareaHeight(Number(ConfigService.get("lan_textarea_height")) || 200);
-      };
-      window.addEventListener("linkual_settings_updated", syncHeight);
-      return () => window.removeEventListener("linkual_settings_updated", syncHeight);
-    }, []);
-    reactExports.useEffect(() => {
-      setPayloadStr(JSON.stringify([], null, 2));
-    }, []);
-    const startResize = (e) => {
-      e.preventDefault();
-      const startY = e.clientY;
-      const startHeight = textareaHeight;
-      let currentHeight = startHeight;
-      const onMouseMove = (ev) => {
-        let newHeight = startHeight + (startY - ev.clientY);
-        if (newHeight < 60) newHeight = 60;
-        if (newHeight > window.innerHeight * 0.7) newHeight = window.innerHeight * 0.7;
-        currentHeight = newHeight;
-        setTextareaHeight(newHeight);
-      };
-      const onMouseUp = () => {
-        document.removeEventListener("mousemove", onMouseMove);
-        document.removeEventListener("mouseup", onMouseUp);
-        ConfigService.set("lan_textarea_height", currentHeight.toString());
-        window.dispatchEvent(new Event("linkual_settings_updated"));
-      };
-      document.addEventListener("mousemove", onMouseMove);
-      document.addEventListener("mouseup", onMouseUp);
-    };
-    const handleKeyDown = (e) => {
-      if (e.key === "Tab") {
-        e.preventDefault();
-        const target = e.target;
-        const start = target.selectionStart;
-        const end = target.selectionEnd;
-        const newPayload = payloadStr.substring(0, start) + "  " + payloadStr.substring(end);
-        setPayloadStr(newPayload);
-        setTimeout(() => {
-          if (textareaRef.current) {
-            textareaRef.current.selectionStart = textareaRef.current.selectionEnd = start + 2;
-          }
-        }, 0);
-      }
-    };
-    const handleInjectSubs = () => {
-      if (activeIndex === -1 || subs.length === 0) {
-        alert("⚠️ 当前没有激活或 Pin 中的字幕！请先播放视频或点击某条字幕的 Pin 按钮。");
-        return;
-      }
-      const ctxSize = parseInt(ConfigService.get("api_ctxSize"), 10) || 0;
-      const startIdx = Math.max(0, activeIndex - ctxSize);
-      const endIdx = Math.min(subs.length - 1, activeIndex + ctxSize);
-      const targetSubs = subs.slice(startIdx, endIdx + 1);
-      const formattedData = targetSubs.map((sub) => ({
-        text: sub.text,
-        focusWords: "",
-        time: sub.start
-      }));
-      setMetaInfo({ targetIndex: activeIndex - startIdx, totalContext: targetSubs.length });
-      setPayloadStr(JSON.stringify(formattedData, null, 2));
-    };
-    const handleSend = async () => {
-      const serverUrl = ConfigService.get("lan_sync_url");
-      if (!serverUrl) {
-        alert("⚠️ 请先在顶部【⚙️全局设置 -> 📡局域网】中配置后端地址");
-        return;
-      }
-      setStatus("sending");
+  const VocabQueue = () => {
+    const [isOpen, setIsOpen] = reactExports.useState(false);
+    const [selectedCategory, setSelectedCategory] = reactExports.useState(ConfigService.get("lan_action") || "Video_Sync");
+    const [themeColor, setThemeColor] = reactExports.useState(ConfigService.get("theme_color") || "#6a1b9a");
+    const [tasks, setTasks] = reactExports.useState(() => {
       try {
-        let parsedData = JSON.parse(payloadStr);
-        if (parsedData && !Array.isArray(parsedData) && Array.isArray(parsedData.data)) {
-          parsedData = parsedData.data;
+        const saved = localStorage.getItem("linkual_vocab_queue");
+        if (saved) return JSON.parse(saved);
+      } catch (e) {
+      }
+      return [];
+    });
+    reactExports.useEffect(() => {
+      localStorage.setItem("linkual_vocab_queue", JSON.stringify(tasks));
+    }, [tasks]);
+    reactExports.useEffect(() => {
+      const syncAcrossTabs = (e) => {
+        if (e.key === "linkual_vocab_queue" && e.newValue) {
+          try {
+            setTasks(JSON.parse(e.newValue));
+          } catch (err) {
+          }
         }
-        let offsetHours = parseFloat(ConfigService.get("lan_timezone"));
-        if (isNaN(offsetHours)) {
-          offsetHours = 0 - (/* @__PURE__ */ new Date()).getTimezoneOffset() / 60;
+      };
+      window.addEventListener("storage", syncAcrossTabs);
+      return () => window.removeEventListener("storage", syncAcrossTabs);
+    }, []);
+    const [position, setPosition] = reactExports.useState({ left: 24, bottom: 24 });
+    const [isDragging, setIsDragging] = reactExports.useState(false);
+    const offset = reactExports.useRef({ x: 0, y: 0 });
+    const hasMoved = reactExports.useRef(false);
+    reactExports.useEffect(() => {
+      const handleConfigUpdate = () => {
+        setSelectedCategory(ConfigService.get("lan_action") || "Video_Sync");
+        setThemeColor(ConfigService.get("theme_color") || "#6a1b9a");
+      };
+      window.addEventListener("linkual_settings_updated", handleConfigUpdate);
+      return () => window.removeEventListener("linkual_settings_updated", handleConfigUpdate);
+    }, []);
+    const handleMouseDown = (e) => {
+      if (e.button !== 0) return;
+      setIsDragging(true);
+      hasMoved.current = false;
+      offset.current = {
+        x: e.clientX - position.left,
+        y: window.innerHeight - e.clientY - position.bottom
+      };
+    };
+    reactExports.useEffect(() => {
+      const handleMouseMove = (e) => {
+        if (isDragging) {
+          e.preventDefault();
+          hasMoved.current = true;
+          let newLeft = e.clientX - offset.current.x;
+          let newBottom = window.innerHeight - e.clientY - offset.current.y;
+          newLeft = Math.max(0, Math.min(newLeft, window.innerWidth - 60));
+          newBottom = Math.max(0, Math.min(newBottom, window.innerHeight - 60));
+          setPosition({ left: newLeft, bottom: newBottom });
         }
-        const now2 = /* @__PURE__ */ new Date();
-        const targetTimeMs = now2.getTime() + offsetHours * 36e5;
-        const targetDate = new Date(targetTimeMs);
-        const pad = (n) => n.toString().padStart(2, "0");
-        const year = targetDate.getUTCFullYear();
-        const month = pad(targetDate.getUTCMonth() + 1);
-        const day = pad(targetDate.getUTCDate());
-        const hours = pad(targetDate.getUTCHours());
-        const minutes = pad(targetDate.getUTCMinutes());
-        const seconds = pad(targetDate.getUTCSeconds());
-        const sign = offsetHours >= 0 ? "+" : "-";
-        const absOffset = Math.abs(offsetHours);
-        const offsetH = pad(Math.floor(absOffset));
-        const offsetM = pad(Math.round(absOffset % 1 * 60));
-        const formattedTimestamp = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}${sign}${offsetH}:${offsetM}`;
-        const fullPayload = {
-          action: ConfigService.get("lan_action"),
-          timestamp: formattedTimestamp,
-          videoUrl: window.location.href,
-          message: ConfigService.get("lan_message"),
-          targetIndex: metaInfo.targetIndex,
-          totalContext: metaInfo.totalContext,
-          data: parsedData
+      };
+      const handleMouseUp = () => setIsDragging(false);
+      if (isDragging) {
+        window.addEventListener("mousemove", handleMouseMove);
+        window.addEventListener("mouseup", handleMouseUp);
+      }
+      return () => {
+        window.removeEventListener("mousemove", handleMouseMove);
+        window.removeEventListener("mouseup", handleMouseUp);
+      };
+    }, [isDragging, position]);
+    const handleButtonClick = (e) => {
+      if (hasMoved.current) {
+        e.preventDefault();
+        return;
+      }
+      setIsOpen(!isOpen);
+    };
+    reactExports.useEffect(() => {
+      const handleEvent = (e) => {
+        const { word, context, source, youtube, autoOpen } = e.detail;
+        const dateObj = /* @__PURE__ */ new Date();
+        const systemDate = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, "0")}-${String(dateObj.getDate()).padStart(2, "0")}`;
+        const newTask = {
+          id: Date.now() + Math.random().toString(36).substring(2, 9),
+          word,
+          context,
+          source,
+          youtube,
+          date: systemDate,
+          category: selectedCategory,
+          status: "idle",
+          error: null
         };
-        console.log("🚀 [Linkual] 最终发送至后端的 Payload:", fullPayload);
-        const res = await fetch(serverUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(fullPayload)
-        });
-        if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
-        setStatus("success");
-        setTimeout(() => setStatus("idle"), 2e3);
-      } catch (error) {
-        console.error("[Linkual] 同步到后端失败:", error);
-        if (error instanceof SyntaxError) {
-          alert("JSON 格式错误，请检查输入框内容是否为合法的 JSON。");
+        setTasks((prev) => [newTask, ...prev]);
+        if (autoOpen) setIsOpen(true);
+      };
+      window.addEventListener("linkual-add-vocab", handleEvent);
+      return () => window.removeEventListener("linkual-add-vocab", handleEvent);
+    }, [selectedCategory]);
+    const handleFetchLlm = (taskId) => {
+      const task = tasks.find((t) => t.id === taskId);
+      if (!task) return;
+      const apiKey = ConfigService.get("api_key");
+      const apiUrl = ConfigService.get("api_url");
+      const apiModel = ConfigService.get("api_model");
+      if (!apiKey) {
+        alert("请先在设置中配置 API Key");
+        return;
+      }
+      setTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, status: "fetching_llm", error: null, rawJson: "" } : t));
+      let generatedJsonStr = "";
+      fetchLlmStream({
+        apiUrl,
+        apiKey,
+        apiModel,
+        systemPrompt: '你是一个翻译和词典助手。请提取目标单词在给定上下文中的含义。必须严格以 JSON 格式输出，不要包含任何 markdown 代码块标记或其他纯文本。\n格式要求：\n{\n  "pronunciation": "音标",\n  "definitions": ["词性. 解释 1", "词性. 解释 2"],\n  "explanation": "在当前上下文中的准确翻译"\n}',
+        userPrompt: `目标单词：${task.word}
+所在上下文：${task.context}`,
+        timeoutSec: 30,
+        onData: (chunk) => {
+          generatedJsonStr += chunk;
+          setTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, rawJson: generatedJsonStr } : t));
+        },
+        onError: (err) => {
+          setTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, status: "failed", error: err } : t));
+        },
+        onDone: () => {
+          let parsed = {};
+          try {
+            const jsonRegex = new RegExp("```json\\n([\\s\\S]*?)\\n```");
+            const replaceRegex = new RegExp("```json\\n|\\n```", "g");
+            const match = generatedJsonStr.match(jsonRegex) || generatedJsonStr.match(/\{[\s\S]*\}/);
+            const cleanStr = match ? match[0].replace(replaceRegex, "") : generatedJsonStr;
+            parsed = JSON.parse(cleanStr);
+          } catch (e) {
+          }
+          setTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, status: "idle", llmResult: parsed, rawJson: generatedJsonStr } : t));
         }
-        setStatus("error");
-        setTimeout(() => setStatus("idle"), 3e3);
+      });
+    };
+    const handleSend = (taskId, deleteOnSuccess) => {
+      const sendingTask = tasks.find((t) => t.id === taskId);
+      if (!sendingTask) return;
+      setTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, status: "sending", error: null } : t));
+      const serverUrl = ConfigService.get("lan_sync_url");
+      const payload = {
+        word: sendingTask.word,
+        context: sendingTask.context,
+        source: sendingTask.source,
+        youtube: sendingTask.youtube,
+        date: sendingTask.date,
+        llm_result: sendingTask.llmResult || {},
+        raw_json: sendingTask.rawJson,
+        fetch_llm: false,
+        category: sendingTask.category
+      };
+      fetch(serverUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      }).then(async (res) => {
+        if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
+        if (deleteOnSuccess) {
+          setTasks((prev) => prev.filter((t) => t.id !== taskId));
+        } else {
+          setTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, status: "success" } : t));
+        }
+      }).catch((err) => {
+        setTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, status: "failed", error: err.message } : t));
+      });
+    };
+    const handleDeleteTask = (taskId) => {
+      setTasks((prev) => prev.filter((t) => t.id !== taskId));
+    };
+    const handleClearAll = () => {
+      if (window.confirm("确定清空当前队列中所有的缓存词卡吗？")) {
+        setTasks([]);
+        localStorage.removeItem("linkual_vocab_queue");
       }
     };
-    return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "lan-sync-module", style: { position: "relative" }, children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsx(
-        "div",
-        {
-          className: "lan-resizer",
-          onMouseDown: startResize,
-          title: "上下拖拽调整编辑区高度"
-        }
-      ),
-      /* @__PURE__ */ jsxRuntimeExports.jsx("style", { children: `
-        /* 自定义拖拽条样式 */
-        .lan-resizer {
-          position: absolute;
-          top: -3px;
-          left: 0;
-          width: 100%;
-          height: 6px;
-          cursor: ns-resize; /* 鼠标变为上下拖拽箭头 */
-          background: transparent;
-          z-index: 10;
-          transition: background 0.2s;
-        }
-        .lan-resizer:hover, .lan-resizer:active {
-          background: var(--linkual-theme, #6a1b9a);
-        }
-
-        .sync-textarea-custom {
-          resize: none; /* [核心修复]：彻底禁用浏览器原生的右下角拖拽功能，防止冲突 */
-          width: 100%;
-          padding: 8px;
-          box-sizing: border-box;
-          font-size: 13px;
-          font-family: monospace;
-          border: 1px solid #ccc;
-          border-radius: 4px;
-          outline: none;
-        }
-        .sync-textarea-custom:focus {
-          border-color: var(--linkual-theme, #6a1b9a);
-        }
-      ` }),
-      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "sync-header", style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }, children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx("span", { style: { fontSize: "12px", fontWeight: "bold", color: "#555" }, children: "Data Payload 编辑" }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx(
-          "button",
-          {
-            onClick: handleInjectSubs,
-            style: { fontSize: "11px", padding: "2px 6px", cursor: "pointer", borderRadius: "4px", border: "1px solid #ccc", background: "#fff" },
-            title: "提取【目标字幕】及其相关字段",
-            children: "⬇️ 注入待办单词数据"
-          }
-        )
+    const pendingCount = tasks.filter((t) => t.status !== "success").length;
+    return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { position: "fixed", left: `${position.left}px`, bottom: `${position.bottom}px`, zIndex: 2147483647, display: "flex", flexDirection: "column", alignItems: "flex-start", fontFamily: "sans-serif" }, children: [
+      isOpen && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { width: "400px", height: "580px", background: "#fff", borderRadius: "8px", boxShadow: "0 10px 30px rgba(0,0,0,0.2)", border: "1px solid #e4e4e7", display: "flex", flexDirection: "column", marginBottom: "12px", overflow: "hidden" }, children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { padding: "12px", borderBottom: "1px solid #e4e4e7", background: "#fafafa", display: "flex", alignItems: "center", justifyContent: "space-between" }, children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { display: "flex", alignItems: "center", gap: "8px" }, children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { style: { fontSize: "13px", fontWeight: "bold", color: "#333" }, children: "生词本目录:" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "input",
+              {
+                value: selectedCategory,
+                onChange: (e) => setSelectedCategory(e.target.value),
+                style: { width: "120px", padding: "4px 8px", border: "1px solid #ddd", borderRadius: "4px", fontSize: "12px", outline: "none" }
+              }
+            )
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("button", { onClick: handleClearAll, style: { border: "none", background: "none", color: "#f44336", cursor: "pointer", fontSize: "12px", fontWeight: "bold" }, children: "清空全部队列" })
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { flex: 1, overflowY: "auto", padding: "12px", display: "flex", flexDirection: "column", gap: "12px", background: "#f9f9f9" }, children: [
+          tasks.length === 0 && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { style: { textAlign: "center", color: "#999", marginTop: "40px", fontSize: "13px" }, children: "暂无待处理单词" }),
+          tasks.map((t) => {
+            var _a;
+            return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { padding: "12px", border: "1px solid #eaeaea", borderRadius: "8px", background: "#fff", boxShadow: "0 2px 5px rgba(0,0,0,0.02)" }, children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }, children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { style: { fontSize: "16px", color: "#333" }, children: t.word }),
+                /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { style: { fontSize: "11px", padding: "2px 6px", borderRadius: "10px", background: t.status === "success" ? "#e8f5e9" : t.status === "failed" ? "#ffebee" : "#e3f2fd", color: t.status === "success" ? "#4caf50" : t.status === "failed" ? "#f44336" : "#1976d2" }, children: [
+                  t.status === "idle" && (t.llmResult ? "释义已就绪" : "等待操作"),
+                  t.status === "fetching_llm" && "正在解析...",
+                  t.status === "sending" && "发送中...",
+                  t.status === "success" && "发送成功",
+                  t.status === "failed" && "操作失败"
+                ] })
+              ] }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("div", { style: { fontSize: "12px", color: "#666", marginBottom: "8px", paddingBottom: "8px", borderBottom: "1px dashed #eee" }, children: t.context }),
+              /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { fontSize: "11px", color: "#e53935", marginBottom: "8px", display: "flex", justifyContent: "space-between" }, children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: t.youtube ? `▶ YouTube 捕获: ${t.youtube.timestamp}s` : "本地字幕记录" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("span", { style: { color: "#888", fontStyle: "italic", maxWidth: "150px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: t.source })
+              ] }),
+              t.llmResult && Object.keys(t.llmResult).length > 0 && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { background: "#f4f4f5", padding: "8px", borderRadius: "6px", fontSize: "12px", marginBottom: "10px" }, children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx("div", { style: { fontWeight: "bold", color: "#111" }, children: t.llmResult.pronunciation }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("ul", { style: { margin: "4px 0", paddingLeft: "16px", color: "#444" }, children: (_a = t.llmResult.definitions) == null ? void 0 : _a.map((d, i) => /* @__PURE__ */ jsxRuntimeExports.jsx("li", { children: d }, i)) }),
+                /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { color: "#1976d2", fontStyle: "italic" }, children: [
+                  "翻译: ",
+                  t.llmResult.explanation
+                ] })
+              ] }),
+              t.error && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { style: { color: "#f44336", fontSize: "11px", marginBottom: "8px" }, children: t.error }),
+              /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "12px" }, children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "button",
+                  {
+                    onClick: () => handleFetchLlm(t.id),
+                    disabled: t.status === "fetching_llm" || t.status === "sending",
+                    style: { flex: "1 1 auto", padding: "6px 10px", background: "#f4f4f5", color: "#333", border: "1px solid #ccc", borderRadius: "4px", cursor: "pointer", fontSize: "12px", fontWeight: "bold" },
+                    children: "请求释义"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("button", { onClick: () => handleSend(t.id, true), style: { flex: "1 1 auto", padding: "6px 10px", background: "#10b981", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer", fontSize: "12px", fontWeight: "bold" }, children: "发送并删除" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("button", { onClick: () => handleSend(t.id, false), style: { flex: "1 1 auto", padding: "6px 10px", background: "#3b82f6", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer", fontSize: "12px", fontWeight: "bold" }, children: "发送并保留" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("button", { onClick: () => handleDeleteTask(t.id), style: { padding: "6px 12px", background: "transparent", color: "#f44336", border: "1px solid #f44336", borderRadius: "4px", cursor: "pointer", fontSize: "12px" }, children: "丢弃" })
+              ] })
+            ] }, t.id);
+          })
+        ] })
       ] }),
       /* @__PURE__ */ jsxRuntimeExports.jsx(
-        "textarea",
-        {
-          ref: textareaRef,
-          className: "sync-textarea sync-textarea-custom",
-          style: { height: `${textareaHeight}px` },
-          value: payloadStr,
-          onChange: (e) => setPayloadStr(e.target.value),
-          onKeyDown: handleKeyDown,
-          placeholder: "在此编辑 data 数组..."
-        }
-      ),
-      /* @__PURE__ */ jsxRuntimeExports.jsxs(
         "button",
         {
-          className: `sync-btn ${status}`,
-          style: { marginTop: "10px" },
-          onClick: handleSend,
-          disabled: status === "sending",
-          children: [
-            status === "idle" && "📤 发送至局域网后端",
-            status === "sending" && "⏳ 发送中...",
-            status === "success" && "✅ 发送成功",
-            status === "error" && "❌ 发送失败"
-          ]
+          onMouseDown: handleMouseDown,
+          onClick: handleButtonClick,
+          title: "按住即可拖动面板位置",
+          style: { padding: "12px 20px", background: themeColor, color: "#fff", border: "none", borderRadius: "30px", boxShadow: "0 6px 16px rgba(0,0,0,0.25)", cursor: isDragging ? "grabbing" : "grab", display: "flex", alignItems: "center", gap: "8px", fontWeight: "bold", fontSize: "14px", userSelect: "none" },
+          children: /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
+            "制卡队列 ",
+            pendingCount > 0 && /* @__PURE__ */ jsxRuntimeExports.jsx("span", { style: { background: "#f44336", padding: "2px 8px", borderRadius: "12px", fontSize: "12px", marginLeft: "6px" }, children: pendingCount })
+          ] })
         }
       )
     ] });
@@ -13284,19 +13379,21 @@ ${contextBlock}`,
       "--linkual-done": doneColor,
       "--linkual-error": errorColor
     };
-    return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-wrap", style: wrapStyle, children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "resizer", onMouseDown: startResize, title: "左右拖拽调整宽度" }),
-      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "header", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
-          "Link-ual Log [",
-          adapter.platformName,
-          "]"
+    return /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-wrap", style: wrapStyle, children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "resizer", onMouseDown: startResize, title: "左右拖拽调整宽度" }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "header", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
+            "Link-ual Log [",
+            adapter.platformName,
+            "]"
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { children: /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "settings-icon", onClick: () => setIsSettingsOpen(true), title: "全局设置", children: "⚙️" }) })
         ] }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { children: /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "settings-icon", onClick: () => setIsSettingsOpen(true), title: "全局设置", children: "⚙️" }) })
+        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "list", children: subs.length === 0 ? /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "empty-tip", children: "等待字幕数据..." }) : subs.slice(0, renderLimit).map((sub, index2) => /* @__PURE__ */ jsxRuntimeExports.jsx(SubtitleItem, { data: sub, index: index2, allSubs: subs, isActive: index2 === activeIndex, adapter }, index2)) }),
+        isSettingsOpen && /* @__PURE__ */ jsxRuntimeExports.jsx(Settings, { onClose: () => setIsSettingsOpen(false) })
       ] }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "list", children: subs.length === 0 ? /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "empty-tip", children: "⏳ 等待字幕数据..." }) : subs.slice(0, renderLimit).map((sub, index2) => /* @__PURE__ */ jsxRuntimeExports.jsx(SubtitleItem, { data: sub, index: index2, allSubs: subs, isActive: index2 === activeIndex, adapter }, index2)) }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx(LanSync, { subs, activeIndex }),
-      isSettingsOpen && /* @__PURE__ */ jsxRuntimeExports.jsx(Settings, { onClose: () => setIsSettingsOpen(false) })
+      /* @__PURE__ */ jsxRuntimeExports.jsx(VocabQueue, {})
     ] });
   };
   class YouTubeShortsAdapter {

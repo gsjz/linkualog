@@ -9,7 +9,7 @@ export default defineConfig({
       entry: 'src/apps/main.tsx',
       userscript: {
         name: 'Linkual Log',
-        version: '0.0.1',
+        version: '0.0.2',
         author: 'Sergio Gao',
         icon: 'https://vitejs.dev/logo.svg',
         namespace: 'npm/vite-plugin-monkey',
@@ -23,7 +23,7 @@ export default defineConfig({
           'GM_setValue',
           'unsafeWindow'
         ],
-        connect: ['api.siliconflow.cn', 'cdn.jsdelivr.net']
+        connect: ['dashscope.aliyuncs.com', 'api.siliconflow.cn', 'cdn.jsdelivr.net']
       },
     }),
   ],
