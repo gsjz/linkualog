@@ -31,7 +31,7 @@ def save_vocab(word: str, data: dict, category: str = ""):
         with open(path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
 
-def merge_or_create_vocab(word: str, context: str, source_name: str, llm_generated_data: dict = None, category: str = "") -> dict:
+def merge_or_create_vocab(word: str, context: str, source_name: str, llm_generated_data: dict = None, category: str = "", youtube: dict = None) -> dict:
     if llm_generated_data is None:
         llm_generated_data = {}
         
@@ -64,8 +64,11 @@ def merge_or_create_vocab(word: str, context: str, source_name: str, llm_generat
                     matched_ex["focusWords"] = focus_words
                 if source_name and not matched_ex.get("source", {}).get("text"):
                     matched_ex["source"] = {"text": source_name, "url": matched_ex.get("source", {}).get("url", "")}
+                
+                if youtube and not matched_ex.get("youtube"):
+                    matched_ex["youtube"] = youtube
             else:
-                existing_examples.append({
+                new_ex = {
                     "text": context,
                     "explanation": extracted_explanation,
                     "focusWords": focus_words,
@@ -73,7 +76,10 @@ def merge_or_create_vocab(word: str, context: str, source_name: str, llm_generat
                         "text": source_name if source_name else "",
                         "url": ""
                     }
-                })
+                }
+                if youtube:
+                    new_ex["youtube"] = youtube
+                existing_examples.append(new_ex)
         
         if llm_generated_data.get("pronunciation") and not existing_data.get("pronunciation"):
             existing_data["pronunciation"] = llm_generated_data["pronunciation"]
@@ -97,6 +103,9 @@ def merge_or_create_vocab(word: str, context: str, source_name: str, llm_generat
                 "url": ""
             }
         } if context else None
+        
+        if new_example and youtube:
+            new_example["youtube"] = youtube
 
         new_data = {
             "word": word,

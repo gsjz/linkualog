@@ -18,7 +18,6 @@ router = APIRouter()
 
 @router.get("/api/config")
 def get_config():
-    """获取当前 LLM 配置信息"""
     config = get_config_data()
     return {
         "provider": config["provider"],
@@ -28,16 +27,11 @@ def get_config():
 
 @router.post("/api/config")
 def update_config(provider: str = Form(...), model: str = Form(...), api_key: str = Form("")):
-    """更新 LLM 配置信息"""
     save_config_data(provider, model, api_key)
     return {"status": "success", "message": "配置已保存"}
 
 
 def process_task_background(task_id: str):
-    """
-    后台任务运行器：支持跳过已完成项实现断点续传。
-    配合优化后的 llm.py，此处读取的原始字节（包括 HEIC）将被正确处理。
-    """
     tasks = load_tasks()
     task = tasks.get(task_id)
     if not task: 
@@ -68,8 +62,6 @@ def process_task_background(task_id: str):
             
         except Exception as e:
             print(f"\n❌ [后台任务] 任务 {task_id} 处理子项异常!")
-            print(f"📄 异常文件: {sub.get('path')}")
-            print(f"⚠️ 错误信息: {str(e)}")
             traceback.print_exc()
             sub["status"] = "failed"
             sub["error"] = str(e)
@@ -88,7 +80,6 @@ async def upload_resource(
     taskName: str = Form(""),    
     startPage: int = Form(1)     
 ):
-    """上传资源并创建处理任务，支持图片和 PDF"""
     sub_tasks_paths = []
     try:
         for file in files:
@@ -104,7 +95,6 @@ async def upload_resource(
                         img.save(img_path, "JPEG")
                         sub_tasks_paths.append(img_path)
                 except Exception as pdf_error:
-                    print(f"❌ PDF 解析失败: {pdf_error}")
                     raise Exception(f"PDF 解析失败，请检查服务器 poppler 配置: {str(pdf_error)}")
             else:
                 sub_tasks_paths.append(saved_path)
@@ -115,24 +105,20 @@ async def upload_resource(
         
         return {"status": "success", "task_id": task_id}
     except Exception as e:
-        print(f"❌ 资源上传阶段异常: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/api/task/{task_id}")
 def get_task_status(task_id: str):
-    """获取指定任务的详细状态"""
     tasks = load_tasks()
     return tasks.get(task_id, {"error": "任务不存在"})
 
 @router.post("/api/task/{task_id}/resume")
 def resume_task(task_id: str, background_tasks: BackgroundTasks):
-    """恢复执行已暂停的任务"""
     background_tasks.add_task(process_task_background, task_id)
     return {"status": "resumed"}
 
 @router.get("/api/tasks")
 def list_all_tasks():
-    """获取所有任务的历史列表"""
     tasks_dict = load_tasks()
     task_list = []
     for task_id, task_info in tasks_dict.items():
@@ -148,7 +134,6 @@ def list_all_tasks():
 
 @router.get("/api/image")
 def get_image(path: str):
-    """根据路径返回图片文件，供前端预览使用"""
     abs_path = os.path.abspath(path)
     if os.path.exists(abs_path):
         return FileResponse(abs_path)
@@ -156,7 +141,6 @@ def get_image(path: str):
 
 @router.delete("/api/task/{task_id}")
 def delete_task(task_id: str):
-    """删除任务记录"""
     tasks = load_tasks()
     if task_id in tasks:
         del tasks[task_id]
@@ -169,7 +153,6 @@ class RegenerateRequest(BaseModel):
 
 @router.post("/api/task/{task_id}/regenerate")
 def regenerate_task_item(task_id: str, req: RegenerateRequest, background_tasks: BackgroundTasks):
-    """重新生成任务中特定的某一项（例如某张图片识别不满意时）"""
     tasks = load_tasks()
     task = tasks.get(task_id)
     if not task:
@@ -201,10 +184,22 @@ class VocabAddRequest(BaseModel):
     fetch_llm: bool = False
     fetch_type: str = "all" 
     category: str = ""
+    llm_result: dict = {}  
+    youtube: dict = {}    
+
+@router.post("/api/vocabulary/parse")
+def parse_vocabulary(req: VocabAddRequest):
+    try:
+        if req.fetch_type == "def" or not req.context:
+            llm_result = process_word_definition(req.word)
+        else:
+            llm_result = process_context_analysis(req.word, req.context)
+        return {"status": "success", "data": llm_result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/api/vocabulary/categories")
 def list_categories():
-    """获取生词本下的所有子文件夹"""
     categories = []
     if os.path.exists(VOCAB_DIR):
         categories = [d for d in os.listdir(VOCAB_DIR) if os.path.isdir(os.path.join(VOCAB_DIR, d))]
@@ -212,18 +207,24 @@ def list_categories():
 
 @router.post("/api/vocabulary/add")
 def add_vocabulary(req: VocabAddRequest):
-    """处理生词加入或合并"""
     try:
-        llm_result = {}
+        llm_result = req.llm_result or {}
+        
         if req.fetch_llm:
             print(f"正在处理 {req.word} | 类型: {req.fetch_type} | 目录: {req.category}")            
-            
             if req.fetch_type == "def" or not req.context:
                 llm_result = process_word_definition(req.word)
             else:
                 llm_result = process_context_analysis(req.word, req.context) 
         
-        final_data = merge_or_create_vocab(req.word, req.context, req.source, llm_result, req.category)
+        final_data = merge_or_create_vocab(
+            word=req.word, 
+            context=req.context, 
+            source_name=req.source, 
+            llm_generated_data=llm_result, 
+            category=req.category,
+            youtube=req.youtube 
+        )
         return {"status": "success", "data": final_data}
     except Exception as e:
         print(f"❌ 生词处理失败: {str(e)}")
