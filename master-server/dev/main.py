@@ -16,7 +16,7 @@ os.environ.setdefault("MAX_SIZE_BYTES", str(1 * 1024 * 1024 * 1024)) # 1GB ÈôêÂà
 os.environ.setdefault("TASKS_FILE", "local_data/tasks_db.json")
 os.environ.setdefault("LOCK_FILE", "local_data/tasks_db.json.lock")
 
-os.environ.setdefault("VOCAB_DIR", "../../data/ielts/")
+os.environ.setdefault("VOCAB_DIR", "../../data/")
 
 from api.routes import router
 from utils.runner import start_frontend_dev

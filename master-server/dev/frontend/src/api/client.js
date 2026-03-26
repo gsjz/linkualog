@@ -65,21 +65,26 @@ export const regenerateTaskPage = async (taskId, index) => {
   return handleResponse(res);
 };
 
-export const addVocabulary = async (word, context, source = '', fetchLlm = false, fetchType = 'all') => {
+export const getVocabularyCategories = async () => {
+  const res = await fetch(`${BACKEND_URL}/api/vocabulary/categories`);
+  return handleResponse(res);
+};
+
+export const addVocabulary = async (word, context, source = '', fetchLlm = false, fetchType = 'all', category = '') => {
   const res = await fetch(`${BACKEND_URL}/api/vocabulary/add`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ word, context, source, fetch_llm: fetchLlm, fetch_type: fetchType })
+    body: JSON.stringify({ word, context, source, fetch_llm: fetchLlm, fetch_type: fetchType, category })
   });
   return handleResponse(res);
 };
 
-export const getVocabularyList = async () => {
-  const res = await fetch(`${BACKEND_URL}/api/vocabulary/list`);
+export const getVocabularyList = async (category = '') => {
+  const res = await fetch(`${BACKEND_URL}/api/vocabulary/list?category=${encodeURIComponent(category)}`);
   return handleResponse(res);
 };
 
-export const getVocabularyDetail = async (word) => {
-  const res = await fetch(`${BACKEND_URL}/api/vocabulary/detail/${encodeURIComponent(word)}`);
+export const getVocabularyDetail = async (word, category = '') => {
+  const res = await fetch(`${BACKEND_URL}/api/vocabulary/detail/${encodeURIComponent(word)}?category=${encodeURIComponent(category)}`);
   return handleResponse(res);
 };

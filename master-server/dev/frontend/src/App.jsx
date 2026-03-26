@@ -54,25 +54,22 @@ function App() {
         </div>
 
         <button 
-          onClick={() => setShowConfig(!showConfig)}
+          onClick={() => setShowConfig(true)}
           style={{ 
             padding: '6px 12px', cursor: 'pointer', 
-            background: showConfig ? '#f4f4f5' : '#18181b', 
-            color: showConfig ? '#18181b' : '#fafafa', 
-            border: '1px solid #e4e4e7', borderRadius: '4px',
+            background: '#18181b', 
+            color: '#fafafa', 
+            border: '1px solid #18181b', borderRadius: '4px',
             fontSize: '13px', fontWeight: '500',
           }}
         >
-          {showConfig ? '收起配置' : 'API 配置'}
+          ⚙️ 全局配置
         </button>
       </header>
 
+      {showConfig && <ConfigForm onClose={() => setShowConfig(false)} />}
+
       <main className="app-main" style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 60px)' }}>
-        {showConfig && (
-          <div style={{ borderBottom: '1px solid #e4e4e7', background: '#fafafa' }}>
-            <ConfigForm />
-          </div>
-        )}
         <div className="task-container-wrapper" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0 }}>
           {currentTab === 'tasks' ? <TaskVisualizer /> : <VocabularyReview />}
         </div>

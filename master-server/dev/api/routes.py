@@ -2,6 +2,7 @@ import os
 import mimetypes
 import traceback
 import glob
+import re
 from typing import List
 from fastapi import APIRouter, UploadFile, File, Form, BackgroundTasks, HTTPException
 from fastapi.responses import FileResponse
@@ -46,7 +47,6 @@ def process_task_background(task_id: str):
     save_tasks(tasks)
 
     for sub in task["sub_tasks"]:
-        # 如果该子任务已完成，则跳过（支持断点续传）
         if sub.get("status") == "completed": 
             continue
         
@@ -194,13 +194,21 @@ def regenerate_task_item(task_id: str, req: RegenerateRequest, background_tasks:
     background_tasks.add_task(process_task_background, task_id)
     return {"status": "success", "message": f"已将第 {req.index} 项加入重新生成队列"}
 
-
 class VocabAddRequest(BaseModel):
     word: str
     context: str = ""
     source: str = ""
     fetch_llm: bool = False
     fetch_type: str = "all" 
+    category: str = ""
+
+@router.get("/api/vocabulary/categories")
+def list_categories():
+    """获取生词本下的所有子文件夹"""
+    categories = []
+    if os.path.exists(VOCAB_DIR):
+        categories = [d for d in os.listdir(VOCAB_DIR) if os.path.isdir(os.path.join(VOCAB_DIR, d))]
+    return {"status": "success", "categories": categories}
 
 @router.post("/api/vocabulary/add")
 def add_vocabulary(req: VocabAddRequest):
@@ -208,24 +216,27 @@ def add_vocabulary(req: VocabAddRequest):
     try:
         llm_result = {}
         if req.fetch_llm:
-            print(f"正在处理 {req.word} | 类型: {req.fetch_type}")            
+            print(f"正在处理 {req.word} | 类型: {req.fetch_type} | 目录: {req.category}")            
             
             if req.fetch_type == "def" or not req.context:
                 llm_result = process_word_definition(req.word)
             else:
                 llm_result = process_context_analysis(req.word, req.context) 
         
-        final_data = merge_or_create_vocab(req.word, req.context, req.source, llm_result)
+        final_data = merge_or_create_vocab(req.word, req.context, req.source, llm_result, req.category)
         return {"status": "success", "data": final_data}
     except Exception as e:
         print(f"❌ 生词处理失败: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/api/vocabulary/list")
-def list_vocabulary():
+def list_vocabulary(category: str = ""):
     words = []
-    if os.path.exists(VOCAB_DIR):
-        files = glob.glob(f"{VOCAB_DIR}/*.json")
+    safe_category = re.sub(r'[^\w\u4e00-\u9fa5\.-]+', '_', category.strip()) if category else ""
+    target_dir = os.path.join(VOCAB_DIR, safe_category) if safe_category else VOCAB_DIR
+    
+    if os.path.exists(target_dir):
+        files = glob.glob(f"{target_dir}/*.json")
         for f in files:
             word = os.path.basename(f).replace(".json", "")
             words.append(word)
@@ -233,8 +244,8 @@ def list_vocabulary():
     return {"status": "success", "words": words}
 
 @router.get("/api/vocabulary/detail/{word}")
-def get_vocab_detail(word: str):
-    data = load_vocab(word)
+def get_vocab_detail(word: str, category: str = ""):
+    data = load_vocab(word, category)
     if not data:
         return {"error": "单词不存在或已删除"}
     return {"status": "success", "data": data}

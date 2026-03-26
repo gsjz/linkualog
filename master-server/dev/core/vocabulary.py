@@ -7,12 +7,15 @@ from filelock import FileLock
 VOCAB_DIR = os.environ.get("VOCAB_DIR")
 os.makedirs(VOCAB_DIR, exist_ok=True)
 
-def get_vocab_path(word: str) -> str:
+def get_vocab_path(word: str, category: str = "") -> str:
     clean_word = re.sub(r'[\s_]+', '-', word.strip().lower())
-    return os.path.join(VOCAB_DIR, f"{clean_word}.json")
+    safe_category = re.sub(r'[^\w\u4e00-\u9fa5\.-]+', '_', category.strip()) if category else ""
+    base_dir = os.path.join(VOCAB_DIR, safe_category) if safe_category else VOCAB_DIR
+    os.makedirs(base_dir, exist_ok=True)
+    return os.path.join(base_dir, f"{clean_word}.json")
 
-def load_vocab(word: str):
-    path = get_vocab_path(word)
+def load_vocab(word: str, category: str = ""):
+    path = get_vocab_path(word, category)
     if not os.path.exists(path):
         return None
     with FileLock(f"{path}.lock", timeout=5):
@@ -22,17 +25,17 @@ def load_vocab(word: str):
             except json.JSONDecodeError:
                 return None
 
-def save_vocab(word: str, data: dict):
-    path = get_vocab_path(word)
+def save_vocab(word: str, data: dict, category: str = ""):
+    path = get_vocab_path(word, category)
     with FileLock(f"{path}.lock", timeout=5):
         with open(path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
 
-def merge_or_create_vocab(word: str, context: str, source_name: str, llm_generated_data: dict = None) -> dict:
+def merge_or_create_vocab(word: str, context: str, source_name: str, llm_generated_data: dict = None, category: str = "") -> dict:
     if llm_generated_data is None:
         llm_generated_data = {}
         
-    existing_data = load_vocab(word)
+    existing_data = load_vocab(word, category)
     today = datetime.now().strftime("%Y-%m-%d")
     
     extracted_explanation = ""
@@ -81,7 +84,7 @@ def merge_or_create_vocab(word: str, context: str, source_name: str, llm_generat
                 if d not in existing_defs:
                     existing_defs.append(d)
         
-        save_vocab(word, existing_data)
+        save_vocab(word, existing_data, category)
         return existing_data
         
     else:
@@ -103,5 +106,5 @@ def merge_or_create_vocab(word: str, context: str, source_name: str, llm_generat
             "definitions": llm_generated_data.get("definitions", []),
             "examples": [new_example] if new_example else []
         }
-        save_vocab(word, new_data)
+        save_vocab(word, new_data, category)
         return new_data

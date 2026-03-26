@@ -1,11 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { getVocabularyList, getVocabularyDetail, addVocabulary } from '../api/client';
+import { getVocabularyList, getVocabularyDetail, addVocabulary, getVocabularyCategories } from '../api/client';
 
 export default function VocabularyReview() {
   const [words, setWords] = useState([]);
   const [selectedWord, setSelectedWord] = useState(null);
   const [detailData, setDetailData] = useState(null);
   
+  const [categories, setCategories] = useState([]);
+  
+  const [selectedCategory, setSelectedCategory] = useState(localStorage.getItem('defaultCategory') || '');
+
   const [generatingWordMap, setGeneratingWordMap] = useState({});
   const [generatingContextMap, setGeneratingContextMap] = useState({});
 
@@ -14,11 +18,34 @@ export default function VocabularyReview() {
     selectedWordRef.current = selectedWord;
   }, [selectedWord]);
 
-  useEffect(() => { loadWords(); }, []);
+  useEffect(() => { 
+    loadCategories(); 
+    
+    const handleConfigUpdate = () => {
+      setSelectedCategory(localStorage.getItem('defaultCategory') || '');
+    };
+    window.addEventListener('config-updated', handleConfigUpdate);
+    return () => window.removeEventListener('config-updated', handleConfigUpdate);
+  }, []);
 
-  const loadWords = async () => {
+  useEffect(() => {
+    loadWords(selectedCategory);
+    setSelectedWord(null);
+    setDetailData(null);
+  }, [selectedCategory]);
+
+  const loadCategories = async () => {
     try {
-      const data = await getVocabularyList();
+      const data = await getVocabularyCategories();
+      if(data.categories) setCategories(data.categories);
+    } catch (e) {
+      console.error("加载目录失败", e);
+    }
+  };
+
+  const loadWords = async (categoryStr) => {
+    try {
+      const data = await getVocabularyList(categoryStr);
       setWords(data.words || []);
     } catch (e) {
       console.error("加载单词列表失败", e);
@@ -29,7 +56,7 @@ export default function VocabularyReview() {
     setSelectedWord(word);
     setDetailData(null);
     try {
-      const res = await getVocabularyDetail(word);
+      const res = await getVocabularyDetail(word, selectedCategory);
       if (res.data) setDetailData(res.data);
     } catch (e) { alert("加载详情失败"); }
   };
@@ -40,10 +67,10 @@ export default function VocabularyReview() {
     
     setGeneratingWordMap(prev => ({ ...prev, [currentWord]: true }));
     try {
-      await addVocabulary(currentWord, '', '', true, 'def');
+      await addVocabulary(currentWord, '', '', true, 'def', selectedCategory);
       
       if (selectedWordRef.current === currentWord) {
-        const res = await getVocabularyDetail(currentWord);
+        const res = await getVocabularyDetail(currentWord, selectedCategory);
         if (res.data) {
           setDetailData(prev => (prev && prev.word === currentWord) ? res.data : prev);
         }
@@ -62,10 +89,10 @@ export default function VocabularyReview() {
     
     setGeneratingContextMap(prev => ({ ...prev, [ctxKey]: true }));
     try {
-      await addVocabulary(currentWord, exText, exSource || '', true, 'context');
+      await addVocabulary(currentWord, exText, exSource || '', true, 'context', selectedCategory);
       
       if (selectedWordRef.current === currentWord) {
-        const res = await getVocabularyDetail(currentWord);
+        const res = await getVocabularyDetail(currentWord, selectedCategory);
         if (res.data) {
           setDetailData(prev => (prev && prev.word === currentWord) ? res.data : prev);
         }
@@ -86,13 +113,9 @@ export default function VocabularyReview() {
     try {
       window.speechSynthesis.cancel();
       const formattedText = text.replace(/-/g, ' ');
-      
       const utterance = new SpeechSynthesisUtterance(formattedText);
-      
       utterance.lang = type === 2 ? 'en-US' : 'en-GB';
-      
       utterance.rate = 0.9; 
-
       window.speechSynthesis.speak(utterance);
     } catch (error) {
       console.error("本地语音播放失败:", error);
@@ -104,9 +127,21 @@ export default function VocabularyReview() {
   return (
     <div style={{ display: 'flex', height: '100%', width: '100%', background: '#fff' }}>
       <div style={{ width: '280px', borderRight: '1px solid #e4e4e7', background: '#fafafa', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
+        
+        <div style={{ padding: '12px 16px', borderBottom: '1px solid #e4e4e7', background: '#fff' }}>
+          <select 
+            value={selectedCategory} 
+            onChange={e => setSelectedCategory(e.target.value)}
+            style={{ width: '100%', padding: '6px', border: '1px solid #e4e4e7', borderRadius: '4px', fontSize: '13px', outline: 'none' }}
+          >
+            <option value="">根目录 (默认)</option>
+            {categories.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </div>
+
         <div style={{ padding: '16px', borderBottom: '1px solid #e4e4e7', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <strong style={{ fontSize: '14px', color: '#09090b' }}>生词本 ({words.length})</strong>
-          <button onClick={loadWords} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#3b82f6', fontSize: '12px' }}>刷新</button>
+          <button onClick={() => { loadCategories(); loadWords(selectedCategory); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#3b82f6', fontSize: '12px' }}>刷新</button>
         </div>
         <ul style={{ listStyle: 'none', padding: 0, margin: 0, overflowY: 'auto', flex: 1 }}>
           {words.map(w => (
@@ -126,7 +161,7 @@ export default function VocabularyReview() {
               )}
             </li>
           ))}
-          {words.length === 0 && <div style={{ padding: '20px', textAlign: 'center', color: '#a1a1aa', fontSize: '13px' }}>暂无生词</div>}
+          {words.length === 0 && <div style={{ padding: '20px', textAlign: 'center', color: '#a1a1aa', fontSize: '13px' }}>该目录下暂无生词</div>}
         </ul>
       </div>
 

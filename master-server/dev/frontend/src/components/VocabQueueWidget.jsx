@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { addVocabulary } from '../api/client';
+import { addVocabulary, getVocabularyCategories } from '../api/client';
 
 export default function VocabQueueWidget() {
   const [isOpen, setIsOpen] = useState(false);
@@ -12,10 +12,31 @@ export default function VocabQueueWidget() {
   const [mSource, setMSource] = useState('');
   const [mFetchLlm, setMFetchLlm] = useState(false); 
 
+  const [categories, setCategories] = useState([]);
+  
+  const [selectedCategory, setSelectedCategory] = useState(localStorage.getItem('defaultCategory') || '');
+
   const [position, setPosition] = useState({ left: 24, bottom: 24 });
   const [isDragging, setIsDragging] = useState(false);
   const offset = useRef({ x: 0, y: 0 });
   const hasMoved = useRef(false);
+
+  const categoryRef = useRef(selectedCategory);
+  useEffect(() => {
+    categoryRef.current = selectedCategory;
+  }, [selectedCategory]);
+
+  useEffect(() => {
+    getVocabularyCategories().then(data => {
+      if(data.categories) setCategories(data.categories);
+    }).catch(err => console.error("无法加载生词本目录:", err));
+
+    const handleConfigUpdate = () => {
+      setSelectedCategory(localStorage.getItem('defaultCategory') || '');
+    };
+    window.addEventListener('config-updated', handleConfigUpdate);
+    return () => window.removeEventListener('config-updated', handleConfigUpdate);
+  }, []);
 
   const handleMouseDown = (e) => {
     if (e.button !== 0) return;
@@ -66,6 +87,7 @@ export default function VocabQueueWidget() {
       const newTask = {
         id: Date.now() + Math.random().toString(36).substring(2, 9),
         word, context, source, fetchLlm,
+        category: categoryRef.current, 
         status: 'pending',
         error: null
       };
@@ -80,7 +102,7 @@ export default function VocabQueueWidget() {
     if (pendingTask) {
       setTasks(prev => prev.map(t => t.id === pendingTask.id ? { ...t, status: 'processing' } : t));
       
-      addVocabulary(pendingTask.word, pendingTask.context, pendingTask.source, pendingTask.fetchLlm)
+      addVocabulary(pendingTask.word, pendingTask.context, pendingTask.source, pendingTask.fetchLlm, 'all', pendingTask.category)
         .then(() => {
           setTasks(prev => prev.map(t => t.id === pendingTask.id ? { ...t, status: 'success' } : t));
         })
@@ -96,6 +118,7 @@ export default function VocabQueueWidget() {
     const newTask = {
       id: Date.now() + Math.random().toString(36).substring(2, 9),
       word: mWord, context: mContext, source: mSource, fetchLlm: mFetchLlm,
+      category: selectedCategory, 
       status: 'pending', error: null
     };
     setTasks(prev => [newTask, ...prev]);
@@ -107,9 +130,9 @@ export default function VocabQueueWidget() {
 
   const handleRequireLlm = (task) => {
     const newTask = {
+      ...task,
       id: Date.now() + Math.random().toString(36).substring(2, 9),
-      word: task.word, context: task.context, source: task.source, fetchLlm: true,
-      status: 'pending', error: null
+      fetchLlm: true, status: 'pending', error: null
     };
     setTasks(prev => [newTask, ...prev]);
   };
@@ -118,26 +141,27 @@ export default function VocabQueueWidget() {
   const pendingCount = tasks.filter(t => t.status === 'pending' || t.status === 'processing').length;
 
   return (
-    <div style={{ 
-      position: 'fixed', 
-      left: `${position.left}px`, 
-      bottom: `${position.bottom}px`, 
-      zIndex: 9999, 
-      display: 'flex', 
-      flexDirection: 'column', 
-      alignItems: 'flex-start'
-    }}>
-      
+    <div style={{ position: 'fixed', left: `${position.left}px`, bottom: `${position.bottom}px`, zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
       {isOpen && (
-        <div style={{ width: '360px', height: '500px', background: '#fff', borderRadius: '8px', boxShadow: '0 10px 25px rgba(0,0,0,0.15)', border: '1px solid #e4e4e7', display: 'flex', flexDirection: 'column', marginBottom: '12px', overflow: 'hidden' }}>
+        <div style={{ width: '360px', height: '540px', background: '#fff', borderRadius: '8px', boxShadow: '0 10px 25px rgba(0,0,0,0.15)', border: '1px solid #e4e4e7', display: 'flex', flexDirection: 'column', marginBottom: '12px', overflow: 'hidden' }}>
           
+          <div style={{ padding: '12px', borderBottom: '1px solid #e4e4e7', background: '#fafafa', display: 'flex', alignItems: 'center', gap: '8px' }}>
+             <label style={{ fontSize: '13px', fontWeight: '600', color: '#09090b', whiteSpace: 'nowrap' }}>目标分类:</label>
+             <input 
+               list="vocab-categories" 
+               value={selectedCategory} 
+               onChange={e => setSelectedCategory(e.target.value)} 
+               placeholder="根目录 (默认)"
+               style={{ flex: 1, padding: '4px 8px', border: '1px solid #e4e4e7', borderRadius: '4px', fontSize: '13px', outline: 'none' }}
+             />
+             <datalist id="vocab-categories">
+               {categories.map(c => <option key={c} value={c} />)}
+             </datalist>
+          </div>
+
           <div style={{ display: 'flex', borderBottom: '1px solid #e4e4e7', background: '#fafafa' }}>
-            <button onClick={() => setActiveTab('queue')} style={{ flex: 1, padding: '12px', border: 'none', background: activeTab === 'queue' ? '#fff' : 'transparent', fontWeight: activeTab === 'queue' ? '600' : '400', cursor: 'pointer', borderBottom: activeTab === 'queue' ? '2px solid #18181b' : '2px solid transparent' }}>
-              任务队列 ({tasks.length})
-            </button>
-            <button onClick={() => setActiveTab('manual')} style={{ flex: 1, padding: '12px', border: 'none', background: activeTab === 'manual' ? '#fff' : 'transparent', fontWeight: activeTab === 'manual' ? '600' : '400', cursor: 'pointer', borderBottom: activeTab === 'manual' ? '2px solid #18181b' : '2px solid transparent' }}>
-              手动录入
-            </button>
+            <button onClick={() => setActiveTab('queue')} style={{ flex: 1, padding: '12px', border: 'none', background: activeTab === 'queue' ? '#fff' : 'transparent', fontWeight: activeTab === 'queue' ? '600' : '400', cursor: 'pointer', borderBottom: activeTab === 'queue' ? '2px solid #18181b' : '2px solid transparent' }}>任务队列 ({tasks.length})</button>
+            <button onClick={() => setActiveTab('manual')} style={{ flex: 1, padding: '12px', border: 'none', background: activeTab === 'manual' ? '#fff' : 'transparent', fontWeight: activeTab === 'manual' ? '600' : '400', cursor: 'pointer', borderBottom: activeTab === 'manual' ? '2px solid #18181b' : '2px solid transparent' }}>手动录入</button>
           </div>
 
           {activeTab === 'queue' && (
@@ -163,19 +187,12 @@ export default function VocabQueueWidget() {
                         {t.status === 'failed' && '失败'}
                       </span>
                     </div>
-                    <div style={{ color: '#71717a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: '8px' }}>
-                      {t.context}
-                    </div>
-                    
+                    <div style={{ color: '#71717a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: '8px' }}>{t.context}</div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span style={{ fontSize: '11px', background: '#e4e4e7', padding: '2px 6px', borderRadius: '4px' }}>{t.fetchLlm ? '解析' : '仅保存'}</span>
                       <div style={{ display: 'flex', gap: '8px' }}>
-                        {t.status === 'failed' && (
-                          <button onClick={() => handleRetry(t.id)} style={{ padding: '2px 8px', fontSize: '12px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>重试</button>
-                        )}
-                        {(t.status === 'success' && !t.fetchLlm) && (
-                          <button onClick={() => handleRequireLlm(t)} style={{ padding: '2px 8px', fontSize: '12px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>请求释义</button>
-                        )}
+                        {t.status === 'failed' && <button onClick={() => handleRetry(t.id)} style={{ padding: '2px 8px', fontSize: '12px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>重试</button>}
+                        {(t.status === 'success' && !t.fetchLlm) && <button onClick={() => handleRequireLlm(t)} style={{ padding: '2px 8px', fontSize: '12px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>请求释义</button>}
                       </div>
                     </div>
                     {t.error && <div style={{ color: '#ef4444', fontSize: '11px', marginTop: '4px' }}>{t.error}</div>}
@@ -199,15 +216,10 @@ export default function VocabQueueWidget() {
                 <label style={{ fontSize: '13px', fontWeight: '500' }}>Source (可选)</label>
                 <input value={mSource} onChange={e => setMSource(e.target.value)} style={{ padding: '8px', border: '1px solid #e4e4e7', borderRadius: '4px' }} placeholder="来源标注..." />
               </div>
-              
               <label style={{ fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                <input type="checkbox" checked={mFetchLlm} onChange={e => setMFetchLlm(e.target.checked)} />
-                立即请求 LLM 生成释义和发音
+                <input type="checkbox" checked={mFetchLlm} onChange={e => setMFetchLlm(e.target.checked)} />立即请求 LLM 生成释义和发音
               </label>
-              
-              <button type="submit" style={{ padding: '10px', background: '#18181b', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: '500', marginTop: 'auto', cursor: 'pointer' }}>
-                添加到处理队列
-              </button>
+              <button type="submit" style={{ padding: '10px', background: '#18181b', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: '500', marginTop: 'auto', cursor: 'pointer' }}>添加到处理队列</button>
             </form>
           )}
         </div>
@@ -217,13 +229,7 @@ export default function VocabQueueWidget() {
         onMouseDown={handleMouseDown}
         onClick={handleButtonClick}
         title="按住即可拖动面板位置"
-        style={{ 
-          padding: '12px 20px', background: '#18181b', color: '#fff', border: 'none', 
-          borderRadius: '30px', boxShadow: '0 4px 12px rgba(0,0,0,0.2)', 
-          cursor: isDragging ? 'grabbing' : 'grab',
-          display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '500',
-          userSelect: 'none'
-        }}
+        style={{ padding: '12px 20px', background: '#18181b', color: '#fff', border: 'none', borderRadius: '30px', boxShadow: '0 4px 12px rgba(0,0,0,0.2)', cursor: isDragging ? 'grabbing' : 'grab', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '500', userSelect: 'none' }}
       >
         <span>词库队列 {pendingCount > 0 && <span style={{ background: '#ef4444', padding: '2px 6px', borderRadius: '10px', fontSize: '11px', marginLeft: '4px' }}>{pendingCount}</span>}</span>
       </button>
