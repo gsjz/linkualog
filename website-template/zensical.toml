@@ -11,7 +11,8 @@ repo_name = "gsjz/linkualog"
 nav = [
     { "获得开始" = "index.md" },
     { "每日词汇" = "dictionary/daily/index.md" },
-    { "四六级" = "dictionary/cet/index.md" },
+    { "CET" = "dictionary/cet/index.md" },
+    { "IELTS" = "dictionary/ielts/index.md" }
 ]
 
 #extra_css = ["stylesheets/extra.css"]

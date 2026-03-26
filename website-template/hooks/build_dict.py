@@ -128,6 +128,8 @@ def generate_pages():
             nav_icon = "lucide/calendar-days"
         elif cat.lower() == 'cet':
             nav_icon = "lucide/graduation-cap"
+        elif cat.lower() == 'ielts':
+            nav_icon = "lucide/file-badge"
         else:
             nav_icon = "lucide/folder"
             
