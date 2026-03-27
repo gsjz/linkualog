@@ -4,7 +4,8 @@
   "reviews": [],
   "pronunciation": "/ˈlæk.toʊs/",
   "definitions": [
-    "乳糖（牛奶中的糖分）"
+    "乳糖（牛奶中的糖分）",
+    "n. 乳糖（一种存在于乳制品中的糖）"
   ],
   "examples": [
     {
@@ -20,6 +21,21 @@
       "youtube": {
         "url": "https://www.youtube.com/watch?v=oakWgLqCwUc",
         "timestamp": 37
+      }
+    },
+    {
+      "text": "Just check the labels\non sweet products you buy. Glucose, fructose, sucrose, maltose, lactose, dextrose, and starch are all forms of sugar. So are high-fructose corn syrup,",
+      "explanation": "",
+      "focusWords": [
+        "lactose"
+      ],
+      "source": {
+        "text": "糖类怎样影响大脑 -Nicole Avena",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=lEXBxijQREo",
+        "timestamp": 36
       }
     }
   ]

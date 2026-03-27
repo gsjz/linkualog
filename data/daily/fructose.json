@@ -1,0 +1,26 @@
+{
+  "word": "fructose",
+  "createdAt": "2026-03-27",
+  "reviews": [],
+  "pronunciation": "/ˈfrʌktoʊs/",
+  "definitions": [
+    "n. 果糖"
+  ],
+  "examples": [
+    {
+      "text": "and it's found in a wide variety\nof food and drink. Just check the labels\non sweet products you buy. Glucose, fructose, sucrose, maltose, lactose, dextrose, and starch are all forms of sugar.",
+      "explanation": "并且它广泛存在于各种食物和饮料中。只需检查你购买的甜味产品上的标签。葡萄糖、果糖、蔗糖、麦芽糖、乳糖、右旋糖以及淀粉都是糖的形式。",
+      "focusWords": [
+        "fructose"
+      ],
+      "source": {
+        "text": "糖类怎样影响大脑 -Nicole Avena",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=lEXBxijQREo",
+        "timestamp": 34
+      }
+    }
+  ]
+}

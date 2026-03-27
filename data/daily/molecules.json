@@ -1,0 +1,26 @@
+{
+  "word": "molecules",
+  "createdAt": "2026-03-27",
+  "reviews": [],
+  "pronunciation": "/ˈmɒl.ɪ.kjuːlz/",
+  "definitions": [
+    "n. 分子（在此语境下的释义）"
+  ],
+  "examples": [
+    {
+      "text": "Why? What happens in the brain\nthat makes sugary foods so hard to resist? Sugar is a general term\nused to describe a class of molecules called carbohydrates, and it's found in a wide variety\nof food and drink.",
+      "explanation": "",
+      "focusWords": [
+        "molecules"
+      ],
+      "source": {
+        "text": "糖类怎样影响大脑 -Nicole Avena",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=lEXBxijQREo",
+        "timestamp": 23
+      }
+    }
+  ]
+}
