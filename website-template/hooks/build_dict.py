@@ -82,6 +82,7 @@ def generate_pages():
             
         for idx, ex in enumerate(item.get("examples", []), 1):
             text = ex.get("text", "")
+            text = " ".join(text.splitlines())
             for fw in ex.get("focusWords", []): 
                 text = text.replace(fw, f"**{fw}**")
                 
