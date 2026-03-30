@@ -1,0 +1,22 @@
+{
+  "word": "prescribe",
+  "createdAt": "2026-03-30",
+  "reviews": [],
+  "pronunciation": "/prɪˈskraɪb/",
+  "definitions": [
+    "vt. 开具（处方）"
+  ],
+  "examples": [
+    {
+      "text": "I'm going to prescribe some special sleeping pills for you.",
+      "explanation": "我将为你开具一些特殊的安眠药。",
+      "focusWords": [
+        "prescribe"
+      ],
+      "source": {
+        "text": "CET6 23 12 1 听力",
+        "url": ""
+      }
+    }
+  ]
+}
