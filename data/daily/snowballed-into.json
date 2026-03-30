@@ -1,26 +1,25 @@
 {
-  "word": "snowballed  into",
-  "createdAt": "2026-03-27",
-  "reviews": [],
-  "pronunciation": "/ˈsnoʊ.bɑːld ˈɪn.tuː/",
-  "definitions": [
-    "vi. 迅速发展成；滚雪球般演变为"
-  ],
-  "examples": [
-    {
-      "text": "better. So they made better tools and learned to \npreserve their knowledge beyond death. Progress started slow. And then suddenly they (or better WE) \nmade the planet our own. Agriculture and the first villages and temples snowballed \ninto civilization. Kingdoms and empires, technology, writing, astronomy, medicine, \nphilosophy. A hot second later, science, industrialization, the modern world, \nthe information age where we are today.",
-      "explanation": "",
-      "focusWords": [
-        "snowballed  into"
-      ],
-      "source": {
-        "text": "Tired of Doomscrolling?",
-        "url": ""
-      },
-      "youtube": {
-        "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
-        "timestamp": 260
-      }
-    }
-  ]
+    "word": "snowballed  into",
+    "createdAt": "2026-03-27",
+    "reviews": [],
+    "definitions": [
+        "vi. 迅速发展成；滚雪球般演变为"
+    ],
+    "examples": [
+        {
+            "text": "better. So they made better tools and learned to \npreserve their knowledge beyond death. Progress started slow. And then suddenly they (or better WE) \nmade the planet our own. Agriculture and the first villages and temples snowballed \ninto civilization. Kingdoms and empires, technology, writing, astronomy, medicine, \nphilosophy. A hot second later, science, industrialization, the modern world, \nthe information age where we are today.",
+            "explanation": "",
+            "focusWords": [
+                "snowballed  into"
+            ],
+            "source": {
+                "text": "Tired of Doomscrolling?",
+                "url": ""
+            },
+            "youtube": {
+                "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
+                "timestamp": 260
+            }
+        }
+    ]
 }

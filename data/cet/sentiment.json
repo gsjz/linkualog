@@ -1,22 +1,21 @@
 {
-  "word": "sentiment",
-  "createdAt": "2026-03-30",
-  "reviews": [],
-  "pronunciation": "/ˈsentɪmənt/",
-  "definitions": [
-    "n. 观点；情绪（在此语境下指普遍的看法或感受）"
-  ],
-  "examples": [
-    {
-      "text": "W: What you have just described is a common sentiment.",
-      "explanation": "女：你刚才描述的是一种普遍的看法。",
-      "focusWords": [
-        "sentiment"
-      ],
-      "source": {
-        "text": "CET6 23 12 1 听力",
-        "url": ""
-      }
-    }
-  ]
+    "word": "sentiment",
+    "createdAt": "2026-03-30",
+    "reviews": [],
+    "definitions": [
+        "n. 观点；情绪（在此语境下指普遍的看法或感受）"
+    ],
+    "examples": [
+        {
+            "text": "W: What you have just described is a common sentiment.",
+            "explanation": "女：你刚才描述的是一种普遍的看法。",
+            "focusWords": [
+                "sentiment"
+            ],
+            "source": {
+                "text": "CET6 23 12 1 听力",
+                "url": ""
+            }
+        }
+    ]
 }

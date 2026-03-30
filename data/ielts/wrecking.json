@@ -1,22 +1,21 @@
 {
-  "word": "wrecking",
-  "createdAt": "2026-03-26",
-  "reviews": [],
-  "pronunciation": "/ˈrek.ɪŋ/",
-  "definitions": [
-    "vt. 破坏（在此语境下的释义）"
-  ],
-  "examples": [
-    {
-      "text": "This climatic phenomenon was accused of wrecking tourism, causing allergies, melting the ski-slopes and causing 22 deaths.",
-      "explanation": "这一气候现象被指责破坏了旅游业，引发过敏、融化滑雪道并造成22人死亡。",
-      "focusWords": [
-        "wrecking"
-      ],
-      "source": {
-        "text": "剑桥 5 1 阅读3",
-        "url": ""
-      }
-    }
-  ]
+    "word": "wrecking",
+    "createdAt": "2026-03-26",
+    "reviews": [],
+    "definitions": [
+        "vt. 破坏（在此语境下的释义）"
+    ],
+    "examples": [
+        {
+            "text": "This climatic phenomenon was accused of wrecking tourism, causing allergies, melting the ski-slopes and causing 22 deaths.",
+            "explanation": "这一气候现象被指责破坏了旅游业，引发过敏、融化滑雪道并造成22人死亡。",
+            "focusWords": [
+                "wrecking"
+            ],
+            "source": {
+                "text": "剑桥 5 1 阅读3",
+                "url": ""
+            }
+        }
+    ]
 }

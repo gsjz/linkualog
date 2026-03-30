@@ -1,22 +1,21 @@
 {
-  "word": "owing to",
-  "createdAt": "2026-03-25",
-  "reviews": [],
-  "pronunciation": "/ˈəʊ.ɪŋ tuː/",
-  "definitions": [
-    "由于"
-  ],
-  "examples": [
-    {
-      "text": "quite limited, especially owing to the warming climate and a growing population.",
-      "explanation": "相当有限，尤其是由于气候变暖和人口增长。",
-      "focusWords": [
-        "owing to"
-      ],
-      "source": {
-        "text": "cet6 23 12 1 匹配",
-        "url": ""
-      }
-    }
-  ]
+    "word": "owing to",
+    "createdAt": "2026-03-25",
+    "reviews": [],
+    "definitions": [
+        "由于"
+    ],
+    "examples": [
+        {
+            "text": "quite limited, especially owing to the warming climate and a growing population.",
+            "explanation": "相当有限，尤其是由于气候变暖和人口增长。",
+            "focusWords": [
+                "owing to"
+            ],
+            "source": {
+                "text": "cet6 23 12 1 匹配",
+                "url": ""
+            }
+        }
+    ]
 }

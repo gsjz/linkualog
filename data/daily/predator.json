@@ -1,26 +1,25 @@
 {
-  "word": "predator",
-  "createdAt": "2026-03-27",
-  "reviews": [],
-  "pronunciation": "/ˈpredətər/",
-  "definitions": [
-    "n. 掠食者"
-  ],
-  "examples": [
-    {
-      "text": "Humans are not nice and if we look at our \nhistory, how could we expect ourselves to be? In nature we see great beauty but \nalso endless violence and struggle, devoid of morals or kindness. We are an instinct \ndriven apex predator that survived in an uncaring world, only now we have coal plants, \nnuclear weapons and social media. This would be hard to handle for any animal,",
-      "explanation": "",
-      "focusWords": [
-        "predator"
-      ],
-      "source": {
-        "text": "Tired of Doomscrolling?",
-        "url": ""
-      },
-      "youtube": {
-        "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
-        "timestamp": 343
-      }
-    }
-  ]
+    "word": "predator",
+    "createdAt": "2026-03-27",
+    "reviews": [],
+    "definitions": [
+        "n. 掠食者"
+    ],
+    "examples": [
+        {
+            "text": "Humans are not nice and if we look at our \nhistory, how could we expect ourselves to be? In nature we see great beauty but \nalso endless violence and struggle, devoid of morals or kindness. We are an instinct \ndriven apex predator that survived in an uncaring world, only now we have coal plants, \nnuclear weapons and social media. This would be hard to handle for any animal,",
+            "explanation": "",
+            "focusWords": [
+                "predator"
+            ],
+            "source": {
+                "text": "Tired of Doomscrolling?",
+                "url": ""
+            },
+            "youtube": {
+                "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
+                "timestamp": 343
+            }
+        }
+    ]
 }

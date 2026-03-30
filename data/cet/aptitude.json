@@ -1,20 +1,19 @@
 {
-  "word": "aptitude",
-  "createdAt": "2026-03-30",
-  "reviews": [],
-  "pronunciation": "",
-  "definitions": [],
-  "examples": [
-    {
-      "text": "Not only can your dog sense when you have a cold, but domestic dogs have shown an aptitude for detecting both much smaller mood fluctuations and far more serious physical conditions.",
-      "explanation": "",
-      "focusWords": [
-        "aptitude"
-      ],
-      "source": {
-        "text": "CET6 23 12 1 听力",
-        "url": ""
-      }
-    }
-  ]
+    "word": "aptitude",
+    "createdAt": "2026-03-30",
+    "reviews": [],
+    "definitions": [],
+    "examples": [
+        {
+            "text": "Not only can your dog sense when you have a cold, but domestic dogs have shown an aptitude for detecting both much smaller mood fluctuations and far more serious physical conditions.",
+            "explanation": "",
+            "focusWords": [
+                "aptitude"
+            ],
+            "source": {
+                "text": "CET6 23 12 1 听力",
+                "url": ""
+            }
+        }
+    ]
 }

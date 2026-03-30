@@ -1,22 +1,21 @@
 {
-  "word": "touch on",
-  "createdAt": "2026-03-30",
-  "reviews": [],
-  "pronunciation": "/tʌtʃ ɒn/",
-  "definitions": [
-    "vt. 涉及"
-  ],
-  "examples": [
-    {
-      "text": "10. What did Kate Atkinson's books touch on? 凯特·阿特金森的作品涉及哪些方面的内容？",
-      "explanation": "凯特·阿特金森的作品涉及哪些方面的内容？",
-      "focusWords": [
-        "touch on"
-      ],
-      "source": {
-        "text": "CET6 23 12 1 听力",
-        "url": ""
-      }
-    }
-  ]
+    "word": "touch on",
+    "createdAt": "2026-03-30",
+    "reviews": [],
+    "definitions": [
+        "vt. 涉及"
+    ],
+    "examples": [
+        {
+            "text": "10. What did Kate Atkinson's books touch on? 凯特·阿特金森的作品涉及哪些方面的内容？",
+            "explanation": "凯特·阿特金森的作品涉及哪些方面的内容？",
+            "focusWords": [
+                "touch on"
+            ],
+            "source": {
+                "text": "CET6 23 12 1 听力",
+                "url": ""
+            }
+        }
+    ]
 }

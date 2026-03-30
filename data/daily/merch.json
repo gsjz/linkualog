@@ -1,26 +1,25 @@
 {
-  "word": "merch",
-  "createdAt": "2026-03-27",
-  "reviews": [],
-  "pronunciation": "/ˈmɜːrtʃ/",
-  "definitions": [
-    "n. 商品（尤指周边产品）"
-  ],
-  "examples": [
-    {
-      "text": "Support my channel by using the link in the description down below to buy the game on Steam. Also, new merch available now in the store, including a mystery new character pin. I wonder who it could be? Ancient China.",
-      "explanation": "通过使用描述下方的链接在Steam上购买游戏来支持我的频道。此外，商店现在有新品上架，包括一个神秘的新角色徽章。我想知道会是谁呢？中国古代。",
-      "focusWords": [
-        "merch"
-      ],
-      "source": {
-        "text": "Three Kingdoms - OverSimplified",
-        "url": ""
-      },
-      "youtube": {
-        "url": "https://www.youtube.com/watch?v=26EivpCPHnQ",
-        "timestamp": 11
-      }
-    }
-  ]
+    "word": "merch",
+    "createdAt": "2026-03-27",
+    "reviews": [],
+    "definitions": [
+        "n. 商品（尤指周边产品）"
+    ],
+    "examples": [
+        {
+            "text": "Support my channel by using the link in the description down below to buy the game on Steam. Also, new merch available now in the store, including a mystery new character pin. I wonder who it could be? Ancient China.",
+            "explanation": "通过使用描述下方的链接在Steam上购买游戏来支持我的频道。此外，商店现在有新品上架，包括一个神秘的新角色徽章。我想知道会是谁呢？中国古代。",
+            "focusWords": [
+                "merch"
+            ],
+            "source": {
+                "text": "Three Kingdoms - OverSimplified",
+                "url": ""
+            },
+            "youtube": {
+                "url": "https://www.youtube.com/watch?v=26EivpCPHnQ",
+                "timestamp": 11
+            }
+        }
+    ]
 }

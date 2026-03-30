@@ -1,22 +1,21 @@
 {
-  "word": "genre",
-  "createdAt": "2026-03-30",
-  "reviews": [],
-  "pronunciation": "/ˈʒɑːn.rə/",
-  "definitions": [
-    "文学或艺术作品的体裁"
-  ],
-  "examples": [
-    {
-      "text": "Whatever genre Atkinson writes in, her books touch on the themes of love and loss and how to carry on.",
-      "explanation": "无论阿特金森创作何种体裁的作品，她的书籍都触及爱与失去以及如何继续生活的主题。",
-      "focusWords": [
-        "genre"
-      ],
-      "source": {
-        "text": "CET6 23 12 1 听力",
-        "url": ""
-      }
-    }
-  ]
+    "word": "genre",
+    "createdAt": "2026-03-30",
+    "reviews": [],
+    "definitions": [
+        "文学或艺术作品的体裁"
+    ],
+    "examples": [
+        {
+            "text": "Whatever genre Atkinson writes in, her books touch on the themes of love and loss and how to carry on.",
+            "explanation": "无论阿特金森创作何种体裁的作品，她的书籍都触及爱与失去以及如何继续生活的主题。",
+            "focusWords": [
+                "genre"
+            ],
+            "source": {
+                "text": "CET6 23 12 1 听力",
+                "url": ""
+            }
+        }
+    ]
 }

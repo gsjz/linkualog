@@ -1,23 +1,22 @@
 {
-  "word": "sparkle",
-  "createdAt": "2026-03-25",
-  "reviews": [],
-  "pronunciation": "/ˈspɑːr.kəl/",
-  "definitions": [
-    "n. 闪烁的光泽 (在此语境下的释义)",
-    "n. 闪烁（此处指阳光下茶丛的光泽）"
-  ],
-  "examples": [
-    {
-      "text": "On the hills of central Kenya, almost lime-green with the sparkle of tea bushes in the sunlight, farmers know all about climate change.",
-      "explanation": "在肯尼亚中部的小山上，几乎呈青柠绿色，阳光下的茶丛闪烁着光芒，农民们对气候变化了如指掌。",
-      "focusWords": [
-        "sparkle"
-      ],
-      "source": {
-        "text": "cet6 23 12 1 匹配",
-        "url": ""
-      }
-    }
-  ]
+    "word": "sparkle",
+    "createdAt": "2026-03-25",
+    "reviews": [],
+    "definitions": [
+        "n. 闪烁的光泽 (在此语境下的释义)",
+        "n. 闪烁（此处指阳光下茶丛的光泽）"
+    ],
+    "examples": [
+        {
+            "text": "On the hills of central Kenya, almost lime-green with the sparkle of tea bushes in the sunlight, farmers know all about climate change.",
+            "explanation": "在肯尼亚中部的小山上，几乎呈青柠绿色，阳光下的茶丛闪烁着光芒，农民们对气候变化了如指掌。",
+            "focusWords": [
+                "sparkle"
+            ],
+            "source": {
+                "text": "cet6 23 12 1 匹配",
+                "url": ""
+            }
+        }
+    ]
 }

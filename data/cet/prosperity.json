@@ -1,22 +1,21 @@
 {
-  "word": "prosperity",
-  "createdAt": "2026-03-25",
-  "reviews": [],
-  "pronunciation": "/prɒsˈper.ə.ti/",
-  "definitions": [
-    "繁荣"
-  ],
-  "examples": [
-    {
-      "text": "Although there are huge uncertainties as to the precise impacts of climate change, enough is known to say that global warming represents one of the main threats to Africa’s prosperity.",
-      "explanation": "尽管气候变化具体影响存在巨大不确定性，但已知的信息足以表明，全球变暖是对非洲繁荣的主要威胁之一。",
-      "focusWords": [
-        "prosperity"
-      ],
-      "source": {
-        "text": "cet6 23 12 1 匹配",
-        "url": ""
-      }
-    }
-  ]
+    "word": "prosperity",
+    "createdAt": "2026-03-25",
+    "reviews": [],
+    "definitions": [
+        "繁荣"
+    ],
+    "examples": [
+        {
+            "text": "Although there are huge uncertainties as to the precise impacts of climate change, enough is known to say that global warming represents one of the main threats to Africa’s prosperity.",
+            "explanation": "尽管气候变化具体影响存在巨大不确定性，但已知的信息足以表明，全球变暖是对非洲繁荣的主要威胁之一。",
+            "focusWords": [
+                "prosperity"
+            ],
+            "source": {
+                "text": "cet6 23 12 1 匹配",
+                "url": ""
+            }
+        }
+    ]
 }

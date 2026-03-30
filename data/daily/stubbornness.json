@@ -1,26 +1,25 @@
 {
-  "word": "stubbornness",
-  "createdAt": "2026-03-27",
-  "reviews": [],
-  "pronunciation": "/ˈstʌb.ərn.nəs/",
-  "definitions": [
-    "n. 倔强 (在此语境下指坚持不懈的精神)"
-  ],
-  "examples": [
-    {
-      "text": "ago they became us. Humanity had arrived. Our ancestors did not waste any time. \nTheir world was still hard and unforgiving, but out of pure stubbornness they did not \naccept that. They wanted their lives to be better. So they made better tools and learned to \npreserve their knowledge beyond death. Progress started slow. And then suddenly they (or better WE) \nmade the planet our own. Agriculture and",
-      "explanation": "",
-      "focusWords": [
-        "stubbornness"
-      ],
-      "source": {
-        "text": "Tired of Doomscrolling?",
-        "url": ""
-      },
-      "youtube": {
-        "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
-        "timestamp": 243
-      }
-    }
-  ]
+    "word": "stubbornness",
+    "createdAt": "2026-03-27",
+    "reviews": [],
+    "definitions": [
+        "n. 倔强 (在此语境下指坚持不懈的精神)"
+    ],
+    "examples": [
+        {
+            "text": "ago they became us. Humanity had arrived. Our ancestors did not waste any time. \nTheir world was still hard and unforgiving, but out of pure stubbornness they did not \naccept that. They wanted their lives to be better. So they made better tools and learned to \npreserve their knowledge beyond death. Progress started slow. And then suddenly they (or better WE) \nmade the planet our own. Agriculture and",
+            "explanation": "",
+            "focusWords": [
+                "stubbornness"
+            ],
+            "source": {
+                "text": "Tired of Doomscrolling?",
+                "url": ""
+            },
+            "youtube": {
+                "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
+                "timestamp": 243
+            }
+        }
+    ]
 }

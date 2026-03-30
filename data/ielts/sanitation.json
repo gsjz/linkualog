@@ -1,22 +1,21 @@
 {
-  "word": "sanitation",
-  "createdAt": "2026-03-26",
-  "reviews": [],
-  "pronunciation": "/sænɪˈteɪʃən/",
-  "definitions": [
-    "卫生设施"
-  ],
-  "examples": [
-    {
-      "text": "Yet the cost of reducing carbon dioxide emissions, for the United States alone, will be higher than the cost of solving the world's single, most pressing health problem: providing universal access to clean drinking water and sanitation.",
-      "explanation": "然而仅在美国，减少二氧化碳排放的成本将高于解决全球最紧迫健康问题（普及清洁饮用水和卫生设施）的成本。",
-      "focusWords": [
-        "sanitation"
-      ],
-      "source": {
-        "text": "剑桥 5 1 阅读3",
-        "url": ""
-      }
-    }
-  ]
+    "word": "sanitation",
+    "createdAt": "2026-03-26",
+    "reviews": [],
+    "definitions": [
+        "卫生设施"
+    ],
+    "examples": [
+        {
+            "text": "Yet the cost of reducing carbon dioxide emissions, for the United States alone, will be higher than the cost of solving the world's single, most pressing health problem: providing universal access to clean drinking water and sanitation.",
+            "explanation": "然而仅在美国，减少二氧化碳排放的成本将高于解决全球最紧迫健康问题（普及清洁饮用水和卫生设施）的成本。",
+            "focusWords": [
+                "sanitation"
+            ],
+            "source": {
+                "text": "剑桥 5 1 阅读3",
+                "url": ""
+            }
+        }
+    ]
 }

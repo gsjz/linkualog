@@ -1,26 +1,25 @@
 {
-  "word": "majestic",
-  "createdAt": "2026-03-27",
-  "reviews": [],
-  "pronunciation": "/məˈdʒestɪk/",
-  "definitions": [
-    "庄严的 (在此语境下指平凡中蕴含的崇高感)"
-  ],
-  "examples": [
-    {
-      "text": "Until a few million years ago an animal \nlooked at the night sky. It looked at its hands. It saw its reflection in a puddle. And it \nrealised it existed. That it was alive. Here and now. You probably had such a moment as a small \nchild, mundane and majestic at the same time. This is where the human story begins, about \nsix million years ago, with the hominins. Still just another animal among many others. \nThey split into many families and lineages",
-      "explanation": "",
-      "focusWords": [
-        "majestic"
-      ],
-      "source": {
-        "text": "Tired of Doomscrolling?",
-        "url": ""
-      },
-      "youtube": {
-        "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
-        "timestamp": 182
-      }
-    }
-  ]
+    "word": "majestic",
+    "createdAt": "2026-03-27",
+    "reviews": [],
+    "definitions": [
+        "庄严的 (在此语境下指平凡中蕴含的崇高感)"
+    ],
+    "examples": [
+        {
+            "text": "Until a few million years ago an animal \nlooked at the night sky. It looked at its hands. It saw its reflection in a puddle. And it \nrealised it existed. That it was alive. Here and now. You probably had such a moment as a small \nchild, mundane and majestic at the same time. This is where the human story begins, about \nsix million years ago, with the hominins. Still just another animal among many others. \nThey split into many families and lineages",
+            "explanation": "",
+            "focusWords": [
+                "majestic"
+            ],
+            "source": {
+                "text": "Tired of Doomscrolling?",
+                "url": ""
+            },
+            "youtube": {
+                "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
+                "timestamp": 182
+            }
+        }
+    ]
 }

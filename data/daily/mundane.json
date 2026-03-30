@@ -1,26 +1,25 @@
 {
-  "word": "mundane",
-  "createdAt": "2026-03-27",
-  "reviews": [],
-  "pronunciation": "/ˈmʌn.deɪn/",
-  "definitions": [
-    "adj. 平凡的 (在此语境下指普通、日常的状态)"
-  ],
-  "examples": [
-    {
-      "text": "Until a few million years ago an animal \nlooked at the night sky. It looked at its hands. It saw its reflection in a puddle. And it \nrealised it existed. That it was alive. Here and now. You probably had such a moment as a small \nchild, mundane and majestic at the same time. This is where the human story begins, about \nsix million years ago, with the hominins. Still just another animal among many others. \nThey split into many families and lineages",
-      "explanation": "",
-      "focusWords": [
-        "mundane"
-      ],
-      "source": {
-        "text": "Tired of Doomscrolling?",
-        "url": ""
-      },
-      "youtube": {
-        "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
-        "timestamp": 182
-      }
-    }
-  ]
+    "word": "mundane",
+    "createdAt": "2026-03-27",
+    "reviews": [],
+    "definitions": [
+        "adj. 平凡的 (在此语境下指普通、日常的状态)"
+    ],
+    "examples": [
+        {
+            "text": "Until a few million years ago an animal \nlooked at the night sky. It looked at its hands. It saw its reflection in a puddle. And it \nrealised it existed. That it was alive. Here and now. You probably had such a moment as a small \nchild, mundane and majestic at the same time. This is where the human story begins, about \nsix million years ago, with the hominins. Still just another animal among many others. \nThey split into many families and lineages",
+            "explanation": "",
+            "focusWords": [
+                "mundane"
+            ],
+            "source": {
+                "text": "Tired of Doomscrolling?",
+                "url": ""
+            },
+            "youtube": {
+                "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
+                "timestamp": 182
+            }
+        }
+    ]
 }

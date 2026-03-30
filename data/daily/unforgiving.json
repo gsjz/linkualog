@@ -1,26 +1,25 @@
 {
-  "word": "unforgiving",
-  "createdAt": "2026-03-27",
-  "reviews": [],
-  "pronunciation": "/ʌnˈfɔːr.ɡɪv.ɪŋ/",
-  "definitions": [
-    "严酷的"
-  ],
-  "examples": [
-    {
-      "text": "And then, at some point 200,000 \nyears or about 10,000 generations ago they became us. Humanity had arrived. Our ancestors did not waste any time. \nTheir world was still hard and unforgiving, but out of pure stubbornness they did not \naccept that. They wanted their lives to be better. So they made better tools and learned to \npreserve their knowledge beyond death. Progress",
-      "explanation": "",
-      "focusWords": [
-        "unforgiving"
-      ],
-      "source": {
-        "text": "Tired of Doomscrolling?",
-        "url": ""
-      },
-      "youtube": {
-        "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
-        "timestamp": 239
-      }
-    }
-  ]
+    "word": "unforgiving",
+    "createdAt": "2026-03-27",
+    "reviews": [],
+    "definitions": [
+        "严酷的"
+    ],
+    "examples": [
+        {
+            "text": "And then, at some point 200,000 \nyears or about 10,000 generations ago they became us. Humanity had arrived. Our ancestors did not waste any time. \nTheir world was still hard and unforgiving, but out of pure stubbornness they did not \naccept that. They wanted their lives to be better. So they made better tools and learned to \npreserve their knowledge beyond death. Progress",
+            "explanation": "",
+            "focusWords": [
+                "unforgiving"
+            ],
+            "source": {
+                "text": "Tired of Doomscrolling?",
+                "url": ""
+            },
+            "youtube": {
+                "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
+                "timestamp": 239
+            }
+        }
+    ]
 }

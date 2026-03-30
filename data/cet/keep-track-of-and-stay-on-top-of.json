@@ -1,22 +1,21 @@
 {
-  "word": "keep track of and stay on top of",
-  "createdAt": "2026-03-30",
-  "reviews": [],
-  "pronunciation": "/kiːp træk əv steɪ ɒn tɒp əv/",
-  "definitions": [
-    "持续跟进并确保一切尽在掌握"
-  ],
-  "examples": [
-    {
-      "text": "There are many things to keep track of and stay on top of.",
-      "explanation": "有许多事情需要持续跟进并确保一切尽在掌握。",
-      "focusWords": [
-        "keep track of and stay on top of"
-      ],
-      "source": {
-        "text": "CET6 23 12 1 听力",
-        "url": ""
-      }
-    }
-  ]
+    "word": "keep track of and stay on top of",
+    "createdAt": "2026-03-30",
+    "reviews": [],
+    "definitions": [
+        "持续跟进并确保一切尽在掌握"
+    ],
+    "examples": [
+        {
+            "text": "There are many things to keep track of and stay on top of.",
+            "explanation": "有许多事情需要持续跟进并确保一切尽在掌握。",
+            "focusWords": [
+                "keep track of and stay on top of"
+            ],
+            "source": {
+                "text": "CET6 23 12 1 听力",
+                "url": ""
+            }
+        }
+    ]
 }

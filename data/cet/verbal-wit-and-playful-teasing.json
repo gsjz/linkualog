@@ -1,20 +1,19 @@
 {
-  "word": "verbal wit and playful teasing",
-  "createdAt": "2026-03-30",
-  "reviews": [],
-  "pronunciation": "",
-  "definitions": [],
-  "examples": [
-    {
-      "text": "The humor of a comedy of manners relies on verbal wit and playful teasing.",
-      "explanation": "",
-      "focusWords": [
-        "verbal wit and playful teasing"
-      ],
-      "source": {
-        "text": "CET6 23 12 1 听力",
-        "url": ""
-      }
-    }
-  ]
+    "word": "verbal wit and playful teasing",
+    "createdAt": "2026-03-30",
+    "reviews": [],
+    "definitions": [],
+    "examples": [
+        {
+            "text": "The humor of a comedy of manners relies on verbal wit and playful teasing.",
+            "explanation": "",
+            "focusWords": [
+                "verbal wit and playful teasing"
+            ],
+            "source": {
+                "text": "CET6 23 12 1 听力",
+                "url": ""
+            }
+        }
+    ]
 }

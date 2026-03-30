@@ -1,22 +1,21 @@
 {
-  "word": "relentless propagation",
-  "createdAt": "2026-03-25",
-  "reviews": [],
-  "pronunciation": "/rɪˈlɛntləs ˌprɒpəˈɡeɪʃən/",
-  "definitions": [
-    "不懈的传播 (在此语境下的释义)"
-  ],
-  "examples": [
-    {
-      "text": "One of the great successes of the Republican Party in recent decades is the relentless propagation of a simple formula for economic growth: tax cuts.",
-      "explanation": "近年来共和党的一大成功在于不懈地传播一个简单经济增长公式：减税。",
-      "focusWords": [
-        "relentless propagation"
-      ],
-      "source": {
-        "text": "cet6 23 12 1 匹配",
-        "url": ""
-      }
-    }
-  ]
+    "word": "relentless propagation",
+    "createdAt": "2026-03-25",
+    "reviews": [],
+    "definitions": [
+        "不懈的传播 (在此语境下的释义)"
+    ],
+    "examples": [
+        {
+            "text": "One of the great successes of the Republican Party in recent decades is the relentless propagation of a simple formula for economic growth: tax cuts.",
+            "explanation": "近年来共和党的一大成功在于不懈地传播一个简单经济增长公式：减税。",
+            "focusWords": [
+                "relentless propagation"
+            ],
+            "source": {
+                "text": "cet6 23 12 1 匹配",
+                "url": ""
+            }
+        }
+    ]
 }

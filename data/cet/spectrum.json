@@ -1,20 +1,19 @@
 {
-  "word": "spectrum",
-  "createdAt": "2026-03-30",
-  "reviews": [],
-  "pronunciation": "",
-  "definitions": [],
-  "examples": [
-    {
-      "text": "However, the reality is that, across the spectrum of human activities, prior work propels the creative process.",
-      "explanation": "",
-      "focusWords": [
-        "spectrum"
-      ],
-      "source": {
-        "text": "CET6 23 12 1 听力",
-        "url": ""
-      }
-    }
-  ]
+    "word": "spectrum",
+    "createdAt": "2026-03-30",
+    "reviews": [],
+    "definitions": [],
+    "examples": [
+        {
+            "text": "However, the reality is that, across the spectrum of human activities, prior work propels the creative process.",
+            "explanation": "",
+            "focusWords": [
+                "spectrum"
+            ],
+            "source": {
+                "text": "CET6 23 12 1 听力",
+                "url": ""
+            }
+        }
+    ]
 }

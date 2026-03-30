@@ -1,22 +1,21 @@
 {
-  "word": "lure",
-  "createdAt": "2026-03-30",
-  "reviews": [],
-  "pronunciation": "/lʊər/",
-  "definitions": [
-    "n. 诱惑；吸引力"
-  ],
-  "examples": [
-    {
-      "text": "W: But walking away from millions of dollars at the height of your career, most people wouldn't be able to resist the lure of such a high salary.",
-      "explanation": "但是，在你职业生涯的巅峰时期放弃数百万美元，大多数人无法抵挡如此高薪的诱惑。",
-      "focusWords": [
-        "lure"
-      ],
-      "source": {
-        "text": "CET6 23 12 1 听力",
-        "url": ""
-      }
-    }
-  ]
+    "word": "lure",
+    "createdAt": "2026-03-30",
+    "reviews": [],
+    "definitions": [
+        "n. 诱惑；吸引力"
+    ],
+    "examples": [
+        {
+            "text": "W: But walking away from millions of dollars at the height of your career, most people wouldn't be able to resist the lure of such a high salary.",
+            "explanation": "但是，在你职业生涯的巅峰时期放弃数百万美元，大多数人无法抵挡如此高薪的诱惑。",
+            "focusWords": [
+                "lure"
+            ],
+            "source": {
+                "text": "CET6 23 12 1 听力",
+                "url": ""
+            }
+        }
+    ]
 }

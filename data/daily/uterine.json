@@ -1,26 +1,25 @@
 {
-  "word": "uterine",
-  "createdAt": "2026-03-26",
-  "reviews": [],
-  "pronunciation": "/juːˈtɪr.ɪn/",
-  "definitions": [
-    "子宫的"
-  ],
-  "examples": [
-    {
-      "text": "like naproxen and ibuprofen,\nwork by targeting prostaglandins, they can provide relief\nfor some people with period pain. Others find hormone-based contraceptives\nthat thin the uterine lining and, in turn, reduce prostaglandin production\nto be helpful. But while prostaglandin research\nwas foundational",
-      "explanation": "像萘普生和布洛芬一样，它们通过靶向前列腺素起作用，可以为一些经期疼痛的人提供缓解。其他人发现，基于激素的避孕药能变薄子宫内膜，进而减少前列腺素的产生，从而感到有帮助。然而，尽管前列腺素的研究是基础性的……",
-      "focusWords": [
-        "uterine"
-      ],
-      "source": {
-        "text": "3 things that can cause painful periods - Chen X. Chen",
-        "url": ""
-      },
-      "youtube": {
-        "url": "https://www.youtube.com/watch?v=NOaeKRft-gc",
-        "timestamp": 230
-      }
-    }
-  ]
+    "word": "uterine",
+    "createdAt": "2026-03-26",
+    "reviews": [],
+    "definitions": [
+        "子宫的"
+    ],
+    "examples": [
+        {
+            "text": "like naproxen and ibuprofen,\nwork by targeting prostaglandins, they can provide relief\nfor some people with period pain. Others find hormone-based contraceptives\nthat thin the uterine lining and, in turn, reduce prostaglandin production\nto be helpful. But while prostaglandin research\nwas foundational",
+            "explanation": "像萘普生和布洛芬一样，它们通过靶向前列腺素起作用，可以为一些经期疼痛的人提供缓解。其他人发现，基于激素的避孕药能变薄子宫内膜，进而减少前列腺素的产生，从而感到有帮助。然而，尽管前列腺素的研究是基础性的……",
+            "focusWords": [
+                "uterine"
+            ],
+            "source": {
+                "text": "3 things that can cause painful periods - Chen X. Chen",
+                "url": ""
+            },
+            "youtube": {
+                "url": "https://www.youtube.com/watch?v=NOaeKRft-gc",
+                "timestamp": 230
+            }
+        }
+    ]
 }

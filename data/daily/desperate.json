@@ -1,26 +1,25 @@
 {
-  "word": "desperate",
-  "createdAt": "2026-03-27",
-  "reviews": [],
-  "pronunciation": "/ˈdespərət/",
-  "definitions": [
-    "adj. 极度渴望的"
-  ],
-  "examples": [
-    {
-      "text": "to survive. We are all still bound to \nour nature that made us so successful. We still tell stories, are hungry \nfor food, greedy for resources, desperate to be accepted by our peers. We are \nscared by the dangers that lurk in the dark, imagined and real ones. We are still brutal to \neach other and the animals we hold power over. We are still territorial and possessive, \nwe fear losing what we have, and we fear",
-      "explanation": "",
-      "focusWords": [
-        "desperate"
-      ],
-      "source": {
-        "text": "Tired of Doomscrolling?",
-        "url": ""
-      },
-      "youtube": {
-        "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
-        "timestamp": 311
-      }
-    }
-  ]
+    "word": "desperate",
+    "createdAt": "2026-03-27",
+    "reviews": [],
+    "definitions": [
+        "adj. 极度渴望的"
+    ],
+    "examples": [
+        {
+            "text": "to survive. We are all still bound to \nour nature that made us so successful. We still tell stories, are hungry \nfor food, greedy for resources, desperate to be accepted by our peers. We are \nscared by the dangers that lurk in the dark, imagined and real ones. We are still brutal to \neach other and the animals we hold power over. We are still territorial and possessive, \nwe fear losing what we have, and we fear",
+            "explanation": "",
+            "focusWords": [
+                "desperate"
+            ],
+            "source": {
+                "text": "Tired of Doomscrolling?",
+                "url": ""
+            },
+            "youtube": {
+                "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
+                "timestamp": 311
+            }
+        }
+    ]
 }

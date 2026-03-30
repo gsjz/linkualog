@@ -1,26 +1,25 @@
 {
-  "word": "scarce",
-  "createdAt": "2026-03-27",
-  "reviews": [],
-  "pronunciation": "/skɛrs/",
-  "definitions": [
-    "adj. 稀缺的（指资源或机会不足的状态）"
-  ],
-  "examples": [
-    {
-      "text": "The real tragedy of humanity today is that \nwe are these amazingly powerful beings that have not awoken to their potential. We are \ntrapped in the present and the mindset of a scarce world. But aside from the physical \nlimits of the universe there is nothing stopping us from creating a literal paradise \nfor ourselves. This seems so daft, but it is true. If we dare to tell ourselves a different \nstory about who we are and who we could be.",
-      "explanation": "",
-      "focusWords": [
-        "scarce"
-      ],
-      "source": {
-        "text": "Tired of Doomscrolling?",
-        "url": ""
-      },
-      "youtube": {
-        "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
-        "timestamp": 375
-      }
-    }
-  ]
+    "word": "scarce",
+    "createdAt": "2026-03-27",
+    "reviews": [],
+    "definitions": [
+        "adj. 稀缺的（指资源或机会不足的状态）"
+    ],
+    "examples": [
+        {
+            "text": "The real tragedy of humanity today is that \nwe are these amazingly powerful beings that have not awoken to their potential. We are \ntrapped in the present and the mindset of a scarce world. But aside from the physical \nlimits of the universe there is nothing stopping us from creating a literal paradise \nfor ourselves. This seems so daft, but it is true. If we dare to tell ourselves a different \nstory about who we are and who we could be.",
+            "explanation": "",
+            "focusWords": [
+                "scarce"
+            ],
+            "source": {
+                "text": "Tired of Doomscrolling?",
+                "url": ""
+            },
+            "youtube": {
+                "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
+                "timestamp": 375
+            }
+        }
+    ]
 }

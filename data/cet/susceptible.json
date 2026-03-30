@@ -1,22 +1,21 @@
 {
-  "word": "susceptible",
-  "createdAt": "2026-03-25",
-  "reviews": [],
-  "pronunciation": "/səˈsɛptəbəl/",
-  "definitions": [
-    "易受影响的"
-  ],
-  "examples": [
-    {
-      "text": "Africa is especially susceptible to the effects of global warming partly because it has difficulty feeding its increasing population even without climate change.",
-      "explanation": "非洲特别容易受到全球变暖的影响，部分原因是即使没有气候变化，它也难以养活不断增长的人口。",
-      "focusWords": [
-        "susceptible"
-      ],
-      "source": {
-        "text": "cet6 23 12 1 匹配",
-        "url": ""
-      }
-    }
-  ]
+    "word": "susceptible",
+    "createdAt": "2026-03-25",
+    "reviews": [],
+    "definitions": [
+        "易受影响的"
+    ],
+    "examples": [
+        {
+            "text": "Africa is especially susceptible to the effects of global warming partly because it has difficulty feeding its increasing population even without climate change.",
+            "explanation": "非洲特别容易受到全球变暖的影响，部分原因是即使没有气候变化，它也难以养活不断增长的人口。",
+            "focusWords": [
+                "susceptible"
+            ],
+            "source": {
+                "text": "cet6 23 12 1 匹配",
+                "url": ""
+            }
+        }
+    ]
 }

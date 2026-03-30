@@ -1,22 +1,21 @@
 {
-  "word": "intensify",
-  "createdAt": "2026-03-25",
-  "reviews": [],
-  "pronunciation": "/ɪnˈtɛns.ə.faɪ/",
-  "definitions": [
-    "v. 加剧 (在此语境下的释义)"
-  ],
-  "examples": [
-    {
-      "text": "Even if the world were to cut emissions enough to keep global warming below 1.5°C, heat-waves would intensify in Africa and diseases would spread to areas not currently affected.",
-      "explanation": "即使世界减少足够的排放量以保持全球变暖低于1.5°C，非洲的热浪仍会加剧，疾病也会传播到目前尚未受影响的地区。",
-      "focusWords": [
-        "intensify"
-      ],
-      "source": {
-        "text": "cet6 23 12 1 匹配",
-        "url": ""
-      }
-    }
-  ]
+    "word": "intensify",
+    "createdAt": "2026-03-25",
+    "reviews": [],
+    "definitions": [
+        "v. 加剧 (在此语境下的释义)"
+    ],
+    "examples": [
+        {
+            "text": "Even if the world were to cut emissions enough to keep global warming below 1.5°C, heat-waves would intensify in Africa and diseases would spread to areas not currently affected.",
+            "explanation": "即使世界减少足够的排放量以保持全球变暖低于1.5°C，非洲的热浪仍会加剧，疾病也会传播到目前尚未受影响的地区。",
+            "focusWords": [
+                "intensify"
+            ],
+            "source": {
+                "text": "cet6 23 12 1 匹配",
+                "url": ""
+            }
+        }
+    ]
 }

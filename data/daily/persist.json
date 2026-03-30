@@ -1,26 +1,25 @@
 {
-  "word": "persist",
-  "createdAt": "2026-03-27",
-  "reviews": [],
-  "pronunciation": "/pəˈsɪst/",
-  "definitions": [
-    "vi. 持续存在；延续"
-  ],
-  "examples": [
-    {
-      "text": "Humans throughout history felt like \nthey would witness the apocalypse and this feels especially true today, but you are \nprobably not living in the end times. There is a solid chance that humanity will persist \nfor thousands, maybe millions of years. If this might be the very start of our history, what can we dream of achieving? Just like our \nvery first ancestors six million years ago,",
-      "explanation": "",
-      "focusWords": [
-        "persist"
-      ],
-      "source": {
-        "text": "Tired of Doomscrolling?",
-        "url": ""
-      },
-      "youtube": {
-        "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
-        "timestamp": 400
-      }
-    }
-  ]
+    "word": "persist",
+    "createdAt": "2026-03-27",
+    "reviews": [],
+    "definitions": [
+        "vi. 持续存在；延续"
+    ],
+    "examples": [
+        {
+            "text": "Humans throughout history felt like \nthey would witness the apocalypse and this feels especially true today, but you are \nprobably not living in the end times. There is a solid chance that humanity will persist \nfor thousands, maybe millions of years. If this might be the very start of our history, what can we dream of achieving? Just like our \nvery first ancestors six million years ago,",
+            "explanation": "",
+            "focusWords": [
+                "persist"
+            ],
+            "source": {
+                "text": "Tired of Doomscrolling?",
+                "url": ""
+            },
+            "youtube": {
+                "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
+                "timestamp": 400
+            }
+        }
+    ]
 }

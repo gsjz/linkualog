@@ -1,22 +1,21 @@
 {
-  "word": "On top of that",
-  "createdAt": "2026-03-27",
-  "reviews": [],
-  "pronunciation": "/ɒn tɒp ʌv ðæt/",
-  "definitions": [
-    "此外"
-  ],
-  "examples": [
-    {
-      "text": "On top of that, for a while after birth, it also contains antibodies and proteins that protect us from infections and regulate our immune system.",
-      "explanation": "此外，出生后的一段时间内，它还会含有抗体和蛋白质，这些成分能保护我们免受感染，并调节我们的免疫系统。",
-      "focusWords": [
-        "On top of that"
-      ],
-      "source": {
-        "text": "",
-        "url": ""
-      }
-    }
-  ]
+    "word": "On top of that",
+    "createdAt": "2026-03-27",
+    "reviews": [],
+    "definitions": [
+        "此外"
+    ],
+    "examples": [
+        {
+            "text": "On top of that, for a while after birth, it also contains antibodies and proteins that protect us from infections and regulate our immune system.",
+            "explanation": "此外，出生后的一段时间内，它还会含有抗体和蛋白质，这些成分能保护我们免受感染，并调节我们的免疫系统。",
+            "focusWords": [
+                "On top of that"
+            ],
+            "source": {
+                "text": "",
+                "url": ""
+            }
+        }
+    ]
 }

@@ -1,22 +1,21 @@
 {
-  "word": "fertiliser",
-  "createdAt": "2026-03-25",
-  "reviews": [],
-  "pronunciation": "/ˈfɜː.tɪ.laɪ.zər/",
-  "definitions": [
-    "n. 肥料（用于促进作物生长的物质）"
-  ],
-  "examples": [
-    {
-      "text": "Much of the focus has been on getting small farmers to use fertiliser and, more important, better seeds.",
-      "explanation": "重点一直集中在让小农户使用肥料上，而更重要的是，采用更优质的种子。",
-      "focusWords": [
-        "fertiliser"
-      ],
-      "source": {
-        "text": "cet6 23 12 1 匹配",
-        "url": ""
-      }
-    }
-  ]
+    "word": "fertiliser",
+    "createdAt": "2026-03-25",
+    "reviews": [],
+    "definitions": [
+        "n. 肥料（用于促进作物生长的物质）"
+    ],
+    "examples": [
+        {
+            "text": "Much of the focus has been on getting small farmers to use fertiliser and, more important, better seeds.",
+            "explanation": "重点一直集中在让小农户使用肥料上，而更重要的是，采用更优质的种子。",
+            "focusWords": [
+                "fertiliser"
+            ],
+            "source": {
+                "text": "cet6 23 12 1 匹配",
+                "url": ""
+            }
+        }
+    ]
 }

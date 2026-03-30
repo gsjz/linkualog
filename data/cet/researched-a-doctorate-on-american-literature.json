@@ -1,22 +1,21 @@
 {
-  "word": "researched a doctorate on American Literature",
-  "createdAt": "2026-03-30",
-  "reviews": [],
-  "pronunciation": "/rɪˈsɜːtʃt/",
-  "definitions": [
-    "v. 攻读博士学位"
-  ],
-  "examples": [
-    {
-      "text": "After graduating in 1974, she researched a doctorate on American Literature.",
-      "explanation": "1974年毕业后，她攻读美国文学博士学位。",
-      "focusWords": [
-        "researched a doctorate on American Literature"
-      ],
-      "source": {
-        "text": "CET6 23 12 1 听力",
-        "url": ""
-      }
-    }
-  ]
+    "word": "researched a doctorate on American Literature",
+    "createdAt": "2026-03-30",
+    "reviews": [],
+    "definitions": [
+        "v. 攻读博士学位"
+    ],
+    "examples": [
+        {
+            "text": "After graduating in 1974, she researched a doctorate on American Literature.",
+            "explanation": "1974年毕业后，她攻读美国文学博士学位。",
+            "focusWords": [
+                "researched a doctorate on American Literature"
+            ],
+            "source": {
+                "text": "CET6 23 12 1 听力",
+                "url": ""
+            }
+        }
+    ]
 }

@@ -1,20 +1,19 @@
 {
-  "word": "chronic diseases",
-  "createdAt": "2026-03-30",
-  "reviews": [],
-  "pronunciation": "",
-  "definitions": [],
-  "examples": [
-    {
-      "text": "Dogs also help people relax, and they can be a particular comfort to those with chronic diseases.",
-      "explanation": "",
-      "focusWords": [
-        "chronic diseases"
-      ],
-      "source": {
-        "text": "CET6 23 12 1 听力",
-        "url": ""
-      }
-    }
-  ]
+    "word": "chronic diseases",
+    "createdAt": "2026-03-30",
+    "reviews": [],
+    "definitions": [],
+    "examples": [
+        {
+            "text": "Dogs also help people relax, and they can be a particular comfort to those with chronic diseases.",
+            "explanation": "",
+            "focusWords": [
+                "chronic diseases"
+            ],
+            "source": {
+                "text": "CET6 23 12 1 听力",
+                "url": ""
+            }
+        }
+    ]
 }

@@ -1,20 +1,19 @@
 {
-  "word": "as a whole",
-  "createdAt": "2026-03-30",
-  "reviews": [],
-  "pronunciation": "",
-  "definitions": [],
-  "examples": [
-    {
-      "text": "5 years after graduation. [25] This suggests that the problem isn't really to do with specific students studying specific degrees, but really with the economy as a whole. Regardless of what they've studied,",
-      "explanation": "",
-      "focusWords": [
-        "as a whole"
-      ],
-      "source": {
-        "text": "CET6 23 12 1 听力",
-        "url": ""
-      }
-    }
-  ]
+    "word": "as a whole",
+    "createdAt": "2026-03-30",
+    "reviews": [],
+    "definitions": [],
+    "examples": [
+        {
+            "text": "5 years after graduation. [25] This suggests that the problem isn't really to do with specific students studying specific degrees, but really with the economy as a whole. Regardless of what they've studied,",
+            "explanation": "",
+            "focusWords": [
+                "as a whole"
+            ],
+            "source": {
+                "text": "CET6 23 12 1 听力",
+                "url": ""
+            }
+        }
+    ]
 }

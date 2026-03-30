@@ -1,22 +1,21 @@
 {
-  "word": "catching up to you",
-  "createdAt": "2026-03-30",
-  "reviews": [],
-  "pronunciation": "/ˈkætʃɪŋ ʌp tuː juː/",
-  "definitions": [
-    "（长期潜伏的问题或后果）终于显现并影响到你"
-  ],
-  "examples": [
-    {
-      "text": "W: That doesn't matter. You could have been suffering from stress for 20 years without knowing it, and now it's catching up to you.",
-      "explanation": "女：那没关系。你可能已经承受了 20 年的压力而不自知，现在它开始找上门了。",
-      "focusWords": [
-        "catching up to you"
-      ],
-      "source": {
-        "text": "CET6 23 12 1 听力",
-        "url": ""
-      }
-    }
-  ]
+    "word": "catching up to you",
+    "createdAt": "2026-03-30",
+    "reviews": [],
+    "definitions": [
+        "（长期潜伏的问题或后果）终于显现并影响到你"
+    ],
+    "examples": [
+        {
+            "text": "W: That doesn't matter. You could have been suffering from stress for 20 years without knowing it, and now it's catching up to you.",
+            "explanation": "女：那没关系。你可能已经承受了 20 年的压力而不自知，现在它开始找上门了。",
+            "focusWords": [
+                "catching up to you"
+            ],
+            "source": {
+                "text": "CET6 23 12 1 听力",
+                "url": ""
+            }
+        }
+    ]
 }

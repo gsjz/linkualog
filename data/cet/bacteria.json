@@ -1,20 +1,19 @@
 {
-  "word": "bacteria",
-  "createdAt": "2026-03-30",
-  "reviews": [],
-  "pronunciation": "",
-  "definitions": [],
-  "examples": [
-    {
-      "text": "[20] If a person is infected with a virus or bacteria, for example, their odor will be abnormal, and dogs are able to smell that change even if the human can't, because dogs have a much more powerful sense of smell than humans.",
-      "explanation": "",
-      "focusWords": [
-        "bacteria"
-      ],
-      "source": {
-        "text": "CET6 23 12 1 听力",
-        "url": ""
-      }
-    }
-  ]
+    "word": "bacteria",
+    "createdAt": "2026-03-30",
+    "reviews": [],
+    "definitions": [],
+    "examples": [
+        {
+            "text": "[20] If a person is infected with a virus or bacteria, for example, their odor will be abnormal, and dogs are able to smell that change even if the human can't, because dogs have a much more powerful sense of smell than humans.",
+            "explanation": "",
+            "focusWords": [
+                "bacteria"
+            ],
+            "source": {
+                "text": "CET6 23 12 1 听力",
+                "url": ""
+            }
+        }
+    ]
 }

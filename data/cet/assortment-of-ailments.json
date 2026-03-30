@@ -1,20 +1,19 @@
 {
-  "word": "assortment of ailments",
-  "createdAt": "2026-03-30",
-  "reviews": [],
-  "pronunciation": "",
-  "definitions": [],
-  "examples": [
-    {
-      "text": "Some researchers assert dogs will one day help doctors diagnose diseases, as some dogs have already demonstrated the ability to detect an assortment of ailments, including diabetes and certain types of cancer.",
-      "explanation": "",
-      "focusWords": [
-        "assortment of ailments"
-      ],
-      "source": {
-        "text": "CET6 23 12 1 听力",
-        "url": ""
-      }
-    }
-  ]
+    "word": "assortment of ailments",
+    "createdAt": "2026-03-30",
+    "reviews": [],
+    "definitions": [],
+    "examples": [
+        {
+            "text": "Some researchers assert dogs will one day help doctors diagnose diseases, as some dogs have already demonstrated the ability to detect an assortment of ailments, including diabetes and certain types of cancer.",
+            "explanation": "",
+            "focusWords": [
+                "assortment of ailments"
+            ],
+            "source": {
+                "text": "CET6 23 12 1 听力",
+                "url": ""
+            }
+        }
+    ]
 }

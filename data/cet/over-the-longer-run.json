@@ -1,22 +1,21 @@
 {
-  "word": "over the longer run",
-  "createdAt": "2026-03-25",
-  "reviews": [],
-  "pronunciation": "/ˌoʊvər ðə ˈlɔːŋ.ɡər rʌn/",
-  "definitions": [
-    "从长远来看"
-  ],
-  "examples": [
-    {
-      "text": "But over the longer run small-scale farming can go only so far, especially in the face of climate change and population pressure",
-      "explanation": "但从长远来看，小规模农业的发展是有限的，尤其是在面对气候变化和人口压力的情况下。",
-      "focusWords": [
-        "over the longer run"
-      ],
-      "source": {
-        "text": "cet6 23 12 1 匹配",
-        "url": ""
-      }
-    }
-  ]
+    "word": "over the longer run",
+    "createdAt": "2026-03-25",
+    "reviews": [],
+    "definitions": [
+        "从长远来看"
+    ],
+    "examples": [
+        {
+            "text": "But over the longer run small-scale farming can go only so far, especially in the face of climate change and population pressure",
+            "explanation": "但从长远来看，小规模农业的发展是有限的，尤其是在面对气候变化和人口压力的情况下。",
+            "focusWords": [
+                "over the longer run"
+            ],
+            "source": {
+                "text": "cet6 23 12 1 匹配",
+                "url": ""
+            }
+        }
+    ]
 }

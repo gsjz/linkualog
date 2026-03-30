@@ -1,22 +1,21 @@
 {
-  "word": "adolescents",
-  "createdAt": "2026-03-30",
-  "reviews": [],
-  "pronunciation": "/ˌæd.əˈles.ənts/",
-  "definitions": [
-    "青少年"
-  ],
-  "examples": [
-    {
-      "text": "M: I went to university and I studied public health and learned about the seriousness of the obesity epidemic, particularly among kids and adolescents in poor communities.",
-      "explanation": "我上了大学并学习公共卫生，了解到肥胖流行病的严重性，尤其是在贫困社区的孩子和青少年中。",
-      "focusWords": [
-        "adolescents"
-      ],
-      "source": {
-        "text": "CET6 23 12 1 听力",
-        "url": ""
-      }
-    }
-  ]
+    "word": "adolescents",
+    "createdAt": "2026-03-30",
+    "reviews": [],
+    "definitions": [
+        "青少年"
+    ],
+    "examples": [
+        {
+            "text": "M: I went to university and I studied public health and learned about the seriousness of the obesity epidemic, particularly among kids and adolescents in poor communities.",
+            "explanation": "我上了大学并学习公共卫生，了解到肥胖流行病的严重性，尤其是在贫困社区的孩子和青少年中。",
+            "focusWords": [
+                "adolescents"
+            ],
+            "source": {
+                "text": "CET6 23 12 1 听力",
+                "url": ""
+            }
+        }
+    ]
 }

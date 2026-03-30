@@ -1,20 +1,19 @@
 {
-  "word": "concede",
-  "createdAt": "2026-03-30",
-  "reviews": [],
-  "pronunciation": "",
-  "definitions": [],
-  "examples": [
-    {
-      "text": "But those researchers concede that's probably in the distant future.",
-      "explanation": "",
-      "focusWords": [
-        "concede"
-      ],
-      "source": {
-        "text": "CET6 23 12 1 听力",
-        "url": ""
-      }
-    }
-  ]
+    "word": "concede",
+    "createdAt": "2026-03-30",
+    "reviews": [],
+    "definitions": [],
+    "examples": [
+        {
+            "text": "But those researchers concede that's probably in the distant future.",
+            "explanation": "",
+            "focusWords": [
+                "concede"
+            ],
+            "source": {
+                "text": "CET6 23 12 1 听力",
+                "url": ""
+            }
+        }
+    ]
 }

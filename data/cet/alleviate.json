@@ -1,22 +1,21 @@
 {
-  "word": "alleviate",
-  "createdAt": "2026-03-30",
-  "reviews": [],
-  "pronunciation": "/əˈliː.vi.eɪt/",
-  "definitions": [
-    "vt. 减轻；缓解"
-  ],
-  "examples": [
-    {
-      "text": "I went to university and I studied public health and learned about the seriousness of the obesity epidemic, particularly among kids and adolescents in poor communities. [8] I've spent the last two decades trying to alleviate the problem.",
-      "explanation": "我上大学时学习公共卫生，了解到肥胖流行的严重性，尤其在贫困社区的儿童和青少年中。[8] 过去二十年我一直在努力缓解这一问题。",
-      "focusWords": [
-        "alleviate"
-      ],
-      "source": {
-        "text": "CET6 23 12 1 听力",
-        "url": ""
-      }
-    }
-  ]
+    "word": "alleviate",
+    "createdAt": "2026-03-30",
+    "reviews": [],
+    "definitions": [
+        "vt. 减轻；缓解"
+    ],
+    "examples": [
+        {
+            "text": "I went to university and I studied public health and learned about the seriousness of the obesity epidemic, particularly among kids and adolescents in poor communities. [8] I've spent the last two decades trying to alleviate the problem.",
+            "explanation": "我上大学时学习公共卫生，了解到肥胖流行的严重性，尤其在贫困社区的儿童和青少年中。[8] 过去二十年我一直在努力缓解这一问题。",
+            "focusWords": [
+                "alleviate"
+            ],
+            "source": {
+                "text": "CET6 23 12 1 听力",
+                "url": ""
+            }
+        }
+    ]
 }

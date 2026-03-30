@@ -1,22 +1,21 @@
 {
-  "word": "devastating",
-  "createdAt": "2026-03-26",
-  "reviews": [],
-  "pronunciation": "/ˈdev.ə.steɪ.tɪŋ/",
-  "definitions": [
-    "灾难性的"
-  ],
-  "examples": [
-    {
-      "text": "but its total impact is unlikely to pose a devastating problem.",
-      "explanation": "但其总体影响不太可能构成一个灾难性的问题。",
-      "focusWords": [
-        "devastating"
-      ],
-      "source": {
-        "text": "剑桥 5 1 阅读3",
-        "url": ""
-      }
-    }
-  ]
+    "word": "devastating",
+    "createdAt": "2026-03-26",
+    "reviews": [],
+    "definitions": [
+        "灾难性的"
+    ],
+    "examples": [
+        {
+            "text": "but its total impact is unlikely to pose a devastating problem.",
+            "explanation": "但其总体影响不太可能构成一个灾难性的问题。",
+            "focusWords": [
+                "devastating"
+            ],
+            "source": {
+                "text": "剑桥 5 1 阅读3",
+                "url": ""
+            }
+        }
+    ]
 }

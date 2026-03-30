@@ -1,22 +1,21 @@
 {
-  "word": "lobby",
-  "createdAt": "2026-03-26",
-  "reviews": [],
-  "pronunciation": "/ˈlɒb.i/",
-  "definitions": [
-    "n. 游说团体"
-  ],
-  "examples": [
-    {
-      "text": "Though these groups are run overwhelmingly by selfless folk, they nevertheless share many of the characteristics of other lobby groups. That would matter less if people applied the same degree of scepticism to environmental lobbying as they do to lobby groups in other fields. A trade organisation arguing for, say, weaker pollution controls is instantly seen as self-interested. Yet a green organisation opposing such a weakening is",
-      "explanation": "尽管这些团体主要由无私的人运营，但它们仍然具有其他游说团体的许多特征。如果人们对环境游说的怀疑程度与其他领域的游说团体相同，那问题就不那么严重了。一个主张削弱污染控制措施的贸易组织会立即被视为自私自利，而一个反对这种削弱的绿色组织却",
-      "focusWords": [
-        "lobby"
-      ],
-      "source": {
-        "text": "剑桥 5 1 阅读3",
-        "url": ""
-      }
-    }
-  ]
+    "word": "lobby",
+    "createdAt": "2026-03-26",
+    "reviews": [],
+    "definitions": [
+        "n. 游说团体"
+    ],
+    "examples": [
+        {
+            "text": "Though these groups are run overwhelmingly by selfless folk, they nevertheless share many of the characteristics of other lobby groups. That would matter less if people applied the same degree of scepticism to environmental lobbying as they do to lobby groups in other fields. A trade organisation arguing for, say, weaker pollution controls is instantly seen as self-interested. Yet a green organisation opposing such a weakening is",
+            "explanation": "尽管这些团体主要由无私的人运营，但它们仍然具有其他游说团体的许多特征。如果人们对环境游说的怀疑程度与其他领域的游说团体相同，那问题就不那么严重了。一个主张削弱污染控制措施的贸易组织会立即被视为自私自利，而一个反对这种削弱的绿色组织却",
+            "focusWords": [
+                "lobby"
+            ],
+            "source": {
+                "text": "剑桥 5 1 阅读3",
+                "url": ""
+            }
+        }
+    ]
 }

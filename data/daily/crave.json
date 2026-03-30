@@ -1,26 +1,25 @@
 {
-  "word": "crave",
-  "createdAt": "2026-03-27",
-  "reviews": [],
-  "pronunciation": "/kreɪv/",
-  "definitions": [
-    "v. 渴望，渴求（指对某事物有强烈的欲望或需求）"
-  ],
-  "examples": [
-    {
-      "text": "when agriculture changed everything for \neverybody. From AI possibly transforming the information age, to biotechnology enabling \nus to manipulate the language of life itself, to new sustainable ways of \nharvesting the energy we crave. If we start thinking in decades and centuries, \nit is perfectly reasonable that we will solve our problems. We can eliminate poverty, maybe all \nmaterial needs. Defeat all diseases, maybe even",
-      "explanation": "",
-      "focusWords": [
-        "crave"
-      ],
-      "source": {
-        "text": "Tired of Doomscrolling?",
-        "url": ""
-      },
-      "youtube": {
-        "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
-        "timestamp": 478
-      }
-    }
-  ]
+    "word": "crave",
+    "createdAt": "2026-03-27",
+    "reviews": [],
+    "definitions": [
+        "v. 渴望，渴求（指对某事物有强烈的欲望或需求）"
+    ],
+    "examples": [
+        {
+            "text": "when agriculture changed everything for \neverybody. From AI possibly transforming the information age, to biotechnology enabling \nus to manipulate the language of life itself, to new sustainable ways of \nharvesting the energy we crave. If we start thinking in decades and centuries, \nit is perfectly reasonable that we will solve our problems. We can eliminate poverty, maybe all \nmaterial needs. Defeat all diseases, maybe even",
+            "explanation": "",
+            "focusWords": [
+                "crave"
+            ],
+            "source": {
+                "text": "Tired of Doomscrolling?",
+                "url": ""
+            },
+            "youtube": {
+                "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
+                "timestamp": 478
+            }
+        }
+    ]
 }

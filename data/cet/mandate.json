@@ -1,20 +1,19 @@
 {
-  "word": "mandate",
-  "createdAt": "2026-03-30",
-  "reviews": [],
-  "pronunciation": "",
-  "definitions": [],
-  "examples": [
-    {
-      "text": "This makes being creative a biological mandate, as what we seek in art and technology is surprise, not simply a fulfillment of expectations.",
-      "explanation": "",
-      "focusWords": [
-        "mandate"
-      ],
-      "source": {
-        "text": "CET6 23 12 1 听力",
-        "url": ""
-      }
-    }
-  ]
+    "word": "mandate",
+    "createdAt": "2026-03-30",
+    "reviews": [],
+    "definitions": [],
+    "examples": [
+        {
+            "text": "This makes being creative a biological mandate, as what we seek in art and technology is surprise, not simply a fulfillment of expectations.",
+            "explanation": "",
+            "focusWords": [
+                "mandate"
+            ],
+            "source": {
+                "text": "CET6 23 12 1 听力",
+                "url": ""
+            }
+        }
+    ]
 }

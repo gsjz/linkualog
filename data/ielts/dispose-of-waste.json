@@ -1,22 +1,21 @@
 {
-  "word": "dispose of waste",
-  "createdAt": "2026-03-26",
-  "reviews": [],
-  "pronunciation": "/dɪˈspəʊz əv weɪst/",
-  "definitions": [
-    "phr. 处理废物"
-  ],
-  "examples": [
-    {
-      "text": "The fourth factor is poor individual perception/People worry that the endless rise in the amount of stuff everyone throws away will cause the world to run out of places to dispose of waste.",
-      "explanation": "第四个因素是个人认知不足/人们担心每个人丢弃的物品数量不断上升，会导致世界没有地方处理废物。",
-      "focusWords": [
-        "dispose of waste"
-      ],
-      "source": {
-        "text": "剑桥 5 1 阅读3",
-        "url": ""
-      }
-    }
-  ]
+    "word": "dispose of waste",
+    "createdAt": "2026-03-26",
+    "reviews": [],
+    "definitions": [
+        "phr. 处理废物"
+    ],
+    "examples": [
+        {
+            "text": "The fourth factor is poor individual perception/People worry that the endless rise in the amount of stuff everyone throws away will cause the world to run out of places to dispose of waste.",
+            "explanation": "第四个因素是个人认知不足/人们担心每个人丢弃的物品数量不断上升，会导致世界没有地方处理废物。",
+            "focusWords": [
+                "dispose of waste"
+            ],
+            "source": {
+                "text": "剑桥 5 1 阅读3",
+                "url": ""
+            }
+        }
+    ]
 }

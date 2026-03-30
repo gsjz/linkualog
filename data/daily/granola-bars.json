@@ -1,26 +1,25 @@
 {
-  "word": "granola bars",
-  "createdAt": "2026-03-27",
-  "reviews": [],
-  "pronunciation": "/ˈɡræ.nə.lə bɑːrz/",
-  "definitions": [
-    "格兰诺拉麦片棒（一种添加糖的零食）"
-  ],
-  "examples": [
-    {
-      "text": "And sugar isn't just\nin candies and desserts, it's also added to tomato sauce, yogurt, dried fruit,\nflavored waters, or granola bars. Since sugar is everywhere,\nit's important to understand how it affects the brain.",
-      "explanation": "",
-      "focusWords": [
-        "granola bars"
-      ],
-      "source": {
-        "text": "糖类怎样影响大脑 -Nicole Avena",
-        "url": ""
-      },
-      "youtube": {
-        "url": "https://www.youtube.com/watch?v=lEXBxijQREo",
-        "timestamp": 51
-      }
-    }
-  ]
+    "word": "granola bars",
+    "createdAt": "2026-03-27",
+    "reviews": [],
+    "definitions": [
+        "格兰诺拉麦片棒（一种添加糖的零食）"
+    ],
+    "examples": [
+        {
+            "text": "And sugar isn't just\nin candies and desserts, it's also added to tomato sauce, yogurt, dried fruit,\nflavored waters, or granola bars. Since sugar is everywhere,\nit's important to understand how it affects the brain.",
+            "explanation": "",
+            "focusWords": [
+                "granola bars"
+            ],
+            "source": {
+                "text": "糖类怎样影响大脑 -Nicole Avena",
+                "url": ""
+            },
+            "youtube": {
+                "url": "https://www.youtube.com/watch?v=lEXBxijQREo",
+                "timestamp": 51
+            }
+        }
+    ]
 }

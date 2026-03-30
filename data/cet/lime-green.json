@@ -1,22 +1,21 @@
 {
-  "word": "lime-green",
-  "createdAt": "2026-03-25",
-  "reviews": [],
-  "pronunciation": "/ˈlaɪm ɡriːn/",
-  "definitions": [
-    "青柠绿的（形容带有黄绿色调的明亮色彩）"
-  ],
-  "examples": [
-    {
-      "text": "On the hills of central Kenya, almost lime-green with the sparkle of tea bushes in the sunlight, farmers know all about climate change.",
-      "explanation": "肯尼亚中部的山丘上，阳光照耀下茶树闪烁着光芒，使山坡几乎呈现出青柠绿色，当地农民对气候变化了如指掌。",
-      "focusWords": [
-        "lime-green"
-      ],
-      "source": {
-        "text": "cet6 23 12 1 匹配",
-        "url": ""
-      }
-    }
-  ]
+    "word": "lime-green",
+    "createdAt": "2026-03-25",
+    "reviews": [],
+    "definitions": [
+        "青柠绿的（形容带有黄绿色调的明亮色彩）"
+    ],
+    "examples": [
+        {
+            "text": "On the hills of central Kenya, almost lime-green with the sparkle of tea bushes in the sunlight, farmers know all about climate change.",
+            "explanation": "肯尼亚中部的山丘上，阳光照耀下茶树闪烁着光芒，使山坡几乎呈现出青柠绿色，当地农民对气候变化了如指掌。",
+            "focusWords": [
+                "lime-green"
+            ],
+            "source": {
+                "text": "cet6 23 12 1 匹配",
+                "url": ""
+            }
+        }
+    ]
 }
