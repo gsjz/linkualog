@@ -73,8 +73,6 @@ def generate_pages():
         
         if pronunciation or definitions:
             md += '??? abstract "释义"\n'
-            if pronunciation:
-                md += f'    **读音**: `{pronunciation}`\n\n'
             if definitions:
                 for d in definitions: 
                     md += f'    - {d}\n'

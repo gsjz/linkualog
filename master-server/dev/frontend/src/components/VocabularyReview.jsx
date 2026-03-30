@@ -186,8 +186,6 @@ export default function VocabularyReview() {
             </div>
             
             <div style={{ fontSize: '18px', color: '#71717a', marginBottom: '24px', fontFamily: 'serif', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span>{detailData.pronunciation || '暂无发音'}</span>
-              
               <button 
                 onClick={() => playAudio(detailData.word, 2)}
                 title="播放发音"

@@ -158,11 +158,10 @@ def process_word_definition(word: str) -> dict:
     
     prompt = (
         "你是一个专业的英文词典 API 引擎。\n"
-        f"请为英文生词 '{word}' 提供音标和全面的中文释义数组。\n"
+        f"请为英文生词 '{word}' 提供全面的中文释义数组。\n"
         "必须严格以纯 JSON 格式输出，不要包含 markdown 代码块或其他说明文字。\n"
         "JSON 结构示例：\n"
         "{\n"
-        '  "pronunciation": "/əˈbæn.dən/",\n'
         '  "definitions": [\n'
         '    "vt. 放弃，抛弃（计划、信念等）",\n'
         '    "vt. 离弃，遗弃（人、物或地方）"\n'
@@ -205,13 +204,11 @@ def process_context_analysis(word: str, context: str) -> dict:
     prompt = (
         "你是一个专业的英文翻译和词典 API 引擎。\n"
         f"请根据生词 '{word}' 及其出现的上下文句子 '{context}'，生成：\n"
-        "1. 该词的音标 (pronunciation)\n"
-        "2. 该词在这句话中具体、贴切的中文释义（将其作为字符串放入 definitions 数组中）\n"
-        "3. 将该上下文句子作为例句对象放入 examples 数组中，并提供精准的中文翻译 (explanation) 和焦点词 (focusWords)。\n"
+        "1. 该词在这句话中具体、贴切的中文释义（将其作为字符串放入 definitions 数组中）\n"
+        "2. 将该上下文句子作为例句对象放入 examples 数组中，并提供精准的中文翻译 (explanation) 和焦点词 (focusWords)。\n"
         "必须严格以纯 JSON 格式输出，不要包含 Markdown 代码块标记（如 ```json）。\n"
         "JSON 结构示例：\n"
         "{\n"
-        '  "pronunciation": "/əˈbæn.dən/",\n'
         '  "definitions": ["vt. 放弃 (在此语境下的释义)"],\n'
         '  "examples": [\n'
         '    {\n'
