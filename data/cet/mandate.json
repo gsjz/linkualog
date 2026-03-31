@@ -1,19 +1,21 @@
 {
-    "word": "mandate",
-    "createdAt": "2026-03-30",
-    "reviews": [],
-    "definitions": [],
-    "examples": [
-        {
-            "text": "This makes being creative a biological mandate, as what we seek in art and technology is surprise, not simply a fulfillment of expectations.",
-            "explanation": "",
-            "focusWords": [
-                "mandate"
-            ],
-            "source": {
-                "text": "CET6 23 12 1 听力",
-                "url": ""
-            }
-        }
-    ]
+  "word": "mandate",
+  "createdAt": "2026-03-30",
+  "reviews": [],
+  "definitions": [
+    "n. 必然要求"
+  ],
+  "examples": [
+    {
+      "text": "This makes being creative a biological mandate, as what we seek in art and technology is surprise, not simply a fulfillment of expectations.",
+      "explanation": "这使得创造力成为一种生物性的必然要求，因为我们在艺术和技术中追求的是惊喜，而不仅仅是满足预期。",
+      "focusWords": [
+        "mandate"
+      ],
+      "source": {
+        "text": "CET6 23 12 1 听力",
+        "url": ""
+      }
+    }
+  ]
 }

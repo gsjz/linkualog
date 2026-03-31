@@ -1,19 +1,21 @@
 {
-    "word": "intricate habitats",
-    "createdAt": "2026-03-30",
-    "reviews": [],
-    "definitions": [],
-    "examples": [
-        {
-            "text": "We build intricate habitats, devise complex recipes for our food, wear clothes that reflect constant changes in fashion,",
-            "explanation": "",
-            "focusWords": [
-                "intricate habitats"
-            ],
-            "source": {
-                "text": "CET6 23 12 1 听力",
-                "url": ""
-            }
-        }
-    ]
+  "word": "intricate habitats",
+  "createdAt": "2026-03-30",
+  "reviews": [],
+  "definitions": [
+    "复杂的栖息环境"
+  ],
+  "examples": [
+    {
+      "text": "We build intricate habitats, devise complex recipes for our food, wear clothes that reflect constant changes in fashion,",
+      "explanation": "我们建造复杂的栖息环境，为我们的食物设计复杂的食谱，穿着反映时尚不断变化的服装。",
+      "focusWords": [
+        "intricate habitats"
+      ],
+      "source": {
+        "text": "CET6 23 12 1 听力",
+        "url": ""
+      }
+    }
+  ]
 }
