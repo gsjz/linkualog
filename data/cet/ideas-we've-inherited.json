@@ -1,19 +1,21 @@
 {
-    "word": "ideas we've inherited",
-    "createdAt": "2026-03-30",
-    "reviews": [],
-    "definitions": [],
-    "examples": [
-        {
-            "text": "We take the ideas we've inherited and put them together into some new shape.",
-            "explanation": "",
-            "focusWords": [
-                "ideas we've inherited"
-            ],
-            "source": {
-                "text": "CET6 23 12 1 听力",
-                "url": ""
-            }
-        }
-    ]
+  "word": "ideas we've inherited",
+  "createdAt": "2026-03-30",
+  "reviews": [],
+  "definitions": [
+    "传承下来的思想"
+  ],
+  "examples": [
+    {
+      "text": "We take the ideas we've inherited and put them together into some new shape.",
+      "explanation": "我们将传承下来的思想整合重组为新的形态。",
+      "focusWords": [
+        "ideas we've inherited"
+      ],
+      "source": {
+        "text": "CET6 23 12 1 听力",
+        "url": ""
+      }
+    }
+  ]
 }

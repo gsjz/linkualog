@@ -1,19 +1,21 @@
 {
-    "word": "suspicion",
-    "createdAt": "2026-03-30",
-    "reviews": [],
-    "definitions": [],
-    "examples": [
-        {
-            "text": "What we perceive as concern on a dog's part might be more like increased curiosity or suspicion that something is wrong with us, and sticking close by is a great way to gather more information about the situation.",
-            "explanation": "",
-            "focusWords": [
-                "suspicion"
-            ],
-            "source": {
-                "text": "CET6 23 12 1 听力",
-                "url": ""
-            }
-        }
-    ]
+  "word": "suspicion",
+  "createdAt": "2026-03-30",
+  "reviews": [],
+  "definitions": [
+    "n. 怀疑; 疑虑"
+  ],
+  "examples": [
+    {
+      "text": "What we perceive as concern on a dog's part might be more like increased curiosity or suspicion that something is wrong with us, and sticking close by is a great way to gather more information about the situation.",
+      "explanation": "我们感知到的狗表现出的关心，可能更像是一种增强的好奇心，或是怀疑我们出了什么问题，而待在附近是收集关于该情况更多信息的绝佳方式。",
+      "focusWords": [
+        "suspicion"
+      ],
+      "source": {
+        "text": "CET6 23 12 1 听力",
+        "url": ""
+      }
+    }
+  ]
 }

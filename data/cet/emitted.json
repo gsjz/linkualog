@@ -1,19 +1,21 @@
 {
-    "word": "emitted",
-    "createdAt": "2026-03-30",
-    "reviews": [],
-    "definitions": [],
-    "examples": [
-        {
-            "text": "Human emotions manifest physically in chemical signals that are emitted by the body, and dogs are able to smell those as well.",
-            "explanation": "",
-            "focusWords": [
-                "emitted"
-            ],
-            "source": {
-                "text": "CET6 23 12 1 听力",
-                "url": ""
-            }
-        }
-    ]
+  "word": "emitted",
+  "createdAt": "2026-03-30",
+  "reviews": [],
+  "definitions": [
+    "v. 发出；释放；散发（指身体释放出化学信号）"
+  ],
+  "examples": [
+    {
+      "text": "Human emotions manifest physically in chemical signals that are emitted by the body, and dogs are able to smell those as well.",
+      "explanation": "人类的情感通过身体释放出的化学信号在生理上表现出来，而狗也能嗅到这些信号。",
+      "focusWords": [
+        "emitted"
+      ],
+      "source": {
+        "text": "CET6 23 12 1 听力",
+        "url": ""
+      }
+    }
+  ]
 }

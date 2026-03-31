@@ -1,19 +1,21 @@
 {
-    "word": "verbal wit and playful teasing",
-    "createdAt": "2026-03-30",
-    "reviews": [],
-    "definitions": [],
-    "examples": [
-        {
-            "text": "The humor of a comedy of manners relies on verbal wit and playful teasing.",
-            "explanation": "",
-            "focusWords": [
-                "verbal wit and playful teasing"
-            ],
-            "source": {
-                "text": "CET6 23 12 1 听力",
-                "url": ""
-            }
-        }
-    ]
+  "word": "verbal wit and playful teasing",
+  "createdAt": "2026-03-30",
+  "reviews": [],
+  "definitions": [
+    "言语机智与戏谑调侃"
+  ],
+  "examples": [
+    {
+      "text": "The humor of a comedy of manners relies on verbal wit and playful teasing.",
+      "explanation": "世态喜剧的幽默依赖于言语机智与戏谑调侃。",
+      "focusWords": [
+        "verbal wit and playful teasing"
+      ],
+      "source": {
+        "text": "CET6 23 12 1 听力",
+        "url": ""
+      }
+    }
+  ]
 }

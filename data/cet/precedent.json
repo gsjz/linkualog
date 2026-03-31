@@ -1,19 +1,21 @@
 {
-    "word": "precedent",
-    "createdAt": "2026-03-30",
-    "reviews": [],
-    "definitions": [],
-    "examples": [
-        {
-            "text": "[18] The human brain works from precedent.",
-            "explanation": "",
-            "focusWords": [
-                "precedent"
-            ],
-            "source": {
-                "text": "CET6 23 12 1 听力",
-                "url": ""
-            }
-        }
-    ]
+  "word": "precedent",
+  "createdAt": "2026-03-30",
+  "reviews": [],
+  "definitions": [
+    "过往经验; 先例"
+  ],
+  "examples": [
+    {
+      "text": "[18] The human brain works from precedent.",
+      "explanation": "人类大脑依据过往经验进行运作。",
+      "focusWords": [
+        "precedent"
+      ],
+      "source": {
+        "text": "CET6 23 12 1 听力",
+        "url": ""
+      }
+    }
+  ]
 }

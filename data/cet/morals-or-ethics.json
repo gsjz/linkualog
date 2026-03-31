@@ -1,19 +1,21 @@
 {
-    "word": "morals or ethics",
-    "createdAt": "2026-03-30",
-    "reviews": [],
-    "definitions": [],
-    "examples": [
-        {
-            "text": "Some philosophers argue it's morals or ethics, while some scientists assert it's our greater cognitive development.",
-            "explanation": "",
-            "focusWords": [
-                "morals or ethics"
-            ],
-            "source": {
-                "text": "CET6 23 12 1 听力",
-                "url": ""
-            }
-        }
-    ]
+  "word": "morals or ethics",
+  "createdAt": "2026-03-30",
+  "reviews": [],
+  "definitions": [
+    "道德或伦理"
+  ],
+  "examples": [
+    {
+      "text": "Some philosophers argue it's morals or ethics, while some scientists assert it's our greater cognitive development.",
+      "explanation": "一些哲学家认为这是道德或伦理问题，而一些科学家则主张这是我们更高级的认知发展。",
+      "focusWords": [
+        "morals or ethics"
+      ],
+      "source": {
+        "text": "CET6 23 12 1 听力",
+        "url": ""
+      }
+    }
+  ]
 }
