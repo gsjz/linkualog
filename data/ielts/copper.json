@@ -1,0 +1,22 @@
+{
+  "word": "copper",
+  "createdAt": "2026-04-01",
+  "reviews": [],
+  "pronunciation": "",
+  "definitions": [
+    "n. 铜"
+  ],
+  "examples": [
+    {
+      "text": "the increase in mercury, lead, copper and zinc coincided with",
+      "explanation": "汞、铅、铜和锌的增加与……相吻合",
+      "focusWords": [
+        "copper"
+      ],
+      "source": {
+        "text": "剑桥 5 3 阅读2",
+        "url": ""
+      }
+    }
+  ]
+}

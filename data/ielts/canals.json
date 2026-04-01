@@ -1,0 +1,22 @@
+{
+  "word": "canals",
+  "createdAt": "2026-04-01",
+  "reviews": [],
+  "pronunciation": "",
+  "definitions": [
+    "n. 渠道；运河（指用于灌溉的人工水道）"
+  ],
+  "examples": [
+    {
+      "text": "diverted into more than 10,000 kilometres of irrigation canals and only a small proportion reaches the sea directly through the rivers in the delta.",
+      "explanation": "水流被分流到超过 1 万公里的灌溉渠道中，只有一小部分通过三角洲的河流直接流入大海。",
+      "focusWords": [
+        "canals"
+      ],
+      "source": {
+        "text": "剑桥 5 3 阅读2",
+        "url": ""
+      }
+    }
+  ]
+}
