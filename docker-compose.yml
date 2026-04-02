@@ -1,0 +1,23 @@
+services:
+  master-server:
+    build:
+      context: ./master-server
+      dockerfile: Dockerfile
+    container_name: master-server-app
+    ports:
+      - "13344:13344"
+      - "13345:13345"
+    volumes:
+      - ./master-server/user:/app/master-server/user
+      - ./data:/app/data
+    restart: always
+
+  review-agent:
+    build:
+      context: ./review-agent
+      dockerfile: Dockerfile
+    container_name: review-agent-app
+    volumes:
+      - ./review-agent/user:/app/review-agent/user
+      - ./data:/app/data
+    restart: always
