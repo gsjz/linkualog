@@ -6,15 +6,26 @@ import VocabQueue from '../components/VocabQueue';
 import { Subtitle } from '../types';
 import { IVideoAdapter } from '../adapters/BaseAdapter';
 import { ConfigService } from '../services/configService';
+import { DEFAULTS } from '../constants/defaults';
 import './App.css';
 
-interface AppProps {
-  adapter: IVideoAdapter;
-}
+interface AppProps { adapter: IVideoAdapter; }
+
+type CfgKey = keyof typeof DEFAULTS;
 
 const App: React.FC<AppProps> = ({ adapter }) => {
   const [subs, setSubs] = useState<Subtitle[]>([]);
-  const [sidebarWidth, setSidebarWidth] = useState(parseInt(ConfigService.get('sidebar_width') as string, 10));
+  
+  const [inVideo, setInVideo] = useState(adapter.isVideoPage());
+
+  const getAdpCfg = (key: CfgKey) => {
+    const val = ConfigService.get(`${key}_${adapter.platformName}` as any);
+    return (val !== null && val !== undefined && val !== '') ? val : ConfigService.get(key);
+  };
+
+  const [layout, setLayout] = useState(getAdpCfg('layout_position') as string);
+  const [sidebarWidth, setSidebarWidth] = useState(parseInt(getAdpCfg('sidebar_width') as string, 10));
+  const [sidebarHeight, setSidebarHeight] = useState(parseInt(getAdpCfg('sidebar_height') as string, 10));
 
   const [themeColor, setThemeColor] = useState(ConfigService.get('theme_color') as string);
   const [doneColor, setDoneColor] = useState(ConfigService.get('done_color') as string);
@@ -22,8 +33,24 @@ const App: React.FC<AppProps> = ({ adapter }) => {
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [renderLimit, setRenderLimit] = useState(50);
-
   const activeIndex = useVideoSync(subs, adapter);
+
+  useEffect(() => {
+    const checkVideo = () => {
+      setInVideo((prev) => {
+        const isVid = adapter.isVideoPage();
+        return prev !== isVid ? isVid : prev;
+      });
+    };
+    
+    const interval = setInterval(checkVideo, 500);
+    window.addEventListener('yt-navigate-finish', checkVideo);
+    
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('yt-navigate-finish', checkVideo);
+    };
+  }, [adapter]);
 
   useEffect(() => {
     adapter.onSubtitleDetected((newSubs) => {
@@ -35,60 +62,72 @@ const App: React.FC<AppProps> = ({ adapter }) => {
       setThemeColor(ConfigService.get('theme_color') as string);
       setDoneColor(ConfigService.get('done_color') as string);
       setErrorColor(ConfigService.get('error_color') as string);
-      setSidebarWidth(parseInt(ConfigService.get('sidebar_width') as string, 10));
+      
+      setLayout(getAdpCfg('layout_position') as string);
+      setSidebarWidth(parseInt(getAdpCfg('sidebar_width') as string, 10));
+      setSidebarHeight(parseInt(getAdpCfg('sidebar_height') as string, 10));
     };
     window.addEventListener('linkual_settings_updated', handleSettingsUpdate);
     return () => window.removeEventListener('linkual_settings_updated', handleSettingsUpdate);
   }, [adapter]);
 
   useEffect(() => {
-    if (subs.length > 0 && renderLimit < subs.length) {
-      const timer = setTimeout(() => {
-        setRenderLimit(prev => Math.min(prev + 100, subs.length));
-      }, 50);
-      return () => clearTimeout(timer);
-    }
-  }, [subs.length, renderLimit]);
-
-  useEffect(() => {
-    if (activeIndex >= renderLimit) {
-      setRenderLimit(activeIndex + 50);
-    }
-  }, [activeIndex, renderLimit]);
-
-  useEffect(() => {
     if (adapter.resizeHost) {
-      adapter.resizeHost(sidebarWidth);
+      if (inVideo) {
+        adapter.resizeHost(sidebarWidth, sidebarHeight, layout);
+      } else {
+        adapter.resizeHost(0, 0, layout);
+      }
     }
-  }, [sidebarWidth, adapter]);
+  }, [sidebarWidth, sidebarHeight, layout, adapter, inVideo]);
 
   const startResize = (e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
-    const startX = e.clientX;
-    const startWidth = sidebarWidth;
-    let currentWidth = startWidth;
-
-    const onMouseMove = (ev: globalThis.MouseEvent) => {
-      let newWidth = startWidth - (ev.clientX - startX);
-      if (newWidth < 250) newWidth = 250;
-      if (newWidth > window.innerWidth * 0.8) newWidth = window.innerWidth * 0.8;
-
-      currentWidth = newWidth;
-      setSidebarWidth(newWidth);
-    };
-
-    const onMouseUp = () => {
-      document.removeEventListener('mousemove', onMouseMove);
-      document.removeEventListener('mouseup', onMouseUp);
-      ConfigService.set('sidebar_width', currentWidth.toString());
-    };
-
-    document.addEventListener('mousemove', onMouseMove);
-    document.addEventListener('mouseup', onMouseUp);
+    if (layout === 'bottom') {
+      const startY = e.clientY;
+      const startHeight = sidebarHeight;
+      let currentHeight = startHeight;
+      const onMouseMove = (ev: globalThis.MouseEvent) => {
+        let newHeight = startHeight - (ev.clientY - startY);
+        if (newHeight < 150) newHeight = 150;
+        if (newHeight > window.innerHeight * 0.8) newHeight = window.innerHeight * 0.8;
+        currentHeight = newHeight;
+        setSidebarHeight(newHeight);
+      };
+      const onMouseUp = () => {
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+        ConfigService.set(`sidebar_height_${adapter.platformName}` as any, currentHeight.toString());
+        ConfigService.set('sidebar_height', currentHeight.toString());
+      };
+      document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('mouseup', onMouseUp);
+    } else {
+      const startX = e.clientX;
+      const startWidth = sidebarWidth;
+      let currentWidth = startWidth;
+      const onMouseMove = (ev: globalThis.MouseEvent) => {
+        let newWidth = startWidth - (ev.clientX - startX);
+        if (newWidth < 250) newWidth = 250;
+        if (newWidth > window.innerWidth * 0.8) newWidth = window.innerWidth * 0.8;
+        currentWidth = newWidth;
+        setSidebarWidth(newWidth);
+      };
+      const onMouseUp = () => {
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+        ConfigService.set(`sidebar_width_${adapter.platformName}` as any, currentWidth.toString());
+        ConfigService.set('sidebar_width', currentWidth.toString());
+      };
+      document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('mouseup', onMouseUp);
+    }
   };
 
   const wrapStyle: React.CSSProperties = {
-    width: sidebarWidth,
+    display: inVideo ? 'flex' : 'none',
+    width: layout === 'right' ? sidebarWidth : '100%',
+    height: layout === 'bottom' ? sidebarHeight : '100vh',
     '--linkual-theme': themeColor,
     '--linkual-done': doneColor,
     '--linkual-error': errorColor
@@ -96,16 +135,12 @@ const App: React.FC<AppProps> = ({ adapter }) => {
 
   return (
     <>
-      <div className="linkual-wrap" style={wrapStyle}>
-        <div className="resizer" onMouseDown={startResize} title="左右拖拽调整宽度" />
-
+      <div className={`linkual-wrap layout-${layout}`} style={wrapStyle}>
+        <div className="resizer" onMouseDown={startResize} title={layout === 'right' ? '左右拖拽调整宽度' : '上下拖拽调整高度'} />
         <div className="header">
           <span>Link-ual Log [{adapter.platformName}]</span>
-          <div>
-            <span className="settings-icon" onClick={() => setIsSettingsOpen(true)} title="全局设置">⚙️</span>
-          </div>
+          <div><span className="settings-icon" onClick={() => setIsSettingsOpen(true)} title="全局设置">⚙️</span></div>
         </div>
-
         <div className="list">
           {subs.length === 0 ? (
             <div className="empty-tip">等待字幕数据...</div>
@@ -115,10 +150,9 @@ const App: React.FC<AppProps> = ({ adapter }) => {
             ))
           )}
         </div>
-
-        {isSettingsOpen && <Settings onClose={() => setIsSettingsOpen(false)} />}
+        {isSettingsOpen && <Settings adapter={adapter} onClose={() => setIsSettingsOpen(false)} />}
       </div>
-      <VocabQueue />
+      {inVideo && <VocabQueue />}
     </>
   );
 };

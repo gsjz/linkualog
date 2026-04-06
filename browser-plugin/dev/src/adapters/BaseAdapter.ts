@@ -8,5 +8,6 @@ export interface IVideoAdapter {
   seekTo(time: number): void;
   play(): void;
   pause(): void;
-  resizeHost?(sidebarWidth: number): void;
+  resizeHost?(width: number, height: number, layout: string): void;
+  isVideoPage(): boolean;
 }

@@ -19,11 +19,12 @@ export class YouTubeAdapter implements IVideoAdapter {
     this.initFullscreenHook();
     this.initAutoHotkey();
 
-    // 轮询同步 UI
     setInterval(() => this.syncSubsToCurrentVideo(), 500);
   }
 
   match(url: string) { return url.includes('youtube.com') && !url.includes('/shorts/'); }
+
+  isVideoPage() { return window.location.pathname === '/watch'; }
 
   onSubtitleDetected(callback: (subs: Subtitle[]) => void) {
     this.listeners = [callback];
@@ -220,26 +221,25 @@ export class YouTubeAdapter implements IVideoAdapter {
     });
   }
 
-  resizeHost(width: number) {
-    document.documentElement.style.setProperty('--linkual-sidebar-width', `${width}px`);
+  resizeHost(width: number, height: number, layout: string) {
+    document.documentElement.style.setProperty('--linkual-sidebar-width', layout === 'right' ? `${width}px` : '0px');
+    document.documentElement.style.setProperty('--linkual-sidebar-height', layout === 'bottom' ? `${height}px` : '0px');
+    
     let styleEl = document.getElementById('linkual-style-patch');
     if (!styleEl) {
       styleEl = document.createElement('style');
       styleEl.id = 'linkual-style-patch';
       document.head.appendChild(styleEl);
     }
-    if (styleEl) {
+    
+    if (layout === 'right') {
       styleEl.textContent = `
         html, body { overflow-x: hidden !important; }
-        
         ytd-app, #masthead-container { 
           width: calc(100vw - var(--linkual-sidebar-width)) !important; 
           max-width: calc(100vw - var(--linkual-sidebar-width)) !important; 
-          left: 0 !important; 
-          right: auto !important; 
+          left: 0 !important; right: auto !important; margin-bottom: 0 !important;
         }
-        
-        /* 【终极修复】：将 ytd-player 和 .html5-video-player 一并制裁，彻底覆盖 YouTube JS 算出的内联宽度 */
         ytd-watch-flexy[theater] #player-theater-container, 
         ytd-watch-flexy[theater] #player-full-bleed-container,
         ytd-watch-flexy[theater] #full-bleed-container, 
@@ -252,27 +252,36 @@ export class YouTubeAdapter implements IVideoAdapter {
           min-height: 0 !important; 
           height: calc((100vw - var(--linkual-sidebar-width)) * 9 / 16) !important; 
           max-height: calc(100vh - 56px) !important; 
-          margin: 0 !important; 
-          transform: none !important; 
+          margin: 0 !important; transform: none !important; 
         }
-        
-        /* 强制视频画面适应新的父级尺寸，防止被裁切 */
-        .html5-video-player .html5-video-container, 
-        .html5-video-player video { 
-          width: 100% !important; 
-          height: 100% !important; 
-          left: 0 !important; 
-          top: 0 !important;
-          margin: 0 !important; 
-          object-fit: contain !important;
+        .html5-video-player .html5-video-container, .html5-video-player video { 
+          width: 100% !important; height: 100% !important; left: 0 !important; top: 0 !important; margin: 0 !important; object-fit: contain !important;
         }
-        
-        /* 让底部控制栏（进度条、播放按钮）也对齐缩放后的宽度 */
-        .html5-video-player .ytp-chrome-bottom { 
-          width: calc(100% - 24px) !important; 
-          left: 12px !important; 
-          margin: 0 !important; 
+        .html5-video-player .ytp-chrome-bottom { width: calc(100% - 24px) !important; left: 12px !important; margin: 0 !important; }
+      `;
+    } else {
+      styleEl.textContent = `
+        html, body { overflow-x: hidden !important; }
+        ytd-app, #masthead-container { 
+          width: 100vw !important; max-width: 100vw !important; left: 0 !important; right: auto !important; 
+          margin-bottom: var(--linkual-sidebar-height) !important; 
         }
+        ytd-watch-flexy[theater] #player-theater-container, 
+        ytd-watch-flexy[theater] #player-full-bleed-container,
+        ytd-watch-flexy[theater] #full-bleed-container, 
+        ytd-watch-flexy[theater] #cinematics-container, 
+        ytd-watch-flexy[theater] #cinematics,
+        ytd-watch-flexy[theater] ytd-player,
+        ytd-watch-flexy[theater] .html5-video-player { 
+          width: 100vw !important; max-width: 100vw !important; min-height: 0 !important; 
+          height: calc(100vw * 9 / 16) !important; 
+          max-height: calc(100vh - var(--linkual-sidebar-height) - 56px) !important; 
+          margin: 0 auto !important; transform: none !important; 
+        }
+        .html5-video-player .html5-video-container, .html5-video-player video { 
+          width: 100% !important; height: 100% !important; left: 0 !important; top: 0 !important; margin: 0 !important; object-fit: contain !important;
+        }
+        .html5-video-player .ytp-chrome-bottom { width: calc(100% - 24px) !important; left: 12px !important; margin: 0 !important; }
       `;
     }
 

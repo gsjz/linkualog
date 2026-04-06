@@ -11,6 +11,10 @@ export class LocalAdapter implements IVideoAdapter {
     return url.includes('localhost') || url.includes('127.0.0.1');
   }
 
+  isVideoPage() { 
+    return true; 
+  }
+
   onSubtitleDetected(callback: (subs: Subtitle[]) => void) {
     setTimeout(() => {
       callback([

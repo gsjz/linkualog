@@ -1,17 +1,26 @@
 import React, { useState } from 'react';
 import { ConfigService } from '../services/configService';
+import { IVideoAdapter } from '../adapters/BaseAdapter';
+import { DEFAULTS } from '../constants/defaults';
 import './Settings.css';
 
-interface SettingsProps { onClose: () => void; }
+// 接收 adapter 以识别当前所处的网站环境
+interface SettingsProps { adapter: IVideoAdapter; onClose: () => void; }
 
-const Settings: React.FC<SettingsProps> = ({ onClose }) => {
+type CfgKey = keyof typeof DEFAULTS;
+
+const Settings: React.FC<SettingsProps> = ({ adapter, onClose }) => {
   const [activeTab, setActiveTab] = useState<'api' | 'ui' | 'lan'>('api');
+
+  const getAdpCfg = (key: CfgKey) => {
+    const val = ConfigService.get(`${key}_${adapter.platformName}` as any);
+    return (val !== null && val !== undefined && val !== '') ? val : ConfigService.get(key);
+  };
 
   const [cfg, setCfg] = useState({
     color: ConfigService.get('theme_color') as string,
     doneColor: ConfigService.get('done_color') as string,
     errorColor: ConfigService.get('error_color') as string,
-    sidebarWidth: ConfigService.get('sidebar_width') as string,
     url: ConfigService.get('api_url') as string,
     key: ConfigService.get('api_key') as string,
     model: ConfigService.get('api_model') as string,
@@ -20,6 +29,10 @@ const Settings: React.FC<SettingsProps> = ({ onClose }) => {
     ctxSize: ConfigService.get('api_ctxSize') as string,
     lanUrl: ConfigService.get('lan_sync_url') as string,
     lanAction: ConfigService.get('lan_action') as string,
+    
+    layout: getAdpCfg('layout_position') as string,
+    sidebarWidth: getAdpCfg('sidebar_width') as string,
+    sidebarHeight: getAdpCfg('sidebar_height') as string,
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -31,7 +44,6 @@ const Settings: React.FC<SettingsProps> = ({ onClose }) => {
     ConfigService.set('theme_color', cfg.color);
     ConfigService.set('done_color', cfg.doneColor);
     ConfigService.set('error_color', cfg.errorColor);
-    ConfigService.set('sidebar_width', cfg.sidebarWidth);
     ConfigService.set('api_url', cfg.url);
     ConfigService.set('api_key', cfg.key);
     ConfigService.set('api_model', cfg.model);
@@ -40,6 +52,14 @@ const Settings: React.FC<SettingsProps> = ({ onClose }) => {
     ConfigService.set('api_ctxSize', cfg.ctxSize);
     ConfigService.set('lan_sync_url', cfg.lanUrl); 
     ConfigService.set('lan_action', cfg.lanAction);
+    
+    ConfigService.set(`layout_position_${adapter.platformName}` as any, cfg.layout);
+    ConfigService.set(`sidebar_width_${adapter.platformName}` as any, cfg.sidebarWidth);
+    ConfigService.set(`sidebar_height_${adapter.platformName}` as any, cfg.sidebarHeight);
+    
+    ConfigService.set('layout_position', cfg.layout);
+    ConfigService.set('sidebar_width', cfg.sidebarWidth);
+    ConfigService.set('sidebar_height', cfg.sidebarHeight);
     
     onClose();
     window.dispatchEvent(new Event('linkual_settings_updated'));
@@ -115,9 +135,29 @@ const Settings: React.FC<SettingsProps> = ({ onClose }) => {
                 <label>解析失败背景色</label>
                 <input type="color" name="errorColor" value={cfg.errorColor} onChange={handleChange} />
               </div>
+              
+              <div className="setting-col" style={{ marginTop: '15px' }}>
+                <span style={{ fontSize: '12px', color: '#1976d2', padding: '4px 8px', background: '#e3f2fd', borderRadius: '4px' }}>
+                  当前网页 ({adapter.platformName}) 的布局设置：
+                </span>
+              </div>
+
               <div className="setting-col">
-                <label>侧边栏宽度 (px)</label>
-                <input type="number" name="sidebarWidth" value={cfg.sidebarWidth} onChange={handleChange} min="250" max="1000" />
+                <label>UI 布局位置</label>
+                <select name="layout" value={cfg.layout} onChange={handleChange} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd' }}>
+                  <option value="right">靠右对齐 (左右分屏)</option>
+                  <option value="bottom">靠下对齐 (上下分屏)</option>
+                </select>
+              </div>
+
+              <div className="setting-col" style={{ opacity: cfg.layout === 'right' ? 1 : 0.5 }}>
+                <label>侧边栏宽度 (px) - 仅靠右对齐时生效</label>
+                <input type="number" name="sidebarWidth" value={cfg.sidebarWidth} onChange={handleChange} min="250" max="1000" disabled={cfg.layout !== 'right'} />
+              </div>
+
+              <div className="setting-col" style={{ opacity: cfg.layout === 'bottom' ? 1 : 0.5 }}>
+                <label>底部栏高度 (px) - 仅靠下对齐时生效</label>
+                <input type="number" name="sidebarHeight" value={cfg.sidebarHeight} onChange={handleChange} min="150" max="800" disabled={cfg.layout !== 'bottom'} />
               </div>
             </div>
           )}

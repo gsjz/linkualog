@@ -25,6 +25,8 @@ export class YouTubeShortsAdapter implements IVideoAdapter {
 
   match(url: string) { return url.includes('youtube.com/shorts/'); }
 
+  isVideoPage() { return window.location.pathname.startsWith('/shorts/'); }
+
   onSubtitleDetected(callback: (subs: Subtitle[]) => void) {
     this.listeners = [callback];
     if (this.cachedSubs.length > 0) callback(this.cachedSubs);
@@ -123,26 +125,29 @@ export class YouTubeShortsAdapter implements IVideoAdapter {
     }
   }
 
-  resizeHost(width: number) {
-    document.documentElement.style.setProperty('--linkual-sidebar-width', `${width}px`);
+  resizeHost(width: number, height: number, layout: string) {
+    document.documentElement.style.setProperty('--linkual-sidebar-width', layout === 'right' ? `${width}px` : '0px');
+    document.documentElement.style.setProperty('--linkual-sidebar-height', layout === 'bottom' ? `${height}px` : '0px');
+    
     let styleEl = document.getElementById('linkual-style-patch-shorts');
     if (!styleEl) { styleEl = document.createElement('style'); styleEl.id = 'linkual-style-patch-shorts'; document.head.appendChild(styleEl); }
-    if (styleEl) {
+    
+    if (layout === 'right') {
       styleEl.textContent = `
         html, body { overflow-x: hidden !important; }
-        
-        /* 同样修复 Shorts 的靠左对齐 */
-        ytd-app, #masthead-container { 
-          width: calc(100vw - var(--linkual-sidebar-width)) !important; 
-          max-width: calc(100vw - var(--linkual-sidebar-width)) !important; 
-          left: 0 !important; 
-          right: auto !important; 
-        }
-        
-        ytd-shorts { width: 100% !important; position: relative !important; }
+        ytd-app, #masthead-container { width: calc(100vw - var(--linkual-sidebar-width)) !important; max-width: calc(100vw - var(--linkual-sidebar-width)) !important; left: 0 !important; right: auto !important; margin-bottom: 0 !important; }
+        ytd-shorts { width: calc(100vw - var(--linkual-sidebar-width)) !important; position: relative !important; }
         #shorts-container, #shorts-inner-container, ytd-reel-video-renderer { width: 100% !important; max-width: 100% !important; }
       `;
+    } else {
+      styleEl.textContent = `
+        html, body { overflow-x: hidden !important; }
+        ytd-app, #masthead-container { width: 100vw !important; max-width: 100vw !important; left: 0 !important; right: auto !important; margin-bottom: var(--linkual-sidebar-height) !important; }
+        ytd-shorts { height: calc(100vh - var(--linkual-sidebar-height)) !important; width: 100% !important; position: relative !important; }
+        #shorts-container, #shorts-inner-container, ytd-reel-video-renderer { width: 100% !important; max-width: 100% !important; height: 100% !important; }
+      `;
     }
+    
     if (this.resizeTimeout !== null) clearTimeout(this.resizeTimeout);
     this.resizeTimeout = window.setTimeout(() => window.dispatchEvent(new Event('resize')), 150);
   }
