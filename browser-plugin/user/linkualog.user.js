@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name       Linkual Log
 // @namespace  npm/vite-plugin-monkey
-// @version    0.0.2
+// @version    0.0.3
 // @author     Sergio Gao
 // @icon       https://vitejs.dev/logo.svg
 // @match      *://*.youtube.com/*
@@ -17,7 +17,7 @@
 // @grant      unsafeWindow
 // ==/UserScript==
 
-(e=>{if(typeof GM_addStyle=="function"){GM_addStyle(e);return}const o=document.createElement("style");o.textContent=e,document.head.append(o)})(" .modal{position:fixed;top:0;left:0;width:100%;height:100%;background:#00000080;display:flex;justify-content:center;align-items:center;z-index:10000;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}.modal-box{background:#fff;border-radius:12px;width:380px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 10px 30px #0003;animation:slideIn .2s ease-out}@keyframes slideIn{0%{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}.modal-header{padding:16px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #eee}.modal-header h3{margin:0;font-size:16px;color:#333}.close-btn{font-size:24px;line-height:1;color:#999;cursor:pointer;transition:color .2s}.close-btn:hover{color:#333}.tabs{display:flex;background:#fafafa;border-bottom:1px solid #eee}.tab{flex:1;text-align:center;padding:12px 0;font-size:14px;color:#666;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;-webkit-user-select:none;user-select:none}.tab:hover{color:#333;background:#00000005}.tab.active{color:var(--linkual-theme, #6a1b9a);font-weight:700;border-bottom:2px solid var(--linkual-theme, #6a1b9a);background:#fff}.tab-content{padding:20px;overflow-y:auto;flex:1}.fade-in{animation:fadeIn .3s ease}@keyframes fadeIn{0%{opacity:0}to{opacity:1}}.setting-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}.setting-row label{font-size:13px;font-weight:700;flex:1;color:#444}.setting-row input[type=color]{width:50px;height:32px;padding:0;cursor:pointer;border:1px solid #ddd;border-radius:4px}.setting-col{margin-bottom:16px}.setting-col label{font-size:13px;font-weight:700;display:block;margin-bottom:6px;color:#444}.setting-col input,.setting-col textarea{width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box;font-family:inherit;font-size:13px;transition:border-color .2s}.setting-col input:focus,.setting-col textarea:focus{outline:none;border-color:var(--linkual-theme, #6a1b9a)}.setting-col textarea{resize:vertical;min-height:80px;line-height:1.5}.modal-footer{padding:16px 20px;display:flex;gap:12px;border-top:1px solid #eee;background:#fafafa}.btn{flex:1;padding:10px;border:none;border-radius:6px;cursor:pointer;font-weight:700;font-size:14px;transition:opacity .2s}.btn:hover{opacity:.9}.reset-btn{background:#e0e0e0;color:#555}.save-btn{box-shadow:0 2px 6px #0000001a}:root{--linkual-theme: #6a1b9a;--linkual-done: #e8f5e9;--linkual-error: #ffebee}.linkual-wrap{position:fixed;top:0;right:0;height:100vh;z-index:2147483647;background:#fff;box-shadow:-5px 0 15px #0000001a;display:flex;flex-direction:column;font-family:sans-serif;color:#333}.resizer{position:absolute;left:0;top:0;bottom:0;width:5px;cursor:ew-resize;background:transparent;z-index:999;transition:background .2s}.resizer:hover,.resizer:active{background:var(--linkual-theme)}.header{background:var(--linkual-theme);color:#fff;padding:16px;font-weight:700;display:flex;justify-content:space-between;align-items:center}.settings-icon{cursor:pointer;-webkit-user-select:none;user-select:none}.list{flex:1;overflow-y:auto;padding:12px}.empty-tip{padding:50px 20px;text-align:center;color:#999;font-style:italic}.item{padding:12px;margin-bottom:10px;border-radius:8px;border:1px solid #f0f0f0;transition:.2s}.item.active{border-left:5px solid var(--linkual-theme);background:#6a1b9a0d}.ctrl-bar{display:flex;gap:8px;margin-bottom:8px;align-items:center;padding:4px;border-radius:4px;background:transparent;transition:background .2s}.ctrl-bar.done{background-color:var(--linkual-done, #e8f5e9)}.ctrl-bar.error{background-color:var(--linkual-error, #ffebee);border:1px solid rgba(255,0,0,.1)}.tag-btn{font-size:11px;padding:3px 8px;border-radius:12px;display:inline-flex;align-items:center;cursor:pointer;transition:.2s;-webkit-user-select:none;user-select:none}.tag-play{background:#eee;color:#666}.tag-play:hover{background:var(--linkual-theme);color:#fff}.tag-pin{background:#e3f2fd;color:#1976d2}.tag-pin:hover{background:#1976d2;color:#fff}.btn-parse{flex:1;text-align:right;font-size:11px;color:#aaa;cursor:pointer;-webkit-user-select:none;user-select:none;padding:4px;transition:.2s}.btn-parse:hover{color:#333}.btn-chevron{font-size:12px;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:4px;cursor:pointer;transition:.2s;-webkit-user-select:none;user-select:none;color:#666}.btn-chevron:hover{background:#0000001a}.text-content{font-size:14px;line-height:1.5;padding:2px 0;color:#333}.ai-box{border-top:1px dashed #ccc;margin-top:8px;padding-top:8px;font-size:13px;white-space:pre-wrap;line-height:1.6;cursor:text}.lan-sync-module{border-top:1px solid #eee;padding:12px 16px;background:#fafafa;display:flex;flex-direction:column;gap:10px;margin-top:auto}.sync-input{width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;font-size:12px;box-sizing:border-box;outline:none;transition:border-color .2s}.sync-input:focus{border-color:var(--linkual-theme)}.sync-btn{width:100%;padding:10px;border:none;border-radius:6px;font-size:13px;font-weight:700;color:#fff;background-color:var(--linkual-theme);cursor:pointer;transition:all .2s}.sync-btn:hover{opacity:.9}.sync-btn:disabled{opacity:.6;cursor:not-allowed}.sync-btn.success{background-color:#4caf50}.sync-btn.error{background-color:#f44336} ");
+(e=>{if(typeof GM_addStyle=="function"){GM_addStyle(e);return}const o=document.createElement("style");o.textContent=e,document.head.append(o)})(" .modal{position:fixed;top:0;left:0;width:100%;height:100%;background:#00000080;display:flex;justify-content:center;align-items:center;z-index:10000;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}.modal-box{background:#fff;border-radius:12px;width:380px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 10px 30px #0003;animation:slideIn .2s ease-out}@keyframes slideIn{0%{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}.modal-header{padding:16px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #eee}.modal-header h3{margin:0;font-size:16px;color:#333}.close-btn{font-size:24px;line-height:1;color:#999;cursor:pointer;transition:color .2s}.close-btn:hover{color:#333}.tabs{display:flex;background:#fafafa;border-bottom:1px solid #eee}.tab{flex:1;text-align:center;padding:12px 0;font-size:14px;color:#666;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;-webkit-user-select:none;user-select:none}.tab:hover{color:#333;background:#00000005}.tab.active{color:var(--linkual-theme, #6a1b9a);font-weight:700;border-bottom:2px solid var(--linkual-theme, #6a1b9a);background:#fff}.tab-content{padding:20px;overflow-y:auto;flex:1}.fade-in{animation:fadeIn .3s ease}@keyframes fadeIn{0%{opacity:0}to{opacity:1}}.setting-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}.setting-row label{font-size:13px;font-weight:700;flex:1;color:#444}.setting-row input[type=color]{width:50px;height:32px;padding:0;cursor:pointer;border:1px solid #ddd;border-radius:4px}.setting-col{margin-bottom:16px}.setting-col label{font-size:13px;font-weight:700;display:block;margin-bottom:6px;color:#444}.setting-col input,.setting-col textarea{width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box;font-family:inherit;font-size:13px;transition:border-color .2s}.setting-col input:focus,.setting-col textarea:focus{outline:none;border-color:var(--linkual-theme, #6a1b9a)}.setting-col textarea{resize:vertical;min-height:80px;line-height:1.5}.modal-footer{padding:16px 20px;display:flex;gap:12px;border-top:1px solid #eee;background:#fafafa}.btn{flex:1;padding:10px;border:none;border-radius:6px;cursor:pointer;font-weight:700;font-size:14px;transition:opacity .2s}.btn:hover{opacity:.9}.reset-btn{background:#e0e0e0;color:#555}.save-btn{box-shadow:0 2px 6px #0000001a}:root{--linkual-theme: #6a1b9a;--linkual-done: #e8f5e9;--linkual-error: #ffebee}.linkual-wrap{position:fixed;z-index:2147483647;background:#fff;display:flex;flex-direction:column;font-family:sans-serif;color:#333}.linkual-wrap.layout-right{top:0;right:0;height:100vh;box-shadow:-5px 0 15px #0000001a}.linkual-wrap.layout-bottom{bottom:0;left:0;width:100vw!important;box-shadow:0 -5px 15px #0000001a}.resizer{position:absolute;background:transparent;z-index:999;transition:background .2s}.linkual-wrap.layout-right .resizer{left:0;top:0;bottom:0;width:5px;cursor:ew-resize}.linkual-wrap.layout-bottom .resizer{top:0;left:0;right:0;height:5px;cursor:ns-resize}.resizer:hover,.resizer:active{background:var(--linkual-theme)}.header{background:var(--linkual-theme);color:#fff;padding:16px;font-weight:700;display:flex;justify-content:space-between;align-items:center}.settings-icon{cursor:pointer;-webkit-user-select:none;user-select:none}.list{flex:1;overflow-y:auto;padding:12px}.empty-tip{padding:50px 20px;text-align:center;color:#999;font-style:italic}.item{padding:12px;margin-bottom:10px;border-radius:8px;border:1px solid #f0f0f0;transition:.2s}.item.active{border-left:5px solid var(--linkual-theme);background:#6a1b9a0d}.ctrl-bar{display:flex;gap:8px;margin-bottom:8px;align-items:center;padding:4px;border-radius:4px;background:transparent;transition:background .2s}.ctrl-bar.done{background-color:var(--linkual-done, #e8f5e9)}.ctrl-bar.error{background-color:var(--linkual-error, #ffebee);border:1px solid rgba(255,0,0,.1)}.tag-btn{font-size:11px;padding:3px 8px;border-radius:12px;display:inline-flex;align-items:center;cursor:pointer;transition:.2s;-webkit-user-select:none;user-select:none}.tag-play{background:#eee;color:#666}.tag-play:hover{background:var(--linkual-theme);color:#fff}.tag-pin{background:#e3f2fd;color:#1976d2}.tag-pin:hover{background:#1976d2;color:#fff}.btn-parse{flex:1;text-align:right;font-size:11px;color:#aaa;cursor:pointer;-webkit-user-select:none;user-select:none;padding:4px;transition:.2s}.btn-parse:hover{color:#333}.btn-chevron{font-size:12px;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:4px;cursor:pointer;transition:.2s;-webkit-user-select:none;user-select:none;color:#666}.btn-chevron:hover{background:#0000001a}.text-content{font-size:14px;line-height:1.5;padding:2px 0;color:#333}.ai-box{border-top:1px dashed #ccc;margin-top:8px;padding-top:8px;font-size:13px;white-space:pre-wrap;line-height:1.6;cursor:text}.lan-sync-module{border-top:1px solid #eee;padding:12px 16px;background:#fafafa;display:flex;flex-direction:column;gap:10px;margin-top:auto}.sync-input{width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;font-size:12px;box-sizing:border-box;outline:none;transition:border-color .2s}.sync-input:focus{border-color:var(--linkual-theme)}.sync-btn{width:100%;padding:10px;border:none;border-radius:6px;font-size:13px;font-weight:700;color:#fff;background-color:var(--linkual-theme);cursor:pointer;transition:all .2s}.sync-btn:hover{opacity:.9}.sync-btn:disabled{opacity:.6;cursor:not-allowed}.sync-btn.success{background-color:#4caf50}.sync-btn.error{background-color:#f44336} ");
 
 (function () {
   'use strict';
@@ -12689,6 +12689,8 @@
     api_prompt: "请结合上下文，准确翻译并解释【目标字幕】这句话的含义。尽量简明扼要，帮助理解整个句子的语境。",
     api_key: "",
     sidebar_width: "500",
+    sidebar_height: "350",
+    layout_position: "right",
     lan_sync_url: "http://localhost:13345/api/vocabulary/add",
     lan_action: "daily"
   };
@@ -12935,13 +12937,16 @@ ${contextBlock}`,
       isExpanded && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "ai-box", style: { color: isError ? "#c62828" : "#444" }, children: aiContent })
     ] });
   };
-  const Settings = ({ onClose }) => {
+  const Settings = ({ adapter, onClose }) => {
     const [activeTab, setActiveTab] = reactExports.useState("api");
+    const getAdpCfg = (key) => {
+      const val = ConfigService.get(`${key}_${adapter.platformName}`);
+      return val !== null && val !== void 0 && val !== "" ? val : ConfigService.get(key);
+    };
     const [cfg, setCfg] = reactExports.useState({
       color: ConfigService.get("theme_color"),
       doneColor: ConfigService.get("done_color"),
       errorColor: ConfigService.get("error_color"),
-      sidebarWidth: ConfigService.get("sidebar_width"),
       url: ConfigService.get("api_url"),
       key: ConfigService.get("api_key"),
       model: ConfigService.get("api_model"),
@@ -12949,7 +12954,10 @@ ${contextBlock}`,
       timeout: ConfigService.get("api_timeout"),
       ctxSize: ConfigService.get("api_ctxSize"),
       lanUrl: ConfigService.get("lan_sync_url"),
-      lanAction: ConfigService.get("lan_action")
+      lanAction: ConfigService.get("lan_action"),
+      layout: getAdpCfg("layout_position"),
+      sidebarWidth: getAdpCfg("sidebar_width"),
+      sidebarHeight: getAdpCfg("sidebar_height")
     });
     const handleChange = (e) => {
       const { name, value } = e.target;
@@ -12959,7 +12967,6 @@ ${contextBlock}`,
       ConfigService.set("theme_color", cfg.color);
       ConfigService.set("done_color", cfg.doneColor);
       ConfigService.set("error_color", cfg.errorColor);
-      ConfigService.set("sidebar_width", cfg.sidebarWidth);
       ConfigService.set("api_url", cfg.url);
       ConfigService.set("api_key", cfg.key);
       ConfigService.set("api_model", cfg.model);
@@ -12968,6 +12975,12 @@ ${contextBlock}`,
       ConfigService.set("api_ctxSize", cfg.ctxSize);
       ConfigService.set("lan_sync_url", cfg.lanUrl);
       ConfigService.set("lan_action", cfg.lanAction);
+      ConfigService.set(`layout_position_${adapter.platformName}`, cfg.layout);
+      ConfigService.set(`sidebar_width_${adapter.platformName}`, cfg.sidebarWidth);
+      ConfigService.set(`sidebar_height_${adapter.platformName}`, cfg.sidebarHeight);
+      ConfigService.set("layout_position", cfg.layout);
+      ConfigService.set("sidebar_width", cfg.sidebarWidth);
+      ConfigService.set("sidebar_height", cfg.sidebarHeight);
       onClose();
       window.dispatchEvent(new Event("linkual_settings_updated"));
     };
@@ -13031,9 +13044,25 @@ ${contextBlock}`,
             /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "解析失败背景色" }),
             /* @__PURE__ */ jsxRuntimeExports.jsx("input", { type: "color", name: "errorColor", value: cfg.errorColor, onChange: handleChange })
           ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "setting-col", style: { marginTop: "15px" }, children: /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { style: { fontSize: "12px", color: "#1976d2", padding: "4px 8px", background: "#e3f2fd", borderRadius: "4px" }, children: [
+            "当前网页 (",
+            adapter.platformName,
+            ") 的布局设置："
+          ] }) }),
           /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-col", children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "侧边栏宽度 (px)" }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("input", { type: "number", name: "sidebarWidth", value: cfg.sidebarWidth, onChange: handleChange, min: "250", max: "1000" })
+            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "UI 布局位置" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("select", { name: "layout", value: cfg.layout, onChange: handleChange, style: { width: "100%", padding: "10px", borderRadius: "6px", border: "1px solid #ddd" }, children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("option", { value: "right", children: "靠右对齐 (左右分屏)" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("option", { value: "bottom", children: "靠下对齐 (上下分屏)" })
+            ] })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-col", style: { opacity: cfg.layout === "right" ? 1 : 0.5 }, children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "侧边栏宽度 (px) - 仅靠右对齐时生效" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("input", { type: "number", name: "sidebarWidth", value: cfg.sidebarWidth, onChange: handleChange, min: "250", max: "1000", disabled: cfg.layout !== "right" })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-col", style: { opacity: cfg.layout === "bottom" ? 1 : 0.5 }, children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "底部栏高度 (px) - 仅靠下对齐时生效" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("input", { type: "number", name: "sidebarHeight", value: cfg.sidebarHeight, onChange: handleChange, min: "150", max: "800", disabled: cfg.layout !== "bottom" })
           ] })
         ] }),
         activeTab === "lan" && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "tab-pane fade-in", children: [
@@ -13314,13 +13343,34 @@ ${contextBlock}`,
   };
   const App = ({ adapter }) => {
     const [subs, setSubs] = reactExports.useState([]);
-    const [sidebarWidth, setSidebarWidth] = reactExports.useState(parseInt(ConfigService.get("sidebar_width"), 10));
+    const [inVideo, setInVideo] = reactExports.useState(adapter.isVideoPage());
+    const getAdpCfg = (key) => {
+      const val = ConfigService.get(`${key}_${adapter.platformName}`);
+      return val !== null && val !== void 0 && val !== "" ? val : ConfigService.get(key);
+    };
+    const [layout, setLayout] = reactExports.useState(getAdpCfg("layout_position"));
+    const [sidebarWidth, setSidebarWidth] = reactExports.useState(parseInt(getAdpCfg("sidebar_width"), 10));
+    const [sidebarHeight, setSidebarHeight] = reactExports.useState(parseInt(getAdpCfg("sidebar_height"), 10));
     const [themeColor, setThemeColor] = reactExports.useState(ConfigService.get("theme_color"));
     const [doneColor, setDoneColor] = reactExports.useState(ConfigService.get("done_color"));
     const [errorColor, setErrorColor] = reactExports.useState(ConfigService.get("error_color"));
     const [isSettingsOpen, setIsSettingsOpen] = reactExports.useState(false);
     const [renderLimit, setRenderLimit] = reactExports.useState(50);
     const activeIndex = useVideoSync(subs, adapter);
+    reactExports.useEffect(() => {
+      const checkVideo = () => {
+        setInVideo((prev) => {
+          const isVid = adapter.isVideoPage();
+          return prev !== isVid ? isVid : prev;
+        });
+      };
+      const interval = setInterval(checkVideo, 500);
+      window.addEventListener("yt-navigate-finish", checkVideo);
+      return () => {
+        clearInterval(interval);
+        window.removeEventListener("yt-navigate-finish", checkVideo);
+      };
+    }, [adapter]);
     reactExports.useEffect(() => {
       adapter.onSubtitleDetected((newSubs) => {
         setSubs(newSubs);
@@ -13330,58 +13380,75 @@ ${contextBlock}`,
         setThemeColor(ConfigService.get("theme_color"));
         setDoneColor(ConfigService.get("done_color"));
         setErrorColor(ConfigService.get("error_color"));
-        setSidebarWidth(parseInt(ConfigService.get("sidebar_width"), 10));
+        setLayout(getAdpCfg("layout_position"));
+        setSidebarWidth(parseInt(getAdpCfg("sidebar_width"), 10));
+        setSidebarHeight(parseInt(getAdpCfg("sidebar_height"), 10));
       };
       window.addEventListener("linkual_settings_updated", handleSettingsUpdate);
       return () => window.removeEventListener("linkual_settings_updated", handleSettingsUpdate);
     }, [adapter]);
     reactExports.useEffect(() => {
-      if (subs.length > 0 && renderLimit < subs.length) {
-        const timer = setTimeout(() => {
-          setRenderLimit((prev) => Math.min(prev + 100, subs.length));
-        }, 50);
-        return () => clearTimeout(timer);
-      }
-    }, [subs.length, renderLimit]);
-    reactExports.useEffect(() => {
-      if (activeIndex >= renderLimit) {
-        setRenderLimit(activeIndex + 50);
-      }
-    }, [activeIndex, renderLimit]);
-    reactExports.useEffect(() => {
       if (adapter.resizeHost) {
-        adapter.resizeHost(sidebarWidth);
+        if (inVideo) {
+          adapter.resizeHost(sidebarWidth, sidebarHeight, layout);
+        } else {
+          adapter.resizeHost(0, 0, layout);
+        }
       }
-    }, [sidebarWidth, adapter]);
+    }, [sidebarWidth, sidebarHeight, layout, adapter, inVideo]);
     const startResize = (e) => {
       e.preventDefault();
-      const startX = e.clientX;
-      const startWidth = sidebarWidth;
-      let currentWidth = startWidth;
-      const onMouseMove = (ev) => {
-        let newWidth = startWidth - (ev.clientX - startX);
-        if (newWidth < 250) newWidth = 250;
-        if (newWidth > window.innerWidth * 0.8) newWidth = window.innerWidth * 0.8;
-        currentWidth = newWidth;
-        setSidebarWidth(newWidth);
-      };
-      const onMouseUp = () => {
-        document.removeEventListener("mousemove", onMouseMove);
-        document.removeEventListener("mouseup", onMouseUp);
-        ConfigService.set("sidebar_width", currentWidth.toString());
-      };
-      document.addEventListener("mousemove", onMouseMove);
-      document.addEventListener("mouseup", onMouseUp);
+      if (layout === "bottom") {
+        const startY = e.clientY;
+        const startHeight = sidebarHeight;
+        let currentHeight = startHeight;
+        const onMouseMove = (ev) => {
+          let newHeight = startHeight - (ev.clientY - startY);
+          if (newHeight < 150) newHeight = 150;
+          if (newHeight > window.innerHeight * 0.8) newHeight = window.innerHeight * 0.8;
+          currentHeight = newHeight;
+          setSidebarHeight(newHeight);
+        };
+        const onMouseUp = () => {
+          document.removeEventListener("mousemove", onMouseMove);
+          document.removeEventListener("mouseup", onMouseUp);
+          ConfigService.set(`sidebar_height_${adapter.platformName}`, currentHeight.toString());
+          ConfigService.set("sidebar_height", currentHeight.toString());
+        };
+        document.addEventListener("mousemove", onMouseMove);
+        document.addEventListener("mouseup", onMouseUp);
+      } else {
+        const startX = e.clientX;
+        const startWidth = sidebarWidth;
+        let currentWidth = startWidth;
+        const onMouseMove = (ev) => {
+          let newWidth = startWidth - (ev.clientX - startX);
+          if (newWidth < 250) newWidth = 250;
+          if (newWidth > window.innerWidth * 0.8) newWidth = window.innerWidth * 0.8;
+          currentWidth = newWidth;
+          setSidebarWidth(newWidth);
+        };
+        const onMouseUp = () => {
+          document.removeEventListener("mousemove", onMouseMove);
+          document.removeEventListener("mouseup", onMouseUp);
+          ConfigService.set(`sidebar_width_${adapter.platformName}`, currentWidth.toString());
+          ConfigService.set("sidebar_width", currentWidth.toString());
+        };
+        document.addEventListener("mousemove", onMouseMove);
+        document.addEventListener("mouseup", onMouseUp);
+      }
     };
     const wrapStyle = {
-      width: sidebarWidth,
+      display: inVideo ? "flex" : "none",
+      width: layout === "right" ? sidebarWidth : "100%",
+      height: layout === "bottom" ? sidebarHeight : "100vh",
       "--linkual-theme": themeColor,
       "--linkual-done": doneColor,
       "--linkual-error": errorColor
     };
     return /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-wrap", style: wrapStyle, children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "resizer", onMouseDown: startResize, title: "左右拖拽调整宽度" }),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: `linkual-wrap layout-${layout}`, style: wrapStyle, children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "resizer", onMouseDown: startResize, title: layout === "right" ? "左右拖拽调整宽度" : "上下拖拽调整高度" }),
         /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "header", children: [
           /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
             "Link-ual Log [",
@@ -13391,9 +13458,9 @@ ${contextBlock}`,
           /* @__PURE__ */ jsxRuntimeExports.jsx("div", { children: /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "settings-icon", onClick: () => setIsSettingsOpen(true), title: "全局设置", children: "⚙️" }) })
         ] }),
         /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "list", children: subs.length === 0 ? /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "empty-tip", children: "等待字幕数据..." }) : subs.slice(0, renderLimit).map((sub, index2) => /* @__PURE__ */ jsxRuntimeExports.jsx(SubtitleItem, { data: sub, index: index2, allSubs: subs, isActive: index2 === activeIndex, adapter }, index2)) }),
-        isSettingsOpen && /* @__PURE__ */ jsxRuntimeExports.jsx(Settings, { onClose: () => setIsSettingsOpen(false) })
+        isSettingsOpen && /* @__PURE__ */ jsxRuntimeExports.jsx(Settings, { adapter, onClose: () => setIsSettingsOpen(false) })
       ] }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx(VocabQueue, {})
+      inVideo && /* @__PURE__ */ jsxRuntimeExports.jsx(VocabQueue, {})
     ] });
   };
   class YouTubeShortsAdapter {
@@ -13415,6 +13482,9 @@ ${contextBlock}`,
     }
     match(url) {
       return url.includes("youtube.com/shorts/");
+    }
+    isVideoPage() {
+      return window.location.pathname.startsWith("/shorts/");
     }
     onSubtitleDetected(callback) {
       this.listeners = [callback];
@@ -13513,28 +13583,28 @@ ${contextBlock}`,
         }
       }
     }
-    resizeHost(width) {
-      document.documentElement.style.setProperty("--linkual-sidebar-width", `${width}px`);
+    resizeHost(width, height, layout) {
+      document.documentElement.style.setProperty("--linkual-sidebar-width", layout === "right" ? `${width}px` : "0px");
+      document.documentElement.style.setProperty("--linkual-sidebar-height", layout === "bottom" ? `${height}px` : "0px");
       let styleEl = document.getElementById("linkual-style-patch-shorts");
       if (!styleEl) {
         styleEl = document.createElement("style");
         styleEl.id = "linkual-style-patch-shorts";
         document.head.appendChild(styleEl);
       }
-      if (styleEl) {
+      if (layout === "right") {
         styleEl.textContent = `
         html, body { overflow-x: hidden !important; }
-        
-        /* 同样修复 Shorts 的靠左对齐 */
-        ytd-app, #masthead-container { 
-          width: calc(100vw - var(--linkual-sidebar-width)) !important; 
-          max-width: calc(100vw - var(--linkual-sidebar-width)) !important; 
-          left: 0 !important; 
-          right: auto !important; 
-        }
-        
-        ytd-shorts { width: 100% !important; position: relative !important; }
+        ytd-app, #masthead-container { width: calc(100vw - var(--linkual-sidebar-width)) !important; max-width: calc(100vw - var(--linkual-sidebar-width)) !important; left: 0 !important; right: auto !important; margin-bottom: 0 !important; }
+        ytd-shorts { width: calc(100vw - var(--linkual-sidebar-width)) !important; position: relative !important; }
         #shorts-container, #shorts-inner-container, ytd-reel-video-renderer { width: 100% !important; max-width: 100% !important; }
+      `;
+      } else {
+        styleEl.textContent = `
+        html, body { overflow-x: hidden !important; }
+        ytd-app, #masthead-container { width: 100vw !important; max-width: 100vw !important; left: 0 !important; right: auto !important; margin-bottom: var(--linkual-sidebar-height) !important; }
+        ytd-shorts { height: calc(100vh - var(--linkual-sidebar-height)) !important; width: 100% !important; position: relative !important; }
+        #shorts-container, #shorts-inner-container, ytd-reel-video-renderer { width: 100% !important; max-width: 100% !important; height: 100% !important; }
       `;
       }
       if (this.resizeTimeout !== null) clearTimeout(this.resizeTimeout);
@@ -13573,6 +13643,9 @@ ${contextBlock}`,
     }
     match(url) {
       return url.includes("youtube.com") && !url.includes("/shorts/");
+    }
+    isVideoPage() {
+      return window.location.pathname === "/watch";
     }
     onSubtitleDetected(callback) {
       this.listeners = [callback];
@@ -13754,26 +13827,23 @@ ${contextBlock}`,
         }
       });
     }
-    resizeHost(width) {
-      document.documentElement.style.setProperty("--linkual-sidebar-width", `${width}px`);
+    resizeHost(width, height, layout) {
+      document.documentElement.style.setProperty("--linkual-sidebar-width", layout === "right" ? `${width}px` : "0px");
+      document.documentElement.style.setProperty("--linkual-sidebar-height", layout === "bottom" ? `${height}px` : "0px");
       let styleEl = document.getElementById("linkual-style-patch");
       if (!styleEl) {
         styleEl = document.createElement("style");
         styleEl.id = "linkual-style-patch";
         document.head.appendChild(styleEl);
       }
-      if (styleEl) {
+      if (layout === "right") {
         styleEl.textContent = `
         html, body { overflow-x: hidden !important; }
-        
         ytd-app, #masthead-container { 
           width: calc(100vw - var(--linkual-sidebar-width)) !important; 
           max-width: calc(100vw - var(--linkual-sidebar-width)) !important; 
-          left: 0 !important; 
-          right: auto !important; 
+          left: 0 !important; right: auto !important; margin-bottom: 0 !important;
         }
-        
-        /* 【终极修复】：将 ytd-player 和 .html5-video-player 一并制裁，彻底覆盖 YouTube JS 算出的内联宽度 */
         ytd-watch-flexy[theater] #player-theater-container, 
         ytd-watch-flexy[theater] #player-full-bleed-container,
         ytd-watch-flexy[theater] #full-bleed-container, 
@@ -13786,27 +13856,36 @@ ${contextBlock}`,
           min-height: 0 !important; 
           height: calc((100vw - var(--linkual-sidebar-width)) * 9 / 16) !important; 
           max-height: calc(100vh - 56px) !important; 
-          margin: 0 !important; 
-          transform: none !important; 
+          margin: 0 !important; transform: none !important; 
         }
-        
-        /* 强制视频画面适应新的父级尺寸，防止被裁切 */
-        .html5-video-player .html5-video-container, 
-        .html5-video-player video { 
-          width: 100% !important; 
-          height: 100% !important; 
-          left: 0 !important; 
-          top: 0 !important;
-          margin: 0 !important; 
-          object-fit: contain !important;
+        .html5-video-player .html5-video-container, .html5-video-player video { 
+          width: 100% !important; height: 100% !important; left: 0 !important; top: 0 !important; margin: 0 !important; object-fit: contain !important;
         }
-        
-        /* 让底部控制栏（进度条、播放按钮）也对齐缩放后的宽度 */
-        .html5-video-player .ytp-chrome-bottom { 
-          width: calc(100% - 24px) !important; 
-          left: 12px !important; 
-          margin: 0 !important; 
+        .html5-video-player .ytp-chrome-bottom { width: calc(100% - 24px) !important; left: 12px !important; margin: 0 !important; }
+      `;
+      } else {
+        styleEl.textContent = `
+        html, body { overflow-x: hidden !important; }
+        ytd-app, #masthead-container { 
+          width: 100vw !important; max-width: 100vw !important; left: 0 !important; right: auto !important; 
+          margin-bottom: var(--linkual-sidebar-height) !important; 
         }
+        ytd-watch-flexy[theater] #player-theater-container, 
+        ytd-watch-flexy[theater] #player-full-bleed-container,
+        ytd-watch-flexy[theater] #full-bleed-container, 
+        ytd-watch-flexy[theater] #cinematics-container, 
+        ytd-watch-flexy[theater] #cinematics,
+        ytd-watch-flexy[theater] ytd-player,
+        ytd-watch-flexy[theater] .html5-video-player { 
+          width: 100vw !important; max-width: 100vw !important; min-height: 0 !important; 
+          height: calc(100vw * 9 / 16) !important; 
+          max-height: calc(100vh - var(--linkual-sidebar-height) - 56px) !important; 
+          margin: 0 auto !important; transform: none !important; 
+        }
+        .html5-video-player .html5-video-container, .html5-video-player video { 
+          width: 100% !important; height: 100% !important; left: 0 !important; top: 0 !important; margin: 0 !important; object-fit: contain !important;
+        }
+        .html5-video-player .ytp-chrome-bottom { width: calc(100% - 24px) !important; left: 12px !important; margin: 0 !important; }
       `;
       }
       if (this.resizeTimeout !== null) clearTimeout(this.resizeTimeout);
@@ -13841,6 +13920,9 @@ ${contextBlock}`,
     }
     match(url) {
       return url.includes("localhost") || url.includes("127.0.0.1");
+    }
+    isVideoPage() {
+      return true;
     }
     onSubtitleDetected(callback) {
       setTimeout(() => {
