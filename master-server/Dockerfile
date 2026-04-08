@@ -21,6 +21,6 @@ ENV VOCAB_DIR="/app/data/"
 WORKDIR /app/master-server/dev
 RUN uv sync
 
-EXPOSE 13344 13345
+EXPOSE 80 8080
 
 CMD ["uv", "run", "main.py"]

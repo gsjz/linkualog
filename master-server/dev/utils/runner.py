@@ -2,7 +2,7 @@ import subprocess
 import os
 import sys
 
-def start_frontend_dev(frontend_port=8888, backend_port=8000):
+def start_frontend_dev(frontend_port=80, backend_port=8080):
     """启动前端开发服务器并暴露在局域网"""
     current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     frontend_dir = os.path.join(current_dir, "frontend")

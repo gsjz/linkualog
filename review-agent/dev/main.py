@@ -1,5 +1,9 @@
+import time
+
 def main():
-    print("Hello from dev!")
+    while True:
+        print("Hello from dev!")
+        time.sleep(60)
 
 
 if __name__ == "__main__":

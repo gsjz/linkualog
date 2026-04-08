@@ -5,8 +5,8 @@ services:
       dockerfile: Dockerfile
     container_name: master-server-app
     ports:
-      - "13344:13344"
-      - "13345:13345"
+      - "80:80"
+      - "8080:8080"
     volumes:
       - ./master-server/user:/app/master-server/user
       - ./data:/app/data
