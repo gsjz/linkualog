@@ -22,12 +22,18 @@ def get_config():
     return {
         "provider": config["provider"],
         "model": config["model"],
-        "hasKey": config["hasKey"]
+        "hasKey": config["hasKey"],
+        "experimentalCoordinatesEnabled": bool(config.get("experimental_coordinates_enabled"))
     }
 
 @router.post("/api/config")
-def update_config(provider: str = Form(...), model: str = Form(...), api_key: str = Form("")):
-    save_config_data(provider, model, api_key)
+def update_config(
+    provider: str = Form(...),
+    model: str = Form(...),
+    api_key: str = Form(""),
+    experimental_coordinates_enabled: bool | None = Form(None)
+):
+    save_config_data(provider, model, api_key, experimental_coordinates_enabled)
     return {"status": "success", "message": "配置已保存"}
 
 
@@ -52,9 +58,17 @@ def process_task_background(task_id: str):
                 image_bytes = f.read()
             
             mime = mimetypes.guess_type(sub["path"])[0] or "image/jpeg"
-            reply = process_image(image_bytes, os.path.basename(sub["path"]), mime)
+            runtime_config = get_config_data()
+            reply = process_image(
+                image_bytes,
+                os.path.basename(sub["path"]),
+                mime,
+                experimental_coordinates=bool(runtime_config.get("experimental_coordinates_enabled"))
+            )
             
-            sub["result"] = reply
+            sub["result"] = reply["raw"]
+            sub["parsed_result"] = reply["parsed"]
+            sub["result_meta"] = reply.get("meta", {})
             sub["status"] = "completed"
             sub.pop("error", None)
             task["completed"] += 1
@@ -78,7 +92,7 @@ async def upload_resource(
     background_tasks: BackgroundTasks, 
     files: List[UploadFile] = File(...),
     taskName: str = Form(""),    
-    startPage: int = Form(1)     
+    startPage: int = Form(1)
 ):
     sub_tasks_paths = []
     try:
@@ -100,7 +114,11 @@ async def upload_resource(
                 sub_tasks_paths.append(saved_path)
 
         final_name = taskName.strip() if taskName.strip() else "资源解析任务"
-        task_id = create_task(final_name, sub_tasks_paths, startPage)
+        task_id = create_task(
+            final_name,
+            sub_tasks_paths,
+            startPage
+        )
         background_tasks.add_task(process_task_background, task_id)
         
         return {"status": "success", "task_id": task_id}
@@ -168,6 +186,8 @@ def regenerate_task_item(task_id: str, req: RegenerateRequest, background_tasks:
         
     sub["status"] = "pending" 
     sub["result"] = None
+    sub.pop("parsed_result", None)
+    sub.pop("result_meta", None)
     if "error" in sub:
         del sub["error"]
         

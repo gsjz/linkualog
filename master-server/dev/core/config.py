@@ -8,7 +8,13 @@ DEFAULT_MODEL = os.environ.get("DEFAULT_MODEL")
 def get_config_data():
     """读取并返回配置"""
     if not os.path.exists(CONFIG_FILE):
-        return {"provider": DEFAULT_PROVIDER, "model": DEFAULT_MODEL, "hasKey": False, "api_key": ""}
+        return {
+            "provider": DEFAULT_PROVIDER,
+            "model": DEFAULT_MODEL,
+            "hasKey": False,
+            "api_key": "",
+            "experimental_coordinates_enabled": False
+        }
     
     with open(CONFIG_FILE, "r", encoding="utf-8") as f:
         config = json.load(f)
@@ -17,10 +23,16 @@ def get_config_data():
         "provider": config.get("provider", DEFAULT_PROVIDER),
         "model": config.get("model", DEFAULT_MODEL),
         "hasKey": bool(config.get("api_key")),
-        "api_key": config.get("api_key", "")
+        "api_key": config.get("api_key", ""),
+        "experimental_coordinates_enabled": bool(config.get("experimental_coordinates_enabled", False))
     }
 
-def save_config_data(provider: str, model: str, api_key: str = ""):
+def save_config_data(
+    provider: str,
+    model: str,
+    api_key: str = "",
+    experimental_coordinates_enabled: bool | None = None
+):
     """保存配置到文件"""
     config = {}
     if os.path.exists(CONFIG_FILE):
@@ -32,6 +44,9 @@ def save_config_data(provider: str, model: str, api_key: str = ""):
     
     if api_key.strip():
         config["api_key"] = api_key.strip()
+
+    if experimental_coordinates_enabled is not None:
+        config["experimental_coordinates_enabled"] = bool(experimental_coordinates_enabled)
     
     os.makedirs(os.path.dirname(CONFIG_FILE), exist_ok=True)
     

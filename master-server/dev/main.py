@@ -43,7 +43,7 @@ app.add_middleware(
 app.include_router(router)
 
 if __name__ == "__main__":
-    FRONTEND_PORT = 80
+    FRONTEND_PORT = 8000
     BACKEND_PORT = 8080
     
     frontend_thread = threading.Thread(target=start_frontend_dev, args=(FRONTEND_PORT, BACKEND_PORT))

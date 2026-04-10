@@ -147,6 +147,102 @@ const JsonNode = ({ val, nodeKey, foldedKeys, isRoot = false, taskName = '' }) =
   );
 };
 
+const parseLegacyTaskResult = (result) => {
+  if (!result) return null;
+  if (typeof result === 'object') return result;
+
+  try {
+    const jsonMatch = result.match(/```json\n([\s\S]*?)\n```/);
+    if (jsonMatch) return JSON.parse(jsonMatch[1]);
+    return JSON.parse(result);
+  } catch (e) {
+    return null;
+  }
+};
+
+const getOverlayMarks = (content) => {
+  if (!content || typeof content !== 'object' || !Array.isArray(content.marked_text)) {
+    return [];
+  }
+
+  return content.marked_text
+    .map((item, index) => ({
+      id: `${item.word || 'mark'}-${index}`,
+      word: item.word || `标记 ${index + 1}`,
+      context: item.context || '',
+      bbox: item.bbox,
+    }))
+    .filter((item) => {
+      const bbox = item.bbox;
+      return bbox
+        && Number.isFinite(bbox.left)
+        && Number.isFinite(bbox.top)
+        && Number.isFinite(bbox.width)
+        && Number.isFinite(bbox.height);
+    });
+};
+
+const ImageOverlayPreview = ({ src, alt, overlayMarks, showOverlay }) => {
+  const [hasImageError, setHasImageError] = useState(false);
+
+  if (hasImageError) {
+    return <span style={{ color: '#a1a1aa', fontSize: '12px' }}>图片不可用</span>;
+  }
+
+  return (
+    <div style={{ position: 'relative', display: 'inline-block', maxWidth: '100%', maxHeight: '100%' }}>
+      <img
+        src={src}
+        alt={alt}
+        style={{ display: 'block', maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+        onError={() => setHasImageError(true)}
+      />
+
+      {showOverlay && overlayMarks.length > 0 && (
+        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+          {overlayMarks.map((mark) => (
+            <div
+              key={mark.id}
+              title={mark.context || mark.word}
+              style={{
+                position: 'absolute',
+                left: `${mark.bbox.left * 100}%`,
+                top: `${mark.bbox.top * 100}%`,
+                width: `${mark.bbox.width * 100}%`,
+                height: `${mark.bbox.height * 100}%`,
+                border: '2px solid rgba(239, 68, 68, 0.9)',
+                background: 'rgba(239, 68, 68, 0.12)',
+                borderRadius: '4px',
+                boxSizing: 'border-box',
+              }}
+            >
+              <span
+                style={{
+                  position: 'absolute',
+                  top: '-24px',
+                  left: '0',
+                  maxWidth: '180px',
+                  padding: '2px 6px',
+                  fontSize: '11px',
+                  lineHeight: '1.2',
+                  color: '#fff',
+                  background: 'rgba(127, 29, 29, 0.92)',
+                  borderRadius: '4px',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+              >
+                {mark.word}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default function TaskVisualizer() {
   const [historyTasks, setHistoryTasks] = useState([]);
   const [selectedTaskId, setSelectedTaskId] = useState(null);
@@ -155,6 +251,7 @@ export default function TaskVisualizer() {
   const [files, setFiles] = useState([]);
   const [taskName, setTaskName] = useState('');
   const [startPage, setStartPage] = useState(1);
+  const [showCoordinateOverlay, setShowCoordinateOverlay] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const [regeneratingPages, setRegeneratingPages] = useState({});
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -258,21 +355,19 @@ export default function TaskVisualizer() {
     const basePage = taskData.start_page !== undefined ? parseInt(taskData.start_page, 10) : 1;
 
     return taskData.sub_tasks.map((sub, index) => {
-      let extractedContent = sub.result;
-      if (sub.result) {
-        try {
-          const jsonMatch = sub.result.match(/```json\n([\s\S]*?)\n```/);
-          if (jsonMatch) extractedContent = JSON.parse(jsonMatch[1]);
-          else extractedContent = JSON.parse(sub.result);
-        } catch (e) {}
-      }
+      const parsedContent = sub.parsed_result || parseLegacyTaskResult(sub.result);
+      const extractedContent = parsedContent || sub.result;
+      const overlayMarks = getOverlayMarks(parsedContent);
+
       return {
         task_name: finalTaskName,
         page_number: basePage + index,
         content: extractedContent,
         status: sub.status,
         image_path: sub.path,
-        error: sub.error 
+        error: sub.error,
+        overlay_marks: overlayMarks,
+        experimental_coordinates: Boolean(sub.result_meta?.experimental_coordinates),
       };
     });
   };
@@ -288,6 +383,11 @@ export default function TaskVisualizer() {
     padding: '6px 12px', border: '1px solid #e4e4e7', borderRadius: '4px', 
     fontSize: '13px', outline: 'none', background: '#fff'
   };
+
+  const formattedResults = getFormattedResults();
+  const taskHasOverlayMarks = formattedResults.some((item) => item.overlay_marks.length > 0);
+  const taskUsesExperimentalCoordinates = formattedResults.some((item) => item.experimental_coordinates);
+  const showOverlayToggle = taskUsesExperimentalCoordinates || taskHasOverlayMarks;
 
   return (
     <div className="task-layout" style={{ display: 'flex', height: '100%', width: '100%' }}>
@@ -348,8 +448,20 @@ export default function TaskVisualizer() {
                 <strong style={{ fontSize: '14px' }}>{taskData.name || '未命名'}</strong>
                 <span>进度: {taskData.completed} / {taskData.total}</span>
                 <span>状态: {getStatusText(taskData.status)}</span>
+                {taskUsesExperimentalCoordinates && <span style={{ padding: '2px 8px', fontSize: '12px', color: '#991b1b', background: '#fee2e2', borderRadius: '999px' }}>实验坐标模式</span>}
               </div>
               <div style={{ display: 'flex', gap: '12px' }}>
+                {showOverlayToggle && (
+                  <label style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: taskHasOverlayMarks ? '#09090b' : '#71717a', padding: '4px 10px', border: '1px solid #e4e4e7', borderRadius: '4px', background: '#fff' }}>
+                    <input
+                      type="checkbox"
+                      checked={showCoordinateOverlay}
+                      onChange={e => setShowCoordinateOverlay(e.target.checked)}
+                      disabled={!taskHasOverlayMarks}
+                    />
+                    显示坐标图层
+                  </label>
+                )}
                 {taskData.status === 'paused' && <button onClick={handleResume} style={{ padding: '4px 12px', background: '#fff', border: '1px solid #e4e4e7', borderRadius: '4px', fontSize: '12px', cursor: 'pointer' }}>从失败处继续</button>}
                 <button onClick={handleDeleteTask} style={{ padding: '4px 12px', background: '#fff', color: '#ef4444', border: '1px solid #fca5a5', borderRadius: '4px', fontSize: '12px', cursor: 'pointer' }}>删除任务</button>
               </div>
@@ -360,7 +472,7 @@ export default function TaskVisualizer() {
             </div>
 
             <div className="task-content-area" style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
-              {getFormattedResults().map((item, idx) => {
+              {formattedResults.map((item, idx) => {
                  const isRegenerating = regeneratingPages[idx];
                  return (
                  <div key={idx} className="result-item-container" style={{ marginBottom: '32px', border: '1px solid #e4e4e7', borderRadius: '6px', overflow: 'hidden' }}>
@@ -368,6 +480,8 @@ export default function TaskVisualizer() {
                       <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
                         <span style={{ fontWeight: '500', color: '#09090b' }}>页码: {item.page_number}</span>
                         <span>状态: {item.status === 'completed' ? '解析成功' : item.status === 'failed' ? '解析失败' : '处理中...'}</span>
+                        {item.experimental_coordinates && <span style={{ color: '#991b1b', background: '#fee2e2', padding: '4px 8px', borderRadius: '999px' }}>坐标实验</span>}
+                        {item.overlay_marks.length > 0 && <span style={{ color: '#065f46', background: '#d1fae5', padding: '4px 8px', borderRadius: '999px' }}>坐标 {item.overlay_marks.length} 个</span>}
                         {item.error && <span style={{ color: '#ef4444', fontSize: '12px', background: '#fee2e2', padding: '4px 8px', borderRadius: '4px', maxWidth: '400px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={item.error}>原因: {item.error}</span>}
                       </div>
                       <button onClick={() => handleRegenerate(idx)} disabled={isRegenerating || item.status === 'processing'} style={{ padding: '4px 10px', background: '#fff', border: '1px solid #e4e4e7', borderRadius: '4px', fontSize: '12px', cursor: (isRegenerating || item.status === 'processing') ? 'not-allowed' : 'pointer', color: (isRegenerating || item.status === 'processing') ? '#a1a1aa' : '#09090b', flexShrink: 0 }}>
@@ -378,11 +492,11 @@ export default function TaskVisualizer() {
                     <div className="result-layout" style={{ display: 'flex', alignItems: 'stretch', maxHeight: '750px' }}>
                       
                       <div className="result-image-box" style={{ background: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
-                        <img 
-                          src={getImageUrl(item.image_path)} 
-                          alt={`第 ${item.page_number} 页预览`} 
-                          style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
-                          onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.innerHTML = '<span style="color:#a1a1aa;font-size:12px;">图片不可用</span>'; }} 
+                        <ImageOverlayPreview
+                          src={getImageUrl(item.image_path)}
+                          alt={`第 ${item.page_number} 页预览`}
+                          overlayMarks={item.overlay_marks}
+                          showOverlay={showCoordinateOverlay}
                         />
                       </div>
 

@@ -6,7 +6,8 @@ export default function ConfigForm({ onClose }) {
     provider: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
     model: 'qwen3.5-27b',
     apiKey: '',
-    hasKey: false
+    hasKey: false,
+    experimentalCoordinatesEnabled: false
   });
   const [foldedKeysStr, setFoldedKeysStr] = useState('');
   const [defaultCategory, setDefaultCategory] = useState('');
@@ -26,7 +27,13 @@ export default function ConfigForm({ onClose }) {
 
     fetchConfig()
       .then(data => {
-        setConfig(prev => ({ ...prev, provider: data.provider || prev.provider, model: data.model || prev.model, hasKey: data.hasKey }));
+        setConfig(prev => ({
+          ...prev,
+          provider: data.provider || prev.provider,
+          model: data.model || prev.model,
+          hasKey: data.hasKey,
+          experimentalCoordinatesEnabled: Boolean(data.experimentalCoordinatesEnabled)
+        }));
       })
       .catch(err => console.error("无法连接到后端:", err));
   }, []);
@@ -42,6 +49,7 @@ export default function ConfigForm({ onClose }) {
     formData.append('provider', config.provider);
     formData.append('model', config.model);
     formData.append('api_key', config.apiKey);
+    formData.append('experimental_coordinates_enabled', config.experimentalCoordinatesEnabled ? 'true' : 'false');
 
     try {
       const data = await saveConfig(formData);
@@ -93,6 +101,14 @@ export default function ConfigForm({ onClose }) {
             <label style={labelStyle}>
               API Key {config.hasKey && <span style={{ color: '#10b981', fontSize: '12px', fontWeight: '400', marginLeft: '4px' }}>(已缓存 ✅)</span>}
               <input type="password" value={config.apiKey} onChange={e => setConfig({ ...config, apiKey: e.target.value })} placeholder={config.hasKey ? "留空则保持原密钥" : "输入 API Key"} style={inputStyle} />
+            </label>
+            <label style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#09090b', fontWeight: '500' }}>
+              <input
+                type="checkbox"
+                checked={config.experimentalCoordinatesEnabled}
+                onChange={e => setConfig({ ...config, experimentalCoordinatesEnabled: e.target.checked })}
+              />
+              启用实验功能：返回下划线词坐标（简写 JSON + 本地还原）
             </label>
           </div>
 

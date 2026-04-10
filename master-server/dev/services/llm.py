@@ -1,12 +1,135 @@
 import base64
-import requests
-import time
 import io
+import json
+import time
+import requests
 from PIL import Image, ImageOps
 from pillow_heif import register_heif_opener
 from core.config import get_config_data
 
 register_heif_opener()
+
+
+def _clean_llm_json_text(content: str) -> str:
+    return content.replace("```json", "").replace("```", "").strip()
+
+
+def _extract_message_content(content) -> str:
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        text_parts = []
+        for item in content:
+            if isinstance(item, dict) and item.get("type") == "text":
+                text_parts.append(item.get("text", ""))
+        return "".join(text_parts).strip()
+    return str(content or "").strip()
+
+
+def _normalize_ratio(value):
+    try:
+        numeric = float(value)
+    except (TypeError, ValueError):
+        return None
+
+    if numeric < 0:
+        return None
+    if numeric <= 1:
+        return numeric
+    if numeric <= 100:
+        return numeric / 100.0
+    if numeric <= 1000:
+        return numeric / 1000.0
+    return None
+
+
+def _normalize_bbox(raw_bbox):
+    if not isinstance(raw_bbox, dict):
+        return None
+
+    left = _normalize_ratio(raw_bbox.get("l", raw_bbox.get("left", raw_bbox.get("x"))))
+    top = _normalize_ratio(raw_bbox.get("t", raw_bbox.get("top", raw_bbox.get("y"))))
+    width = _normalize_ratio(raw_bbox.get("w", raw_bbox.get("width")))
+    height = _normalize_ratio(raw_bbox.get("h", raw_bbox.get("height")))
+
+    if None in (left, top, width, height):
+        return None
+    if width <= 0 or height <= 0:
+        return None
+
+    return {
+        "left": max(0.0, min(1.0, left)),
+        "top": max(0.0, min(1.0, top)),
+        "width": max(0.0, min(1.0, width)),
+        "height": max(0.0, min(1.0, height)),
+    }
+
+
+def _restore_marked_item(item):
+    if not isinstance(item, dict):
+        return None
+
+    restored = {
+        "word": item.get("word", item.get("w", "")),
+        "context": item.get("context", item.get("c", "")),
+    }
+
+    raw_bbox = item.get("bbox", item.get("b", item.get("coordinates")))
+    bbox = _normalize_bbox(raw_bbox)
+    if bbox:
+        restored["bbox"] = bbox
+
+    return restored
+
+
+def _restore_image_result(parsed_reply):
+    if not isinstance(parsed_reply, dict):
+        raise ValueError("LLM 返回不是 JSON 对象")
+
+    extracted_text = parsed_reply.get("extracted_text", parsed_reply.get("t", ""))
+    raw_marked_text = parsed_reply.get("marked_text", parsed_reply.get("m", []))
+
+    marked_text = []
+    if isinstance(raw_marked_text, list):
+        for item in raw_marked_text:
+            restored_item = _restore_marked_item(item)
+            if restored_item:
+                marked_text.append(restored_item)
+
+    return {
+        "extracted_text": extracted_text if isinstance(extracted_text, str) else str(extracted_text),
+        "marked_text": marked_text,
+    }
+
+
+def _parse_image_reply(llm_reply: str):
+    parsed_reply = json.loads(llm_reply)
+    return _restore_image_result(parsed_reply)
+
+
+def _build_image_prompt(experimental_coordinates: bool) -> str:
+    prompt_prefix = (
+        "你是一个专业的 OCR 和语言处理引擎。"
+        "请提取这张图片中的主要文字，并找出其中的英文被用户用笔做下划线标记的生词或重点词。"
+        "必须严格以 JSON 格式输出，不要包含任何额外的 markdown 标记或解释说明。"
+    )
+
+    if experimental_coordinates:
+        return (
+            prompt_prefix
+            + "这是一个实验模式。"
+            + "为了减少 token 和提升稳定性，所有 JSON 键名必须使用单字符简写，我们会在本地还原完整键名。"
+            + "JSON 结构："
+            + '{ "t": "带换行的提取文字...", "m": [ { "w": "用笔迹划出的词...", "c": "词所在的语义完整句子...", "b": { "l": 0.12, "t": 0.34, "w": 0.08, "h": 0.02 } } ] }'
+            + "其中 t=extracted_text，m=marked_text，w=word，c=context，b=bbox。"
+            + "bbox 内 l=left，t=top，w=width，h=height，均是相对整张图片的归一化小数，范围 0 到 1。"
+            + "如果能识别到下划线词但无法可靠定位坐标，保留该词条并将 b 设为 null。"
+        )
+
+    return (
+        prompt_prefix
+        + 'JSON 结构：{ "extracted_text": "带换行的提取文字...", "marked_text": [ { "word": "用笔迹划出的词...", "context": "词所在的语义完整句子..." } ] }'
+    )
 
 def test_llm_connection(api_url: str, api_key: str, model_name: str) -> bool:
     """
@@ -59,8 +182,8 @@ def optimize_image(image_bytes: bytes, max_size: int = 2000) -> bytes:
     return output.getvalue()
 
 
-def process_image(image_bytes: bytes, filename: str, content_type: str) -> str:
-    """调用 LLM 处理图片，返回 JSON 字符串结果"""
+def process_image(image_bytes: bytes, filename: str, content_type: str, experimental_coordinates: bool = False) -> dict:
+    """调用 LLM 处理图片，返回原始文本和本地还原后的 JSON"""
     config = get_config_data()
     api_key = config.get("api_key")
     
@@ -103,12 +226,7 @@ def process_image(image_bytes: bytes, filename: str, content_type: str) -> str:
                 "content": [
                     {
                         "type": "text",
-                        "text": (
-                            "你是一个专业的 OCR 和语言处理引擎。"
-                            "请提取这张图片中的主要文字，并找出其中的英文被用户用笔做下划线标记的生词或重点词。"
-                            "必须严格以 JSON 格式输出，不要包含任何额外的 markdown 标记或解释说明。"
-                            "JSON 结构：{ \"extracted_text\": \"带换行的提取文字...\", \"marked_text\": [ { \"word\": \"用笔迹划出的词...\", \"context\": \"词所在的语义完整句子...\" } ] }"
-                        ) 
+                        "text": _build_image_prompt(experimental_coordinates)
                     },
                     {
                         "type": "image_url",
@@ -128,11 +246,18 @@ def process_image(image_bytes: bytes, filename: str, content_type: str) -> str:
             response.raise_for_status()
             
             result_data = response.json()
-            llm_reply = result_data['choices'][0]['message']['content']
-            llm_reply = llm_reply.replace("```json", "").replace("```", "").strip()
+            llm_reply = _extract_message_content(result_data['choices'][0]['message']['content'])
+            llm_reply = _clean_llm_json_text(llm_reply)
+            parsed_reply = _parse_image_reply(llm_reply)
             
             print(f"✅ LLM 返回结果成功 ({filename})")
-            return llm_reply
+            return {
+                "raw": llm_reply,
+                "parsed": parsed_reply,
+                "meta": {
+                    "experimental_coordinates": experimental_coordinates
+                }
+            }
             
         except Exception as e:
             print(f"⚠️ 第 {attempt + 1} 次正式请求失败: {e}")
@@ -179,8 +304,8 @@ def process_word_definition(word: str) -> dict:
         try:
             response = requests.post(api_url, headers=headers, json=payload, timeout=30)
             response.raise_for_status()
-            llm_reply = response.json()['choices'][0]['message']['content']
-            llm_reply = llm_reply.replace("```json", "").replace("```", "").strip()
+            llm_reply = _extract_message_content(response.json()['choices'][0]['message']['content'])
+            llm_reply = _clean_llm_json_text(llm_reply)
             return standard_json.loads(llm_reply)
         except Exception as e:
             if attempt == 2: raise Exception(f"请求大模型处理基础释义失败: {e}")
@@ -230,8 +355,8 @@ def process_context_analysis(word: str, context: str) -> dict:
         try:
             response = requests.post(api_url, headers=headers, json=payload, timeout=30)
             response.raise_for_status()
-            llm_reply = response.json()['choices'][0]['message']['content']
-            llm_reply = llm_reply.replace("```json", "").replace("```", "").strip()
+            llm_reply = _extract_message_content(response.json()['choices'][0]['message']['content'])
+            llm_reply = _clean_llm_json_text(llm_reply)
             return standard_json.loads(llm_reply)
         except Exception as e:
             if attempt == 2: raise Exception(f"请求大模型处理例句解析失败: {e}")
