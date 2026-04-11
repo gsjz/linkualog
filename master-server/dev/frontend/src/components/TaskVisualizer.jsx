@@ -37,10 +37,8 @@ const buildWordFromFocusPositions = (tokens, focusPositions) => focusPositions.m
 function getExplicitFocusPositions(mark, tokenCount) {
   if (!Number.isInteger(tokenCount) || tokenCount <= 0) return [];
 
-  const focusList = Array.isArray(mark.focusPosition)
-    ? mark.focusPosition
-    : Array.isArray(mark.focusPositions)
-      ? mark.focusPositions
+  const focusList = Array.isArray(mark.focusPositions)
+    ? mark.focusPositions
     : Array.isArray(mark.fp)
       ? mark.fp
       : Array.isArray(mark.fps)
@@ -63,7 +61,7 @@ const sanitizeMarkForContent = (mark) => {
     word: mark.word || '',
     context: mark.context || '',
     bbox: mark.bbox ? { ...mark.bbox } : null,
-    ...(focusPositions.length > 0 ? { focusPosition: focusPositions, focusPositions } : {}),
+    ...(focusPositions.length > 0 ? { focusPositions } : {}),
   };
 };
 
@@ -136,7 +134,7 @@ const toggleFocusTokenSelection = (mark, tokenIndex) => {
       ...mark,
       word: fallbackWord,
     };
-    delete nextMark.focusPosition;
+    delete nextMark.focusPositions;
     delete nextMark.local_start;
     delete nextMark.local_end;
     return nextMark;
@@ -145,7 +143,7 @@ const toggleFocusTokenSelection = (mark, tokenIndex) => {
   return {
     ...mark,
     word: buildWordFromFocusPositions(tokens, nextFocus),
-    focusPosition: nextFocus,
+    focusPositions: nextFocus,
     local_start: nextFocus[0],
     local_end: nextFocus[nextFocus.length - 1],
   };
@@ -202,11 +200,9 @@ const JsonNode = ({ val, nodeKey, foldedKeys, isRoot = false, taskName = '' }) =
 
   const handleDispatchTask = (word, context, fetchLlm, e) => {
     e.stopPropagation();
-    const focusPositions = Array.isArray(val.focusPosition)
-      ? val.focusPosition
-      : Array.isArray(val.focusPositions)
-        ? val.focusPositions
-        : Array.isArray(val.fp)
+    const focusPositions = Array.isArray(val.focusPositions)
+      ? val.focusPositions
+      : Array.isArray(val.fp)
           ? val.fp
           : (Array.isArray(val.fps) ? val.fps : []);
     dispatchVocabTask(word, context, taskName, fetchLlm, focusPositions);
@@ -342,11 +338,9 @@ const getOverlayMarks = (content) => {
       source_word: item.word || item.w || `标记 ${index + 1}`,
       context: item.context || item.c || '',
       bbox: normalizeBbox(item.bbox || item.b),
-      focusPosition: Array.isArray(item.focusPosition)
-        ? item.focusPosition
-        : Array.isArray(item.focusPositions)
-          ? item.focusPositions
-          : Array.isArray(item.fp)
+      focusPositions: Array.isArray(item.focusPositions)
+        ? item.focusPositions
+        : Array.isArray(item.fp)
             ? item.fp
             : (Array.isArray(item.fps) ? item.fps : []),
       local_start: Number.isInteger(item.local_start) ? item.local_start : undefined,
@@ -400,7 +394,7 @@ const ImageOverlayPreview = ({ src, alt, overlayMarks, showOverlay, selectedMark
     const target = previewRootRef.current;
 
     const reportHeight = () => {
-      const nextHeight = Math.round(target.getBoundingClientRect().height);
+      const nextHeight = Math.ceil(target.getBoundingClientRect().height);
       if (nextHeight > 0 && onHeightChangeRef.current) onHeightChangeRef.current(nextHeight);
     };
 
@@ -497,7 +491,7 @@ const ImageOverlayPreview = ({ src, alt, overlayMarks, showOverlay, selectedMark
       </div>
 
       {overlayMarks.length > 0 && (
-        <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '8px', height: '120px', overflowY: 'auto', overflowX: 'hidden', display: 'flex', flexWrap: 'wrap', alignContent: 'flex-start', gap: '8px', paddingRight: '6px' }}>
+        <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '8px', paddingBottom: '8px', maxHeight: '120px', boxSizing: 'border-box', overflowY: 'auto', overflowX: 'hidden', display: 'flex', flexWrap: 'wrap', alignContent: 'flex-start', gap: '8px', paddingRight: '6px' }}>
           {overlayMarks.map((mark) => {
             const isSelected = selectedMarkId === mark.id;
             return (
@@ -517,21 +511,53 @@ const ImageOverlayPreview = ({ src, alt, overlayMarks, showOverlay, selectedMark
   );
 };
 
-const ExperimentalMarkView = ({ marks, selectedMarkId = '', onSelectMark, taskName = '', onUpdateMark, onToggleFocusToken }) => {
+const ExperimentalMarkView = ({ marks, selectedMarkId = '', selectionSignal = 0, onSelectMark, taskName = '', onUpdateMark, onToggleFocusToken }) => {
   const itemRefs = useRef({});
-  const prevSelectedRef = useRef('');
+  const lastFocusKeyRef = useRef('');
 
   useEffect(() => {
-    if (!selectedMarkId || selectedMarkId === prevSelectedRef.current) {
-      prevSelectedRef.current = selectedMarkId;
-      return;
-    }
+    if (!selectedMarkId) return undefined;
+    const focusKey = `${selectedMarkId}:${selectionSignal}`;
+    if (focusKey === lastFocusKeyRef.current) return undefined;
+    lastFocusKeyRef.current = focusKey;
+
     const target = itemRefs.current[selectedMarkId];
-    if (target && typeof target.scrollIntoView === 'function') {
-      target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
-    prevSelectedRef.current = selectedMarkId;
-  }, [selectedMarkId]);
+    if (!(target instanceof HTMLElement)) return undefined;
+
+    const alignTargetInViewport = (behavior = 'smooth') => {
+      const scrollBox = target.closest('.result-json-box');
+      if (!(scrollBox instanceof HTMLElement)) return;
+
+      const targetRect = target.getBoundingClientRect();
+      const scrollBoxRect = scrollBox.getBoundingClientRect();
+      const targetTop = scrollBox.scrollTop + (targetRect.top - scrollBoxRect.top);
+      const targetAnchor = targetTop + Math.min(72, Math.max(24, Math.round(targetRect.height * 0.35)));
+      const viewTop = scrollBox.scrollTop;
+      const viewHeight = scrollBox.clientHeight;
+      const focusBandTop = viewTop + Math.round(viewHeight * 0.18);
+      const focusBandBottom = viewTop + Math.round(viewHeight * 0.62);
+
+      if (targetAnchor >= focusBandTop && targetAnchor <= focusBandBottom) return;
+
+      const idealAnchorInView = Math.round(viewHeight * 0.34);
+      const maxScrollTop = Math.max(0, scrollBox.scrollHeight - viewHeight);
+      const nextTop = Math.max(0, Math.min(maxScrollTop, targetAnchor - idealAnchorInView));
+      if (Math.abs(nextTop - viewTop) < 1) return;
+      scrollBox.scrollTo({ top: nextTop, behavior });
+    };
+
+    const rafId = requestAnimationFrame(() => {
+      alignTargetInViewport('smooth');
+    });
+    const timerId = window.setTimeout(() => {
+      alignTargetInViewport('auto');
+    }, 220);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      window.clearTimeout(timerId);
+    };
+  }, [selectedMarkId, selectionSignal]);
 
   if (!marks || marks.length === 0) return <div style={{ color: '#a1a1aa' }}>当前页面没有可联动词块。</div>;
 
@@ -591,7 +617,7 @@ const ExperimentalMarkView = ({ marks, selectedMarkId = '', onSelectMark, taskNa
                 })}
               </div>
               <span style={{ fontSize: '11px', color: '#9ca3af' }}>
-                {focusPositions.length ? `focusPosition: [${focusSummary}]（共 ${focusPositions.length} 个）` : 'focusPosition: 未设置（默认按返回词条 word）'}
+                {focusPositions.length ? `focusPositions: [${focusSummary}]（共 ${focusPositions.length} 个）` : 'focusPositions: 未设置（默认按返回词条 word）'}
               </span>
             </div>
 
@@ -623,6 +649,7 @@ export default function TaskVisualizer() {
   const [resultViewMode, setResultViewMode] = useState('json');
   const [showCoordinateOverlay, setShowCoordinateOverlay] = useState(true);
   const [selectedMarkByPage, setSelectedMarkByPage] = useState({});
+  const [selectedMarkSignalByPage, setSelectedMarkSignalByPage] = useState({});
   const [editedMarksByPage, setEditedMarksByPage] = useState({});
   const [layoutHeightByPage, setLayoutHeightByPage] = useState({});
 
@@ -758,6 +785,7 @@ export default function TaskVisualizer() {
     setSelectedTaskId(taskId);
     setTaskData(null);
     setSelectedMarkByPage({});
+    setSelectedMarkSignalByPage({});
     setEditedMarksByPage({});
     setLayoutHeightByPage({});
     setSavingPages({});
@@ -776,6 +804,7 @@ export default function TaskVisualizer() {
       setTaskData(null);
       setEditingTaskName('');
       setSelectedMarkByPage({});
+      setSelectedMarkSignalByPage({});
       setEditedMarksByPage({});
       setLayoutHeightByPage({});
       setSavingPages({});
@@ -820,6 +849,7 @@ export default function TaskVisualizer() {
         return next;
       });
       setSelectedMarkByPage((prev) => ({ ...prev, [index]: '' }));
+      setSelectedMarkSignalByPage((prev) => ({ ...prev, [index]: (prev[index] || 0) + 1 }));
       setLayoutHeightByPage((prev) => {
         const next = { ...prev };
         delete next[index];
@@ -846,6 +876,7 @@ export default function TaskVisualizer() {
       if (!nextMarkId) return {};
       return { [pageIndex]: nextMarkId };
     });
+    setSelectedMarkSignalByPage((prev) => ({ [pageIndex]: (prev[pageIndex] || 0) + 1 }));
   };
 
   const updatePageMark = (pageIndex, fallbackMarks, pageContent, markId, updater) => {
@@ -873,14 +904,14 @@ export default function TaskVisualizer() {
       if (tokens.length) {
         const focusPositions = getExplicitFocusPositions(nextMark, tokens.length);
         if (focusPositions.length) {
-          nextMark.focusPosition = focusPositions;
+          nextMark.focusPositions = focusPositions;
           nextMark.local_start = focusPositions[0];
           nextMark.local_end = focusPositions[focusPositions.length - 1];
           if (Object.prototype.hasOwnProperty.call(patch, 'context') && !Object.prototype.hasOwnProperty.call(patch, 'word')) {
             nextMark.word = buildWordFromFocusPositions(tokens, focusPositions);
           }
         } else {
-          delete nextMark.focusPosition;
+          delete nextMark.focusPositions;
           delete nextMark.local_start;
           delete nextMark.local_end;
         }
@@ -1008,7 +1039,7 @@ export default function TaskVisualizer() {
 
   return (
     <div className="task-layout" style={{ position: 'relative', height: '100%', width: '100%', minHeight: 0, overflow: 'hidden', background: '#fff' }}>
-      <div className="task-main" style={{ height: '100%', minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column', background: '#fff', overflow: 'hidden' }}>
+      <div className="task-main" style={{ height: '100%', minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column', background: '#fff', overflow: 'hidden', paddingRight: '52px' }}>
         {pageMode === 'create' ? (
           <div className="task-page-body" style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '20px' }}>
             <div style={{ maxWidth: '980px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -1091,6 +1122,7 @@ export default function TaskVisualizer() {
                 const isRegenerating = regeneratingPages[idx];
                 const pageMarks = (editedMarksByPage[idx] || item.overlay_marks).map(cloneMark);
                 const selectedMarkId = selectedMarkByPage[idx] || '';
+                const selectedMarkSignal = selectedMarkSignalByPage[idx] || 0;
                 const displayContent = buildContentWithEditedMarks(item.content, pageMarks);
                 const measuredRowHeight = layoutHeightByPage[idx];
 
@@ -1122,7 +1154,7 @@ export default function TaskVisualizer() {
                           onSelectMark={(markId, force) => handleSelectMark(idx, markId, force)}
                           onMoveMark={(markId, nextPosition) => handleMoveMark(idx, pageMarks, item.content, markId, nextPosition)}
                           onHeightChange={(height) => {
-                            const normalized = Math.max(260, Math.round(height));
+                            const normalized = Math.max(260, Math.ceil(height));
                             setLayoutHeightByPage((prev) => (prev[idx] === normalized ? prev : { ...prev, [idx]: normalized }));
                           }}
                         />
@@ -1139,6 +1171,7 @@ export default function TaskVisualizer() {
                             : <ExperimentalMarkView
                                 marks={pageMarks}
                                 selectedMarkId={selectedMarkId}
+                                selectionSignal={selectedMarkSignal}
                                 onSelectMark={(markId, force) => handleSelectMark(idx, markId, force)}
                                 taskName={item.task_name}
                                 onUpdateMark={(markId, patch) => handleUpdateMark(idx, pageMarks, item.content, markId, patch)}
@@ -1159,18 +1192,10 @@ export default function TaskVisualizer() {
         )}
       </div>
 
-      <aside className="task-right-panel" style={{ position: 'absolute', top: '12px', right: '12px', bottom: '12px', width: isRightPanelCollapsed ? '44px' : '320px', minWidth: isRightPanelCollapsed ? '44px' : '280px', border: '1px solid #e4e4e7', borderRadius: '10px', background: '#fafafa', display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden', transition: 'width 0.2s ease', boxShadow: '0 12px 24px rgba(15, 23, 42, 0.08)', zIndex: 30 }}>
-        {isRightPanelCollapsed ? (
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <button onClick={() => setIsRightPanelCollapsed(false)} style={{ width: '30px', height: '30px', borderRadius: '8px', border: '1px solid #d4d4d8', background: '#fff', cursor: 'pointer', color: '#18181b' }} title="展开侧栏">◀</button>
-          </div>
-        ) : (
-          <>
+      <aside className={`task-right-panel${isRightPanelCollapsed ? ' is-collapsed' : ''}`} style={{ position: 'absolute', top: '12px', right: '12px', bottom: '12px', width: isRightPanelCollapsed ? '40px' : '320px', minWidth: '40px', border: '1px solid #e4e4e7', borderRadius: '10px', background: '#fafafa', display: 'flex', flexDirection: 'row', minHeight: 0, overflow: 'hidden', transition: 'width 0.2s ease', boxShadow: '0 12px 24px rgba(15, 23, 42, 0.08)', zIndex: 30 }}>
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', minHeight: 0, opacity: isRightPanelCollapsed ? 0 : 1, visibility: isRightPanelCollapsed ? 'hidden' : 'visible', pointerEvents: isRightPanelCollapsed ? 'none' : 'auto', transition: 'opacity 0.15s ease' }}>
             <div style={{ padding: '10px 12px', borderBottom: '1px solid #e4e4e7', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-                <div style={{ fontSize: '12px', fontWeight: 600, color: '#71717a' }}>工作区</div>
-                <button onClick={() => setIsRightPanelCollapsed(true)} style={{ padding: '2px 8px', border: '1px solid #d4d4d8', borderRadius: '6px', background: '#fff', cursor: 'pointer', fontSize: '12px', color: '#52525b' }} title="收起侧栏">收起</button>
-              </div>
+              <div style={{ fontSize: '12px', fontWeight: 600, color: '#71717a' }}>工作区</div>
               <div style={{ display: 'inline-flex', border: '1px solid #e4e4e7', borderRadius: '6px', overflow: 'hidden', background: '#fff' }}>
                 <button onClick={() => setPageMode('browse')} style={{ padding: '6px 12px', border: 'none', borderRight: '1px solid #e4e4e7', fontSize: '12px', background: pageMode === 'browse' ? '#e4e4e7' : '#fff', color: '#09090b', cursor: 'pointer' }}>浏览任务</button>
                 <button onClick={() => setPageMode('create')} style={{ padding: '6px 12px', border: 'none', fontSize: '12px', background: pageMode === 'create' ? '#e4e4e7' : '#fff', color: '#09090b', cursor: 'pointer' }}>新建任务</button>
@@ -1210,8 +1235,23 @@ export default function TaskVisualizer() {
               })}
               {historyTasks.length === 0 && <div style={{ padding: '16px', color: '#a1a1aa', fontSize: '12px' }}>暂无历史任务</div>}
             </div>
-          </>
-        )}
+          </div>
+        <button
+          type="button"
+          onClick={() => setIsRightPanelCollapsed((prev) => !prev)}
+          title={isRightPanelCollapsed ? '展开侧栏' : '收起侧栏'}
+          aria-label={isRightPanelCollapsed ? '展开侧栏' : '收起侧栏'}
+          style={{ width: '30px', minWidth: '30px', flexShrink: 0, border: 'none', borderLeft: '1px solid #e4e4e7', background: '#f8fafc', cursor: 'pointer', color: '#52525b', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '10px 4px' }}
+        >
+          <span style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+            <span aria-hidden style={{ display: 'inline-block', fontSize: '12px', lineHeight: 1, transform: isRightPanelCollapsed ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }}>
+              ❮
+            </span>
+            <span style={{ writingMode: 'vertical-rl', fontSize: '11px', letterSpacing: '1px', fontWeight: 600, lineHeight: 1.1 }}>
+              侧栏
+            </span>
+          </span>
+        </button>
       </aside>
     </div>
   );

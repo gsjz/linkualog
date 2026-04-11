@@ -225,6 +225,15 @@
     box-shadow: none !important;
   }
 
+  .task-right-panel.is-collapsed {
+    width: 44px !important;
+    min-width: 44px !important;
+    max-height: none !important;
+    margin-left: auto !important;
+    border-top: none !important;
+    border-left: 1px solid #e4e4e7 !important;
+  }
+
   .task-page-body {
     padding: 12px !important;
   }

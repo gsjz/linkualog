@@ -61,7 +61,7 @@ def _normalize_mark_focus(mark: dict, short_mode: bool = False):
     token_count = token_count if token_count > 0 else None
 
     focus_positions = _normalize_focus_positions(
-        next_mark.get("focusPosition", next_mark.get("focusPositions", next_mark.get("fp", next_mark.get("fps")))),
+        next_mark.get("focusPositions", next_mark.get("focusPosition", next_mark.get("fp", next_mark.get("fps")))),
         token_count=token_count
     )
 
@@ -76,11 +76,10 @@ def _normalize_mark_focus(mark: dict, short_mode: bool = False):
         next_mark.pop("focusPositions", None)
     else:
         if focus_positions:
-            next_mark["focusPosition"] = focus_positions
             next_mark["focusPositions"] = focus_positions
         else:
-            next_mark.pop("focusPosition", None)
             next_mark.pop("focusPositions", None)
+        next_mark.pop("focusPosition", None)
         next_mark.pop("fp", None)
         next_mark.pop("fps", None)
 
