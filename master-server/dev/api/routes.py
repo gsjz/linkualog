@@ -17,15 +17,18 @@ from core.vocabulary import merge_or_create_vocab, VOCAB_DIR, load_vocab
 
 router = APIRouter()
 
+_FOCUS_TOKEN_RE = re.compile(r"\s+|[\w]+|[^\w\s]", flags=re.UNICODE)
+
+
+def _coerce_int(value):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
 
 def _tokenize_focus_text(text: str):
-    parts = re.split(r"\s+", str(text or "").strip())
-    tokens = []
-    for part in parts:
-        cleaned = re.sub(r"^[^\w]+|[^\w]+$", "", part, flags=re.UNICODE)
-        if cleaned:
-            tokens.append(cleaned)
-    return tokens
+    return [m.group(0) for m in _FOCUS_TOKEN_RE.finditer(str(text or "")) if not m.group(0).isspace()]
 
 
 def _normalize_focus_positions(raw_focus, token_count: int | None = None):
@@ -34,19 +37,48 @@ def _normalize_focus_positions(raw_focus, token_count: int | None = None):
 
     normalized = []
     seen = set()
-    for item in raw_focus:
-        try:
-            idx = int(item)
-        except (TypeError, ValueError):
-            continue
-        if idx < 0:
-            continue
+
+    def add_index(idx):
+        if idx is None or idx < 0:
+            return
         if token_count is not None and idx >= token_count:
-            continue
+            return
         if idx in seen:
-            continue
+            return
         seen.add(idx)
         normalized.append(idx)
+
+    for item in raw_focus:
+        if isinstance(item, dict):
+            idx = None
+            for key in ("index", "idx", "position", "pos", "tokenIndex", "token_index", "focusIndex", "focus_index", "i"):
+                if key in item:
+                    idx = _coerce_int(item.get(key))
+                    break
+            if idx is not None:
+                add_index(idx)
+                continue
+
+            start = None
+            end = None
+            for key in ("start", "local_start", "from", "begin"):
+                if key in item:
+                    start = _coerce_int(item.get(key))
+                    break
+            for key in ("end", "local_end", "to", "finish"):
+                if key in item:
+                    end = _coerce_int(item.get(key))
+                    break
+            if start is not None:
+                if end is None:
+                    end = start
+                if end < start:
+                    start, end = end, start
+                for idx_in_range in range(start, end + 1):
+                    add_index(idx_in_range)
+            continue
+
+        add_index(_coerce_int(item))
     normalized.sort()
     return normalized
 

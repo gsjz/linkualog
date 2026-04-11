@@ -2,10 +2,97 @@ import json
 import os
 import glob
 import shutil
+import re
 
 DATA_DIR = os.environ.get("DATA_DIR", "../data")
 OUTPUT_DIR = "docs/dictionary"
 TAGS_MAP_PATH = "hooks/tags.json" 
+FOCUS_TOKEN_RE = re.compile(r"\s+|[\w]+|[^\w\s]", flags=re.UNICODE)
+
+def _coerce_int(value):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+def _tokenize_focus_text(text):
+    return [m.group(0) for m in FOCUS_TOKEN_RE.finditer(str(text or "")) if not m.group(0).isspace()]
+
+def _normalize_focus_positions(raw_focus, token_count=None):
+    if not isinstance(raw_focus, list):
+        return []
+
+    values = []
+    seen = set()
+
+    def add_index(idx):
+        if idx is None or idx < 0:
+            return
+        if token_count is not None and idx >= token_count:
+            return
+        if idx in seen:
+            return
+        seen.add(idx)
+        values.append(idx)
+
+    for item in raw_focus:
+        if isinstance(item, dict):
+            idx = None
+            for key in ("index", "idx", "position", "pos", "tokenIndex", "token_index", "focusIndex", "focus_index", "i"):
+                if key in item:
+                    idx = _coerce_int(item.get(key))
+                    break
+            if idx is not None:
+                add_index(idx)
+                continue
+
+            start = None
+            end = None
+            for key in ("start", "local_start", "from", "begin"):
+                if key in item:
+                    start = _coerce_int(item.get(key))
+                    break
+            for key in ("end", "local_end", "to", "finish"):
+                if key in item:
+                    end = _coerce_int(item.get(key))
+                    break
+            if start is not None:
+                if end is None:
+                    end = start
+                if end < start:
+                    start, end = end, start
+                for idx in range(start, end + 1):
+                    add_index(idx)
+            continue
+
+        add_index(_coerce_int(item))
+
+    values.sort()
+    return values
+
+def _bold_text_by_positions(text, focus_positions):
+    if not text:
+        return text
+
+    focus_set = set(focus_positions)
+    token_index = 0
+    out = []
+
+    for match in FOCUS_TOKEN_RE.finditer(text):
+        part = match.group(0)
+        if part.isspace():
+            out.append(part)
+        else:
+            out.append(f"**{part}**" if token_index in focus_set else part)
+            token_index += 1
+
+    return "".join(out)
+
+def _bold_text_by_words(text, focus_words):
+    for fw in focus_words:
+        if isinstance(fw, str) and fw:
+            text = text.replace(fw, f"**{fw}**")
+    return text
 
 def generate_pages():
     if os.path.exists(OUTPUT_DIR):
@@ -81,8 +168,13 @@ def generate_pages():
         for idx, ex in enumerate(item.get("examples", []), 1):
             text = ex.get("text", "")
             text = " ".join(text.splitlines())
-            for fw in ex.get("focusWords", []): 
-                text = text.replace(fw, f"**{fw}**")
+            token_count = len(_tokenize_focus_text(text))
+            raw_focus = ex.get("focusPositions", ex.get("focusPosition", ex.get("fp", ex.get("fps"))))
+            focus_positions = _normalize_focus_positions(raw_focus, token_count=token_count)
+            if focus_positions:
+                text = _bold_text_by_positions(text, focus_positions)
+            else:
+                text = _bold_text_by_words(text, ex.get("focusWords", []))
                 
             md += f'!!! quote "例句 {idx}"\n    {text}\n\n'
 

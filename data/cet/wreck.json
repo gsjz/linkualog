@@ -1,21 +1,21 @@
 {
-  "word": "smash",
+  "word": "wreck",
   "createdAt": "2026-04-11",
   "reviews": [],
   "definitions": [],
   "examples": [
     {
-      "text": "Over the centuries, dozens of majestic Old World sailing ships smashed and sank on this irregular stretch of windy Florida coast.",
+      "text": "Nearly three million vessels lie wrecked on the Earth’s ocean floor—from old canoes to the Titanic—and likely less than one percent have been explored.",
       "explanation": "",
       "focusWords": [
-        "smash"
+        "wreck"
       ],
       "source": {
         "text": "CET6 23 12 2 匹配",
         "url": ""
       },
       "focusPositions": [
-        11
+        5
       ]
     }
   ]

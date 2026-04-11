@@ -2,11 +2,44 @@ import React, { useState, useEffect, useRef } from 'react';
 import { getVocabularyList, getVocabularyDetail, addVocabulary, getVocabularyCategories } from '../api/client';
 
 const REVIEW_CATEGORY_KEY = 'vocabReviewCategory';
+const FOCUS_RENDER_TOKEN_REGEX = /\s+|[\p{L}\p{N}_]+|[^\s]/gu;
 
 const getInitialReviewCategory = () => {
   const savedReviewCategory = localStorage.getItem(REVIEW_CATEGORY_KEY);
   if (savedReviewCategory !== null) return savedReviewCategory;
   return localStorage.getItem('defaultCategory') || '';
+};
+
+const normalizeFocusPositions = (rawFocus, tokenCount) => {
+  if (!Array.isArray(rawFocus) || tokenCount <= 0) return [];
+  return [...new Set(rawFocus
+    .map((item) => parseInt(item, 10))
+    .filter((idx) => Number.isInteger(idx) && idx >= 0 && idx < tokenCount))]
+    .sort((a, b) => a - b);
+};
+
+const escapeHtml = (value) => String(value || '')
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#39;');
+
+const renderTextWithFocusPositions = (text, rawFocus) => {
+  const chunks = String(text || '').match(FOCUS_RENDER_TOKEN_REGEX) || [];
+  const tokenCount = chunks.filter((chunk) => !/^\s+$/.test(chunk)).length;
+  const focusPositions = normalizeFocusPositions(rawFocus, tokenCount);
+  if (!focusPositions.length) return '';
+
+  const focusedSet = new Set(focusPositions);
+  let tokenIndex = 0;
+  return chunks.map((chunk) => {
+    if (/^\s+$/.test(chunk)) return chunk;
+    const safe = escapeHtml(chunk);
+    const html = focusedSet.has(tokenIndex) ? `<strong>${safe}</strong>` : safe;
+    tokenIndex += 1;
+    return html;
+  }).join('');
 };
 
 export default function VocabularyReview() {
@@ -81,7 +114,7 @@ export default function VocabularyReview() {
     try {
       const res = await getVocabularyDetail(word, selectedCategory);
       if (res.data) setDetailData(res.data);
-    } catch (e) { alert("加载详情失败"); }
+    } catch { alert("加载详情失败"); }
   };
 
   const handleRegenerateDef = async () => {
@@ -246,12 +279,23 @@ export default function VocabularyReview() {
               {detailData.examples && detailData.examples.map((ex, idx) => {
                 const isCtxRegenerating = generatingContextMap[`${detailData.word}-${ex.text}`] || false;
                 
-                let renderedText = ex.text;
-                if (ex.focusWords && ex.focusWords.length > 0) {
-                  ex.focusWords.forEach(fw => {
-                    const regex = new RegExp(`(${fw})`, 'gi');
-                    renderedText = renderedText.replace(regex, '<strong>$1</strong>');
-                  });
+                const rawFocus = Array.isArray(ex.focusPositions)
+                  ? ex.focusPositions
+                  : Array.isArray(ex.focusPosition)
+                    ? ex.focusPosition
+                    : Array.isArray(ex.fp)
+                      ? ex.fp
+                      : (Array.isArray(ex.fps) ? ex.fps : []);
+
+                let renderedText = renderTextWithFocusPositions(ex.text, rawFocus);
+                if (!renderedText) {
+                  renderedText = ex.text;
+                  if (ex.focusWords && ex.focusWords.length > 0) {
+                    ex.focusWords.forEach(fw => {
+                      const regex = new RegExp(`(${fw})`, 'gi');
+                      renderedText = renderedText.replace(regex, '<strong>$1</strong>');
+                    });
+                  }
                 }
                 
                 return (

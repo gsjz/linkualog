@@ -18,21 +18,39 @@ const dispatchVocabTask = (word, context, taskName, fetchLlm, focusPositions = [
 };
 
 const clampNumber = (value, min, max) => Math.min(max, Math.max(min, value));
+const TOKEN_REGEX = /[\p{L}\p{N}_]+|[^\s]/gu;
 
 const cloneMark = (mark) => ({
   ...mark,
   bbox: mark?.bbox ? { ...mark.bbox } : null,
 });
 
-const stripEdgePunctuation = (token) => String(token || '').replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, '');
-
 const tokenizeContext = (text) => String(text || '')
-  .trim()
-  .split(/\s+/)
-  .map((token) => stripEdgePunctuation(token))
-  .filter(Boolean);
+  .match(TOKEN_REGEX) || [];
 
-const buildWordFromFocusPositions = (tokens, focusPositions) => focusPositions.map((i) => tokens[i]).filter(Boolean).join(' ');
+const isConnectorToken = (token) => /^['’\-–—/]$/.test(token);
+const isNoSpaceBeforeToken = (token) => /^[,.;:!?%)\]}>\u3001\u3002\uff0c\uff1b\uff1a\uff01\uff1f\u3009\u300b\u300d\u300f\u3011]$/.test(token);
+const isNoSpaceAfterToken = (token) => /^[([{<\u3008\u300a\u300c\u300e\u3010]$/.test(token);
+
+const joinFocusTokens = (selectedTokens) => selectedTokens.reduce((result, token, index) => {
+  if (!token) return result;
+  if (index === 0 || !result) return token;
+
+  const prevToken = selectedTokens[index - 1] || '';
+  if (
+    isConnectorToken(token) ||
+    isConnectorToken(prevToken) ||
+    isNoSpaceBeforeToken(token) ||
+    isNoSpaceAfterToken(prevToken)
+  ) {
+    return `${result}${token}`;
+  }
+  return `${result} ${token}`;
+}, '');
+
+const buildWordFromFocusPositions = (tokens, focusPositions) => joinFocusTokens(
+  focusPositions.map((i) => tokens[i]).filter(Boolean),
+);
 
 function getExplicitFocusPositions(mark, tokenCount) {
   if (!Number.isInteger(tokenCount) || tokenCount <= 0) return [];
