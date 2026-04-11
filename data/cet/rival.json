@@ -1,0 +1,24 @@
+{
+  "word": "rival",
+  "createdAt": "2026-04-12",
+  "reviews": [],
+  "definitions": [
+    "n. 竞争对手（在此语境下的释义）"
+  ],
+  "examples": [
+    {
+      "text": "And while the cult of tax cuts has attracted many critics, it lacks for obvious rivals.",
+      "explanation": "尽管减税的狂热吸引了许多批评者，但它并没有明显的竞争对手。",
+      "focusWords": [
+        "rivals"
+      ],
+      "source": {
+        "text": "cet6 23 12 1 匹配",
+        "url": ""
+      }
+    }
+  ],
+  "mergedFrom": [
+    "rivals"
+  ]
+}

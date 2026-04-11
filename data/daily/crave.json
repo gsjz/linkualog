@@ -1,25 +1,45 @@
 {
-    "word": "crave",
-    "createdAt": "2026-03-27",
-    "reviews": [],
-    "definitions": [
-        "v. 渴望，渴求（指对某事物有强烈的欲望或需求）"
-    ],
-    "examples": [
-        {
-            "text": "when agriculture changed everything for \neverybody. From AI possibly transforming the information age, to biotechnology enabling \nus to manipulate the language of life itself, to new sustainable ways of \nharvesting the energy we crave. If we start thinking in decades and centuries, \nit is perfectly reasonable that we will solve our problems. We can eliminate poverty, maybe all \nmaterial needs. Defeat all diseases, maybe even",
-            "explanation": "",
-            "focusWords": [
-                "crave"
-            ],
-            "source": {
-                "text": "Tired of Doomscrolling?",
-                "url": ""
-            },
-            "youtube": {
-                "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
-                "timestamp": 478
-            }
-        }
-    ]
+  "word": "crave",
+  "createdAt": "2026-03-27",
+  "reviews": [],
+  "definitions": [
+    "v. 渴望，渴求（指对某事物有强烈的欲望或需求）",
+    "渴望（尤指对食物的强烈欲望）",
+    "n. 渴望（在此语境下的释义）"
+  ],
+  "examples": [
+    {
+      "text": "when agriculture changed everything for \neverybody. From AI possibly transforming the information age, to biotechnology enabling \nus to manipulate the language of life itself, to new sustainable ways of \nharvesting the energy we crave. If we start thinking in decades and centuries, \nit is perfectly reasonable that we will solve our problems. We can eliminate poverty, maybe all \nmaterial needs. Defeat all diseases, maybe even",
+      "explanation": "",
+      "focusWords": [
+        "crave"
+      ],
+      "source": {
+        "text": "Tired of Doomscrolling?",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
+        "timestamp": 478
+      }
+    },
+    {
+      "text": "waffle cones piled high with ice cream. Is your mouth watering? Are you craving dessert? Why? What happens in the brain\nthat makes sugary foods so hard to resist?",
+      "explanation": "",
+      "focusWords": [
+        "craving"
+      ],
+      "source": {
+        "text": "糖类怎样影响大脑 -Nicole Avena",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=lEXBxijQREo",
+        "timestamp": 16
+      }
+    }
+  ],
+  "mergedFrom": [
+    "craving"
+  ]
 }

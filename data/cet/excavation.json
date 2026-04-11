@@ -4,7 +4,8 @@
   "reviews": [],
   "pronunciation": "",
   "definitions": [
-    "n. 发掘 (指对文物/遗迹的系统性挖掘)"
+    "n. 发掘 (指对文物/遗迹的系统性挖掘)",
+    "n. 发掘（考古活动）"
   ],
   "examples": [
     {
@@ -17,6 +18,20 @@
         "text": "CET6 2023 12 2 匹配",
         "url": ""
       }
+    },
+    {
+      "text": "“Archaeology has a terrible reputation for not publishing enough on its excavations (发掘) and finds,” he says.",
+      "explanation": "他说：‘考古学因未能充分发表其发掘成果和发现而声誉不佳。’",
+      "focusWords": [
+        "excavations"
+      ],
+      "source": {
+        "text": "CET6 2023 12 2 匹配",
+        "url": ""
+      }
     }
+  ],
+  "mergedFrom": [
+    "excavations"
   ]
 }

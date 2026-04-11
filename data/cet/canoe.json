@@ -1,0 +1,24 @@
+{
+  "word": "canoe",
+  "createdAt": "2026-04-12",
+  "reviews": [],
+  "definitions": [
+    "n. 独木舟"
+  ],
+  "examples": [
+    {
+      "text": "from old canoes to the Titanic",
+      "explanation": "从旧独木舟到泰坦尼克号",
+      "focusWords": [
+        "canoes"
+      ],
+      "source": {
+        "text": "CET6 2023 12 2 匹配",
+        "url": ""
+      }
+    }
+  ],
+  "mergedFrom": [
+    "canoes"
+  ]
+}

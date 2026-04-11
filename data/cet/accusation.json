@@ -1,0 +1,24 @@
+{
+  "word": "accusation",
+  "createdAt": "2026-04-11",
+  "reviews": [],
+  "definitions": [
+    "相互指责"
+  ],
+  "examples": [
+    {
+      "text": "High-stakes fights over shipwrecks pit archaeologists against treasure hunters in a vicious cycle of accusations",
+      "explanation": "高风险的沉船争夺战将考古学家与寻宝者对立起来，陷入相互指责的恶性循环。",
+      "focusWords": [
+        "accusations"
+      ],
+      "source": {
+        "text": "CET6 2023 12 2 匹配",
+        "url": ""
+      }
+    }
+  ],
+  "mergedFrom": [
+    "accusations"
+  ]
+}

@@ -2,7 +2,9 @@
   "word": "wedge",
   "createdAt": "2026-04-11",
   "reviews": [],
-  "definitions": [],
+  "definitions": [
+    "v. 楔入；嵌入（在此语境下指被紧紧卡在泥沙中）"
+  ],
   "examples": [
     {
       "text": "Yet some of Cape Canaveral’s most legendary attractions lie unseen, wedged under the sea’s surface in mud and sand, for this part of the world has a reputation as a deadly ship trap.",
@@ -17,6 +19,20 @@
       "focusPositions": [
         13
       ]
+    },
+    {
+      "text": "attractions lie unseen, wedged under the sea's surface in mud and sand,",
+      "explanation": "这些景点隐匿不见，被楔入海底表面的泥沙之中。",
+      "focusWords": [
+        "wedged"
+      ],
+      "source": {
+        "text": "CET6 2023 12 2 匹配",
+        "url": ""
+      }
     }
+  ],
+  "mergedFrom": [
+    "wedged"
   ]
 }

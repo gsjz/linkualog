@@ -1,0 +1,24 @@
+{
+  "word": "minister",
+  "createdAt": "2026-04-12",
+  "reviews": [],
+  "definitions": [
+    "n. 部长（政府中负责特定部门的官员）"
+  ],
+  "examples": [
+    {
+      "text": "If ministers want to make education pay for young people, they need to look beyond the higher education sector,",
+      "explanation": "如果部长们希望让教育对年轻人产生效益，他们需要超越高等教育领域的视野。",
+      "focusWords": [
+        "ministers"
+      ],
+      "source": {
+        "text": "CET6 23 12 1 听力",
+        "url": ""
+      }
+    }
+  ],
+  "mergedFrom": [
+    "ministers"
+  ]
+}

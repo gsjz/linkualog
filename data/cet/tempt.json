@@ -1,0 +1,24 @@
+{
+  "word": "tempt",
+  "createdAt": "2026-04-11",
+  "reviews": [],
+  "definitions": [
+    "adj. 被诱惑的；难以抗拒的"
+  ],
+  "examples": [
+    {
+      "text": "M: Not at all. It was hard to quit. I was tempted to stay in the game, because I love basketball and I loved my team.",
+      "explanation": "男士表示戒掉很难，他因热爱篮球和球队而忍不住想继续参赛。",
+      "focusWords": [
+        "tempted"
+      ],
+      "source": {
+        "text": "CET6 23 12 1 听力",
+        "url": ""
+      }
+    }
+  ],
+  "mergedFrom": [
+    "tempted"
+  ]
+}

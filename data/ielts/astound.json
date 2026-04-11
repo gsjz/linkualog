@@ -1,0 +1,24 @@
+{
+  "word": "astound",
+  "createdAt": "2026-04-11",
+  "reviews": [],
+  "definitions": [
+    "adj. 惊人的；令人震惊的"
+  ],
+  "examples": [
+    {
+      "text": "coast at an astounding rate, in some parts estimated at 100 metres per year",
+      "explanation": "海岸以惊人的速度侵蚀，在某些部分估计每年达 100 米。",
+      "focusWords": [
+        "astounding"
+      ],
+      "source": {
+        "text": "剑桥 5 3 阅读2",
+        "url": ""
+      }
+    }
+  ],
+  "mergedFrom": [
+    "astounding"
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "word": "excavate",
+  "createdAt": "2026-04-12",
+  "reviews": [],
+  "definitions": [
+    "vt. 发掘（在此语境下指考古挖掘）"
+  ],
+  "examples": [
+    {
+      "text": "Who is more at fault, Bass asks, the professional archaeologist who carefully excavates a site and never publishes on it or the treasure hunter who locates a submerged wreck, salvages part, conserves part, and publishes a book on the operation?",
+      "explanation": "巴斯问道，谁更有过错？是那位仔细发掘遗址却从不发表成果的专业考古学家，还是那位发现沉船残骸、打捞部分、保存部分并出版相关书籍的寻宝者？",
+      "focusWords": [
+        "excavates"
+      ],
+      "source": {
+        "text": "CET6 2023 12 2 匹配",
+        "url": ""
+      }
+    }
+  ],
+  "mergedFrom": [
+    "excavates"
+  ]
+}

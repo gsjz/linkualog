@@ -1,0 +1,26 @@
+{
+  "word": "raid",
+  "createdAt": "2026-04-11",
+  "reviews": [],
+  "definitions": [],
+  "examples": [
+    {
+      "text": "\"What a wonderful time to be alive! Hey, the Yellow River flooded again and destroyed all your crops. aaand also we're being raided by nomadic tribesmen, aaaand also this period of Chinese history may be entirely mythical, meaning you may not even exist. Well, that would certainly explain the laser eyes.",
+      "explanation": "",
+      "focusWords": [
+        "raided"
+      ],
+      "source": {
+        "text": "Three Kingdoms - OverSimplified",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=26EivpCPHnQ",
+        "timestamp": 31
+      }
+    }
+  ],
+  "mergedFrom": [
+    "raided"
+  ]
+}

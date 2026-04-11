@@ -1,0 +1,24 @@
+{
+  "word": "fluctuation",
+  "createdAt": "2026-04-12",
+  "reviews": [],
+  "definitions": [
+    "n. 波动（指情绪或状态的起伏变化）"
+  ],
+  "examples": [
+    {
+      "text": "Not only can your dog sense when you have a cold, but domestic dogs have shown an aptitude for detecting both much smaller mood fluctuations and far more serious physical conditions.",
+      "explanation": "不仅你的狗能察觉你感冒了，家犬还显示出能够探测到更细微的情绪波动以及更严重的身体状况的能力。",
+      "focusWords": [
+        "fluctuations"
+      ],
+      "source": {
+        "text": "CET6 23 12 1 听力",
+        "url": ""
+      }
+    }
+  ],
+  "mergedFrom": [
+    "fluctuations"
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "word": "devastate",
+  "createdAt": "2026-04-11",
+  "reviews": [],
+  "definitions": [
+    "毁灭性的"
+  ],
+  "examples": [
+    {
+      "text": "For Pritchett, the decision was devastating",
+      "explanation": "对普里切特而言，这个决定是毁灭性的。",
+      "focusWords": [
+        "devastating"
+      ],
+      "source": {
+        "text": "CET6 2023 12 2 匹配",
+        "url": ""
+      }
+    }
+  ],
+  "mergedFrom": [
+    "devastating"
+  ]
+}
