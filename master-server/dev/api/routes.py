@@ -3,6 +3,7 @@ import mimetypes
 import traceback
 import glob
 import re
+import copy
 from typing import List
 from fastapi import APIRouter, UploadFile, File, Form, BackgroundTasks, HTTPException
 from fastapi.responses import FileResponse
@@ -15,6 +16,111 @@ from services.llm import process_image, process_word_definition, process_context
 from core.vocabulary import merge_or_create_vocab, VOCAB_DIR, load_vocab
 
 router = APIRouter()
+
+
+def _tokenize_focus_text(text: str):
+    parts = re.split(r"\s+", str(text or "").strip())
+    tokens = []
+    for part in parts:
+        cleaned = re.sub(r"^[^\w]+|[^\w]+$", "", part, flags=re.UNICODE)
+        if cleaned:
+            tokens.append(cleaned)
+    return tokens
+
+
+def _normalize_focus_positions(raw_focus, token_count: int | None = None):
+    if not isinstance(raw_focus, list):
+        return []
+
+    normalized = []
+    seen = set()
+    for item in raw_focus:
+        try:
+            idx = int(item)
+        except (TypeError, ValueError):
+            continue
+        if idx < 0:
+            continue
+        if token_count is not None and idx >= token_count:
+            continue
+        if idx in seen:
+            continue
+        seen.add(idx)
+        normalized.append(idx)
+    normalized.sort()
+    return normalized
+
+
+def _normalize_mark_focus(mark: dict, short_mode: bool = False):
+    if not isinstance(mark, dict):
+        return mark
+
+    next_mark = copy.deepcopy(mark)
+    context_value = next_mark.get("c" if short_mode else "context", "")
+    token_count = len(_tokenize_focus_text(context_value))
+    token_count = token_count if token_count > 0 else None
+
+    focus_positions = _normalize_focus_positions(
+        next_mark.get("focusPosition", next_mark.get("focusPositions", next_mark.get("fp", next_mark.get("fps")))),
+        token_count=token_count
+    )
+
+    if short_mode:
+        if focus_positions:
+            next_mark["fp"] = focus_positions
+            next_mark["fps"] = focus_positions
+        else:
+            next_mark.pop("fp", None)
+            next_mark.pop("fps", None)
+        next_mark.pop("focusPosition", None)
+        next_mark.pop("focusPositions", None)
+    else:
+        if focus_positions:
+            next_mark["focusPosition"] = focus_positions
+            next_mark["focusPositions"] = focus_positions
+        else:
+            next_mark.pop("focusPosition", None)
+            next_mark.pop("focusPositions", None)
+        next_mark.pop("fp", None)
+        next_mark.pop("fps", None)
+
+    return next_mark
+
+
+def _normalize_parsed_result_focus(parsed_result):
+    if not isinstance(parsed_result, dict):
+        return parsed_result
+
+    next_result = copy.deepcopy(parsed_result)
+    if isinstance(next_result.get("marked_text"), list):
+        next_result["marked_text"] = [
+            _normalize_mark_focus(item, short_mode=False) for item in next_result["marked_text"]
+            if isinstance(item, dict)
+        ]
+    if isinstance(next_result.get("m"), list):
+        next_result["m"] = [
+            _normalize_mark_focus(item, short_mode=True) for item in next_result["m"]
+            if isinstance(item, dict)
+        ]
+    return next_result
+
+
+def _normalize_task_focus_fields(task):
+    if not isinstance(task, dict):
+        return task
+
+    next_task = copy.deepcopy(task)
+    sub_tasks = next_task.get("sub_tasks", [])
+    if not isinstance(sub_tasks, list):
+        return next_task
+
+    for sub in sub_tasks:
+        if not isinstance(sub, dict):
+            continue
+        parsed_result = sub.get("parsed_result")
+        if isinstance(parsed_result, dict):
+            sub["parsed_result"] = _normalize_parsed_result_focus(parsed_result)
+    return next_task
 
 @router.get("/api/config")
 def get_config():
@@ -128,7 +234,10 @@ async def upload_resource(
 @router.get("/api/task/{task_id}")
 def get_task_status(task_id: str):
     tasks = load_tasks()
-    return tasks.get(task_id, {"error": "任务不存在"})
+    task = tasks.get(task_id)
+    if not task:
+        return {"error": "任务不存在"}
+    return _normalize_task_focus_fields(task)
 
 @router.post("/api/task/{task_id}/resume")
 def resume_task(task_id: str, background_tasks: BackgroundTasks):
@@ -169,6 +278,42 @@ def delete_task(task_id: str):
 class RegenerateRequest(BaseModel):
     index: int 
 
+class TaskRenameRequest(BaseModel):
+    name: str
+
+
+class TaskPageParsedResultRequest(BaseModel):
+    parsed_result: dict
+
+@router.patch("/api/task/{task_id}")
+def rename_task(task_id: str, req: TaskRenameRequest):
+    tasks = load_tasks()
+    task = tasks.get(task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="任务不存在")
+
+    final_name = req.name.strip() if req.name and req.name.strip() else "资源解析任务"
+    task["name"] = final_name
+    save_tasks(tasks)
+    return {"status": "success", "name": final_name}
+
+
+@router.patch("/api/task/{task_id}/page/{index}/parsed_result")
+def update_task_page_parsed_result(task_id: str, index: int, req: TaskPageParsedResultRequest):
+    tasks = load_tasks()
+    task = tasks.get(task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="任务不存在")
+
+    sub_tasks = task.get("sub_tasks", [])
+    if index < 0 or index >= len(sub_tasks):
+        raise HTTPException(status_code=400, detail="参数错误，索引越界")
+
+    normalized_result = _normalize_parsed_result_focus(req.parsed_result)
+    sub_tasks[index]["parsed_result"] = normalized_result
+    save_tasks(tasks)
+    return {"status": "success", "parsed_result": normalized_result}
+
 @router.post("/api/task/{task_id}/regenerate")
 def regenerate_task_item(task_id: str, req: RegenerateRequest, background_tasks: BackgroundTasks):
     tasks = load_tasks()
@@ -204,6 +349,7 @@ class VocabAddRequest(BaseModel):
     fetch_llm: bool = False
     fetch_type: str = "all" 
     category: str = ""
+    focus_positions: list[int] = []
     llm_result: dict = {}  
     youtube: dict = {}    
 
@@ -243,6 +389,7 @@ def add_vocabulary(req: VocabAddRequest):
             source_name=req.source, 
             llm_generated_data=llm_result, 
             category=req.category,
+            focus_positions=req.focus_positions,
             youtube=req.youtube 
         )
         return {"status": "success", "data": final_data}

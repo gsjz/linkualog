@@ -1,6 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getVocabularyList, getVocabularyDetail, addVocabulary, getVocabularyCategories } from '../api/client';
 
+const REVIEW_CATEGORY_KEY = 'vocabReviewCategory';
+
+const getInitialReviewCategory = () => {
+  const savedReviewCategory = localStorage.getItem(REVIEW_CATEGORY_KEY);
+  if (savedReviewCategory !== null) return savedReviewCategory;
+  return localStorage.getItem('defaultCategory') || '';
+};
+
 export default function VocabularyReview() {
   const [words, setWords] = useState([]);
   const [selectedWord, setSelectedWord] = useState(null);
@@ -8,7 +16,7 @@ export default function VocabularyReview() {
   
   const [categories, setCategories] = useState([]);
   
-  const [selectedCategory, setSelectedCategory] = useState(localStorage.getItem('defaultCategory') || '');
+  const [selectedCategory, setSelectedCategory] = useState(getInitialReviewCategory);
 
   const [generatingWordMap, setGeneratingWordMap] = useState({});
   const [generatingContextMap, setGeneratingContextMap] = useState({});
@@ -22,11 +30,26 @@ export default function VocabularyReview() {
     loadCategories(); 
     
     const handleConfigUpdate = () => {
-      setSelectedCategory(localStorage.getItem('defaultCategory') || '');
+      const savedReviewCategory = localStorage.getItem(REVIEW_CATEGORY_KEY);
+      if (savedReviewCategory !== null) {
+        setSelectedCategory(savedReviewCategory);
+      } else {
+        setSelectedCategory(localStorage.getItem('defaultCategory') || '');
+      }
     };
+    const handleDefaultCategoryUpdate = () => handleConfigUpdate();
+
     window.addEventListener('config-updated', handleConfigUpdate);
-    return () => window.removeEventListener('config-updated', handleConfigUpdate);
+    window.addEventListener('default-category-updated', handleDefaultCategoryUpdate);
+    return () => {
+      window.removeEventListener('config-updated', handleConfigUpdate);
+      window.removeEventListener('default-category-updated', handleDefaultCategoryUpdate);
+    };
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem(REVIEW_CATEGORY_KEY, selectedCategory || '');
+  }, [selectedCategory]);
 
   useEffect(() => {
     loadWords(selectedCategory);

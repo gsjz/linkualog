@@ -201,24 +201,39 @@
   }
 
   .task-layout {
-    flex-direction: column !important;
+    height: 100% !important;
+    min-height: 0 !important;
   }
-  
-  .task-sidebar {
+
+  .task-main {
+    min-height: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  .task-right-panel {
+    position: static !important;
+    top: auto !important;
+    right: auto !important;
+    bottom: auto !important;
     width: 100% !important;
-    height: auto !important;
-    max-height: 160px !important;
+    min-width: 0 !important;
+    max-height: 240px !important;
     overflow-y: auto !important;
-    border-right: none !important;
-    border-bottom: 2px solid #e4e4e7 !important;
+    border-left: none !important;
+    border-top: 1px solid #e4e4e7 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .task-page-body {
+    padding: 12px !important;
   }
 
   .task-toolbar {
-    flex-direction: column;
+    flex-direction: column !important;
     align-items: stretch !important;
-    gap: 12px;
+    gap: 12px !important;
   }
-  .task-toolbar input,
   .task-toolbar button {
     width: 100% !important;
     margin-left: 0 !important;
@@ -231,17 +246,13 @@
     gap: 12px;
   }
 
-  .task-content-area {
-    padding: 12px 0 !important; 
-    overflow-y: visible !important;
-  }
-  
   .result-item-container {
     margin-bottom: 16px !important;
   }
 
   .result-layout {
     flex-direction: column !important;
+    height: auto !important;
   }
   
   .result-image-box {
@@ -250,6 +261,8 @@
     border-bottom: 1px solid #e4e4e7;
     padding: 8px !important;
     box-sizing: border-box;
+    max-width: 100% !important;
+    height: 280px !important;
   }
 
   .result-image-box img {
@@ -260,6 +273,7 @@
     width: 100% !important;
     padding: 12px !important;
     box-sizing: border-box !important;
+    max-height: none !important;
   }
 
   .result-json-box pre,
@@ -271,18 +285,16 @@
   }
 
   .app-main {
-    height: auto !important;
-    min-height: calc(100vh - 60px) !important;
+    height: calc(100vh - 60px) !important;
+    min-height: 0 !important;
   }
   .task-container-wrapper {
-    overflow: visible !important;
-    height: auto !important;
+    overflow: hidden !important;
+    height: 100% !important;
+    min-height: 0 !important;
   }
 
-  .task-layout,
-  .task-main-area,
   .task-detail-wrapper {
-    height: auto !important;
-    overflow: visible !important;
+    min-height: 0 !important;
   }
 }

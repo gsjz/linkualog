@@ -111,6 +111,8 @@ def _build_image_prompt(experimental_coordinates: bool) -> str:
     prompt_prefix = (
         "你是一个专业的 OCR 和语言处理引擎。"
         "请提取这张图片中的主要文字，并找出其中的英文被用户用笔做下划线标记的生词或重点词。"
+        "对每个词返回的 context 必须是语义完整且信息充分的上下文，优先返回完整句子；"
+        "如果该词依赖前后句才能准确理解，请补充必要的前后句，不要只截取零碎短语。"
         "必须严格以 JSON 格式输出，不要包含任何额外的 markdown 标记或解释说明。"
     )
 
@@ -269,7 +271,7 @@ def process_image(image_bytes: bytes, filename: str, content_type: str, experime
 
 def process_word_definition(word: str) -> dict:
     """
-    单独请求单词的基础音标和通用释义
+    单独请求单词的通用释义
     """
     import json as standard_json
     config = get_config_data()

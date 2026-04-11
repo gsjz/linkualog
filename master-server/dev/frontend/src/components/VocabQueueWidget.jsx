@@ -34,8 +34,13 @@ export default function VocabQueueWidget() {
     const handleConfigUpdate = () => {
       setSelectedCategory(localStorage.getItem('defaultCategory') || '');
     };
+    const handleDefaultCategoryUpdate = () => handleConfigUpdate();
     window.addEventListener('config-updated', handleConfigUpdate);
-    return () => window.removeEventListener('config-updated', handleConfigUpdate);
+    window.addEventListener('default-category-updated', handleDefaultCategoryUpdate);
+    return () => {
+      window.removeEventListener('config-updated', handleConfigUpdate);
+      window.removeEventListener('default-category-updated', handleDefaultCategoryUpdate);
+    };
   }, []);
 
   const handleMouseDown = (e) => {
@@ -82,11 +87,12 @@ export default function VocabQueueWidget() {
   };
 
   useEffect(() => {
-    const handleEvent = (e) => {
-      const { word, context, source, fetchLlm } = e.detail;
+  const handleEvent = (e) => {
+      const { word, context, source, fetchLlm, focusPositions } = e.detail;
       const newTask = {
         id: Date.now() + Math.random().toString(36).substring(2, 9),
         word, context, source, fetchLlm,
+        focusPositions: Array.isArray(focusPositions) ? focusPositions : [],
         category: categoryRef.current, 
         status: 'pending',
         error: null
@@ -102,7 +108,15 @@ export default function VocabQueueWidget() {
     if (pendingTask) {
       setTasks(prev => prev.map(t => t.id === pendingTask.id ? { ...t, status: 'processing' } : t));
       
-      addVocabulary(pendingTask.word, pendingTask.context, pendingTask.source, pendingTask.fetchLlm, 'all', pendingTask.category)
+      addVocabulary(
+        pendingTask.word,
+        pendingTask.context,
+        pendingTask.source,
+        pendingTask.fetchLlm,
+        'all',
+        pendingTask.category,
+        pendingTask.focusPositions
+      )
         .then(() => {
           setTasks(prev => prev.map(t => t.id === pendingTask.id ? { ...t, status: 'success' } : t));
         })
@@ -118,6 +132,7 @@ export default function VocabQueueWidget() {
     const newTask = {
       id: Date.now() + Math.random().toString(36).substring(2, 9),
       word: mWord, context: mContext, source: mSource, fetchLlm: mFetchLlm,
+      focusPositions: [],
       category: selectedCategory, 
       status: 'pending', error: null
     };

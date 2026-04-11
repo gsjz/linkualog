@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { fetchConfig, saveConfig, getVocabularyCategories } from '../api/client';
+import { fetchConfig, saveConfig } from '../api/client';
 
 export default function ConfigForm({ onClose }) {
   const [config, setConfig] = useState({
@@ -10,21 +10,12 @@ export default function ConfigForm({ onClose }) {
     experimentalCoordinatesEnabled: false
   });
   const [foldedKeysStr, setFoldedKeysStr] = useState('');
-  const [defaultCategory, setDefaultCategory] = useState('');
-  const [categories, setCategories] = useState([]);
   const [statusMsg, setStatusMsg] = useState('');
 
   useEffect(() => {
     const localKeys = localStorage.getItem('defaultFoldedKeys');
-    setFoldedKeysStr(localKeys !== null ? localKeys : 'extracted_text');
+    setFoldedKeysStr(localKeys !== null ? localKeys : 'extracted_text,bbox');
     
-    const localCat = localStorage.getItem('defaultCategory');
-    setDefaultCategory(localCat !== null ? localCat : '');
-
-    getVocabularyCategories()
-      .then(data => { if(data.categories) setCategories(data.categories); })
-      .catch(err => console.error("无法加载目录:", err));
-
     fetchConfig()
       .then(data => {
         setConfig(prev => ({
@@ -42,7 +33,6 @@ export default function ConfigForm({ onClose }) {
     e.preventDefault();
     
     localStorage.setItem('defaultFoldedKeys', foldedKeysStr);
-    localStorage.setItem('defaultCategory', defaultCategory);
     window.dispatchEvent(new Event('config-updated'));
 
     const formData = new FormData();
@@ -116,22 +106,8 @@ export default function ConfigForm({ onClose }) {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <label style={labelStyle}>
-              默认生词本保存目录:
-              <input 
-                list="config-vocab-categories" 
-                value={defaultCategory} 
-                onChange={e => setDefaultCategory(e.target.value)} 
-                placeholder="留空即为根目录" 
-                style={inputStyle} 
-              />
-              <datalist id="config-vocab-categories">
-                {categories.map(c => <option key={c} value={c} />)}
-              </datalist>
-            </label>
-            
-            <label style={labelStyle}>
               默认折叠的 JSON 键名 (逗号分隔):
-              <input type="text" value={foldedKeysStr} onChange={e => setFoldedKeysStr(e.target.value)} placeholder="如: extracted_text" style={inputStyle} />
+              <input type="text" value={foldedKeysStr} onChange={e => setFoldedKeysStr(e.target.value)} placeholder="如: extracted_text,bbox" style={inputStyle} />
             </label>
           </div>
           

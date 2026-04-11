@@ -51,6 +51,15 @@ export const deleteTask = async (taskId) => {
   return handleResponse(res);
 };
 
+export const renameTask = async (taskId, name) => {
+  const res = await fetch(`${BACKEND_URL}/api/task/${taskId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name }),
+  });
+  return handleResponse(res);
+};
+
 export const getImageUrl = (imagePath) => {
   if (!imagePath) return '';
   return `${BACKEND_URL}/api/image?path=${encodeURIComponent(imagePath)}`;
@@ -65,16 +74,33 @@ export const regenerateTaskPage = async (taskId, index) => {
   return handleResponse(res);
 };
 
+export const updateTaskPageParsedResult = async (taskId, index, parsedResult) => {
+  const res = await fetch(`${BACKEND_URL}/api/task/${taskId}/page/${index}/parsed_result`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ parsed_result: parsedResult }),
+  });
+  return handleResponse(res);
+};
+
 export const getVocabularyCategories = async () => {
   const res = await fetch(`${BACKEND_URL}/api/vocabulary/categories`);
   return handleResponse(res);
 };
 
-export const addVocabulary = async (word, context, source = '', fetchLlm = false, fetchType = 'all', category = '') => {
+export const addVocabulary = async (word, context, source = '', fetchLlm = false, fetchType = 'all', category = '', focusPositions = []) => {
   const res = await fetch(`${BACKEND_URL}/api/vocabulary/add`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ word, context, source, fetch_llm: fetchLlm, fetch_type: fetchType, category })
+    body: JSON.stringify({
+      word,
+      context,
+      source,
+      fetch_llm: fetchLlm,
+      fetch_type: fetchType,
+      category,
+      focus_positions: Array.isArray(focusPositions) ? focusPositions : [],
+    })
   });
   return handleResponse(res);
 };
