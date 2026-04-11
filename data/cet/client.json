@@ -1,21 +1,22 @@
 {
-  "word": "maritime",
-  "createdAt": "2026-03-31",
+  "word": "client",
+  "createdAt": "2026-04-11",
   "reviews": [],
-  "definitions": [
-    "海洋的"
-  ],
+  "definitions": [],
   "examples": [
     {
       "text": "\"Treasure hunters can be naive,\" says attorney David Concannon, who has had several maritime archaeologists as clients and represented two sides in the battles over the Titanic for 20 years.",
       "explanation": "",
       "focusWords": [
-        "maritime"
+        "client"
       ],
       "source": {
         "text": "CET6 23 12 2 匹配",
         "url": ""
-      }
+      },
+      "focusPositions": [
+        16
+      ]
     }
   ]
 }

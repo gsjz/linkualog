@@ -1,0 +1,22 @@
+{
+  "word": "smash",
+  "createdAt": "2026-04-11",
+  "reviews": [],
+  "definitions": [],
+  "examples": [
+    {
+      "text": "Over the centuries, dozens of majestic Old World sailing ships smashed and sank on this irregular stretch of windy Florida coast.",
+      "explanation": "",
+      "focusWords": [
+        "smash"
+      ],
+      "source": {
+        "text": "CET6 23 12 2 匹配",
+        "url": ""
+      },
+      "focusPositions": [
+        10
+      ]
+    }
+  ]
+}

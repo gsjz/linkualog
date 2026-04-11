@@ -1,0 +1,22 @@
+{
+  "word": "wedge",
+  "createdAt": "2026-04-11",
+  "reviews": [],
+  "definitions": [],
+  "examples": [
+    {
+      "text": "Yet some of Cape Canaveral’s most legendary attractions lie unseen, wedged under the sea’s surface in mud and sand, for this part of the world has a reputation as a deadly ship trap.",
+      "explanation": "",
+      "focusWords": [
+        "wedge"
+      ],
+      "source": {
+        "text": "CET6 23 12 2 匹配",
+        "url": ""
+      },
+      "focusPositions": [
+        10
+      ]
+    }
+  ]
+}

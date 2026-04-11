@@ -1,21 +1,22 @@
 {
-  "word": "gateway",
-  "createdAt": "2026-03-31",
+  "word": "cruise",
+  "createdAt": "2026-04-11",
   "reviews": [],
-  "definitions": [
-    "n. 门户; 入口"
-  ],
+  "definitions": [],
   "examples": [
     {
       "text": "It’s home to the second-busiest cruise ship port in the world and is a gateway to the cosmos.",
       "explanation": "",
       "focusWords": [
-        "gateway"
+        "cruise"
       ],
       "source": {
         "text": "CET6 23 12 2 匹配",
         "url": ""
-      }
+      },
+      "focusPositions": [
+        5
+      ]
     }
   ]
 }

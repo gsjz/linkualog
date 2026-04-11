@@ -2,19 +2,18 @@
   "word": "blast off",
   "createdAt": "2026-03-31",
   "reviews": [],
-  "pronunciation": "",
   "definitions": [
     "vi. 发射升空"
   ],
   "examples": [
     {
-      "text": "spacecraft, and satellites blast off into the solar system from Kennedy",
-      "explanation": "航天器和卫星从肯尼迪发射升空进入太阳系。",
+      "text": "Nearly 1.5 million visitors flock here every year to watch rockets, spacecraft, and satellites blast off into the solar system from Kennedy Space Center Visitor Complex.",
+      "explanation": "",
       "focusWords": [
         "blast off"
       ],
       "source": {
-        "text": "CET6 2023 12 2 匹配",
+        "text": "CET6 23 12 2 匹配",
         "url": ""
       }
     }
