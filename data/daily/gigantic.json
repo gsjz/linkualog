@@ -1,40 +1,49 @@
 {
-    "word": "gigantic",
-    "createdAt": "2026-03-27",
-    "reviews": [],
-    "definitions": [
-        "adj. 巨大的（在此语境下形容恒星的规模）"
-    ],
-    "examples": [
-        {
-            "text": "very first moment the universe grew \nand evolved. Things that were one became many. Energy turned into forces and \nparticles, out of chaos emerged the laws of nature. From these ingredients stars arose, \ngigantic engines, turning simple stuff into complex stuff only to die violently \nand spread the new complexity around. Out of this more complex stuff, \nnew stars and more worlds emerged,",
-            "explanation": "",
-            "focusWords": [
-                "gigantic"
-            ],
-            "source": {
-                "text": "Tired of Doomscrolling?",
-                "url": ""
-            },
-            "youtube": {
-                "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
-                "timestamp": 90
-            }
-        },
-        {
-            "text": "Earth is truly ours now. We changed it in ways unfathomable a few \nshort generations ago. We turned the land into fields worked by millions of machines, \nbuilt thousands of gigantic jungles made of sand and metal. We split the atom and travelled \nto other worlds. Everything is different today. Except us of course. We humans have \nnot changed. We were molded by a",
-            "explanation": "",
-            "focusWords": [
-                "gigantic"
-            ],
-            "source": {
-                "text": "Tired of Doomscrolling?",
-                "url": ""
-            },
-            "youtube": {
-                "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
-                "timestamp": 282
-            }
-        }
-    ]
+  "word": "gigantic",
+  "createdAt": "2026-03-27",
+  "reviews": [
+    {
+      "date": "2026-04-11",
+      "score": 2
+    },
+    {
+      "date": "2026-04-12",
+      "score": 4
+    }
+  ],
+  "definitions": [
+    "adj. 巨大的（在此语境下形容恒星的规模）"
+  ],
+  "examples": [
+    {
+      "text": "From these ingredients stars arose, gigantic engines, turning simple stuff into complex stuff only to die violently and spread the new complexity around.",
+      "explanation": "此处 gigantic 修饰 engines（恒星），强调其体积与能量的巨大。",
+      "focusWords": [
+        "gigantic"
+      ],
+      "source": {
+        "text": "Tired of Doomscrolling?",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
+        "timestamp": 90
+      }
+    },
+    {
+      "text": "We turned the land into fields worked by millions of machines, built thousands of gigantic jungles made of sand and metal.",
+      "explanation": "此处 gigantic 修饰 jungles，隐喻由金属和沙土构成的人造巨型建筑群。",
+      "focusWords": [
+        "gigantic"
+      ],
+      "source": {
+        "text": "Tired of Doomscrolling?",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
+        "timestamp": 282
+      }
+    }
+  ]
 }

@@ -1,7 +1,12 @@
 {
   "word": "fertilizer",
   "createdAt": "2026-04-12",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-12",
+      "score": 4
+    }
+  ],
   "definitions": [],
   "examples": [
     {

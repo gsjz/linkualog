@@ -1,25 +1,34 @@
 {
-    "word": "fructose",
-    "createdAt": "2026-03-27",
-    "reviews": [],
-    "definitions": [
-        "n. 果糖"
-    ],
-    "examples": [
-        {
-            "text": "and it's found in a wide variety\nof food and drink. Just check the labels\non sweet products you buy. Glucose, fructose, sucrose, maltose, lactose, dextrose, and starch are all forms of sugar.",
-            "explanation": "并且它广泛存在于各种食物和饮料中。只需检查你购买的甜味产品上的标签。葡萄糖、果糖、蔗糖、麦芽糖、乳糖、右旋糖以及淀粉都是糖的形式。",
-            "focusWords": [
-                "fructose"
-            ],
-            "source": {
-                "text": "糖类怎样影响大脑 -Nicole Avena",
-                "url": ""
-            },
-            "youtube": {
-                "url": "https://www.youtube.com/watch?v=lEXBxijQREo",
-                "timestamp": 34
-            }
-        }
-    ]
+  "word": "fructose",
+  "createdAt": "2026-03-27",
+  "reviews": [
+    {
+      "date": "2026-04-11",
+      "score": 2
+    },
+    {
+      "date": "2026-04-12",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "n. 果糖"
+  ],
+  "examples": [
+    {
+      "text": "It's found in a wide variety of food and drink. Just check the labels on sweet products you buy. Glucose, fructose, sucrose, maltose, lactose, dextrose, and starch are all forms of sugar.",
+      "explanation": "它广泛存在于各种食物和饮料中。只需检查你购买的甜味产品上的标签。葡萄糖、果糖、蔗糖、麦芽糖、乳糖、右旋糖以及淀粉都是糖的形式。",
+      "focusWords": [
+        "fructose"
+      ],
+      "source": {
+        "text": "糖类怎样影响大脑 -Nicole Avena",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=lEXBxijQREo",
+        "timestamp": 34
+      }
+    }
+  ]
 }

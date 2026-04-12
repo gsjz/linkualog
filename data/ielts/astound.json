@@ -1,9 +1,14 @@
 {
   "word": "astound",
   "createdAt": "2026-04-11",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-12",
+      "score": 1
+    }
+  ],
   "definitions": [
-    "adj. 惊人的；令人震惊的"
+    "v. 使震惊；使惊愕"
   ],
   "examples": [
     {

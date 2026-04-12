@@ -1,0 +1,37 @@
+{
+  "word": "fungus",
+  "createdAt": "2026-04-12",
+  "reviews": [
+    {
+      "date": "2026-04-11",
+      "score": 2
+    },
+    {
+      "date": "2026-04-12",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "n. 真菌"
+  ],
+  "examples": [
+    {
+      "text": "...until one day they came together and made another jump in complexity, to plants, animals and fungi.",
+      "explanation": "fungi 是 fungus 的复数形式，此处指生物分类中的真菌界。",
+      "focusWords": [
+        "fungi"
+      ],
+      "source": {
+        "text": "Tired of Doomscrolling?",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
+        "timestamp": 142
+      }
+    }
+  ],
+  "mergedFrom": [
+    "fungi"
+  ]
+}

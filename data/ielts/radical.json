@@ -1,9 +1,15 @@
 {
   "word": "radical",
   "createdAt": "2026-04-12",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-12",
+      "score": 2
+    }
+  ],
   "definitions": [
-    "彻底地；根本性地"
+    "(adj.) 激进的；根本的",
+    "(n.) 激进分子"
   ],
   "examples": [
     {
