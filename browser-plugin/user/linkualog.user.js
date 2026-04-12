@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name       Linkual Log
 // @namespace  npm/vite-plugin-monkey
-// @version    0.0.3
+// @version    0.0.4
 // @author     Sergio Gao
 // @icon       https://vitejs.dev/logo.svg
 // @match      *://*.youtube.com/*
@@ -12691,7 +12691,7 @@
     sidebar_width: "500",
     sidebar_height: "350",
     layout_position: "right",
-    lan_sync_url: "http://localhost:13345/api/vocabulary/add",
+    lan_sync_url: "http://localhost:8080/api/vocabulary/add",
     lan_action: "daily"
   };
   const ConfigService = {

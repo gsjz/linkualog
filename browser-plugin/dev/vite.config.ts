@@ -9,7 +9,7 @@ export default defineConfig({
       entry: 'src/apps/main.tsx',
       userscript: {
         name: 'Linkual Log',
-        version: '0.0.3',
+        version: '0.0.4',
         author: 'Sergio Gao',
         icon: 'https://vitejs.dev/logo.svg',
         namespace: 'npm/vite-plugin-monkey',
