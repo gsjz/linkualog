@@ -8,6 +8,29 @@ DATA_DIR = os.environ.get("DATA_DIR", "../data")
 OUTPUT_DIR = "docs/dictionary"
 TAGS_MAP_PATH = "hooks/tags.json" 
 FOCUS_TOKEN_RE = re.compile(r"\s+|[\w]+|[^\w\s]", flags=re.UNICODE)
+SCORE_LABELS = {
+    0: "完全忘记",
+    1: "非常吃力",
+    2: "勉强想起",
+    3: "基本记住",
+    4: "比较牢固",
+    5: "非常熟练",
+}
+
+def _clamp_score(value):
+    try:
+        score = int(value)
+    except (TypeError, ValueError):
+        return 0
+    return max(0, min(5, score))
+
+def _format_score_stars(value):
+    score = _clamp_score(value)
+    return "★" * score + "☆" * (5 - score)
+
+def _format_score_summary(value):
+    score = _clamp_score(value)
+    return f"{_format_score_stars(score)} ({score}/5, {SCORE_LABELS[score]})"
 
 def _coerce_int(value):
     try:
@@ -151,14 +174,12 @@ def generate_pages():
                 for r in reviews:
                     r_date = r.get("date", "未知时间")
                     r_score = r.get("score", 0)
-                    stars = "⭐" * int(r_score) if isinstance(r_score, (int, float)) else r_score
-                    md += f'        - `{r_date}` ｜ 难度: {stars} (分数: {r_score})\n'
+                    md += f'        - `{r_date}` ｜ 熟练度: {_format_score_summary(r_score)}\n'
             md += '\n'
 
-        pronunciation = item.get("pronunciation", "")
         definitions = item.get("definitions", [])
         
-        if pronunciation or definitions:
+        if definitions:
             md += '??? abstract "释义"\n'
             if definitions:
                 for d in definitions: 

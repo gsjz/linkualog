@@ -12,13 +12,13 @@ WORKDIR /app
 
 COPY . /app/master-server
 
-ENV CONFIG_FILE="/app/master-server/user/llm_config.json"
-ENV STORAGE_DIR="/app/master-server/user/temp_storage"
-ENV TASKS_FILE="/app/master-server/user/tasks_db.json"
-ENV LOCK_FILE="/app/master-server/user/tasks_db.json.lock"
+ENV CONFIG_FILE="/app/master-server/local_data/llm_config.json"
+ENV STORAGE_DIR="/app/master-server/local_data/temp_storage"
+ENV TASKS_FILE="/app/master-server/local_data/tasks_db.json"
+ENV LOCK_FILE="/app/master-server/local_data/tasks_db.json.lock"
 ENV VOCAB_DIR="/app/data/"
 
-WORKDIR /app/master-server/dev
+WORKDIR /app/master-server
 RUN uv sync
 
 EXPOSE 80 8080
