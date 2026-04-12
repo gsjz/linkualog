@@ -34,6 +34,7 @@ website-template/docs/dictionary/
 
 # LLM service key
 llm_config.json
+.env
 
 # repomix
 repomix-output.xml
