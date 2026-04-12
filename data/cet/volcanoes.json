@@ -1,0 +1,24 @@
+{
+  "word": "volcanoes",
+  "createdAt": "2026-04-12",
+  "reviews": [],
+  "definitions": [
+    "火山"
+  ],
+  "examples": [
+    {
+      "text": "During my last outing, I was surprised to see how much of the area was shaped by ancient volcanoes and geological forces, much of which remains today, giving the area a unique feel and painting a colorful background for great photographs.",
+      "explanation": "在我上次外出时，我惊讶地发现该地区有多少是由古代火山和地质作用塑造的，其中大部分至今仍保留着，赋予了该地区独特的风貌，并为拍摄出色的照片提供了色彩斑斓的背景。",
+      "focusWords": [
+        "volcanoes"
+      ],
+      "source": {
+        "text": "CET6 23 12 1 匹配",
+        "url": ""
+      },
+      "focusPositions": [
+        19
+      ]
+    }
+  ]
+}

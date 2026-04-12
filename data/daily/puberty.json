@@ -1,0 +1,26 @@
+{
+  "word": "puberty",
+  "createdAt": "2026-04-12",
+  "reviews": [],
+  "definitions": [
+    "The period during which adolescents reach sexual maturity.",
+    "The process of physical changes through which a child's body matures into an adult body capable of sexual reproduction."
+  ],
+  "examples": [
+    {
+      "text": "While we often talk about puberty’s effect on the body, what gets overlooked are the fascinating changes that happen in the brain.",
+      "explanation": "展示 puberty 在对比身体与大脑变化时的用法。",
+      "focusWords": [
+        "puberty"
+      ],
+      "source": {
+        "text": "What sex ed doesn’t tell you about your brain - Shannon Odell",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=deNGkzUlhZU",
+        "timestamp": 6
+      }
+    }
+  ]
+}

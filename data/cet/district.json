@@ -1,0 +1,22 @@
+{
+  "word": "district",
+  "createdAt": "2026-04-12",
+  "reviews": [],
+  "definitions": [],
+  "examples": [
+    {
+      "text": "In 2018, two long years after Pritchett’s discovery, the federal district court ruled in favor of France.",
+      "explanation": "",
+      "focusWords": [
+        "district"
+      ],
+      "source": {
+        "text": "CET6 23 12 2 匹配",
+        "url": ""
+      },
+      "focusPositions": [
+        14
+      ]
+    }
+  ]
+}

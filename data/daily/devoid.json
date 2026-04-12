@@ -1,26 +1,30 @@
 {
-    "word": "devoid",
-    "createdAt": "2026-03-27",
-    "reviews": [],
-    "definitions": [
-        "adj. 缺乏；完全没有",
-        "adj. 缺乏的；全无的"
-    ],
-    "examples": [
-        {
-            "text": "Humans are not nice and if we look at our \nhistory, how could we expect ourselves to be? In nature we see great beauty but \nalso endless violence and struggle, devoid of morals or kindness. We are an instinct \ndriven apex predator that survived in an uncaring world, only now we have coal plants, \nnuclear weapons and social media. This would be hard to handle for any animal,",
-            "explanation": "",
-            "focusWords": [
-                "devoid"
-            ],
-            "source": {
-                "text": "Tired of Doomscrolling?",
-                "url": ""
-            },
-            "youtube": {
-                "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
-                "timestamp": 343
-            }
-        }
-    ]
+  "word": "devoid",
+  "createdAt": "2026-03-27",
+  "reviews": [
+    {
+      "date": "2026-04-12",
+      "score": 2
+    }
+  ],
+  "definitions": [
+    "adj. 完全没有；缺乏（常接 of）"
+  ],
+  "examples": [
+    {
+      "text": "In nature we see great beauty but also endless violence and struggle, devoid of morals or kindness.",
+      "explanation": "展示 'devoid of' 搭配名词短语，表示‘缺乏某种品质’的用法。",
+      "focusWords": [
+        "devoid"
+      ],
+      "source": {
+        "text": "Tired of Doomscrolling?",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
+        "timestamp": 343
+      }
+    }
+  ]
 }

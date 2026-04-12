@@ -1,7 +1,12 @@
 {
   "word": "canal",
   "createdAt": "2026-04-12",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-12",
+      "score": 3
+    }
+  ],
   "definitions": [
     "n. 渠道；运河（指用于灌溉的人工水道）"
   ],

@@ -1,0 +1,22 @@
+{
+  "word": "hectare",
+  "createdAt": "2026-04-12",
+  "reviews": [],
+  "definitions": [],
+  "examples": [
+    {
+      "text": "A World Bank irrigation project in Ethiopia helped farmers increase their potato harvest from about 8 tonnes per hectare to 35 tonnes.",
+      "explanation": "",
+      "focusWords": [
+        "hectare"
+      ],
+      "source": {
+        "text": "CET6 23 12 1 匹配",
+        "url": ""
+      },
+      "focusPositions": [
+        18
+      ]
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "word": "artifact",
+  "createdAt": "2026-04-12",
+  "reviews": [],
+  "definitions": [],
+  "examples": [
+    {
+      "text": "The discovery was cause for celebration. The artifacts indicated the divers had likely found the wreck of La Trinité, a 16th-century French vessel that had been at the center of a bloody battle between France and Spain that changed the fate of the United States of America.",
+      "explanation": "",
+      "focusWords": [
+        "artifact"
+      ],
+      "source": {
+        "text": "CET6 23 12 2 匹配",
+        "url": ""
+      },
+      "focusPositions": [
+        8
+      ]
+    }
+  ]
+}

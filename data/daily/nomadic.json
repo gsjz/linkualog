@@ -1,23 +1,26 @@
 {
-    "word": "nomadic",
-    "createdAt": "2026-03-27",
-    "reviews": [],
-    "definitions": [],
-    "examples": [
-        {
-            "text": "\"What a wonderful time to be alive! Hey, the Yellow River flooded again and destroyed all your crops. aaand also we're being raided by nomadic tribesmen, aaaand also this period of Chinese history may be entirely mythical, meaning you may not even exist. Well, that would certainly explain the laser eyes.",
-            "explanation": "",
-            "focusWords": [
-                "nomadic"
-            ],
-            "source": {
-                "text": "Three Kingdoms - OverSimplified",
-                "url": ""
-            },
-            "youtube": {
-                "url": "https://www.youtube.com/watch?v=26EivpCPHnQ",
-                "timestamp": 31
-            }
-        }
-    ]
+  "word": "nomadic",
+  "createdAt": "2026-03-27",
+  "reviews": [],
+  "definitions": [
+    "(adj.) Relating to or characteristic of nomads.",
+    "(adj.) Moving from place to place rather than settling permanently."
+  ],
+  "examples": [
+    {
+      "text": "\"What a wonderful time to be alive! Hey, the Yellow River flooded again and destroyed all your crops. aaand also we're being raided by nomadic tribesmen, aaaand also this period of Chinese history may be entirely mythical, meaning you may not even exist. Well, that would certainly explain the laser eyes.",
+      "explanation": "",
+      "focusWords": [
+        "nomadic"
+      ],
+      "source": {
+        "text": "Three Kingdoms - OverSimplified",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=26EivpCPHnQ",
+        "timestamp": 31
+      }
+    }
+  ]
 }

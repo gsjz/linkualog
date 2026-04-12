@@ -1,7 +1,12 @@
 {
   "word": "adolescent",
   "createdAt": "2026-04-12",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-12",
+      "score": 3
+    }
+  ],
   "definitions": [
     "青少年"
   ],
