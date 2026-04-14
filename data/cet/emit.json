@@ -1,14 +1,19 @@
 {
   "word": "emit",
   "createdAt": "2026-04-12",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-13",
+      "score": 4
+    }
+  ],
   "definitions": [
-    "v. 发出；释放；散发（指身体释放出化学信号）"
+    "v. 发出；释放；散发"
   ],
   "examples": [
     {
       "text": "Human emotions manifest physically in chemical signals that are emitted by the body, and dogs are able to smell those as well.",
-      "explanation": "人类的情感通过身体释放出的化学信号在生理上表现出来，而狗也能嗅到这些信号。",
+      "explanation": "人类的情感表现为身体释放的化学信号，狗也能嗅到这些信号。",
       "focusWords": [
         "emitted"
       ],

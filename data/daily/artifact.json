@@ -1,12 +1,19 @@
 {
   "word": "artifact",
   "createdAt": "2026-04-12",
-  "reviews": [],
-  "definitions": [],
+  "reviews": [
+    {
+      "date": "2026-04-13",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "n. 文物；手工艺品"
+  ],
   "examples": [
     {
-      "text": "The discovery was cause for celebration. The artifacts indicated the divers had likely found the wreck of La Trinité, a 16th-century French vessel that had been at the center of a bloody battle between France and Spain that changed the fate of the United States of America.",
-      "explanation": "",
+      "text": "The artifacts indicated the divers had likely found the wreck of La Trinité.",
+      "explanation": "句中 artifacts 指“文物”，在此处特指水下考古发现的古代遗物。",
       "focusWords": [
         "artifact"
       ],

@@ -1,9 +1,19 @@
 {
   "word": "deed",
   "createdAt": "2026-04-12",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-13",
+      "score": 1
+    },
+    {
+      "date": "2026-04-14",
+      "score": 3
+    }
+  ],
   "definitions": [
-    "恶行 (在此语境下的释义)"
+    "an action that is done or performed",
+    "a legal document transferring property"
   ],
   "examples": [
     {

@@ -1,7 +1,12 @@
 {
   "word": "minister",
   "createdAt": "2026-04-12",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-13",
+      "score": 4
+    }
+  ],
   "definitions": [
     "n. 部长（政府中负责特定部门的官员）"
   ],

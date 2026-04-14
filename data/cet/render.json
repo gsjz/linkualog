@@ -1,7 +1,12 @@
 {
   "word": "render",
   "createdAt": "2026-04-12",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-13",
+      "score": 1
+    }
+  ],
   "definitions": [
     "vt. 使变得"
   ],

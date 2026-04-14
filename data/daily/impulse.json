@@ -1,14 +1,19 @@
 {
   "word": "impulse",
   "createdAt": "2026-04-12",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-13",
+      "score": 4
+    }
+  ],
   "definitions": [
-    "n. 冲动；本能 (指深植于内心的原始驱动力)"
+    "n. 冲动；本能"
   ],
   "examples": [
     {
-      "text": "world, only now we have coal plants, \nnuclear weapons and social media. This would be hard to handle for any animal, so it makes sense that we continue to follow \nthe impulses so deeply ingrained in us. But this is only because we have not yet caught up \nwith the mind numbing gift we have been handed. The real tragedy of humanity today is that \nwe are these amazingly powerful beings that",
-      "explanation": "",
+      "text": "it makes sense that we continue to follow the impulses so deeply ingrained in us.",
+      "explanation": "Refers to innate primitive drives that persist despite technological advancement",
       "focusWords": [
         "impulses"
       ],

@@ -1,7 +1,12 @@
 {
   "word": "fluctuation",
   "createdAt": "2026-04-12",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-13",
+      "score": 3
+    }
+  ],
   "definitions": [
     "n. 波动（指情绪或状态的起伏变化）"
   ],

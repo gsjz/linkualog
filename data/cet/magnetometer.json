@@ -1,8 +1,19 @@
 {
   "word": "magnetometer",
   "createdAt": "2026-04-12",
-  "reviews": [],
-  "definitions": [],
+  "reviews": [
+    {
+      "date": "2026-04-13",
+      "score": 1
+    },
+    {
+      "date": "2026-04-14",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "A device that measures magnetic fields."
+  ],
   "examples": [
     {
       "text": "One day in 2015, the magnetometer (磁力计) picked up metal that turned out to be an iron cannon; when the divers blew the sand away, they also discovered a more precious bronze cannon with markings indicating French royalty...",

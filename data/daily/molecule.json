@@ -1,15 +1,19 @@
 {
   "word": "molecule",
   "createdAt": "2026-04-12",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-13",
+      "score": 1
+    }
+  ],
   "definitions": [
-    "n. 分子（在此语境下的释义）",
     "n. 分子"
   ],
   "examples": [
     {
-      "text": "Why? What happens in the brain\nthat makes sugary foods so hard to resist? Sugar is a general term\nused to describe a class of molecules called carbohydrates, and it's found in a wide variety\nof food and drink.",
-      "explanation": "",
+      "text": "Sugar is a general term used to describe a class of molecules called carbohydrates, and it's found in a wide variety of food and drink.",
+      "explanation": "Refers to carbohydrate molecules in the context of sugar composition.",
       "focusWords": [
         "molecules"
       ],

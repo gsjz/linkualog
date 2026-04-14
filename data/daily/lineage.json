@@ -1,14 +1,19 @@
 {
   "word": "lineage",
   "createdAt": "2026-04-12",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-13",
+      "score": 1
+    }
+  ],
   "definitions": [
-    "（物种的）演化支系"
+    "a line of descent; a sequence of generations"
   ],
   "examples": [
     {
-      "text": "now. You probably had such a moment as a small \nchild, mundane and majestic at the same time. This is where the human story begins, about \nsix million years ago, with the hominins. Still just another animal among many others. \nThey split into many families and lineages evolving further or disappearing again. But for \nsome reason their evolutionary niche enabled their brains to grow and they learned more about \nthis strange world. They prayed to the stars,",
-      "explanation": "",
+      "text": "They split into many families and lineages evolving further or disappearing again.",
+      "explanation": "Refers to evolutionary branches in biological context.",
       "focusWords": [
         "lineages"
       ],

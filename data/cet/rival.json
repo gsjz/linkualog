@@ -1,7 +1,12 @@
 {
   "word": "rival",
   "createdAt": "2026-04-12",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-13",
+      "score": 1
+    }
+  ],
   "definitions": [
     "n. 竞争对手（在此语境下的释义）"
   ],

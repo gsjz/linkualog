@@ -1,8 +1,15 @@
 {
   "word": "district",
   "createdAt": "2026-04-12",
-  "reviews": [],
-  "definitions": [],
+  "reviews": [
+    {
+      "date": "2026-04-13",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "an administrative division of a city or town"
+  ],
   "examples": [
     {
       "text": "In 2018, two long years after Pritchett’s discovery, the federal district court ruled in favor of France.",

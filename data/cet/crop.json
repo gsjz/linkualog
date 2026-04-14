@@ -1,7 +1,12 @@
 {
   "word": "crop",
   "createdAt": "2026-04-12",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-13",
+      "score": 3
+    }
+  ],
   "definitions": [
     "n. 农作物（在此语境下指农民种植的庄稼）"
   ],

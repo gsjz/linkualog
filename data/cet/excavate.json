@@ -1,9 +1,18 @@
 {
   "word": "excavate",
   "createdAt": "2026-04-12",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-13",
+      "score": 1
+    },
+    {
+      "date": "2026-04-14",
+      "score": 2
+    }
+  ],
   "definitions": [
-    "vt. 发掘（在此语境下指考古挖掘）"
+    "vt. 发掘；挖掘"
   ],
   "examples": [
     {

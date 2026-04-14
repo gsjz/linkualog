@@ -1,7 +1,16 @@
 {
   "word": "meticulous",
   "createdAt": "2026-04-12",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-13",
+      "score": 1
+    },
+    {
+      "date": "2026-04-14",
+      "score": 2
+    }
+  ],
   "definitions": [
     "一丝不苟地",
     "细致地"

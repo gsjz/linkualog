@@ -1,22 +1,26 @@
 {
   "word": "marble",
   "createdAt": "2026-04-12",
-  "reviews": [],
-  "definitions": [],
+  "reviews": [
+    {
+      "date": "2026-04-13",
+      "score": 2
+    }
+  ],
+  "definitions": [
+    "a hard, fine-grained metamorphic rock used for sculpture and building"
+  ],
   "examples": [
     {
-      "text": "One day in 2015, the magnetometer (磁力计) picked up metal that turned out to be an iron cannon; when the divers blew the sand away, they also discovered a more precious bronze cannon with markings indicating French royalty and, not far off, a famous marble column carved with the coat of arms of France...",
-      "explanation": "",
+      "text": "a famous marble column carved with the coat of arms of France",
+      "explanation": "marble: a type of stone used in architecture",
       "focusWords": [
         "marble"
       ],
       "source": {
         "text": "CET6 23 12 2 匹配",
         "url": ""
-      },
-      "focusPositions": [
-        51
-      ]
+      }
     }
   ]
 }

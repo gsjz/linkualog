@@ -1,12 +1,19 @@
 {
   "word": "hectare",
   "createdAt": "2026-04-12",
-  "reviews": [],
-  "definitions": [],
+  "reviews": [
+    {
+      "date": "2026-04-13",
+      "score": 4
+    }
+  ],
+  "definitions": [
+    "a metric unit of area equal to 10,000 square meters"
+  ],
   "examples": [
     {
       "text": "A World Bank irrigation project in Ethiopia helped farmers increase their potato harvest from about 8 tonnes per hectare to 35 tonnes.",
-      "explanation": "",
+      "explanation": "Unit of area commonly used in agriculture and land measurement.",
       "focusWords": [
         "hectare"
       ],

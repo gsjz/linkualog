@@ -1,7 +1,12 @@
 {
   "word": "canoe",
   "createdAt": "2026-04-12",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-13",
+      "score": 4
+    }
+  ],
   "definitions": [
     "n. 独木舟"
   ],
