@@ -8,7 +8,7 @@ from fastapi import APIRouter, UploadFile, File, Form, BackgroundTasks, HTTPExce
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
-from core.config import get_config_data, get_public_config_data, save_config_data
+from core.config import get_public_config_data, save_config_data
 from core.storage import save_temp_file
 from core.tasks import load_tasks, save_tasks, create_task
 from services.llm import process_image, process_word_definition, process_context_analysis
@@ -161,7 +161,8 @@ def _normalize_task_focus_fields(task):
 @router.get("/api/config")
 def get_config():
     config = get_public_config_data()
-    config["experimentalCoordinatesEnabled"] = bool(config.get("experimental_coordinates_enabled"))
+    config["experimental_coordinates_enabled"] = True
+    config["experimentalCoordinatesEnabled"] = True
     return config
 
 @router.post("/api/config")
@@ -172,7 +173,8 @@ def update_config(payload: dict):
         for key, value in saved.items()
         if key not in {"api_key", "config_file"}
     }
-    public["experimentalCoordinatesEnabled"] = bool(public.get("experimental_coordinates_enabled"))
+    public["experimental_coordinates_enabled"] = True
+    public["experimentalCoordinatesEnabled"] = True
     return {"status": "success", "message": "配置已保存", "data": public}
 
 
@@ -197,12 +199,11 @@ def process_task_background(task_id: str):
                 image_bytes = f.read()
             
             mime = mimetypes.guess_type(sub["path"])[0] or "image/jpeg"
-            runtime_config = get_config_data()
             reply = process_image(
                 image_bytes,
                 os.path.basename(sub["path"]),
                 mime,
-                experimental_coordinates=bool(runtime_config.get("experimental_coordinates_enabled"))
+                experimental_coordinates=True
             )
             
             sub["result"] = reply["raw"]

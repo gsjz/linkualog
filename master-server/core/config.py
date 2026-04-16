@@ -228,6 +228,8 @@ def get_config_data() -> dict:
             continue
         config[key] = _normalize_value(key, saved.get(key))
 
+    # OCR 下划线词坐标能力已转为默认能力，不再允许关闭。
+    config["experimental_coordinates_enabled"] = True
     config["hasKey"] = bool(str(config.get("api_key", "")).strip())
     config["running_in_docker"] = is_running_in_docker()
     config["config_file"] = str(CONFIG_FILE)
@@ -257,7 +259,13 @@ def save_config_data(payload: dict | None = None) -> dict:
                 saved[key] = api_key
             continue
 
+        if key == "experimental_coordinates_enabled":
+            saved[key] = True
+            continue
+
         saved[key] = _normalize_value(key, payload.get(key))
+
+    saved["experimental_coordinates_enabled"] = True
 
     config_dir = CONFIG_FILE.parent
     if config_dir:

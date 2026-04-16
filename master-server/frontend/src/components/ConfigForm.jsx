@@ -47,7 +47,6 @@ export default function ConfigForm({ onClose, categories = [] }) {
     model: DEFAULT_MODEL,
     api_key: '',
     hasKey: false,
-    experimental_coordinates_enabled: false,
     frontend_port: 8000,
     backend_port: 8080,
     log_level: 'INFO',
@@ -81,9 +80,6 @@ export default function ConfigForm({ onClose, categories = [] }) {
           provider: data.provider || prev.provider,
           model: data.model || prev.model,
           hasKey: Boolean(data.hasKey),
-          experimental_coordinates_enabled: Boolean(
-            data.experimental_coordinates_enabled ?? data.experimentalCoordinatesEnabled ?? prev.experimental_coordinates_enabled
-          ),
         }));
       })
       .catch((err) => {
@@ -130,7 +126,6 @@ export default function ConfigForm({ onClose, categories = [] }) {
       provider: config.provider,
       model: config.model,
       api_key: config.api_key,
-      experimental_coordinates_enabled: Boolean(config.experimental_coordinates_enabled),
       frontend_port: numberValue(config.frontend_port, 8000),
       backend_port: numberValue(config.backend_port, 8080),
       log_level: String(config.log_level || 'INFO').trim().toUpperCase(),
@@ -165,9 +160,6 @@ export default function ConfigForm({ onClose, categories = [] }) {
         ...(data.data || {}),
         api_key: '',
         hasKey: Boolean(data?.data?.hasKey ?? true),
-        experimental_coordinates_enabled: Boolean(
-          data?.data?.experimental_coordinates_enabled ?? data?.data?.experimentalCoordinatesEnabled ?? prev.experimental_coordinates_enabled
-        ),
       }));
       setStatusKind('success');
       setStatusMsg('设置已保存。端口类配置需要重启服务后生效。');
@@ -223,6 +215,9 @@ export default function ConfigForm({ onClose, categories = [] }) {
           <div className="config-modal-body">
             {page === 'llm' ? (
               <>
+                <div className="config-info-box">
+                  OCR 下划线词坐标已默认开启，不再提供实验开关。
+                </div>
                 <label style={labelStyle}>
                   接口地址 (Provider API)
                   <input type="text" value={config.provider} onChange={(e) => setField('provider', e.target.value)} style={inputStyle(loading)} required disabled={loading || saving} />
@@ -241,15 +236,6 @@ export default function ConfigForm({ onClose, categories = [] }) {
                     style={inputStyle(loading)}
                     disabled={loading || saving}
                   />
-                </label>
-                <label className="config-inline-check">
-                  <input
-                    type="checkbox"
-                    checked={Boolean(config.experimental_coordinates_enabled)}
-                    onChange={(e) => setField('experimental_coordinates_enabled', e.target.checked)}
-                    disabled={loading || saving}
-                  />
-                  OCR 实验功能：返回下划线词坐标
                 </label>
               </>
             ) : null}
