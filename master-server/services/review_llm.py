@@ -878,6 +878,11 @@ def suggest_file_cleaning_with_llm(word: str, definitions: list[str], examples: 
         "请只输出 JSON，不要输出 markdown。"
         "任务：根据给定词条，给出数据清洗建议，重点关注："
         "1) 释义重复/无必要；2) 例句上下文可精简；3) 空或无效 explanation。"
+        "风格要求：所有 suggested / suggested_definitions / suggested_explanation 都必须保持中文学习友好。"
+        "如果你改写 definitions，新内容必须包含明确中文释义，可以附带极短英文提示，但不能只有英文。"
+        "如果你改写 explanation，新内容必须是自然、完整、易懂的中文，必要时可在括号里保留极短英文提示，但主体必须是中文。"
+        "不要把 definitions 或 explanation 改写成纯英文笔记、词根说明或过长段落。"
+        "如果原始内容已经清晰且中文信息充分，就不要为了统一风格硬改。"
         "输出结构："
         '{"definitions":[{"action":"replace|append|drop|replace_all","index":0,"reason":"...","suggested":"...","suggested_definitions":["..."]}],'
         '"examples":[{"index":0,"action":"keep|trim|drop|rewrite","reason":"...","suggested_text":"...","suggested_explanation":"..."}],'
