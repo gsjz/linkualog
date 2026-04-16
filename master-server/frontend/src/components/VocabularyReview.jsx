@@ -244,6 +244,7 @@ export default function VocabularyReview({ onOpenReviewEntry = null, launchReque
   const [detailData, setDetailData] = useState(null);
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(getInitialReviewCategory);
+  const [wordQuery, setWordQuery] = useState('');
   const pendingLaunchRef = useRef(null);
 
   const loadCategories = useCallback(async () => {
@@ -313,6 +314,7 @@ export default function VocabularyReview({ onOpenReviewEntry = null, launchReque
         setWords([]);
         setSelectedWord(null);
         setDetailData(null);
+        setWordQuery('');
       });
       return;
     }
@@ -320,6 +322,7 @@ export default function VocabularyReview({ onOpenReviewEntry = null, launchReque
       void loadWords(selectedCategory);
       setSelectedWord(null);
       setDetailData(null);
+      setWordQuery('');
     });
   }, [loadWords, selectedCategory]);
 
@@ -398,6 +401,10 @@ export default function VocabularyReview({ onOpenReviewEntry = null, launchReque
   const reviews = Array.isArray(detailData?.reviews) ? detailData.reviews : [];
   const definitions = Array.isArray(detailData?.definitions) ? detailData.definitions : [];
   const examples = Array.isArray(detailData?.examples) ? detailData.examples : [];
+  const normalizedWordQuery = String(wordQuery || '').trim().toLowerCase();
+  const visibleWords = normalizedWordQuery
+    ? words.filter((word) => String(word || '').toLowerCase().includes(normalizedWordQuery))
+    : words;
   const mergedFrom = Array.isArray(detailData?.mergedFrom)
     ? detailData.mergedFrom.map((item) => String(item || '').trim()).filter(Boolean)
     : [];
@@ -424,13 +431,26 @@ export default function VocabularyReview({ onOpenReviewEntry = null, launchReque
           </select>
         </div>
 
+        <div className="vocab-review-sidebar-search" style={{ padding: '12px 16px', borderBottom: '1px solid var(--ms-border)', background: 'rgba(255, 255, 255, 0.94)' }}>
+          <input
+            className="vocab-review-search-input"
+            type="search"
+            placeholder="筛选单词"
+            value={wordQuery}
+            onChange={(e) => setWordQuery(e.target.value)}
+            style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--ms-border)', borderRadius: '6px', fontSize: '13px', outline: 'none', background: '#fff', color: 'var(--ms-text)' }}
+          />
+        </div>
+
         <div className="vocab-review-sidebar-meta" style={{ padding: '16px', borderBottom: '1px solid var(--ms-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
-          <strong className="vocab-review-sidebar-title" style={{ fontSize: '14px', color: 'var(--ms-text)' }}>生词本 ({words.length})</strong>
+          <strong className="vocab-review-sidebar-title" style={{ fontSize: '14px', color: 'var(--ms-text)' }}>
+            生词本 ({visibleWords.length}{normalizedWordQuery ? ` / ${words.length}` : ''})
+          </strong>
           <button className="vocab-review-refresh-button" onClick={() => { loadCategories(); loadWords(selectedCategory); }} disabled={!String(selectedCategory || '').trim()} style={{ background: 'none', border: 'none', cursor: String(selectedCategory || '').trim() ? 'pointer' : 'not-allowed', color: 'var(--ms-text)', fontSize: '12px', opacity: String(selectedCategory || '').trim() ? 1 : 0.4 }}>刷新</button>
         </div>
 
         <ul className="vocab-review-word-list" style={{ listStyle: 'none', padding: 0, margin: 0, overflowY: 'auto', flex: 1 }}>
-          {words.map((word) => (
+          {visibleWords.map((word) => (
             <li
               key={word}
               className={`vocab-review-word-item${selectedWord === word ? ' is-selected' : ''}`}
@@ -451,9 +471,11 @@ export default function VocabularyReview({ onOpenReviewEntry = null, launchReque
               <span className="vocab-review-word-label" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{word}</span>
             </li>
           ))}
-          {words.length === 0 ? (
+          {visibleWords.length === 0 ? (
             <div className="vocab-review-empty" style={{ padding: '20px', textAlign: 'center', color: '#a1a1aa', fontSize: '13px' }}>
-              {String(selectedCategory || '').trim() ? '该目录下暂无生词' : '先选择一个目录'}
+              {String(selectedCategory || '').trim()
+                ? (normalizedWordQuery ? '没有匹配的词条' : '该目录下暂无生词')
+                : '先选择一个目录'}
             </div>
           ) : null}
         </ul>
@@ -688,8 +710,25 @@ export default function VocabularyReview({ onOpenReviewEntry = null, launchReque
             </div>
           </div>
         ) : (
-          <div className="vocab-review-empty" style={{ display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center', color: '#a1a1aa' }}>
-            在左侧选择一个单词查看，或前往数据解析控制台快捷制卡。
+          <div className="vocab-review-empty vocab-review-empty-state" style={{ display: 'flex', minHeight: '100%', alignItems: 'center', justifyContent: 'center', color: '#a1a1aa' }}>
+            <div className="vocab-review-empty-card" style={{ width: '100%', maxWidth: '720px', display: 'grid', gap: '14px', padding: '28px', border: '1px dashed var(--ms-border)', borderRadius: '10px', background: 'linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,248,248,0.98))' }}>
+              <div className="vocab-review-empty-kicker" style={{ fontSize: '12px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ms-text-faint)', fontWeight: 700 }}>
+                Vocabulary Workspace
+              </div>
+              <div className="vocab-review-empty-title" style={{ fontSize: 'clamp(24px, 4vw, 36px)', lineHeight: 1.08, fontWeight: 760, color: 'var(--ms-text)' }}>
+                {visibleWords.length ? '先从词条列表选择一个单词' : '先选目录，再开始复习'}
+              </div>
+              <div className="vocab-review-empty-copy" style={{ fontSize: '15px', lineHeight: 1.7, color: 'var(--ms-text-muted)' }}>
+                {visibleWords.length
+                  ? '选中后会在这里展示释义、例句、复习记录，并可一键跳转到精修与复习工作区。'
+                  : '可以先在右侧切换目录；如果目录里已有词条，也可以用筛选框快速定位。'}
+              </div>
+              <div className="vocab-review-empty-tips" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {selectedCategory ? <span className="vocab-review-chip" style={chipStyle()}>当前目录: {formatCategoryLabel(selectedCategory)}</span> : null}
+                <span className="vocab-review-chip" style={chipStyle()}>{words.length ? `${words.length} 个词条待查看` : '还没有载入词条'}</span>
+                {normalizedWordQuery ? <span className="vocab-review-chip" style={chipStyle()}>筛选: {wordQuery.trim()}</span> : null}
+              </div>
+            </div>
           </div>
         )}
       </div>

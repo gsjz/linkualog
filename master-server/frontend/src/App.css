@@ -479,6 +479,7 @@
 }
 
 .vocab-review .vocab-review-sidebar {
+  border-left: 1px solid var(--ms-border) !important;
   border-right: 1px solid var(--ms-border) !important;
   background: rgba(255, 255, 255, 0.9) !important;
 }
@@ -1053,6 +1054,7 @@
 }
 
 .vocab-review {
+  flex-direction: row-reverse !important;
   background: var(--ms-bg) !important;
 }
 
@@ -1064,6 +1066,8 @@
 
 .vocab-review .vocab-review-sidebar {
   width: 288px !important;
+  border-left: 1px solid var(--ms-border) !important;
+  border-right: none !important;
 }
 
 .vocab-review .vocab-review-sidebar-header,
@@ -1296,4 +1300,807 @@
 
 .task-layout .result-json-box pre {
   color: var(--ms-text) !important;
+}
+
+/* Responsive UX refinements */
+
+.master-header {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: start !important;
+  gap: 18px 24px !important;
+}
+
+.master-brand-wrap {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  flex-wrap: wrap !important;
+  align-items: flex-end !important;
+  gap: 14px 24px !important;
+}
+
+.master-tabs {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+.master-tab {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 38px !important;
+  padding: 0 14px !important;
+  border: 1px solid transparent !important;
+  border-radius: var(--ms-radius-sm) !important;
+}
+
+.master-tab.active {
+  background: var(--ms-text) !important;
+  color: #fff !important;
+}
+
+.master-actions {
+  display: grid !important;
+  grid-auto-flow: column !important;
+  grid-auto-columns: max-content !important;
+  align-items: end !important;
+  justify-content: end !important;
+  gap: 12px !important;
+}
+
+.task-layout .task-toolbar-actions {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: flex-end !important;
+  gap: 8px !important;
+}
+
+.task-layout .task-create-shell {
+  gap: 16px !important;
+}
+
+.task-layout .task-create-header {
+  align-items: flex-end !important;
+  gap: 16px !important;
+}
+
+.task-layout .task-create-header-actions {
+  margin-left: auto !important;
+  display: flex !important;
+  justify-content: flex-end !important;
+  flex: 0 0 auto !important;
+}
+
+.task-layout .task-create-controls {
+  align-items: stretch !important;
+  gap: 14px !important;
+}
+
+.task-layout .task-create-meta-row {
+  display: flex !important;
+  flex: 1 1 320px !important;
+  flex-wrap: wrap !important;
+  gap: 12px !important;
+}
+
+.task-layout .task-control-field {
+  display: grid !important;
+  gap: 6px !important;
+  min-width: 0 !important;
+  flex: 1 1 220px !important;
+}
+
+.task-layout .task-control-field-small {
+  flex: 0 0 110px !important;
+}
+
+.task-layout .task-upload-dropzone {
+  display: flex !important;
+  flex: 2 1 420px !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 16px !important;
+  min-width: 280px !important;
+  padding: 14px 16px !important;
+  border: 1px dashed var(--ms-border-strong) !important;
+  border-radius: var(--ms-radius) !important;
+  background: var(--ms-surface-muted) !important;
+}
+
+.task-layout .task-upload-dropzone-copy {
+  flex: 1 1 240px !important;
+  min-width: 0 !important;
+}
+
+.task-layout .task-upload-dropzone-title {
+  font-size: 14px !important;
+  font-weight: 650 !important;
+  color: var(--ms-text) !important;
+}
+
+.task-layout .task-upload-dropzone-hint {
+  margin-top: 4px !important;
+  font-size: 12px !important;
+  line-height: 1.5 !important;
+  color: var(--ms-text-muted) !important;
+}
+
+.task-layout .task-upload-dropzone-actions {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: flex-end !important;
+  gap: 10px !important;
+}
+
+.task-layout .task-upload-picker {
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 40px !important;
+  padding: 0 16px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+}
+
+.task-layout .task-file-input-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+.task-layout .task-upload-toolbar {
+  justify-content: space-between !important;
+  gap: 12px !important;
+}
+
+.task-layout .task-upload-toolbar-selection {
+  flex: 0 0 auto !important;
+}
+
+.task-layout .task-upload-toolbar-actions {
+  display: flex !important;
+  align-items: center !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+}
+
+.task-layout .task-upload-item {
+  display: grid !important;
+  grid-template-columns: auto 84px minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 12px !important;
+  padding: 12px !important;
+}
+
+.task-layout .task-upload-actions {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  flex-wrap: wrap !important;
+  gap: 6px !important;
+}
+
+.task-layout .task-create-sticky-bar {
+  display: none !important;
+}
+
+.task-layout .task-create-submit,
+.task-layout .task-create-submit-inline {
+  min-height: 42px !important;
+  padding: 0 18px !important;
+  font-weight: 650 !important;
+}
+
+@media (max-width: 1080px) {
+  .master-header {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .master-brand-wrap {
+    align-items: flex-start !important;
+  }
+
+  .master-actions {
+    grid-auto-flow: row !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    justify-content: stretch !important;
+    width: 100% !important;
+  }
+
+  .master-select-label {
+    min-width: 0 !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .master-header {
+    gap: 14px !important;
+    padding: 14px !important;
+  }
+
+  .master-brand-wrap {
+    gap: 12px !important;
+  }
+
+  .master-tabs {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    width: 100% !important;
+    gap: 8px !important;
+    padding: 4px !important;
+    border: 1px solid var(--ms-border) !important;
+    border-radius: var(--ms-radius) !important;
+    background: #fff !important;
+  }
+
+  .master-tab {
+    min-height: 40px !important;
+    padding: 0 8px !important;
+    font-size: 12px !important;
+    white-space: nowrap !important;
+  }
+
+  .master-actions {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  .master-select-label,
+  .master-select,
+  .master-primary-button {
+    width: 100% !important;
+  }
+
+  .task-layout .task-create-shell {
+    padding-bottom: calc(92px + env(safe-area-inset-bottom)) !important;
+  }
+
+  .task-layout .task-create-header {
+    align-items: stretch !important;
+  }
+
+  .task-layout .task-create-header-actions {
+    width: 100% !important;
+    margin-left: 0 !important;
+  }
+
+  .task-layout .task-create-submit-inline {
+    display: none !important;
+  }
+
+  .task-layout .task-create-controls {
+    flex-direction: column !important;
+    padding: 14px !important;
+  }
+
+  .task-layout .task-create-meta-row {
+    width: 100% !important;
+    flex-direction: column !important;
+  }
+
+  .task-layout .task-control-field,
+  .task-layout .task-control-field-small {
+    width: 100% !important;
+    flex: 1 1 auto !important;
+  }
+
+  .task-layout .task-control-field .task-inline-input {
+    width: 100% !important;
+  }
+
+  .task-layout .task-upload-dropzone {
+    width: 100% !important;
+    min-width: 0 !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    padding: 14px !important;
+  }
+
+  .task-layout .task-upload-dropzone-actions {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    justify-content: stretch !important;
+    width: 100% !important;
+  }
+
+  .task-layout .task-upload-picker {
+    width: 100% !important;
+  }
+
+  .task-layout .task-upload-toolbar {
+    align-items: stretch !important;
+  }
+
+  .task-layout .task-upload-toolbar-selection,
+  .task-layout .task-upload-count {
+    width: 100% !important;
+  }
+
+  .task-layout .task-upload-toolbar-actions {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    width: 100% !important;
+  }
+
+  .task-layout .task-upload-toolbar-actions > button {
+    width: 100% !important;
+  }
+
+  .task-layout .task-upload-count {
+    margin-left: 0 !important;
+  }
+
+  .task-layout .task-upload-item {
+    grid-template-columns: auto 84px minmax(0, 1fr) !important;
+    align-items: start !important;
+  }
+
+  .task-layout .task-upload-actions {
+    grid-column: 1 / -1 !important;
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    width: 100% !important;
+  }
+
+  .task-layout .task-upload-actions > button {
+    width: 100% !important;
+  }
+
+  .task-layout .task-upload-name {
+    white-space: normal !important;
+    word-break: break-word !important;
+  }
+
+  .task-layout .task-toolbar-actions {
+    width: 100% !important;
+    justify-content: stretch !important;
+  }
+
+  .task-layout .task-toolbar-actions > button {
+    flex: 1 1 0 !important;
+  }
+
+  .task-layout .task-create-sticky-bar {
+    position: sticky !important;
+    bottom: 0 !important;
+    z-index: 12 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+    padding: 12px 12px calc(12px + env(safe-area-inset-bottom)) !important;
+    margin-top: 2px !important;
+    border: 1px solid var(--ms-border) !important;
+    border-radius: var(--ms-radius) !important;
+    background: rgba(255, 255, 255, 0.96) !important;
+    box-shadow: 0 -8px 24px rgba(17, 17, 17, 0.08) !important;
+  }
+
+  .task-layout .task-create-sticky-meta,
+  .task-layout .task-create-submit {
+    width: 100% !important;
+  }
+
+  .task-layout .task-create-sticky-meta {
+    font-size: 12px !important;
+    color: var(--ms-text-muted) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .task-layout .task-upload-dropzone-actions,
+  .task-layout .task-upload-toolbar-actions,
+  .task-layout .task-upload-actions {
+    grid-template-columns: 1fr !important;
+  }
+
+  .task-layout .task-upload-item {
+    grid-template-columns: auto minmax(0, 1fr) !important;
+  }
+
+  .task-layout .task-upload-preview {
+    width: 72px !important;
+    height: 56px !important;
+  }
+
+  .task-layout .task-upload-meta {
+    grid-column: 2 !important;
+  }
+}
+
+/* Interaction refinements */
+
+.task-layout .task-sidebar-panel {
+  background: #fff !important;
+}
+
+.task-layout .task-sidebar-section {
+  gap: 10px !important;
+}
+
+.task-layout .task-sidebar-title {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.task-layout .task-segment {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  width: 100% !important;
+}
+
+.task-layout .task-segment-button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 44px !important;
+  width: 100% !important;
+  padding: 0 10px !important;
+  text-align: center !important;
+}
+
+.task-layout .task-empty-state-card {
+  background: transparent !important;
+}
+
+.task-layout .task-empty-state-panel {
+  box-shadow: 0 16px 36px rgba(17, 17, 17, 0.04) !important;
+}
+
+.task-layout .task-empty-state-title {
+  letter-spacing: -0.03em;
+}
+
+.task-layout .task-empty-state-action {
+  min-height: 44px !important;
+  padding: 0 16px !important;
+}
+
+.task-layout .result-item-header {
+  align-items: flex-start !important;
+}
+
+.task-layout .result-image-box {
+  background: linear-gradient(180deg, #ffffff 0%, #fafafa 100%) !important;
+}
+
+.task-layout .task-image-stage {
+  padding: 12px !important;
+  border: 1px solid var(--ms-border) !important;
+  border-radius: var(--ms-radius) !important;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(250, 250, 250, 0.98)),
+    repeating-linear-gradient(
+      45deg,
+      rgba(17, 17, 17, 0.015) 0,
+      rgba(17, 17, 17, 0.015) 14px,
+      transparent 14px,
+      transparent 28px
+    ) !important;
+}
+
+.task-layout .task-image-frame {
+  overflow: hidden !important;
+  border: 1px solid rgba(17, 17, 17, 0.08) !important;
+  border-radius: var(--ms-radius) !important;
+  background: #fff !important;
+}
+
+.task-layout .task-image-preview-image {
+  display: block !important;
+}
+
+.task-layout .task-image-preview-meta {
+  padding: 0 2px !important;
+}
+
+.task-layout .task-image-mark-list {
+  padding-top: 10px !important;
+}
+
+.task-layout .task-image-mark-chip {
+  border-radius: 999px !important;
+  background: #fff !important;
+}
+
+.task-layout .task-image-mark-chip.is-selected {
+  border-color: var(--ms-text) !important;
+  background: var(--ms-surface-muted) !important;
+}
+
+.vocab-review .vocab-review-sidebar-search {
+  background: #fff !important;
+}
+
+.vocab-review .vocab-review-search-input {
+  border: 1px solid var(--ms-border) !important;
+  border-radius: var(--ms-radius) !important;
+  background: #fff !important;
+  color: var(--ms-text) !important;
+}
+
+.vocab-review .vocab-review-content {
+  display: flex !important;
+}
+
+.vocab-review .vocab-review-empty-state {
+  width: 100% !important;
+  padding: 28px 0 !important;
+}
+
+.vocab-review .vocab-review-empty-card {
+  border-style: dashed !important;
+  box-shadow: 0 16px 36px rgba(17, 17, 17, 0.04) !important;
+}
+
+.vocab-review .vocab-review-empty-title {
+  color: var(--ms-text) !important;
+  letter-spacing: -0.04em;
+}
+
+.vocab-review .vocab-review-empty-copy {
+  color: var(--ms-text-muted) !important;
+}
+
+@media (max-width: 960px) {
+  .task-layout {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+    overflow: auto !important;
+    padding: 12px !important;
+  }
+
+  .task-layout .task-main {
+    order: 2 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    padding-right: 0 !important;
+    background: transparent !important;
+  }
+
+  .task-layout .task-detail-wrapper,
+  .task-layout .task-page-body {
+    overflow: visible !important;
+  }
+
+  .task-layout .task-page-body {
+    padding: 0 !important;
+  }
+
+  .task-layout .task-right-panel {
+    order: 1 !important;
+    position: static !important;
+    top: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-height: none !important;
+    border: 1px solid var(--ms-border) !important;
+    border-radius: var(--ms-radius) !important;
+    overflow: hidden !important;
+  }
+
+  .task-layout .task-right-panel.is-collapsed {
+    width: 100% !important;
+    min-width: 0 !important;
+    margin-left: 0 !important;
+    border-left: 1px solid var(--ms-border) !important;
+    border-top: 1px solid var(--ms-border) !important;
+  }
+
+  .task-layout .task-sidebar-panel {
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+  }
+
+  .task-layout .task-sidebar-toggle {
+    display: none !important;
+  }
+
+  .task-layout .task-history-list {
+    max-height: min(34vh, 280px) !important;
+  }
+
+  .task-layout .task-create-shell {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 16px 16px calc(96px + env(safe-area-inset-bottom)) !important;
+    border: 1px solid var(--ms-border) !important;
+    border-radius: var(--ms-radius) !important;
+    background: #fff !important;
+  }
+
+  .task-layout .task-detail-wrapper {
+    border: 1px solid var(--ms-border) !important;
+    border-radius: var(--ms-radius) !important;
+    background: #fff !important;
+  }
+
+  .task-layout .task-status-bar .task-inline-input {
+    width: 100% !important;
+  }
+}
+
+@media (max-width: 1080px) {
+  .vocab-review {
+    flex-direction: column !important;
+  }
+
+  .vocab-review .vocab-review-sidebar {
+    width: 100% !important;
+    max-height: none !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-bottom: 1px solid var(--ms-border) !important;
+  }
+
+  .vocab-review .vocab-review-content {
+    padding: 20px 18px !important;
+  }
+
+  .vocab-review .vocab-review-empty-state {
+    min-height: auto !important;
+    padding: 12px 0 0 !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .master-brand-subtitle {
+    display: none !important;
+  }
+
+  .master-tabs {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+    padding: 0 !important;
+    border: none !important;
+    background: transparent !important;
+  }
+
+  .master-tab {
+    min-height: 42px !important;
+    padding: 0 10px !important;
+    border: 1px solid var(--ms-border) !important;
+    border-radius: var(--ms-radius) !important;
+    background: #fff !important;
+    font-size: 12px !important;
+  }
+
+  .master-tab.active {
+    border-color: var(--ms-text) !important;
+    background: var(--ms-text) !important;
+  }
+
+  .master-actions {
+    gap: 10px !important;
+  }
+
+  .master-select-label {
+    display: grid !important;
+    gap: 8px !important;
+  }
+
+  .task-layout .task-create-header {
+    align-items: stretch !important;
+  }
+
+  .task-layout .task-create-header-actions {
+    display: none !important;
+  }
+
+  .task-layout .task-create-title {
+    font-size: 16px !important;
+  }
+
+  .task-layout .task-create-subtitle {
+    font-size: 12px !important;
+    line-height: 1.5 !important;
+  }
+
+  .task-layout .task-create-controls,
+  .task-layout .task-upload-toolbar,
+  .task-layout .result-item-header {
+    padding: 10px !important;
+  }
+
+  .task-layout .task-upload-dropzone-actions,
+  .task-layout .task-upload-toolbar-actions,
+  .task-layout .task-upload-actions {
+    grid-template-columns: 1fr !important;
+  }
+
+  .task-layout .task-upload-count {
+    width: 100% !important;
+    margin-left: 0 !important;
+  }
+
+  .task-layout .task-upload-item {
+    display: grid !important;
+    grid-template-columns: auto 72px minmax(0, 1fr) !important;
+    align-items: start !important;
+  }
+
+  .task-layout .task-upload-actions {
+    grid-column: 1 / -1 !important;
+  }
+
+  .task-layout .task-toolbar {
+    padding: 10px !important;
+  }
+
+  .task-layout .task-toolbar-actions,
+  .task-layout .task-status-bar {
+    width: 100% !important;
+  }
+
+  .task-layout .task-toolbar-actions {
+    justify-content: stretch !important;
+  }
+
+  .task-layout .task-toolbar-actions > button {
+    flex: 1 1 0 !important;
+  }
+
+  .vocab-review .vocab-review-sidebar {
+    max-height: none !important;
+  }
+
+  .vocab-review .vocab-review-shell {
+    gap: 16px !important;
+  }
+
+  .vocab-review .vocab-review-hero {
+    gap: 12px !important;
+    padding-bottom: 10px !important;
+  }
+
+  .vocab-review .vocab-review-hero-title {
+    font-size: clamp(24px, 9vw, 30px) !important;
+  }
+
+  .vocab-review .vocab-review-card,
+  .vocab-review .vocab-review-example-card {
+    padding: 16px !important;
+  }
+
+  .vocab-review .vocab-review-sidebar-header,
+  .vocab-review .vocab-review-sidebar-search,
+  .vocab-review .vocab-review-sidebar-meta {
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+  }
+
+  .vocab-review .vocab-review-content {
+    padding: 14px !important;
+  }
+
+  .vocab-review .vocab-review-hero-actions {
+    width: 100% !important;
+  }
+
+  .vocab-review .vocab-review-hero-actions > button {
+    width: 100% !important;
+  }
+
+  .vocab-review .vocab-review-empty-card {
+    padding: 20px !important;
+  }
 }

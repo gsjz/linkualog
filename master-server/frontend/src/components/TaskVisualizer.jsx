@@ -452,7 +452,6 @@ const JsonNode = ({ val, nodeKey, foldedKeys, isRoot = false, taskName = '' }) =
         {isVocabItem && (
           <div style={{ display: 'flex', gap: '4px' }}>
             <button onClick={(e) => handleDispatchTask(val.word, val.context || val.example || val.text, false, e)} style={{ padding: '2px 8px', fontSize: '12px', background: 'var(--ms-surface-muted)', color: 'var(--ms-text)', border: '1px solid var(--ms-border)', borderRadius: '4px', cursor: 'pointer' }}>保存</button>
-            <button onClick={(e) => handleDispatchTask(val.word, val.context || val.example || val.text, true, e)} style={{ padding: '2px 8px', fontSize: '12px', background: 'var(--ms-text)', color: '#fff', border: '1px solid var(--ms-text)', borderRadius: '4px', cursor: 'pointer' }}>解析</button>
           </div>
         )}
 
@@ -596,14 +595,15 @@ const ImageOverlayPreview = ({ src, alt, overlayMarks, showOverlay, selectedMark
     };
   }, [src, overlayMarks.length]);
 
-  if (hasImageError) return <span style={{ color: 'var(--ms-text-faint)', fontSize: '12px' }}>图片不可用</span>;
+  if (hasImageError) return <span className="task-image-preview-error" style={{ color: 'var(--ms-text-faint)', fontSize: '12px' }}>图片不可用</span>;
 
   const hasSelected = Boolean(selectedMarkId);
 
   return (
-    <div ref={previewRootRef} style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-      <div style={{ width: '100%' }}>
+    <div ref={previewRootRef} className="task-image-preview" style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      <div className="task-image-stage" style={{ width: '100%' }}>
         <div
+          className="task-image-frame"
           ref={imageWrapRef}
           style={{
             position: 'relative',
@@ -614,6 +614,7 @@ const ImageOverlayPreview = ({ src, alt, overlayMarks, showOverlay, selectedMark
           <img
             src={src}
             alt={alt}
+            className="task-image-preview-image"
             style={{
               display: 'block',
               width: '100%',
@@ -623,7 +624,7 @@ const ImageOverlayPreview = ({ src, alt, overlayMarks, showOverlay, selectedMark
           />
 
           {showOverlay && overlayMarks.length > 0 && (
-            <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+            <div className="task-image-overlay-layer" style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
               {overlayMarks.map((mark) => {
                 const isSelected = selectedMarkId === mark.id;
                 return (
@@ -672,13 +673,19 @@ const ImageOverlayPreview = ({ src, alt, overlayMarks, showOverlay, selectedMark
         </div>
       </div>
 
+      <div className="task-image-preview-meta" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', fontSize: '12px', color: 'var(--ms-text-muted)' }}>
+        <span>{alt}</span>
+        <span>{overlayMarks.length ? `坐标标记 ${overlayMarks.length} 个` : '原图预览'}</span>
+      </div>
+
       {overlayMarks.length > 0 && (
-        <div style={{ borderTop: '1px solid var(--ms-border)', paddingTop: '8px', paddingBottom: '8px', maxHeight: '120px', boxSizing: 'border-box', overflowY: 'auto', overflowX: 'hidden', display: 'flex', flexWrap: 'wrap', alignContent: 'flex-start', gap: '8px', paddingRight: '6px' }}>
+        <div className="task-image-mark-list" style={{ borderTop: '1px solid var(--ms-border)', paddingTop: '8px', paddingBottom: '8px', maxHeight: '120px', boxSizing: 'border-box', overflowY: 'auto', overflowX: 'hidden', display: 'flex', flexWrap: 'wrap', alignContent: 'flex-start', gap: '8px', paddingRight: '6px' }}>
           {overlayMarks.map((mark) => {
             const isSelected = selectedMarkId === mark.id;
             return (
               <button
                 key={`${mark.id}-chip`}
+                className={`task-image-mark-chip${isSelected ? ' is-selected' : ''}`}
                 onClick={() => onSelectMark && onSelectMark(mark.id, true)}
                 style={{ maxWidth: '100%', border: '1px solid', borderColor: isSelected ? 'var(--ms-text)' : 'var(--ms-border)', background: isSelected ? 'var(--ms-surface-muted)' : 'var(--ms-surface-muted)', color: isSelected ? 'var(--ms-text)' : 'var(--ms-text)', borderRadius: '4px', padding: '3px 10px', fontSize: '12px', cursor: 'pointer', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}
                 title={mark.context || mark.word}
@@ -1215,7 +1222,6 @@ const ExperimentalMarkView = ({
 
             <div style={{ display: 'flex', gap: '8px' }}>
               <button onClick={(e) => { e.stopPropagation(); dispatchVocabTask(mark.word, mark.context, taskName, false, getSerializableFocusPositions(mark)); }} style={{ padding: '3px 10px', fontSize: '12px', background: 'var(--ms-surface-muted)', color: 'var(--ms-text)', border: '1px solid var(--ms-border)', borderRadius: '4px', cursor: 'pointer' }}>保存</button>
-              <button onClick={(e) => { e.stopPropagation(); dispatchVocabTask(mark.word, mark.context, taskName, true, getSerializableFocusPositions(mark)); }} style={{ padding: '3px 10px', fontSize: '12px', background: 'var(--ms-text)', color: '#fff', border: '1px solid var(--ms-text)', borderRadius: '4px', cursor: 'pointer' }}>解析</button>
             </div>
 
           </div>
@@ -1236,7 +1242,6 @@ export default function TaskVisualizer({ onOpenVocabularyEntry = null }) {
   const [createStartPage, setCreateStartPage] = useState(1);
   const [stagedFiles, setStagedFiles] = useState([]);
   const [selectedUploadIds, setSelectedUploadIds] = useState([]);
-  const fileInputRef = useRef(null);
   const prevStagedRef = useRef([]);
 
   const [resultViewMode, setResultViewMode] = useState(() => normalizeResultViewMode(localStorage.getItem(RESULT_VIEW_STORAGE_KEY)));
@@ -1284,6 +1289,12 @@ export default function TaskVisualizer({ onOpenVocabularyEntry = null }) {
     const listInterval = setInterval(fetchTasksList, 10000);
     return () => clearInterval(listInterval);
   }, []);
+
+  useEffect(() => {
+    if (!historyTasks.length && !selectedTaskId && pageMode !== 'create') {
+      setPageMode('create');
+    }
+  }, [historyTasks.length, pageMode, selectedTaskId]);
 
   useEffect(() => {
     let detailInterval;
@@ -1604,9 +1615,9 @@ export default function TaskVisualizer({ onOpenVocabularyEntry = null }) {
 
   const handleChooseFiles = (e) => {
     const files = Array.from(e.target.files || []);
+    e.target.value = '';
     if (!files.length) return;
     setStagedFiles((prev) => [...prev, ...files.map((file) => makeStagedFile(file))]);
-    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const moveStagedFile = (index, delta) => {
@@ -1718,8 +1729,7 @@ export default function TaskVisualizer({ onOpenVocabularyEntry = null }) {
 
   const formattedResults = getFormattedResults();
   const taskHasOverlayMarks = formattedResults.some((item) => item.overlay_marks.length > 0);
-  const taskUsesExperimentalCoordinates = formattedResults.some((item) => item.experimental_coordinates);
-  const showOverlayToggle = taskUsesExperimentalCoordinates || taskHasOverlayMarks;
+  const showOverlayToggle = taskHasOverlayMarks;
   const normalizedCurrentTaskName = (taskData?.name || '').trim() || '资源解析任务';
   const normalizedEditingTaskName = (editingTaskName || '').trim() || '资源解析任务';
   const isTaskNameDirty = normalizedCurrentTaskName !== normalizedEditingTaskName;
@@ -1730,6 +1740,8 @@ export default function TaskVisualizer({ onOpenVocabularyEntry = null }) {
     : taskData?.status === 'finished'
       ? 'var(--ms-success)'
       : 'var(--ms-text)';
+  const createTaskDisabled = isUploading || !stagedFiles.length;
+  const allUploadsSelected = stagedFiles.length > 0 && selectedUploadIds.length === stagedFiles.length;
 
   return (
     <div className="task-layout" style={{ position: 'relative', height: '100%', width: '100%', minHeight: 0, overflow: 'hidden', background: '#fff' }}>
@@ -1742,24 +1754,50 @@ export default function TaskVisualizer({ onOpenVocabularyEntry = null }) {
                   <div className="task-create-title" style={{ fontSize: '18px', color: 'var(--ms-text)', fontWeight: 600 }}>新建任务</div>
                   <div className="task-create-subtitle" style={{ fontSize: '12px', color: 'var(--ms-text-muted)', marginTop: '2px' }}>上传后可预览、调整顺序、删除部分文件再确认创建</div>
                 </div>
-                <button className="task-primary-button" onClick={handleCreateTask} disabled={isUploading || !stagedFiles.length} style={{ padding: '8px 16px', border: '1px solid transparent', borderRadius: '6px', fontSize: '13px', cursor: (isUploading || !stagedFiles.length) ? 'not-allowed' : 'pointer', background: (isUploading || !stagedFiles.length) ? 'var(--ms-surface-inset)' : '#111111', color: (isUploading || !stagedFiles.length) ? 'var(--ms-text-faint)' : '#fff' }}>{isUploading ? '处理中...' : '确认并创建任务'}</button>
+                <div className="task-create-header-actions">
+                  <button className="task-primary-button task-create-submit-inline" onClick={handleCreateTask} disabled={createTaskDisabled} style={{ padding: '8px 16px', border: '1px solid transparent', borderRadius: '6px', fontSize: '13px', cursor: createTaskDisabled ? 'not-allowed' : 'pointer', background: createTaskDisabled ? 'var(--ms-surface-inset)' : '#111111', color: createTaskDisabled ? 'var(--ms-text-faint)' : '#fff' }}>{isUploading ? '处理中...' : '确认并创建任务'}</button>
+                </div>
               </div>
 
               <div className="task-create-controls" style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', padding: '12px', border: '1px solid var(--ms-border)', borderRadius: '6px', background: 'rgba(255, 255, 255, 0.9)' }}>
-                <span className="task-inline-label" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ms-text)' }}>任务名</span>
-                <input className="task-inline-input" value={createTaskName} onChange={(e) => setCreateTaskName(e.target.value)} placeholder="任务名称（选填）" style={{ padding: '6px 10px', border: '1px solid var(--ms-border)', borderRadius: '6px', fontSize: '13px', width: '220px', outline: 'none', background: '#fff' }} />
-                <span className="task-inline-label is-muted" style={{ fontSize: '13px', color: 'var(--ms-text-muted)' }}>起始页</span>
-                <input className="task-inline-input task-inline-input-small" type="number" min="1" value={createStartPage} onChange={(e) => setCreateStartPage(Math.max(1, parseInt(e.target.value, 10) || 1))} style={{ padding: '6px 10px', border: '1px solid var(--ms-border)', borderRadius: '6px', fontSize: '13px', width: '90px', outline: 'none', background: '#fff' }} />
-                <input className="task-file-input" ref={fileInputRef} type="file" multiple accept="image/*,application/pdf" onChange={handleChooseFiles} style={{ fontSize: '13px' }} />
+                <div className="task-create-meta-row">
+                  <label className="task-control-field">
+                    <span className="task-inline-label" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ms-text)' }}>任务名</span>
+                    <input className="task-inline-input" value={createTaskName} onChange={(e) => setCreateTaskName(e.target.value)} placeholder="任务名称（选填）" style={{ padding: '6px 10px', border: '1px solid var(--ms-border)', borderRadius: '6px', fontSize: '13px', width: '220px', outline: 'none', background: '#fff' }} />
+                  </label>
+                  <label className="task-control-field task-control-field-small">
+                    <span className="task-inline-label is-muted" style={{ fontSize: '13px', color: 'var(--ms-text-muted)' }}>起始页</span>
+                    <input className="task-inline-input task-inline-input-small" type="number" min="1" value={createStartPage} onChange={(e) => setCreateStartPage(Math.max(1, parseInt(e.target.value, 10) || 1))} style={{ padding: '6px 10px', border: '1px solid var(--ms-border)', borderRadius: '6px', fontSize: '13px', width: '90px', outline: 'none', background: '#fff' }} />
+                  </label>
+                </div>
+
+                <div className="task-upload-dropzone">
+                  <div className="task-upload-dropzone-copy">
+                    <div className="task-upload-dropzone-title">上传图片或 PDF</div>
+                    <div className="task-upload-dropzone-hint">手机端建议直接拍照或选图，文件会先暂存在下方列表，确认后再创建任务。</div>
+                  </div>
+                  <div className="task-upload-dropzone-actions">
+                    <label className="task-primary-button task-upload-picker">
+                      选择图片
+                      <input className="task-file-input task-file-input-hidden" type="file" multiple accept="image/*" onChange={handleChooseFiles} />
+                    </label>
+                    <label className="task-secondary-button task-upload-picker">
+                      选择 PDF
+                      <input className="task-file-input task-file-input-hidden" type="file" multiple accept="application/pdf" onChange={handleChooseFiles} />
+                    </label>
+                  </div>
+                </div>
               </div>
 
               <div className="task-upload-toolbar" style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', padding: '10px 12px', border: '1px solid #e4e4e7', borderRadius: '6px', background: '#fafafa' }}>
-                <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--ms-text)' }}>
-                  <input type="checkbox" checked={stagedFiles.length > 0 && selectedUploadIds.length === stagedFiles.length} onChange={toggleSelectAllUploads} />
+                <label className="task-upload-toolbar-selection" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--ms-text)' }}>
+                  <input type="checkbox" checked={allUploadsSelected} onChange={toggleSelectAllUploads} />
                   全选
                 </label>
-                <button className="task-secondary-button" onClick={removeSelectedUploads} disabled={!selectedUploadIds.length} style={{ padding: '4px 10px', border: '1px solid #e4e4e7', borderRadius: '4px', background: '#fff', fontSize: '12px', cursor: selectedUploadIds.length ? 'pointer' : 'not-allowed', color: selectedUploadIds.length ? '#09090b' : '#a1a1aa' }}>删除选中</button>
-                <button className="task-secondary-button" onClick={clearAllStagedFiles} disabled={!stagedFiles.length} style={{ padding: '4px 10px', border: '1px solid var(--ms-border)', borderRadius: '4px', background: '#fff', fontSize: '12px', cursor: stagedFiles.length ? 'pointer' : 'not-allowed', color: stagedFiles.length ? 'var(--ms-text)' : 'var(--ms-border)' }}>全部删除</button>
+                <div className="task-upload-toolbar-actions">
+                  <button className="task-secondary-button" onClick={removeSelectedUploads} disabled={!selectedUploadIds.length} style={{ padding: '4px 10px', border: '1px solid #e4e4e7', borderRadius: '4px', background: '#fff', fontSize: '12px', cursor: selectedUploadIds.length ? 'pointer' : 'not-allowed', color: selectedUploadIds.length ? '#09090b' : '#a1a1aa' }}>删除选中</button>
+                  <button className="task-secondary-button" onClick={clearAllStagedFiles} disabled={!stagedFiles.length} style={{ padding: '4px 10px', border: '1px solid var(--ms-border)', borderRadius: '4px', background: '#fff', fontSize: '12px', cursor: stagedFiles.length ? 'pointer' : 'not-allowed', color: stagedFiles.length ? 'var(--ms-text)' : 'var(--ms-border)' }}>全部删除</button>
+                </div>
                 <span className="task-upload-count" style={{ marginLeft: 'auto', fontSize: '12px', color: '#71717a' }}>已上传 {stagedFiles.length} 个文件</span>
               </div>
 
@@ -1787,6 +1825,15 @@ export default function TaskVisualizer({ onOpenVocabularyEntry = null }) {
                     </div>
                   );
                 })}
+              </div>
+
+              <div className="task-create-sticky-bar">
+                <div className="task-create-sticky-meta">
+                  {stagedFiles.length ? `准备创建 ${stagedFiles.length} 个文件` : '先选择文件，再创建任务'}
+                </div>
+                <button className="task-primary-button task-create-submit" onClick={handleCreateTask} disabled={createTaskDisabled}>
+                  {isUploading ? '处理中...' : '确认并创建任务'}
+                </button>
               </div>
             </div>
           </div>
@@ -1827,7 +1874,6 @@ export default function TaskVisualizer({ onOpenVocabularyEntry = null }) {
                       <div className="result-meta-list" style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
                         <span className="task-status-chip task-status-chip-page" style={{ color: '#09090b', fontWeight: 500 }}>页码: {item.page_number}</span>
                         <span className="task-status-chip task-status-chip-state" style={{ color: pageTone.color, fontWeight: 600 }}>状态: {item.status === 'completed' ? '解析成功' : item.status === 'failed' ? '解析失败' : '处理中...'}</span>
-                        {item.experimental_coordinates && <span className="task-status-chip" style={{ color: 'var(--ms-text)', background: 'var(--ms-surface-muted)', padding: '2px 8px', borderRadius: '4px' }}>坐标实验</span>}
                         {pageMarks.length > 0 && <span className="task-status-chip" style={{ color: 'var(--ms-text)', background: 'var(--ms-surface-muted)', padding: '2px 8px', borderRadius: '4px' }}>坐标 {pageMarks.length} 个</span>}
                         {savingPages[idx] && <span className="task-status-chip task-status-chip-success" style={{ color: 'var(--ms-success)', background: 'var(--ms-success-soft)', padding: '2px 8px', borderRadius: '4px' }}>保存中…</span>}
                         {item.error && <span className="task-status-chip task-status-chip-error" style={{ color: 'var(--ms-danger)', background: 'var(--ms-danger-soft)', padding: '2px 8px', borderRadius: '4px', maxWidth: '320px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={item.error}>原因: {item.error}</span>}
@@ -1888,12 +1934,26 @@ export default function TaskVisualizer({ onOpenVocabularyEntry = null }) {
             </div>
           </div>
         ) : (
-          <div className="task-empty-state" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#a1a1aa', fontSize: '14px' }}>请在右侧选择一个历史任务，或切到“新建任务”。</div>
+          <div className="task-empty-state task-empty-state-card" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+            <div className="task-empty-state-panel" style={{ width: '100%', maxWidth: '520px', display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'flex-start', border: '1px dashed var(--ms-border)', borderRadius: '10px', padding: '20px', background: 'linear-gradient(180deg, rgba(255,255,255,0.98), rgba(250,250,250,0.98))' }}>
+              <div className="task-empty-state-title" style={{ fontSize: '20px', lineHeight: 1.15, fontWeight: 700, color: 'var(--ms-text)' }}>
+                {historyTasks.length ? '先选择一个历史任务' : '先创建你的第一个任务'}
+              </div>
+              <div className="task-empty-state-copy" style={{ fontSize: '14px', lineHeight: 1.6, color: 'var(--ms-text-muted)' }}>
+                {historyTasks.length
+                  ? '可以从右侧历史列表继续查看，也可以直接切换到“新建任务”上传图片或 PDF。'
+                  : '当前还没有历史任务。直接上传图片或 PDF，确认后就能开始解析。'}
+              </div>
+              <button className="task-primary-button task-empty-state-action" type="button" onClick={() => setPageMode('create')}>
+                立即新建任务
+              </button>
+            </div>
+          </div>
         )}
       </div>
 
       <aside className={`task-right-panel${isRightPanelCollapsed ? ' is-collapsed' : ''}`} style={{ position: 'absolute', top: '12px', right: '12px', bottom: '12px', width: isRightPanelCollapsed ? '40px' : '320px', minWidth: '40px', border: '1px solid #e4e4e7', borderRadius: '6px', background: '#fafafa', display: 'flex', flexDirection: 'row', minHeight: 0, overflow: 'hidden', transition: 'width 0.2s ease', boxShadow: 'none', zIndex: 30 }}>
-        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', minHeight: 0, opacity: isRightPanelCollapsed ? 0 : 1, visibility: isRightPanelCollapsed ? 'hidden' : 'visible', pointerEvents: isRightPanelCollapsed ? 'none' : 'auto', transition: 'opacity 0.15s ease' }}>
+        <div className="task-sidebar-panel" style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', minHeight: 0, opacity: isRightPanelCollapsed ? 0 : 1, visibility: isRightPanelCollapsed ? 'hidden' : 'visible', pointerEvents: isRightPanelCollapsed ? 'none' : 'auto', transition: 'opacity 0.15s ease' }}>
             <div className="task-sidebar-section" style={{ padding: '10px 12px', borderBottom: '1px solid #e4e4e7', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <div className="task-sidebar-title" style={{ fontSize: '12px', fontWeight: 600, color: '#71717a' }}>工作区</div>
               <div className="task-segment" style={{ display: 'inline-flex', border: '1px solid #e4e4e7', borderRadius: '6px', overflow: 'hidden', background: '#fff' }}>

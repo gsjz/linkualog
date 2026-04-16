@@ -196,6 +196,37 @@ function renderPreviewWithFocusWords(text, focusWords) {
   return rendered;
 }
 
+function getExampleRawFocus(example) {
+  return example?.focusPositions ?? example?.focusPosition ?? example?.fp ?? example?.fps ?? [];
+}
+
+function buildExampleFocusPreviewHtml(example) {
+  const text = String(example?.text || '');
+  if (!text.trim()) return '';
+
+  return renderPreviewWithFocusPositions(text, getExampleRawFocus(example))
+    || renderPreviewWithFocusWords(text, example?.focusWords)
+    || escapeHtml(text);
+}
+
+function buildExampleFocusSummary(example) {
+  const focusPositions = normalizeExampleFocusPositions(
+    Array.isArray(example?.focusPositions) ? example.focusPositions : [],
+    tokenizeNonSpace(example?.text || '').length,
+  );
+  const focusWords = Array.isArray(example?.focusWords)
+    ? example.focusWords.map((item) => String(item || '').trim()).filter(Boolean)
+    : [];
+
+  if (focusPositions.length) {
+    return `focusPositions ${focusPositions.join(', ')}`;
+  }
+  if (focusWords.length) {
+    return `focusWords ${focusWords.join(', ')}`;
+  }
+  return '未设置 focus';
+}
+
 function ExampleFocusPicker({
   example,
   index,
@@ -900,27 +931,34 @@ function EditorPanel({
         </div>
       </section>
 
-      <section className="editor-section">
-        <div className="editor-title-row">
-          <h4>Definitions</h4>
-          <button type="button" className="ghost" onClick={onDefinitionAdd}>新增释义</button>
-        </div>
+      <details className="editor-section editor-collapsible-section">
+        <summary className="editor-disclosure">
+          <span>Definitions</span>
+          <span className="editor-disclosure-meta">{definitions.length ? `${definitions.length} 条释义` : '暂无释义'}</span>
+        </summary>
 
-        <div className="editor-list">
-          {definitions.length === 0 ? <div className="empty">暂无释义</div> : null}
-          {definitions.map((item, index) => (
-            <div className="editor-item" key={`def-${index}`}>
-              <input
-                className="field"
-                value={item}
-                onChange={(event) => onDefinitionChange(index, event.target.value)}
-                placeholder="输入释义"
-              />
-              <button type="button" className="danger" onClick={() => onDefinitionRemove(index)}>删除</button>
-            </div>
-          ))}
+        <div className="editor-section-body">
+          <div className="editor-title-row">
+            <h4>Definitions</h4>
+            <button type="button" className="ghost" onClick={onDefinitionAdd}>新增释义</button>
+          </div>
+
+          <div className="editor-list">
+            {definitions.length === 0 ? <div className="empty">暂无释义</div> : null}
+            {definitions.map((item, index) => (
+              <div className="editor-item" key={`def-${index}`}>
+                <input
+                  className="field"
+                  value={item}
+                  onChange={(event) => onDefinitionChange(index, event.target.value)}
+                  placeholder="输入释义"
+                />
+                <button type="button" className="danger" onClick={() => onDefinitionRemove(index)}>删除</button>
+              </div>
+            ))}
+          </div>
         </div>
-      </section>
+      </details>
 
       <section className="editor-section">
         <div className="editor-title-row">
@@ -930,65 +968,89 @@ function EditorPanel({
 
         <div className="editor-list">
           {examples.length === 0 ? <div className="empty">暂无例句</div> : null}
-          {examples.map((example, index) => (
-            <div className="example-editor-card" key={`example-${index}`}>
-              <div className="editor-item between">
-                <strong>例句 {index + 1}</strong>
-                <button type="button" className="danger" onClick={() => onExampleRemove(index)}>删除</button>
-              </div>
+          {examples.map((example, index) => {
+            const focusPreviewHtml = buildExampleFocusPreviewHtml(example);
+            const focusSummary = buildExampleFocusSummary(example);
+            const hasExplanation = Boolean(String(example.explanation || '').trim());
 
-              <label>
-                text
-                <textarea
-                  className="field textarea"
-                  rows={3}
-                  value={example.text || ''}
-                  onChange={(event) => onExampleChange(index, 'text', event.target.value)}
-                />
-              </label>
+            return (
+              <div className="example-editor-card" key={`example-${index}`}>
+                <div className="editor-item between">
+                  <strong>例句 {index + 1}</strong>
+                  <button type="button" className="danger" onClick={() => onExampleRemove(index)}>删除</button>
+                </div>
 
-              <label>
-                explanation
-                <textarea
-                  className="field textarea"
-                  rows={2}
-                  value={example.explanation || ''}
-                  onChange={(event) => onExampleChange(index, 'explanation', event.target.value)}
-                />
-              </label>
-
-              <div className="editor-grid">
                 <label>
-                  focusWords (逗号分隔)
-                  <input
-                    className="field"
-                    value={Array.isArray(example.focusWords) ? example.focusWords.join(', ') : ''}
-                    onChange={(event) => onExampleChange(index, 'focusWords', event.target.value)}
+                  text
+                  <textarea
+                    className="field textarea"
+                    rows={3}
+                    value={example.text || ''}
+                    onChange={(event) => onExampleChange(index, 'text', event.target.value)}
                   />
                 </label>
 
-                <label>
-                  focusPositions (逗号分隔)
-                  <input
-                    className="field"
-                    value={normalizeExampleFocusPositions(
-                      Array.isArray(example.focusPositions) ? example.focusPositions : [],
-                      tokenizeNonSpace(example.text).length,
-                    ).join(', ')}
-                    onChange={(event) => onExampleChange(index, 'focusPositions', event.target.value)}
-                  />
-                </label>
-              </div>
+                <div className="example-focus-preview">
+                  <div className="row-sub">Focus 渲染</div>
+                  {focusPreviewHtml ? (
+                    <div className="focus-preview-text example-focus-render" dangerouslySetInnerHTML={{ __html: focusPreviewHtml }} />
+                  ) : (
+                    <div className="focus-preview-text example-focus-render is-empty">输入例句后，这里会直接高亮 focus。</div>
+                  )}
+                </div>
 
-              <ExampleFocusPicker
-                example={example}
-                index={index}
-                onToggleFocusPosition={onExampleToggleFocusPosition}
-                onClearFocusPositions={onExampleClearFocusPositions}
-                onApplyFocusPositions={onExampleApplyFocusPositions}
-              />
-            </div>
-          ))}
+                <details className="editor-section editor-collapsible-section example-config-section">
+                  <summary className="editor-disclosure">
+                    <span>Explanation 与 focus 设置</span>
+                    <span className="editor-disclosure-meta">{hasExplanation ? '已填 explanation' : '未填 explanation'} · {focusSummary}</span>
+                  </summary>
+
+                  <div className="editor-section-body">
+                    <label>
+                      explanation
+                      <textarea
+                        className="field textarea"
+                        rows={2}
+                        value={example.explanation || ''}
+                        onChange={(event) => onExampleChange(index, 'explanation', event.target.value)}
+                      />
+                    </label>
+
+                    <div className="editor-grid">
+                      <label>
+                        focusWords (逗号分隔)
+                        <input
+                          className="field"
+                          value={Array.isArray(example.focusWords) ? example.focusWords.join(', ') : ''}
+                          onChange={(event) => onExampleChange(index, 'focusWords', event.target.value)}
+                        />
+                      </label>
+
+                      <label>
+                        focusPositions (逗号分隔)
+                        <input
+                          className="field"
+                          value={normalizeExampleFocusPositions(
+                            Array.isArray(example.focusPositions) ? example.focusPositions : [],
+                            tokenizeNonSpace(example.text).length,
+                          ).join(', ')}
+                          onChange={(event) => onExampleChange(index, 'focusPositions', event.target.value)}
+                        />
+                      </label>
+                    </div>
+
+                    <ExampleFocusPicker
+                      example={example}
+                      index={index}
+                      onToggleFocusPosition={onExampleToggleFocusPosition}
+                      onClearFocusPositions={onExampleClearFocusPositions}
+                      onApplyFocusPositions={onExampleApplyFocusPositions}
+                    />
+                  </div>
+                </details>
+              </div>
+            );
+          })}
         </div>
       </section>
 
@@ -2500,13 +2562,15 @@ export default function App({ embedded = false, onOpenConfig = null, launchReque
         </aside>
 
         <section className="workspace-main">
-          <section className="panel panel-soft workspace-summary">
+          <section className={`panel panel-soft workspace-summary${hasSelection ? '' : ' is-empty'}`}>
             <div className="panel-body">
               <div className="workspace-summary-top">
                 <div>
                   <div className="hero-kicker">{selectionSource === 'recommendation' ? 'Recommended Target' : 'Current Target'}</div>
                   <div className="workspace-title-row">
-                    <div className="workspace-title">{hasSelection ? (activeWord || filename.replace(/\.json$/i, '')) : '先从侧边选择一个词条'}</div>
+                    <div className={`workspace-title${hasSelection ? '' : ' is-empty'}`}>
+                      {hasSelection ? (activeWord || filename.replace(/\.json$/i, '')) : '先选择一个词条开始处理'}
+                    </div>
                     {hasSelection ? (
                       <div className="word-tools">
                         <button type="button" className="ghost" onClick={() => handleSpeakWord('en-US', '美音')} disabled={!ttsSupported}>
@@ -2526,9 +2590,16 @@ export default function App({ embedded = false, onOpenConfig = null, launchReque
                     {hasSelection
                       ? `${formatCategoryLabel(category)} / ${filename}`
                       : mode === 'recommend'
-                        ? '推荐模式下，从侧边推荐面板进入编辑、清洗和复习。'
+                        ? '推荐模式下，从推荐面板直接进入编辑、清洗和复习。'
                         : '手动模式下，先选目录，再点具体词条文件。'}
                   </p>
+                  {!hasSelection ? (
+                    <div className="workspace-empty-steps">
+                      <span>1. 选目录</span>
+                      <span>2. 选词条</span>
+                      <span>3. 直接清洗与复习</span>
+                    </div>
+                  ) : null}
                 </div>
 
                 {embedded ? (
@@ -2681,19 +2752,16 @@ export default function App({ embedded = false, onOpenConfig = null, launchReque
             </aside>
 
             <section className="inspector-column">
-              <MergePanel
-                mergeData={mergeData}
-                loading={loadingMerge}
-                includeLowConfidence={includeLowConfidence}
-                setIncludeLowConfidence={setIncludeLowConfidence}
-                includeMergeLlm={includeMergeLlm}
-                setIncludeMergeLlm={setIncludeMergeLlm}
-                deleteSourceAfterMerge={deleteSourceAfterMerge}
-                setDeleteSourceAfterMerge={setDeleteSourceAfterMerge}
-                onRun={handleMerge}
-                onApplyMerge={handleApplyMerge}
-                applyingKey={mergeApplyingKey}
-              />
+              <div ref={reviewPanelRef}>
+                <ReviewPanel
+                  reviewData={reviewData}
+                  loading={loadingReview}
+                  reviewDate={reviewDate}
+                  setReviewDate={setReviewDate}
+                  onRefresh={handleReviewRefresh}
+                  onScore={handleScore}
+                />
+              </div>
 
               <div ref={cleanPanelRef}>
                 <CleanPanel
@@ -2713,16 +2781,19 @@ export default function App({ embedded = false, onOpenConfig = null, launchReque
                 />
               </div>
 
-              <div ref={reviewPanelRef}>
-                <ReviewPanel
-                  reviewData={reviewData}
-                  loading={loadingReview}
-                  reviewDate={reviewDate}
-                  setReviewDate={setReviewDate}
-                  onRefresh={handleReviewRefresh}
-                  onScore={handleScore}
-                />
-              </div>
+              <MergePanel
+                mergeData={mergeData}
+                loading={loadingMerge}
+                includeLowConfidence={includeLowConfidence}
+                setIncludeLowConfidence={setIncludeLowConfidence}
+                includeMergeLlm={includeMergeLlm}
+                setIncludeMergeLlm={setIncludeMergeLlm}
+                deleteSourceAfterMerge={deleteSourceAfterMerge}
+                setDeleteSourceAfterMerge={setDeleteSourceAfterMerge}
+                onRun={handleMerge}
+                onApplyMerge={handleApplyMerge}
+                applyingKey={mergeApplyingKey}
+              />
             </section>
           </div>
         </section>
