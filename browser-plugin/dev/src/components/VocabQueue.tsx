@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ConfigService } from '../services/configService';
 import { fetchLlmStream } from '../services/llmApi';
+import { requestJson } from '../services/jsonApi';
 
 export interface VocabTask {
   id: string;
@@ -181,21 +182,23 @@ const VocabQueue: React.FC = () => {
       category: sendingTask.category
     };
 
-    fetch(serverUrl, {
+    requestJson({
+      url: serverUrl,
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
+      timeoutMs: 15000,
     })
-    .then(async res => {
-      if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
+    .then(() => {
       if (deleteOnSuccess) {
         setTasks(prev => prev.filter(t => t.id !== taskId));
       } else {
         setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: 'success' } : t));
       }
     })
-    .catch(err => {
-      setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: 'failed', error: err.message } : t));
+    .catch((err: unknown) => {
+      const message = err instanceof Error ? err.message : '请求异常';
+      setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: 'failed', error: message } : t));
     });
   };
 

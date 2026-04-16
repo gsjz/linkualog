@@ -1,14 +1,12 @@
 // ==UserScript==
 // @name       Linkual Log
 // @namespace  npm/vite-plugin-monkey
-// @version    0.0.4
+// @version    0.0.5
 // @author     Sergio Gao
 // @icon       https://vitejs.dev/logo.svg
 // @match      *://*.youtube.com/*
 // @match      *://youtube.com/*
-// @connect    dashscope.aliyuncs.com
-// @connect    api.siliconflow.cn
-// @connect    cdn.jsdelivr.net
+// @connect    *
 // @grant      GM_addStyle
 // @grant      GM_deleteValue
 // @grant      GM_getValue
@@ -12525,7 +12523,7 @@
     }, [subs, adapter]);
     return activeIndex;
   }
-  const isGreaseMonkey = typeof GM_xmlhttpRequest !== "undefined";
+  const isGreaseMonkey$1 = typeof GM_xmlhttpRequest !== "undefined";
   function fetchLlmStream(options) {
     let isAborted = false;
     let gmReq = null;
@@ -12558,7 +12556,7 @@
         messages: finalMessages,
         stream: true
       };
-      if (isGreaseMonkey) {
+      if (isGreaseMonkey$1) {
         let streamAttached = false;
         gmReq = GM_xmlhttpRequest({
           method: "POST",
@@ -13082,6 +13080,75 @@ ${contextBlock}`,
       ] })
     ] }) });
   };
+  const isGreaseMonkey = typeof GM_xmlhttpRequest !== "undefined";
+  const formatHttpError = (status, responseText) => {
+    const detail = (responseText || "").trim();
+    return detail ? `HTTP ${status}: ${detail}` : `HTTP ${status}`;
+  };
+  async function requestJson({
+    url,
+    method = "GET",
+    headers = {},
+    body,
+    timeoutMs = 15e3
+  }) {
+    if (isGreaseMonkey) {
+      return new Promise((resolve, reject) => {
+        GM_xmlhttpRequest({
+          method,
+          url,
+          headers,
+          data: body,
+          timeout: timeoutMs,
+          onload: (res) => {
+            if (res.status < 200 || res.status >= 300) {
+              reject(new Error(formatHttpError(res.status, res.responseText)));
+              return;
+            }
+            const text = String(res.responseText || "").trim();
+            if (!text) {
+              resolve({});
+              return;
+            }
+            try {
+              resolve(JSON.parse(text));
+            } catch (err) {
+              const message = err instanceof Error ? err.message : String(err);
+              reject(new Error(`响应 JSON 解析失败: ${message}`));
+            }
+          },
+          onerror: () => reject(new Error("网络请求被拦截或断开")),
+          ontimeout: () => reject(new Error(`请求超时 (${Math.ceil(timeoutMs / 1e3)}s)`)),
+          onabort: () => reject(new Error("请求已取消"))
+        });
+      });
+    }
+    const abortController = new AbortController();
+    const timeoutId = setTimeout(() => abortController.abort(), timeoutMs);
+    try {
+      const response = await fetch(url, {
+        method,
+        headers,
+        body,
+        signal: abortController.signal
+      });
+      const text = await response.text();
+      if (!response.ok) {
+        throw new Error(formatHttpError(response.status, text));
+      }
+      if (!text.trim()) {
+        return {};
+      }
+      return JSON.parse(text);
+    } catch (err) {
+      if ((err == null ? void 0 : err.name) === "AbortError") {
+        throw new Error(`请求超时 (${Math.ceil(timeoutMs / 1e3)}s)`);
+      }
+      throw err;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
   const VocabQueue = () => {
     const [isOpen, setIsOpen] = reactExports.useState(false);
     const [selectedCategory, setSelectedCategory] = reactExports.useState(ConfigService.get("lan_action") || "Video_Sync");
@@ -13238,19 +13305,21 @@ ${contextBlock}`,
         fetch_llm: false,
         category: sendingTask.category
       };
-      fetch(serverUrl, {
+      requestJson({
+        url: serverUrl,
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      }).then(async (res) => {
-        if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
+        body: JSON.stringify(payload),
+        timeoutMs: 15e3
+      }).then(() => {
         if (deleteOnSuccess) {
           setTasks((prev) => prev.filter((t) => t.id !== taskId));
         } else {
           setTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, status: "success" } : t));
         }
       }).catch((err) => {
-        setTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, status: "failed", error: err.message } : t));
+        const message = err instanceof Error ? err.message : "请求异常";
+        setTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, status: "failed", error: message } : t));
       });
     };
     const handleDeleteTask = (taskId) => {
