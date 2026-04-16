@@ -6,6 +6,8 @@ from pathlib import Path
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 
 def _load_dotenv(path: Path) -> None:
@@ -78,10 +80,23 @@ def _configure_logging(config: dict | None = None) -> None:
     logging.getLogger("master_server.review.llm").setLevel(level)
 
 
+def _read_bool_env(key: str, default: bool) -> bool:
+    raw_value = os.environ.get(key)
+    if raw_value is None:
+        return default
+
+    normalized = str(raw_value).strip().lower()
+    if normalized in {"1", "true", "yes", "on"}:
+        return True
+    if normalized in {"0", "false", "no", "off"}:
+        return False
+    return default
+
+
 APP_DIR = Path(__file__).resolve().parent
 REPO_ROOT = APP_DIR.parent
 _load_dotenv(REPO_ROOT / ".env")
-from core.config import get_config_data
+from core.config import get_config_data, is_running_in_docker
 from api.routes import router as master_router
 from api.review_routes import router as review_router
 from utils.runner import start_frontend_dev
@@ -96,6 +111,32 @@ os.environ.setdefault("LOCK_FILE", str(APP_DIR / "local_data/tasks_db.json.lock"
 
 os.environ.setdefault("VOCAB_DIR", str(REPO_ROOT / "data"))
 os.environ.setdefault("MAX_SCAN_FILES", "2000")
+
+
+def _should_serve_built_frontend() -> bool:
+    return _read_bool_env("MASTER_SERVER_SERVE_BUILT_FRONTEND", is_running_in_docker())
+
+
+def _mount_frontend_static(target_app: FastAPI) -> bool:
+    dist_dir = APP_DIR / "frontend" / "dist"
+    index_file = dist_dir / "index.html"
+    review_file = dist_dir / "review.html"
+
+    if not _should_serve_built_frontend() or not index_file.exists():
+        return False
+
+    @target_app.get("/", include_in_schema=False)
+    def serve_frontend_index():
+        return FileResponse(index_file)
+
+    @target_app.get("/review", include_in_schema=False)
+    @target_app.get("/review/", include_in_schema=False)
+    @target_app.get("/review.html", include_in_schema=False)
+    def serve_review_index():
+        return FileResponse(review_file if review_file.exists() else index_file)
+
+    target_app.mount("/", StaticFiles(directory=dist_dir, html=True), name="frontend")
+    return True
 
 class EndpointFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
@@ -118,17 +159,21 @@ app.add_middleware(
 
 app.include_router(master_router)
 app.include_router(review_router)
+SERVING_BUILT_FRONTEND = _mount_frontend_static(app)
 
 if __name__ == "__main__":
     runtime_config = get_config_data()
     backend_port = _read_port(int(runtime_config.get("backend_port", 8080)), "MASTER_SERVER_BACKEND_PORT", "BACKEND_PORT")
     frontend_port = _read_port(int(runtime_config.get("frontend_port", 8000)), "MASTER_SERVER_FRONTEND_PORT", "FRONTEND_PORT")
     start_master_frontend = os.environ.get("MASTER_SERVER_DISABLE_FRONTEND", "0").strip().lower() not in {"1", "true"}
+    start_master_frontend = start_master_frontend and not SERVING_BUILT_FRONTEND
 
     if start_master_frontend:
         frontend_thread = threading.Thread(target=start_frontend_dev, args=(frontend_port, backend_port))
         frontend_thread.daemon = True
         frontend_thread.start()
+    elif SERVING_BUILT_FRONTEND:
+        print("🧩 已启用内置前端静态资源，由 FastAPI 同端口对外提供服务。")
 
     print(f"🚀 正在启动 FastAPI 后端服务 (端口: {backend_port})...")
     uvicorn.run(app, host="0.0.0.0", port=backend_port)

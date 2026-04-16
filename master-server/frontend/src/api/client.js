@@ -2,7 +2,9 @@ const envBackendUrl = String(import.meta.env.VITE_BACKEND_URL || '').trim();
 const backendPort = String(import.meta.env.VITE_BACKEND_PORT || '').trim() || '8080';
 const host = window.location.hostname || 'localhost';
 const protocol = window.location.protocol || 'http:';
-const BACKEND_URL = envBackendUrl || `${protocol}//${host}:${backendPort}`;
+const currentOrigin = window.location.origin || `${protocol}//${host}`;
+const devBackendUrl = `${protocol}//${host}:${backendPort}`;
+const BACKEND_URL = envBackendUrl || (import.meta.env.DEV ? devBackendUrl : currentOrigin);
 
 console.log('当前连接的后端地址:', BACKEND_URL);
 
