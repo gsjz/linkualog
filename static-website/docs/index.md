@@ -27,7 +27,7 @@ icon: lucide/rocket
 
 - 一个**浏览器插件 (browser-plugin)**，基于油猴类脚本环境，用于增强你在视频网站上的学习体验；
 - 一个**主服务器 (master-server)**，后端基于 FastAPI，前端基于 React，用于接收 OCR 资源、维护词条 JSON（词条清洗、目录级 merge 建议、复习建议与打分回写），并承接浏览器插件发来的数据；
-- 一个**网站模板 (website-template)**，提供了一个基于 Zensical 的静态网站的实现案例，便于你在脱离主服务器也能随时浏览数据；
+- 一个**静态网站 (static-website)**，提供了一个基于 Zensical 的静态网站实现案例，便于你在脱离主服务器也能随时浏览数据；
 - 一个**示例数据集 (data)**，当前仓库内置 `daily`、`cet`、`ielts` 三个分类的数据。
 
 ### 当前模块状态 (Current Modules)
@@ -37,19 +37,20 @@ icon: lucide/rocket
 - `browser-plugin/user/linkualog.user.js`：给最终用户安装的油猴脚本，当前覆盖 `youtube.com` 域名下的长视频与 Shorts；
 - `browser-plugin/dev/`：浏览器插件的开发工程，基于 `Vite`、`React` 与 `vite-plugin-monkey`；
 - `master-server/`：统一后的主应用，主前端中包含 `OCR 解析库`、`我的生词本`、`精修与复习` 三个标签页；
-- `website-template/`：静态网站模板，通过 hook 把 `data/*/*.json` 转成 `docs/dictionary/**` 下的 Markdown；
-- `data/`：当前主数据库样例，同时也是 `master-server` 与 `website-template` 默认共享的数据目录。
+- `static-website/`：静态网站目录，通过 hook 把 `data/*/*.json` 转成 `docs/dictionary/**` 下的 Markdown；
+- `data/`：当前主数据库样例，同时也是 `master-server` 与 `static-website` 默认共享的数据目录。
 
 ### 快速开始？(Quick Start?)
 
 如果你只想用最短路径跑通当前版本，建议按下面的顺序：
 
-1. 在仓库根目录根据 `.env.example` 准备 `.env`，至少填入 `MASTER_SERVER_LLM_API_KEY`
-2. 进入 `master-server/`，执行 `uv sync` 和 `uv run main.py`
-3. 打开主前端，在“全局配置”里确认模型与默认生词本目录
-4. 安装 `browser-plugin/user/linkualog.user.js`
-5. 把插件中的 `LAN Sync URL` 指向 `http://<你的主机>:8080/api/vocabulary/add`
-6. 如果你还需要静态站，再进入 `website-template/` 运行 `make serve`
+1. 在仓库根目录根据 `.env.example` 准备 `.env`，通常只需要确认 `MASTER_SERVER_LLM_PROVIDER`、`MASTER_SERVER_LLM_MODEL`、`MASTER_SERVER_LLM_API_KEY`
+2. 本地手动跑：进入 `master-server/`，执行 `uv sync` 和 `uv run main.py`
+3. 或服务器 Docker 跑：在仓库根目录执行 `docker compose up -d --build master-server`
+4. 打开主前端，在“全局配置”里确认模型与默认生词本目录
+5. 安装 `browser-plugin/user/linkualog.user.js`
+6. 把插件中的 `LAN Sync URL` 指向 `http://<你的主机>:8080/api/vocabulary/add`
+7. 如果你还需要静态站，再进入 `static-website/` 运行 `make serve`
 
 ### 项目动机 (Motivation)
 
@@ -87,15 +88,15 @@ P.S. 'Link-ual' 听起来像 'lingual'（语言的）。系统的输出结果正
 1. 你可以使用 `master-server` 主前端中的 `OCR 解析库` 标签页，将图片或 PDF 资源发送到服务器。这主要针对**图片素材**。（如果需要，你可以给任务命名，这有助于未来的引用和追溯。）
 2. 你可以使用浏览器插件将视频网站上的字幕数据发送到服务器。这主要针对**视频素材**。（当前用户态脚本主要覆盖 YouTube 长视频与 Shorts，引用信息可以自动生成。）
 
-补充一点：当前后端支持上传 PDF，但 PDF 分页依赖 Poppler。仓库里的代码已经处理了这一路径，不过当前 Dockerfile 没有显式安装 Poppler；如果你要在本地或容器中稳定处理 PDF，请先确认环境具备该依赖。
+补充一点：当前后端支持上传 PDF，分页依赖 Poppler。仓库里的 Docker 镜像已经安装 `poppler-utils`；如果你是本地手动运行，请自行确保系统里也有这一依赖。
 
 ### 数据处理 (Data Processing)
 
-对于图片素材，系统会尝试对内容进行 OCR（光学字符识别），并默认提取关键词及其上下文。为了获得更好的效果，此步骤仍然需要人工监督介入：
+对于图片素材，系统会尝试对内容进行 OCR（光学字符识别），并默认提取关键词及其上下文。当前 OCR 会始终尝试返回下划线词坐标；为了获得更好的效果，此步骤仍然需要人工监督介入：
 
 - 如果 OCR 识别内容较差，你可以尝试重新识别
 - 如果 OCR 识别内容无误，你可以删除系统的推荐内容，或者自己手动选择句子和单词
-- 如果你开启了实验开关，系统还会尝试返回被标记词的坐标信息，供前端进行更精细的交互
+- 系统会返回被标记词的坐标信息，供前端进行更精细的交互；如果模型对坐标不够确定，也可能只返回词条而不返回坐标
 
 推荐算法方面：如果你在图片素材中标记了下划线，推荐内容会通过 OCR 与 LLM 联合生成；视频侧则会根据字幕和用户划词结果生成词条，并带上对应上下文。
 
@@ -117,7 +118,7 @@ P.S. 'Link-ual' 听起来像 'lingual'（语言的）。系统的输出结果正
 当前主要有两种方式来消费这些产出结果：
 
 1. **`master-server` 主前端**。其中的“我的生词本”和“精修与复习”直接围绕这些 JSON 文件工作。
-2. **`website-template` 静态站**。JSON 文件可通过 hook 脚本转换为 Markdown，进而部署到 Zensical 静态网站上。
+2. **`static-website` 静态站**。JSON 文件可通过 hook 脚本转换为 Markdown，进而部署到 Zensical 静态网站上。
 
 ## 主服务器配置 (Master-server Set Up)
 
@@ -139,51 +140,105 @@ P.S. 'Link-ual' 听起来像 'lingual'（语言的）。系统的输出结果正
 
 也就是说，`master-server` 虽然在自己的目录里运行，但它默认读取的是**仓库根目录**的 `.env`。
 
-### 部署
+### 本地手动部署 (Local Manual Deploy)
 
-切换到 `master-server/` 作为工作目录。
+这种方式适合你在自己的 Ubuntu / macOS 开发机上直接跑起来，方便调试。
 
-建议先在仓库根目录准备 `.env`。至少推荐填写：
+1. 在仓库根目录准备 `.env`
 
-- `MASTER_SERVER_LLM_API_KEY`
+通常只需要确认下面这几项：
+
 - `MASTER_SERVER_LLM_PROVIDER`
 - `MASTER_SERVER_LLM_MODEL`
+- `MASTER_SERVER_LLM_API_KEY`
 - 可选：`MASTER_SERVER_FRONTEND_PORT`
 - 可选：`MASTER_SERVER_BACKEND_PORT`
 
-如果你只是想先确认前后端能启动，不填这些值也可以继续运行；只是 OCR / LLM 相关功能届时不可用。
-
-然后执行：
+高级 review / refine 调参已经不再放进 `.env.example`；通常直接在前端“全局配置”里改，或者看 `master-server/local_data/llm_config.json` 即可。
 
 ```bash
+cd /path/to/linkualog
+cp .env.example .env
+# 编辑 .env
+```
+
+2. 进入 `master-server/` 目录运行
+
+```bash
+cd master-server
 uv sync
 uv run main.py
 ```
 
-当前行为和旧版不同，注意下面几点：
+当前行为：
 
 - `uv run main.py` 会启动统一 FastAPI 后端，默认端口是 `8080`
-- 如果没有设置 `MASTER_SERVER_DISABLE_FRONTEND=1`，它还会自动在 `master-server/frontend/` 中执行 `npm install`，然后拉起前端开发服务
-- 非 Docker 环境下，统一前端默认端口是 `8000`
-- Docker / Compose 环境下，统一前端默认端口是 `80`
+- 如果没有设置 `MASTER_SERVER_DISABLE_FRONTEND=1`，它还会拉起主前端开发服务
+- 非 Docker 环境下，主前端默认端口是 `8000`
 - 端口类配置可以在“全局配置”中修改，但需要重启服务后生效
 
-启动后：
+启动后默认访问地址：
 
-- 主前端默认地址是 `http://localhost:8000`
-- 统一后端默认地址是 `http://localhost:8080`
+- 主前端：`http://localhost:8000`
+- 后端 API：`http://localhost:8080`
 
-如果你只想跑后端：
+如果你只想本地跑后端：
 
 ```bash
+cd master-server
 MASTER_SERVER_DISABLE_FRONTEND=1 uv run main.py
 ```
 
-如果你想从仓库根目录直接使用 Docker / Compose：
+### 服务器 Docker 部署 (Server Docker Deploy)
+
+这种方式适合轻量云服务器、家用小主机或 NAS。
+
+1. 在仓库根目录准备 `.env`
+
+必须至少确认：
+
+- `MASTER_SERVER_LLM_PROVIDER`
+- `MASTER_SERVER_LLM_MODEL`
+- `MASTER_SERVER_LLM_API_KEY`
+
+如果你的服务器在中国大陆或网络较慢，推荐保留默认镜像源；如果你有自己的源，也可以在 `.env` 里改：
+
+- `MASTER_SERVER_APT_MIRROR_BASE`
+- `MASTER_SERVER_PIP_INDEX_URL`
+- `MASTER_SERVER_NPM_REGISTRY`
 
 ```bash
-docker compose up --build
+cd /path/to/linkualog
+cp .env.example .env
+# 编辑 .env
 ```
+
+2. 构建并启动
+
+```bash
+cd /path/to/linkualog
+docker compose up -d --build master-server
+```
+
+默认对外暴露：
+
+- `http://服务器IP/`：主前端
+- `http://服务器IP:8080/`：同一套后端 / API
+
+常用运维命令：
+
+```bash
+docker compose logs -f master-server
+docker compose up -d --build master-server
+docker compose restart master-server
+```
+
+默认持久化目录：
+
+- `./data`
+- `./master-server/local_data`
+
+如果你只改了前端，有时也可以只重建前端产物并替换 `dist`；但对多数使用者来说，直接 `docker compose up -d --build master-server` 最稳。
 
 ## 浏览器插件配置 (Browser-plugin Set Up)
 
@@ -230,24 +285,24 @@ docker compose up --build
 
 如果你想自己重新打包构建产物，请使用 `npm run build`。
   
-## 网站模板配置 (Website-template Set Up)
+## 静态网站配置 (Static-website Set Up)
 
 ### 前言 (Preface)
 
 相比于 `mkdocs`，`Zensical` 更为现代高效。它的主要原理是自动将 `.md` 文件转换成 Web 页面。
 
-当前版本的 `website-template` 仍然需要在启动前先运行 hook，把 JSON 文件转换成 Markdown。
+当前版本的 `static-website` 仍然需要在启动前先运行 hook，把 JSON 文件转换成 Markdown。
 
 为了暂时替代这一步的自动化缺口，我继续使用 `Makefile` 绑定一些“快捷键”。当前仓库的实际状态是：
 
-- `website-template/main.py` 仍然只是占位文件
+- `static-website/main.py` 仍然只是占位文件
 - 真正的入口是 `Makefile` + `hooks/build_dict.py`
 - `hooks/build_dict.py` 会读取 `DATA_DIR` 下的 JSON，并生成 `docs/dictionary/` 下的 Markdown
 - `zensical.toml` 当前导航只预置了 `daily`、`cet`、`ielts` 三个目录；如果你新增分类，页面会生成，但导航需要手动补上
 
 ### 本地构建 (Local Build)
 
-切换到 `website-template/` 作为工作目录。
+切换到 `static-website/` 作为工作目录。
 
 ```bash
 uv sync
@@ -268,13 +323,38 @@ make serve PORT=6789 DATA_DIR=../data
 其他常用命令：
 
 - `make data`：只执行 JSON -> Markdown 转换
-- `make build`：构建静态站点到 `website-template/site/`
+- `make build`：构建静态站点到 `static-website/site/`
 - `make clean`：清理 `site/` 与 `docs/dictionary/`
+
+### 服务器静态部署 (Server Static Deploy)
+
+`static-website` 自身不是长期运行的动态服务，它更适合先构建、再把 `site/` 目录交给任意静态文件服务器。
+
+一个常见流程是：
+
+```bash
+cd static-website
+uv sync
+make build DATA_DIR=../data
+```
+
+构建完成后：
+
+- 生成结果位于 `static-website/site/`
+- 你可以把整个 `site/` 目录交给 `Nginx`、`Caddy`、对象存储静态托管，或者任何能托管静态文件的服务
+- 如果你的服务器上 `data/` 有更新，重新执行一次 `make build` 再覆盖原静态目录即可
+
+如果你只是想在服务器上临时预览，也可以直接：
+
+```bash
+cd static-website
+make serve PORT=6789 DATA_DIR=../data
+```
 
 ### 通过 Github 部署 (Deploy by Github)
 
 仓库当前仍然保留 `.github/workflows/deploy.yml`。它的实际行为是：
 
 - 当 `main` 或 `master` 分支有新提交时触发
-- 在 `website-template/` 下执行 `uv sync` 与 `make build`
-- 将 `website-template/site/` 上传到 GitHub Pages
+- 在 `static-website/` 下执行 `uv sync` 与 `make build`
+- 将 `static-website/site/` 上传到 GitHub Pages
