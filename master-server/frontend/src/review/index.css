@@ -758,6 +758,16 @@
   white-space: nowrap;
 }
 
+.workspace-mark-button {
+  min-width: 88px;
+}
+
+.workspace-mark-button.is-marked {
+  color: #fff;
+  background: var(--brand);
+  border-color: var(--brand);
+}
+
 .row-main {
   display: flex;
   align-items: center;

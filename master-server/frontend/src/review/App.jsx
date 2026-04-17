@@ -44,6 +44,12 @@ const scoreLabels = {
   5: '非常熟练',
 };
 
+const ENTRY_FILTER_OPTIONS = [
+  { value: 'marked', label: '标记词条' },
+  { value: 'all', label: '全部词条' },
+  { value: 'unmarked', label: '未标记' },
+];
+
 function normalizeCategoryValue(value) {
   return String(value || '').trim();
 }
@@ -69,6 +75,16 @@ function deepClone(value) {
 
 function collapseWhitespace(value) {
   return String(value || '').replace(/\s+/g, ' ').trim();
+}
+
+function normalizeManualEntry(entryLike) {
+  const file = normalizeFilename(entryLike?.file || entryLike?.filename || entryLike?.key || entryLike?.word);
+  const fallbackWord = file.replace(/\.json$/i, '');
+  return {
+    file,
+    word: collapseWhitespace(entryLike?.word || fallbackWord) || fallbackWord,
+    marked: Boolean(entryLike?.marked),
+  };
 }
 
 function normalizeDefinitionKey(value) {
@@ -1587,12 +1603,15 @@ function ManualSelectionPanel({
   categories,
   category,
   filename,
-  files,
-  filteredFiles,
+  entries,
+  filteredEntries,
+  entryFilter,
+  filterCounts,
   fileQuery,
   setFileQuery,
   loadingCategories,
   loadingFiles,
+  onEntryFilterChange,
   onCategorySelect,
   onFilenameSelect,
 }) {
@@ -1600,7 +1619,7 @@ function ManualSelectionPanel({
     <div className="panel sidebar-panel manual-selection-panel">
       <div className="panel-header">
         <h3>手动选择</h3>
-        <span className="badge high">{files.length} files</span>
+        <span className="badge high">{entries.length} files</span>
       </div>
 
       <div className="panel-body sidebar-section category-section">
@@ -1635,23 +1654,40 @@ function ManualSelectionPanel({
           />
         </label>
 
+        <div className="recommend-actions">
+          {ENTRY_FILTER_OPTIONS.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              className={entryFilter === option.value ? 'primary' : 'ghost'}
+              onClick={() => onEntryFilterChange(option.value)}
+              disabled={loadingFiles}
+            >
+              {option.label} {filterCounts[option.value]}
+            </button>
+          ))}
+        </div>
+
         <div className="file-list-meta">
-          <span>{loadingFiles ? '词条加载中...' : category ? `${filteredFiles.length} / ${files.length} 条` : '先选目录'}</span>
+          <span>{loadingFiles ? '词条加载中...' : category ? `${filteredEntries.length} / ${entries.length} 条` : '先选目录'}</span>
           {fileQuery.trim() ? <span>过滤: {fileQuery.trim()}</span> : null}
         </div>
 
         <div className="nav-list nav-list-scroll">
           {!loadingFiles && !category ? <div className="empty">先选择目录，再查看词条列表。</div> : null}
-          {!loadingFiles && category && !filteredFiles.length ? <div className="empty">没有匹配的词条。</div> : null}
-          {filteredFiles.map((item) => (
+          {!loadingFiles && category && !filteredEntries.length ? <div className="empty">没有匹配的词条。</div> : null}
+          {filteredEntries.map((item) => (
             <button
-              key={item}
+              key={item.file}
               type="button"
-              className={`nav-item ${item === filename ? 'active' : ''}`}
-              onClick={() => onFilenameSelect(item)}
+              className={`nav-item ${item.file === filename ? 'active' : ''}`}
+              onClick={() => onFilenameSelect(item.file)}
             >
-              <span className="nav-main">{item.replace(/\.json$/i, '')}</span>
-              <span className="nav-sub">{item}</span>
+              <span className="nav-main">{item.word}</span>
+              <span className="nav-sub">
+                {item.file}
+                {item.marked ? ' · 已标记' : ''}
+              </span>
             </button>
           ))}
         </div>
@@ -1766,9 +1802,10 @@ export default function App({ embedded = false, onOpenConfig = null, launchReque
 
   const [categories, setCategories] = useState([]);
   const [category, setCategory] = useState(() => normalizeCategoryValue(localStorage.getItem('defaultCategory') || ''));
-  const [files, setFiles] = useState([]);
+  const [entries, setEntries] = useState([]);
   const [filename, setFilename] = useState('');
   const [fileQuery, setFileQuery] = useState('');
+  const [entryFilter, setEntryFilter] = useState('marked');
 
   const [recommendScope, setRecommendScope] = useState(ALL_SCOPE);
   const [recommendation, setRecommendation] = useState(null);
@@ -1798,6 +1835,7 @@ export default function App({ embedded = false, onOpenConfig = null, launchReque
   const [loadingClean, setLoadingClean] = useState(false);
   const [loadingReview, setLoadingReview] = useState(false);
   const [savingDraft, setSavingDraft] = useState(false);
+  const [savingMarked, setSavingMarked] = useState(false);
   const [mergeApplyingKey, setMergeApplyingKey] = useState('');
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
@@ -1811,20 +1849,32 @@ export default function App({ embedded = false, onOpenConfig = null, launchReque
   const hasSelection = Boolean(category && filename);
   const apiCategory = toApiCategory(category);
 
-  const filteredFiles = useMemo(() => {
+  const filterCounts = useMemo(() => ({
+    marked: entries.filter((item) => item.marked).length,
+    all: entries.length,
+    unmarked: entries.filter((item) => !item.marked).length,
+  }), [entries]);
+
+  const filteredEntries = useMemo(() => {
+    const filteredByMark = entries.filter((item) => {
+      if (entryFilter === 'marked') return item.marked;
+      if (entryFilter === 'unmarked') return !item.marked;
+      return true;
+    });
     const query = deferredFileQuery.trim().toLowerCase();
-    if (!query) return files;
-    return files.filter((item) => {
-      const normalizedFile = item.toLowerCase();
-      const normalizedWord = item.replace(/\.json$/i, '').toLowerCase();
+    if (!query) return filteredByMark;
+    return filteredByMark.filter((item) => {
+      const normalizedFile = item.file.toLowerCase();
+      const normalizedWord = item.word.toLowerCase();
       return normalizedFile.includes(query) || normalizedWord.includes(query);
     });
-  }, [deferredFileQuery, files]);
+  }, [deferredFileQuery, entries, entryFilter]);
 
   const activeWord = useMemo(() => {
     if (!hasSelection) return '';
     return String(draft?.word || detail?.word || filename.replace(/\.json$/i, '')).trim();
   }, [detail, draft, filename, hasSelection]);
+  const currentMarked = Boolean(draft?.marked ?? detail?.marked);
   const youdaoUrl = useMemo(() => buildYoudaoUrl(activeWord), [activeWord]);
 
   const ttsSupported = typeof window !== 'undefined'
@@ -2011,7 +2061,7 @@ export default function App({ embedded = false, onOpenConfig = null, launchReque
   useEffect(() => {
     let cancelled = false;
 
-    setFiles([]);
+    setEntries([]);
     setFilename('');
     setMergeData(null);
     resetEntryState();
@@ -2028,11 +2078,16 @@ export default function App({ embedded = false, onOpenConfig = null, launchReque
     fetchFiles(apiCategory)
       .then((res) => {
         if (cancelled) return;
-        const list = res.files || [];
+        const list = (Array.isArray(res?.entries) && res.entries.length
+          ? res.entries
+          : (res.files || []).map((item) => ({ file: item, word: item.replace(/\.json$/i, ''), marked: false })))
+          .map((item) => normalizeManualEntry(item))
+          .filter((item) => item.file);
+        const filenames = list.map((item) => item.file);
         let nextFilename = '';
-        setFiles(list);
+        setEntries(list);
         const pendingSelection = pendingSelectionRef.current;
-        if (pendingSelection.category === category && pendingSelection.filename && list.includes(pendingSelection.filename)) {
+        if (pendingSelection.category === category && pendingSelection.filename && filenames.includes(pendingSelection.filename)) {
           nextFilename = pendingSelection.filename;
         }
         if (pendingSelection.category === category) {
@@ -2170,7 +2225,7 @@ export default function App({ embedded = false, onOpenConfig = null, launchReque
 
   const refreshFiles = async () => {
     if (!apiCategory) {
-      setFiles([]);
+      setEntries([]);
       setFilename('');
       resetEntryState();
       showError('先选择目录，再刷新词条列表');
@@ -2180,8 +2235,13 @@ export default function App({ embedded = false, onOpenConfig = null, launchReque
     setLoadingFiles(true);
     try {
       const res = await fetchFiles(apiCategory);
-      const list = res.files || [];
-      setFiles(list);
+      const list = (Array.isArray(res?.entries) && res.entries.length
+        ? res.entries
+        : (res.files || []).map((item) => ({ file: item, word: item.replace(/\.json$/i, ''), marked: false })))
+        .map((item) => normalizeManualEntry(item))
+        .filter((item) => item.file);
+      const filenames = list.map((item) => item.file);
+      setEntries(list);
 
       if (!list.length) {
         setFilename('');
@@ -2189,7 +2249,7 @@ export default function App({ embedded = false, onOpenConfig = null, launchReque
         return;
       }
 
-      if (filename && !list.includes(filename)) {
+      if (filename && !filenames.includes(filename)) {
         setFilename('');
         resetEntryState();
       }
@@ -2401,6 +2461,35 @@ export default function App({ embedded = false, onOpenConfig = null, launchReque
     showNotice('草稿已重置');
   };
 
+  const handleToggleMarked = async () => {
+    if (!hasSelection || !detail) return;
+
+    setSavingMarked(true);
+    try {
+      setError('');
+      const payload = { ...detail, marked: !currentMarked };
+      const res = await saveVocabDetail(apiCategory, filename, payload);
+      const nextData = res.data || payload;
+
+      setDetail(deepClone(nextData));
+      setDraft((prev) => (prev ? { ...prev, marked: Boolean(nextData.marked) } : prev));
+      setEntries((prev) => prev.map((item) => (
+        item.file === filename
+          ? {
+              ...item,
+              word: collapseWhitespace(nextData.word || item.word || filename.replace(/\.json$/i, '')) || item.word,
+              marked: Boolean(nextData.marked),
+            }
+          : item
+      )));
+      showNotice(Boolean(nextData.marked) ? '已标记当前词条' : '已取消标记');
+    } catch (err) {
+      showError(err.message);
+    } finally {
+      setSavingMarked(false);
+    }
+  };
+
   const handleReviewRefresh = async () => {
     if (!hasSelection) return;
 
@@ -2536,12 +2625,15 @@ export default function App({ embedded = false, onOpenConfig = null, launchReque
               categories={categories}
               category={category}
               filename={filename}
-              files={files}
-              filteredFiles={filteredFiles}
+              entries={entries}
+              filteredEntries={filteredEntries}
+              entryFilter={entryFilter}
+              filterCounts={filterCounts}
               fileQuery={fileQuery}
               setFileQuery={setFileQuery}
               loadingCategories={loadingCategories}
               loadingFiles={loadingFiles}
+              onEntryFilterChange={setEntryFilter}
               onCategorySelect={handleCategorySelect}
               onFilenameSelect={handleFilenameSelect}
             />
@@ -2573,6 +2665,14 @@ export default function App({ embedded = false, onOpenConfig = null, launchReque
                     </div>
                     {hasSelection ? (
                       <div className="word-tools">
+                        <button
+                          type="button"
+                          className={currentMarked ? 'primary workspace-mark-button is-marked' : 'ghost workspace-mark-button'}
+                          onClick={handleToggleMarked}
+                          disabled={savingMarked}
+                        >
+                          {savingMarked ? '保存中...' : (currentMarked ? '取消标记' : '标记词条')}
+                        </button>
                         <button type="button" className="ghost" onClick={() => handleSpeakWord('en-US', '美音')} disabled={!ttsSupported}>
                           {ttsVoiceLabel === '美音' ? '朗读中·美音' : '美音'}
                         </button>
