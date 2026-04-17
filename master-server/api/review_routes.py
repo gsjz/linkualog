@@ -15,6 +15,7 @@ from core.review import (
     parse_review_date,
 )
 from core.review_vocabulary import (
+    list_categories,
     list_vocab_files,
     load_vocab_entry,
     load_vocab_file,

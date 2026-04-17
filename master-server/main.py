@@ -117,6 +117,26 @@ def _should_serve_built_frontend() -> bool:
     return _read_bool_env("MASTER_SERVER_SERVE_BUILT_FRONTEND", is_running_in_docker())
 
 
+HTML_NO_CACHE_HEADERS = {
+    "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+    "Pragma": "no-cache",
+    "Expires": "0",
+}
+
+
+class FrontendStaticFiles(StaticFiles):
+    async def get_response(self, path: str, scope):
+        response = await super().get_response(path, scope)
+        normalized_path = str(path or "").strip().lower()
+        if response.status_code == 200 and normalized_path.endswith(".html"):
+            response.headers.update(HTML_NO_CACHE_HEADERS)
+        return response
+
+
+def _html_file_response(path: Path) -> FileResponse:
+    return FileResponse(path, headers=HTML_NO_CACHE_HEADERS)
+
+
 def _mount_frontend_static(target_app: FastAPI) -> bool:
     dist_dir = APP_DIR / "frontend" / "dist"
     index_file = dist_dir / "index.html"
@@ -127,15 +147,15 @@ def _mount_frontend_static(target_app: FastAPI) -> bool:
 
     @target_app.get("/", include_in_schema=False)
     def serve_frontend_index():
-        return FileResponse(index_file)
+        return _html_file_response(index_file)
 
     @target_app.get("/review", include_in_schema=False)
     @target_app.get("/review/", include_in_schema=False)
     @target_app.get("/review.html", include_in_schema=False)
     def serve_review_index():
-        return FileResponse(review_file if review_file.exists() else index_file)
+        return _html_file_response(review_file if review_file.exists() else index_file)
 
-    target_app.mount("/", StaticFiles(directory=dist_dir, html=True), name="frontend")
+    target_app.mount("/", FrontendStaticFiles(directory=dist_dir, html=True), name="frontend")
     return True
 
 class EndpointFilter(logging.Filter):
