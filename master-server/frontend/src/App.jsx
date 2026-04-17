@@ -8,10 +8,16 @@ import { getVocabularyCategories } from './api/client';
 import './App.css';
 
 const MOBILE_MEDIA_QUERY = '(max-width: 820px)';
+const DESKTOP_MINIMAL_MODE_KEY = 'linkualogDesktopMinimalMode';
 
 const readIsMobileViewport = () => {
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false;
   return window.matchMedia(MOBILE_MEDIA_QUERY).matches;
+};
+
+const readDesktopMinimalMode = () => {
+  if (typeof window === 'undefined') return false;
+  return localStorage.getItem(DESKTOP_MINIMAL_MODE_KEY) === '1';
 };
 
 function App() {
@@ -22,6 +28,9 @@ function App() {
   const [reviewLaunchRequest, setReviewLaunchRequest] = useState(null);
   const [vocabularyLaunchRequest, setVocabularyLaunchRequest] = useState(null);
   const [isMobileViewport, setIsMobileViewport] = useState(readIsMobileViewport);
+  const [preferDesktopMinimalMode, setPreferDesktopMinimalMode] = useState(readDesktopMinimalMode);
+  const useDesktopMinimalMode = !isMobileViewport && preferDesktopMinimalMode;
+  const usesCompactLayout = isMobileViewport || useDesktopMinimalMode;
 
   useEffect(() => {
     getVocabularyCategories()
@@ -60,10 +69,15 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (isMobileViewport && currentTab === 'review') {
+    if (usesCompactLayout && currentTab === 'review') {
       setCurrentTab('vocabulary');
     }
-  }, [currentTab, isMobileViewport]);
+  }, [currentTab, usesCompactLayout]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem(DESKTOP_MINIMAL_MODE_KEY, preferDesktopMinimalMode ? '1' : '0');
+  }, [preferDesktopMinimalMode]);
 
   const handleDefaultCategoryChange = (nextCategory) => {
     const finalCategory = String(nextCategory || '').trim();
@@ -103,30 +117,30 @@ function App() {
 
   return (
     <div className="master-shell">
-      {!isMobileViewport ? <VocabQueueWidget /> : null}
+      {!usesCompactLayout ? <VocabQueueWidget /> : null}
 
       <header className="master-header">
         <div className="master-brand-wrap">
           <div className="master-brand-block">
             <h1 className="master-brand">Linkual Log</h1>
-            <div className="master-brand-subtitle">{isMobileViewport ? 'Mobile Study' : 'Master Server Workspace'}</div>
+            <div className="master-brand-subtitle">{usesCompactLayout ? 'Mobile Study' : 'Master Server Workspace'}</div>
           </div>
 
           <div className="master-tabs">
-            <button 
+            <button
               onClick={() => setCurrentTab('tasks')}
               className={`master-tab${currentTab === 'tasks' ? ' active' : ''}`}
             >
-              {isMobileViewport ? '上传文件' : 'OCR 解析库'}
+              {usesCompactLayout ? '上传文件' : 'OCR 解析库'}
             </button>
-            <button 
+            <button
               onClick={() => setCurrentTab('vocabulary')}
               className={`master-tab${currentTab === 'vocabulary' ? ' active' : ''}`}
             >
-              {isMobileViewport ? '随机背词' : '我的生词本'}
+              {usesCompactLayout ? '随机背词' : '我的生词本'}
             </button>
-            {!isMobileViewport ? (
-              <button 
+            {!usesCompactLayout ? (
+              <button
                 onClick={() => setCurrentTab('review')}
                 className={`master-tab${currentTab === 'review' ? ' active' : ''}`}
               >
@@ -137,25 +151,38 @@ function App() {
         </div>
 
         {!isMobileViewport ? (
-          <div className="master-actions">
-            <label className="master-select-label">
-              默认生词本目录
-              <select
-                value={defaultCategory}
-                onChange={(e) => handleDefaultCategoryChange(e.target.value)}
-                className="master-select"
-              >
-                <option value="">请选择目录</option>
-                {categories.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-            </label>
-
-            <button 
-              onClick={() => setShowConfig(true)}
-              className="master-primary-button"
+          <div className={`master-actions${useDesktopMinimalMode ? ' is-compact-layout' : ''}`}>
+            <button
+              type="button"
+              onClick={() => setPreferDesktopMinimalMode((prev) => !prev)}
+              aria-pressed={useDesktopMinimalMode}
+              className={`master-secondary-button master-layout-toggle${useDesktopMinimalMode ? ' is-active' : ''}`}
             >
-              全局配置
+              {useDesktopMinimalMode ? '退出极简' : '极简模式'}
             </button>
+
+            {!useDesktopMinimalMode ? (
+              <label className="master-select-label">
+                默认生词本目录
+                <select
+                  value={defaultCategory}
+                  onChange={(e) => handleDefaultCategoryChange(e.target.value)}
+                  className="master-select"
+                >
+                  <option value="">请选择目录</option>
+                  {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </label>
+            ) : null}
+
+            {!useDesktopMinimalMode ? (
+              <button
+                onClick={() => setShowConfig(true)}
+                className="master-primary-button"
+              >
+                全局配置
+              </button>
+            ) : null}
           </div>
         ) : null}
       </header>
@@ -168,7 +195,7 @@ function App() {
             className={`master-pane${currentTab === 'tasks' ? ' is-active' : ''}`}
             aria-hidden={currentTab !== 'tasks'}
           >
-            <TaskVisualizer onOpenVocabularyEntry={handleOpenVocabularyEntry} simpleCreateOnly={isMobileViewport} />
+            <TaskVisualizer onOpenVocabularyEntry={handleOpenVocabularyEntry} simpleCreateOnly={usesCompactLayout} />
           </div>
           <div
             className={`master-pane${currentTab === 'vocabulary' ? ' is-active' : ''}`}
@@ -177,10 +204,11 @@ function App() {
             <VocabularyReview
               onOpenReviewEntry={handleOpenReviewEntry}
               launchRequest={vocabularyLaunchRequest}
-              mobileSimple={isMobileViewport}
+              mobileSimple={usesCompactLayout}
+              compactDesktop={useDesktopMinimalMode}
             />
           </div>
-          {!isMobileViewport ? (
+          {!usesCompactLayout ? (
             <div
               className={`master-pane master-pane-scroll${currentTab === 'review' ? ' is-active' : ''}`}
               aria-hidden={currentTab !== 'review'}

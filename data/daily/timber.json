@@ -1,0 +1,23 @@
+{
+  "word": "timber",
+  "createdAt": "2026-04-17",
+  "reviews": [],
+  "definitions": [],
+  "examples": [
+    {
+      "text": "However, it was on the verge\nof ecological collapse. Years of intense logging had led\nto massive deforestation. The city now faced timber shortages\nand the impacts of severe erosion and frequent flooding\nthat threatened food supplies. But over just a few decades,",
+      "explanation": "",
+      "focusWords": [
+        "timber"
+      ],
+      "source": {
+        "text": "How Japan saved its biggest city from collapse - Roman Krznaric",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=t0h8Dmni8g8",
+        "timestamp": 28
+      }
+    }
+  ]
+}

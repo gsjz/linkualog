@@ -185,6 +185,16 @@
   cursor: pointer;
 }
 
+.master-layout-toggle {
+  min-width: 112px;
+}
+
+.master-layout-toggle.is-active {
+  border-color: var(--ms-text) !important;
+  background: var(--ms-text) !important;
+  color: #fff !important;
+}
+
 .app-main,
 .task-container-wrapper {
   display: flex;
@@ -681,6 +691,10 @@
   .master-primary-button {
     width: 100%;
     justify-content: center;
+  }
+
+  .master-layout-toggle {
+    width: 100%;
   }
 
   .config-modal {
@@ -1832,6 +1846,41 @@
 
 .vocab-review .vocab-review-content {
   display: flex !important;
+}
+
+.vocab-review.vocab-review-compact-desktop {
+  overflow-x: hidden !important;
+}
+
+.vocab-review.vocab-review-compact-desktop .vocab-review-sidebar,
+.vocab-review.vocab-review-compact-desktop .vocab-review-content {
+  min-width: 0 !important;
+}
+
+.vocab-review.vocab-review-compact-desktop .vocab-review-sidebar {
+  border-radius: 10px !important;
+}
+
+.vocab-review.vocab-review-compact-desktop .vocab-review-content {
+  display: block !important;
+}
+
+.vocab-review.vocab-review-mobile-simple .vocab-review-content {
+  display: block !important;
+}
+
+.vocab-review.vocab-review-mobile-simple.is-compact-desktop .vocab-review-mobile-toolbar,
+.vocab-review.vocab-review-mobile-simple.is-compact-desktop .vocab-review-shell,
+.vocab-review.vocab-review-mobile-simple.is-compact-desktop .vocab-review-empty-state {
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+}
+
+.vocab-review.vocab-review-mobile-simple.is-compact-desktop .vocab-review-card,
+.vocab-review.vocab-review-mobile-simple.is-compact-desktop .vocab-review-example-card,
+.vocab-review.vocab-review-mobile-simple.is-compact-desktop .vocab-review-empty-card {
+  box-shadow: none !important;
 }
 
 .vocab-review .vocab-review-empty-state {

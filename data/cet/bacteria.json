@@ -1,7 +1,12 @@
 {
   "word": "bacteria",
   "createdAt": "2026-03-30",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-17",
+      "score": 2
+    }
+  ],
   "definitions": [
     "细菌"
   ],

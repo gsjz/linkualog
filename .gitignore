@@ -41,5 +41,6 @@ repomix-output.xml
 
 # Local Data for master-server
 local_data/
+.local-notes/
 
 .codex

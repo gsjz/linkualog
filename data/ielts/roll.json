@@ -1,7 +1,12 @@
 {
   "word": "roll",
   "createdAt": "2026-04-12",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-17",
+      "score": 3
+    }
+  ],
   "definitions": [
     "v. （资金）源源不断流入"
   ],
