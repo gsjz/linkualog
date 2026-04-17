@@ -1,7 +1,12 @@
 {
   "word": "dispense",
   "createdAt": "2026-04-12",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-16",
+      "score": 2
+    }
+  ],
   "definitions": [
     "vt. 省去 (在此语境下的释义)"
   ],
