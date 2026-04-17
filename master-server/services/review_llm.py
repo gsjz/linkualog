@@ -883,6 +883,10 @@ def suggest_file_cleaning_with_llm(word: str, definitions: list[str], examples: 
         "如果你改写 explanation，新内容必须是自然、完整、易懂的中文，必要时可在括号里保留极短英文提示，但主体必须是中文。"
         "不要把 definitions 或 explanation 改写成纯英文笔记、词根说明或过长段落。"
         "如果原始内容已经清晰且中文信息充分，就不要为了统一风格硬改。"
+        "例句规则：默认优先 keep；只有在原句明显冗余、语病明显、截断错误或含有无关噪音时，才使用 trim / rewrite。"
+        "如果只是 explanation 需要修改，就不要顺手改 suggested_text。"
+        "如果需要改 suggested_text，必须尽量做最小改动：保留原句核心措辞、语气、时态、主语和事实，不要擅自换同义表达、补背景、扩写细节、改写成更地道但更远离原文的新句子。"
+        "严禁为了追求自然度而过度发挥；不要新增原句里没有的信息、因果、评价或例子。"
         "输出结构："
         '{"definitions":[{"action":"replace|append|drop|replace_all","index":0,"reason":"...","suggested":"...","suggested_definitions":["..."]}],'
         '"examples":[{"index":0,"action":"keep|trim|drop|rewrite","reason":"...","suggested_text":"...","suggested_explanation":"..."}],'
