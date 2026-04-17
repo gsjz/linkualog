@@ -1231,8 +1231,8 @@ const ExperimentalMarkView = ({
   );
 };
 
-export default function TaskVisualizer({ onOpenVocabularyEntry = null }) {
-  const [pageMode, setPageMode] = useState('browse');
+export default function TaskVisualizer({ onOpenVocabularyEntry = null, simpleCreateOnly = false }) {
+  const [pageMode, setPageMode] = useState(simpleCreateOnly ? 'create' : 'browse');
 
   const [historyTasks, setHistoryTasks] = useState([]);
   const [selectedTaskId, setSelectedTaskId] = useState(null);
@@ -1291,10 +1291,11 @@ export default function TaskVisualizer({ onOpenVocabularyEntry = null }) {
   }, []);
 
   useEffect(() => {
+    if (simpleCreateOnly) return;
     if (!historyTasks.length && !selectedTaskId && pageMode !== 'create') {
       setPageMode('create');
     }
-  }, [historyTasks.length, pageMode, selectedTaskId]);
+  }, [historyTasks.length, pageMode, selectedTaskId, simpleCreateOnly]);
 
   useEffect(() => {
     let detailInterval;
@@ -1671,12 +1672,18 @@ export default function TaskVisualizer({ onOpenVocabularyEntry = null }) {
       formData.append('startPage', createStartPage);
 
       const result = await uploadResource(formData);
-      await fetchTasksList();
-      await handleSelectTask(result.task_id);
-
       setCreateTaskName('');
       setCreateStartPage(1);
       clearAllStagedFiles();
+
+      if (simpleCreateOnly) {
+        await fetchTasksList();
+        window.alert('任务已创建，可稍后在桌面端查看解析结果。');
+        return;
+      }
+
+      await fetchTasksList();
+      await handleSelectTask(result.task_id);
       setPageMode('browse');
     } catch (error) {
       alert(`创建任务失败: ${error.message}`);
@@ -1734,7 +1741,8 @@ export default function TaskVisualizer({ onOpenVocabularyEntry = null }) {
   const normalizedEditingTaskName = (editingTaskName || '').trim() || '资源解析任务';
   const isTaskNameDirty = normalizedCurrentTaskName !== normalizedEditingTaskName;
   const progressPct = taskData?.total ? ((taskData.completed / taskData.total) * 100) : 0;
-  const canTuneBrowseView = pageMode === 'browse' && Boolean(taskData);
+  const currentPageMode = simpleCreateOnly ? 'create' : pageMode;
+  const canTuneBrowseView = currentPageMode === 'browse' && Boolean(taskData);
   const taskProgressColor = taskData?.status === 'paused'
     ? 'var(--ms-danger)'
     : taskData?.status === 'finished'
@@ -1745,8 +1753,8 @@ export default function TaskVisualizer({ onOpenVocabularyEntry = null }) {
 
   return (
     <div className="task-layout" style={{ position: 'relative', height: '100%', width: '100%', minHeight: 0, overflow: 'hidden', background: '#fff' }}>
-      <div className="task-main" style={{ height: '100%', minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column', background: '#fff', overflow: 'hidden', paddingRight: isRightPanelCollapsed ? '52px' : '344px' }}>
-        {pageMode === 'create' ? (
+      <div className="task-main" style={{ height: '100%', minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column', background: '#fff', overflow: 'hidden', paddingRight: simpleCreateOnly ? 0 : (isRightPanelCollapsed ? '52px' : '344px') }}>
+        {currentPageMode === 'create' ? (
           <div className="task-page-body" style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '20px' }}>
             <div className="task-create-shell" style={{ maxWidth: '980px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div className="task-create-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
@@ -1952,15 +1960,16 @@ export default function TaskVisualizer({ onOpenVocabularyEntry = null }) {
         )}
       </div>
 
+      {!simpleCreateOnly ? (
       <aside className={`task-right-panel${isRightPanelCollapsed ? ' is-collapsed' : ''}`} style={{ position: 'absolute', top: '12px', right: '12px', bottom: '12px', width: isRightPanelCollapsed ? '40px' : '320px', minWidth: '40px', border: '1px solid #e4e4e7', borderRadius: '6px', background: '#fafafa', display: 'flex', flexDirection: 'row', minHeight: 0, overflow: 'hidden', transition: 'width 0.2s ease', boxShadow: 'none', zIndex: 30 }}>
         <div className="task-sidebar-panel" style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', minHeight: 0, opacity: isRightPanelCollapsed ? 0 : 1, visibility: isRightPanelCollapsed ? 'hidden' : 'visible', pointerEvents: isRightPanelCollapsed ? 'none' : 'auto', transition: 'opacity 0.15s ease' }}>
             <div className="task-sidebar-section" style={{ padding: '10px 12px', borderBottom: '1px solid #e4e4e7', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <div className="task-sidebar-title" style={{ fontSize: '12px', fontWeight: 600, color: '#71717a' }}>工作区</div>
               <div className="task-segment" style={{ display: 'inline-flex', border: '1px solid #e4e4e7', borderRadius: '6px', overflow: 'hidden', background: '#fff' }}>
-                <button className={`task-segment-button${pageMode === 'browse' ? ' is-active' : ''}`} onClick={() => setPageMode('browse')} style={{ padding: '6px 12px', border: 'none', borderRight: '1px solid #e4e4e7', fontSize: '12px', background: pageMode === 'browse' ? '#e4e4e7' : '#fff', color: '#09090b', cursor: 'pointer' }}>浏览任务</button>
-                <button className={`task-segment-button${pageMode === 'create' ? ' is-active' : ''}`} onClick={() => setPageMode('create')} style={{ padding: '6px 12px', border: 'none', fontSize: '12px', background: pageMode === 'create' ? '#e4e4e7' : '#fff', color: '#09090b', cursor: 'pointer' }}>新建任务</button>
+                <button className={`task-segment-button${currentPageMode === 'browse' ? ' is-active' : ''}`} onClick={() => setPageMode('browse')} style={{ padding: '6px 12px', border: 'none', borderRight: '1px solid #e4e4e7', fontSize: '12px', background: currentPageMode === 'browse' ? '#e4e4e7' : '#fff', color: '#09090b', cursor: 'pointer' }}>浏览任务</button>
+                <button className={`task-segment-button${currentPageMode === 'create' ? ' is-active' : ''}`} onClick={() => setPageMode('create')} style={{ padding: '6px 12px', border: 'none', fontSize: '12px', background: currentPageMode === 'create' ? '#e4e4e7' : '#fff', color: '#09090b', cursor: 'pointer' }}>新建任务</button>
               </div>
-              {pageMode === 'browse' && taskData && (
+              {currentPageMode === 'browse' && taskData && (
                 <div className="task-sidebar-current" style={{ fontSize: '12px', color: '#71717a' }}>当前任务：<strong style={{ color: '#09090b' }}>{taskData.name || '未命名'}</strong></div>
               )}
             </div>
@@ -2014,6 +2023,7 @@ export default function TaskVisualizer({ onOpenVocabularyEntry = null }) {
           </span>
         </button>
       </aside>
+      ) : null}
     </div>
   );
 }

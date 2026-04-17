@@ -450,6 +450,7 @@ def list_vocabulary(category: str = ""):
                 "key": word_key,
                 "file": filename,
                 "word": display_word,
+                "marked": bool(payload.get("marked", False)),
             })
         return {"status": "success", "category": category, "words": words, "files": files, "entries": entries}
     except ValueError as e:

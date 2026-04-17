@@ -149,3 +149,33 @@ export const getVocabularyDetail = async (word, category = '') => {
   const res = await fetch(`${BACKEND_URL}/api/vocabulary/detail/${encodeURIComponent(word)}?category=${encodeURIComponent(category)}`);
   return handleResponse(res);
 };
+
+export const saveVocabularyDetail = async (category, filename, data) => {
+  const finalCategory = requireVocabularyCategory(category);
+  const res = await fetch(`${BACKEND_URL}/api/vocabulary/save`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      category: finalCategory,
+      filename,
+      data,
+    }),
+  });
+  return handleResponse(res);
+};
+
+export const submitReviewScore = async (category, filename, score, reviewDate) => {
+  const finalCategory = requireVocabularyCategory(category);
+  const res = await fetch(`${BACKEND_URL}/api/review/suggest`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      category: finalCategory,
+      filename,
+      score,
+      review_date: reviewDate,
+      auto_save: true,
+    }),
+  });
+  return handleResponse(res);
+};

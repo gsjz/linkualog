@@ -2093,14 +2093,102 @@
   }
 
   .vocab-review .vocab-review-hero-actions {
-    width: 100% !important;
+    width: auto !important;
   }
 
   .vocab-review .vocab-review-hero-actions > button {
-    width: 100% !important;
+    width: auto !important;
+    min-height: 34px !important;
+    padding: 0 12px !important;
+    font-size: 12px !important;
   }
 
   .vocab-review .vocab-review-empty-card {
     padding: 20px !important;
+  }
+}
+
+.vocab-review .vocab-review-disclosure-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  cursor: pointer;
+  list-style: none;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ms-text);
+  text-decoration: none;
+  user-select: none;
+}
+
+.vocab-review .vocab-review-disclosure-summary::-webkit-details-marker {
+  display: none;
+}
+
+.vocab-review .vocab-review-disclosure-summary::marker {
+  content: "";
+}
+
+.vocab-review .vocab-review-disclosure-summary-compact {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.vocab-review .vocab-review-disclosure-hint {
+  flex-shrink: 0;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ms-text-faint);
+}
+
+@media (max-width: 640px) {
+  .master-header {
+    min-height: 56px !important;
+    padding: 10px 12px !important;
+    gap: 8px !important;
+  }
+
+  .master-brand-wrap {
+    width: 100% !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    flex-wrap: nowrap !important;
+    gap: 8px !important;
+  }
+
+  .master-brand-block {
+    flex: 0 0 auto !important;
+    gap: 0 !important;
+  }
+
+  .master-brand {
+    font-size: 14px !important;
+    letter-spacing: 0.06em !important;
+    white-space: nowrap !important;
+  }
+
+  .master-tabs {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    display: flex !important;
+    gap: 4px !important;
+    padding: 0 !important;
+    border: none !important;
+    background: transparent !important;
+  }
+
+  .master-tab {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    min-height: 34px !important;
+    padding: 0 8px !important;
+    border: 1px solid var(--ms-border) !important;
+    border-radius: 6px !important;
+    background: #fff !important;
+    font-size: 12px !important;
+    white-space: nowrap !important;
   }
 }
