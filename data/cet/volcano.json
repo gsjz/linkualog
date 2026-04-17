@@ -1,6 +1,6 @@
 {
-  "word": "volcanoes",
-  "createdAt": "2026-04-12",
+  "word": "volcano",
+  "createdAt": "2026-04-16",
   "reviews": [],
   "definitions": [
     "火山"
@@ -20,5 +20,8 @@
         19
       ]
     }
+  ],
+  "mergedFrom": [
+    "volcanoes"
   ]
 }
