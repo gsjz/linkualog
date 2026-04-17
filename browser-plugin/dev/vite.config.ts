@@ -10,6 +10,8 @@ export default defineConfig({
       userscript: {
         name: 'Linkual Log',
         version: '0.0.5',
+        updateURL: 'https://raw.githubusercontent.com/gsjz/linkualog/main/browser-plugin/user/linkualog.user.js',
+        downloadURL: 'https://raw.githubusercontent.com/gsjz/linkualog/main/browser-plugin/user/linkualog.user.js',
         author: 'Sergio Gao',
         icon: 'https://vitejs.dev/logo.svg',
         namespace: 'npm/vite-plugin-monkey',
