@@ -1,7 +1,12 @@
 {
   "word": "devastate",
   "createdAt": "2026-04-11",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-17",
+      "score": 4
+    }
+  ],
   "definitions": [
     "毁灭性的"
   ],

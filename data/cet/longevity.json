@@ -1,21 +1,26 @@
 {
-    "word": "longevity",
-    "createdAt": "2026-03-30",
-    "reviews": [],
-    "definitions": [
-        "n. 持久性；长期性（在此语境下指职业生涯的持续时间）"
-    ],
-    "examples": [
-        {
-            "text": "M: Not at all. It was hard to quit. I was tempted to stay in the game, because I love basketball and I loved my team. As for money, I turned professional at 18. So I'd actually earned a lot and saved most of it, because I had great financial advisers. [6] I knew basketball wasn't a career with a lot of longevity for most players, so I wanted to change careers while I was still young.",
-            "explanation": "男：一点也不。这很难戒掉。我曾动念留在赛场上，因为我热爱篮球，也热爱我的球队。至于钱，我18岁就转为职业选手了。所以我实际上赚了很多钱，并存下了大部分，因为我有出色的理财顾问。[6] 我知道对于大多数球员来说，篮球并不是一份具有长久持续性的职业，所以我想趁年轻转换职业。",
-            "focusWords": [
-                "longevity"
-            ],
-            "source": {
-                "text": "CET6 23 12 1 听力",
-                "url": ""
-            }
-        }
-    ]
+  "word": "longevity",
+  "createdAt": "2026-03-30",
+  "reviews": [
+    {
+      "date": "2026-04-17",
+      "score": 4
+    }
+  ],
+  "definitions": [
+    "n. 持久性；长期性（在此语境下指职业生涯的持续时间）"
+  ],
+  "examples": [
+    {
+      "text": "M: Not at all. It was hard to quit. I was tempted to stay in the game, because I love basketball and I loved my team. As for money, I turned professional at 18. So I'd actually earned a lot and saved most of it, because I had great financial advisers. [6] I knew basketball wasn't a career with a lot of longevity for most players, so I wanted to change careers while I was still young.",
+      "explanation": "男：一点也不。这很难戒掉。我曾动念留在赛场上，因为我热爱篮球，也热爱我的球队。至于钱，我18岁就转为职业选手了。所以我实际上赚了很多钱，并存下了大部分，因为我有出色的理财顾问。[6] 我知道对于大多数球员来说，篮球并不是一份具有长久持续性的职业，所以我想趁年轻转换职业。",
+      "focusWords": [
+        "longevity"
+      ],
+      "source": {
+        "text": "CET6 23 12 1 听力",
+        "url": ""
+      }
+    }
+  ]
 }

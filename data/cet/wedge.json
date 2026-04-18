@@ -1,7 +1,12 @@
 {
   "word": "wedge",
   "createdAt": "2026-04-11",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-17",
+      "score": 2
+    }
+  ],
   "definitions": [
     "v. 楔入；嵌入（在此语境下指被紧紧卡在泥沙中）"
   ],

@@ -1,7 +1,12 @@
 {
   "word": "cruise ship port",
   "createdAt": "2026-03-31",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-17",
+      "score": 3
+    }
+  ],
   "definitions": [
     "邮轮港口"
   ],

@@ -1,7 +1,12 @@
 {
   "word": "mandate",
   "createdAt": "2026-03-30",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-17",
+      "score": 2
+    }
+  ],
   "definitions": [
     "n. 必然要求"
   ],

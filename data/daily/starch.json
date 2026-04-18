@@ -1,25 +1,30 @@
 {
-    "word": "starch",
-    "createdAt": "2026-03-27",
-    "reviews": [],
-    "definitions": [
-        "n. 淀粉"
-    ],
-    "examples": [
-        {
-            "text": "Just check the labels\non sweet products you buy. Glucose, fructose, sucrose, maltose, lactose, dextrose, and starch are all forms of sugar. So are high-fructose corn syrup,",
-            "explanation": "只需检查你购买的甜食上的标签。葡萄糖、果糖、蔗糖、麦芽糖、乳糖、右旋糖和淀粉都是糖的形式。高果糖玉米糖浆也是。",
-            "focusWords": [
-                "starch"
-            ],
-            "source": {
-                "text": "糖类怎样影响大脑 -Nicole Avena",
-                "url": ""
-            },
-            "youtube": {
-                "url": "https://www.youtube.com/watch?v=lEXBxijQREo",
-                "timestamp": 36
-            }
-        }
-    ]
+  "word": "starch",
+  "createdAt": "2026-03-27",
+  "reviews": [
+    {
+      "date": "2026-04-17",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "n. 淀粉"
+  ],
+  "examples": [
+    {
+      "text": "Just check the labels\non sweet products you buy. Glucose, fructose, sucrose, maltose, lactose, dextrose, and starch are all forms of sugar. So are high-fructose corn syrup,",
+      "explanation": "只需检查你购买的甜食上的标签。葡萄糖、果糖、蔗糖、麦芽糖、乳糖、右旋糖和淀粉都是糖的形式。高果糖玉米糖浆也是。",
+      "focusWords": [
+        "starch"
+      ],
+      "source": {
+        "text": "糖类怎样影响大脑 -Nicole Avena",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=lEXBxijQREo",
+        "timestamp": 36
+      }
+    }
+  ]
 }

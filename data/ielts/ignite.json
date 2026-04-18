@@ -1,0 +1,22 @@
+{
+  "word": "ignite",
+  "createdAt": "2026-04-18",
+  "reviews": [],
+  "definitions": [],
+  "examples": [
+    {
+      "text": "This has ignited public debate about AI, but the term is also being used once more within the computer industry.",
+      "explanation": "",
+      "focusWords": [
+        "ignite"
+      ],
+      "source": {
+        "text": "剑桥5 3 阅读3",
+        "url": ""
+      },
+      "focusPositions": [
+        2
+      ]
+    }
+  ]
+}

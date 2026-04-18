@@ -1,7 +1,12 @@
 {
   "word": "inflate",
   "createdAt": "2026-04-11",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-17",
+      "score": 3
+    }
+  ],
   "definitions": [
     "adj. 虚高的 (在此语境下指价格被不合理抬高)"
   ],

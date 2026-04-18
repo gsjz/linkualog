@@ -1,7 +1,12 @@
 {
   "word": "cosmos",
   "createdAt": "2026-03-31",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-17",
+      "score": 3
+    }
+  ],
   "definitions": [
     "n. 宇宙"
   ],

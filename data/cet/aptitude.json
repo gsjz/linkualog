@@ -1,7 +1,12 @@
 {
   "word": "aptitude",
   "createdAt": "2026-03-30",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-17",
+      "score": 2
+    }
+  ],
   "definitions": [
     "n. 天赋（在此语境下指感知与识别能力）"
   ],

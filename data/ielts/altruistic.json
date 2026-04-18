@@ -1,21 +1,26 @@
 {
-    "word": "altruistic",
-    "createdAt": "2026-03-26",
-    "reviews": [],
-    "definitions": [
-        "adj. 利他主义的（在此语境下指看似无私的行为）"
-    ],
-    "examples": [
-        {
-            "text": "seen as altruistic, even if an impartial view of the controls in question might suggest they are doing more harm than good.",
-            "explanation": "尽管对有关控制的客观看法可能表明它们造成的危害大于好处，但仍被视为利他主义的行为。",
-            "focusWords": [
-                "altruistic"
-            ],
-            "source": {
-                "text": "剑桥 5 1 阅读3",
-                "url": ""
-            }
-        }
-    ]
+  "word": "altruistic",
+  "createdAt": "2026-03-26",
+  "reviews": [
+    {
+      "date": "2026-04-17",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "adj. 利他主义的（在此语境下指看似无私的行为）"
+  ],
+  "examples": [
+    {
+      "text": "seen as altruistic, even if an impartial view of the controls in question might suggest they are doing more harm than good.",
+      "explanation": "尽管对有关控制的客观看法可能表明它们造成的危害大于好处，但仍被视为利他主义的行为。",
+      "focusWords": [
+        "altruistic"
+      ],
+      "source": {
+        "text": "剑桥 5 1 阅读3",
+        "url": ""
+      }
+    }
+  ]
 }

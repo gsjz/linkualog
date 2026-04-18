@@ -1,21 +1,26 @@
 {
-    "word": "transient",
-    "createdAt": "2026-03-26",
-    "reviews": [],
-    "definitions": [
-        "adj. 短暂的 (在此语境下的释义)"
-    ],
-    "examples": [
-        {
-            "text": "And finally, most forms of environmental pollution either appear to have been exaggerated, or are transient - associated with the early phases of industrialisation and therefore best cured not by restricting economic growth, but by accelerating it.",
-            "explanation": "最后，大多数形式的环境污染要么被夸大了，要么是暂时的——与工业化的早期阶段相关，因此最好的解决办法不是限制经济增长，而是加速它。",
-            "focusWords": [
-                "transient"
-            ],
-            "source": {
-                "text": "剑桥 5 1 阅读3",
-                "url": ""
-            }
-        }
-    ]
+  "word": "transient",
+  "createdAt": "2026-03-26",
+  "reviews": [
+    {
+      "date": "2026-04-17",
+      "score": 4
+    }
+  ],
+  "definitions": [
+    "adj. 短暂的 (在此语境下的释义)"
+  ],
+  "examples": [
+    {
+      "text": "And finally, most forms of environmental pollution either appear to have been exaggerated, or are transient - associated with the early phases of industrialisation and therefore best cured not by restricting economic growth, but by accelerating it.",
+      "explanation": "最后，大多数形式的环境污染要么被夸大了，要么是暂时的——与工业化的早期阶段相关，因此最好的解决办法不是限制经济增长，而是加速它。",
+      "focusWords": [
+        "transient"
+      ],
+      "source": {
+        "text": "剑桥 5 1 阅读3",
+        "url": ""
+      }
+    }
+  ]
 }

@@ -1,7 +1,12 @@
 {
   "word": "erod",
   "createdAt": "2026-04-11",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-17",
+      "score": 2
+    }
+  ],
   "definitions": [],
   "examples": [
     {
@@ -18,5 +23,6 @@
   ],
   "mergedFrom": [
     "eroded"
-  ]
+  ],
+  "marked": true
 }

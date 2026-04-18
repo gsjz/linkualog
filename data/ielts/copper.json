@@ -1,7 +1,12 @@
 {
   "word": "copper",
   "createdAt": "2026-04-01",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-17",
+      "score": 1
+    }
+  ],
   "definitions": [
     "n. 铜"
   ],
