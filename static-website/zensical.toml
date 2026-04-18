@@ -1,9 +1,9 @@
 [project]
 
 site_name = "Linkual Log"
-site_description = "Official implementation of linkual log"
+site_description = "Static website example for Linkual Log"
 site_author = "Sergio Gao"
-site_url = "https://eng.shujie.com/"
+site_url = "https://example.com/"
 copyright = "Copyright &copy; 2026 Sergio Gao"
 repo_url = "https://github.com/gsjz/linkualog"
 repo_name = "gsjz/linkualog"

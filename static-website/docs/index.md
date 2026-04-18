@@ -8,7 +8,7 @@ icon: lucide/rocket
 
 ## 前言 (Overall Preface)
 
-本站是一个个人词典网站，同时也是 <a href="https://github.com/gsjz/linkualog" target="_blank">这个仓库</a> 当前版本的官方演示站。
+本站是一个基于仓库数据生成的静态词典示例，同时也是 <a href="https://github.com/gsjz/linkualog" target="_blank">这个仓库</a> 的文档/演示入口之一。
 
 本页面待整理。
 
