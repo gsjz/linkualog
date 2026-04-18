@@ -44,3 +44,6 @@ local_data/
 .local-notes/
 
 .codex
+
+# Server-local deployment files
+deploy/nginx/*.private.conf
