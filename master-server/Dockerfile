@@ -1,5 +1,5 @@
 ARG NPM_REGISTRY=https://registry.npmmirror.com
-ARG PIP_INDEX_URL=https://pypi.org/simple
+ARG PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
 ARG APT_MIRROR_BASE=https://mirrors.tuna.tsinghua.edu.cn
 
 FROM node:20-bookworm-slim AS frontend-builder
@@ -30,6 +30,7 @@ ENV LOCK_FILE="/app/master-server/local_data/tasks_db.json.lock"
 ENV VOCAB_DIR="/app/data/"
 ENV MASTER_SERVER_SERVE_BUILT_FRONTEND=1
 ENV MASTER_SERVER_DISABLE_FRONTEND=1
+ENV UV_LINK_MODE=copy
 ENV PIP_INDEX_URL="${PIP_INDEX_URL}"
 
 WORKDIR /app/master-server
@@ -41,14 +42,17 @@ RUN if [ -f /etc/apt/sources.list.d/debian.sources ]; then \
     fi
 RUN apt-get update \
     && apt-get install -y --no-install-recommends poppler-utils \
+    && python -m pip install --no-cache-dir "uv==0.7.21" \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.docker.txt /tmp/requirements.docker.txt
-RUN python -m pip install --no-cache-dir -r /tmp/requirements.docker.txt
+COPY pyproject.toml uv.lock README.md ./
+RUN uv sync --frozen --no-dev --no-install-project
 
 COPY . /app/master-server
 COPY --from=frontend-builder /app/frontend/dist /app/master-server/frontend/dist
 
+ENV PATH="/app/master-server/.venv/bin:${PATH}"
+
 EXPOSE 8080
 
-CMD ["python", "main.py"]
+CMD ["uv", "run", "--no-sync", "main.py"]
