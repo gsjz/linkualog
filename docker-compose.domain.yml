@@ -38,4 +38,41 @@ services:
     volumes:
       - ./master-server/local_data:/app/master-server/local_data
       - ./data:/app/data
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import os, urllib.request; urllib.request.urlopen('http://127.0.0.1:%s/api/config' % os.getenv('MASTER_SERVER_BACKEND_PORT', '18081'), timeout=5).read()",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    restart: always
+
+  qq-bot:
+    profiles: ["qq-bot"]
+    build:
+      context: ./qq-bot
+      dockerfile: Dockerfile
+      args:
+        APT_MIRROR_BASE: ${QQ_BOT_APT_MIRROR_BASE:-https://mirrors.tuna.tsinghua.edu.cn}
+        PIP_INDEX_URL: ${QQ_BOT_PIP_INDEX_URL:-https://pypi.tuna.tsinghua.edu.cn/simple}
+    container_name: qq-linkualog-bot
+    env_file:
+      - ./.env
+    environment:
+      - QQ_RUN_SECONDS=${QQ_RUN_SECONDS:-0}
+      - QQ_LINKUALOG_BASE_URL=http://master-server:${MASTER_SERVER_BACKEND_PORT:-18081}
+      - QQ_LINKUALOG_DATA_DIR=/app/data
+      - QQ_LOCAL_DATA_DIR=/app/qq-bot/local_data
+      - QQ_SESSION_STATE_FILE=/app/qq-bot/local_data/session_state.json
+    depends_on:
+      master-server:
+        condition: service_healthy
+    volumes:
+      - ./qq-bot/local_data:/app/qq-bot/local_data
+      - ./data:/app/data:ro
     restart: always
