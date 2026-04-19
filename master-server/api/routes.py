@@ -3,6 +3,7 @@ import mimetypes
 import traceback
 import re
 import copy
+import subprocess
 from typing import List
 from fastapi import APIRouter, UploadFile, File, Form, BackgroundTasks, HTTPException
 from fastapi.responses import FileResponse
@@ -158,6 +159,98 @@ def _normalize_task_focus_fields(task):
             sub["parsed_result"] = _normalize_parsed_result_focus(parsed_result)
     return next_task
 
+
+def _convert_pdf_with_pdf2image(saved_path: str) -> list[str]:
+    from pdf2image import convert_from_path
+
+    image_paths: list[str] = []
+    pdf_images = convert_from_path(saved_path)
+    for i, img in enumerate(pdf_images):
+        img_path = f"{saved_path}_page_{i}.jpg"
+        img.save(img_path, "JPEG")
+        image_paths.append(img_path)
+    return image_paths
+
+
+def _convert_pdf_with_pymupdf(saved_path: str) -> list[str]:
+    import pymupdf
+
+    image_paths: list[str] = []
+    with pymupdf.open(saved_path) as pdf:
+        for i, page in enumerate(pdf):
+            pix = page.get_pixmap(dpi=200, alpha=False)
+            img_path = f"{saved_path}_page_{i}.png"
+            pix.save(img_path)
+            image_paths.append(img_path)
+    return image_paths
+
+
+def _convert_pdf_with_pdftoppm(saved_path: str) -> list[str]:
+    output_prefix = f"{saved_path}_page"
+    command = ["pdftoppm", "-png", saved_path, output_prefix]
+    completed = subprocess.run(command, capture_output=True, text=True, check=False)
+    if completed.returncode != 0:
+        stderr = (completed.stderr or "").strip()
+        stdout = (completed.stdout or "").strip()
+        detail = stderr or stdout or f"exit code {completed.returncode}"
+        raise RuntimeError(detail)
+
+    image_paths = []
+    index = 1
+    while True:
+        img_path = f"{output_prefix}-{index}.png"
+        if not os.path.exists(img_path):
+            break
+        image_paths.append(img_path)
+        index += 1
+
+    if not image_paths:
+        raise RuntimeError("pdftoppm 未生成任何页面图片")
+    return image_paths
+
+
+def _convert_pdf_to_images(saved_path: str) -> list[str]:
+    errors: list[str] = []
+
+    try:
+        return _convert_pdf_with_pdf2image(saved_path)
+    except Exception as exc:
+        errors.append(f"pdf2image: {exc}")
+
+    try:
+        return _convert_pdf_with_pdftoppm(saved_path)
+    except Exception as exc:
+        errors.append(f"pdftoppm: {exc}")
+
+    try:
+        return _convert_pdf_with_pymupdf(saved_path)
+    except Exception as exc:
+        errors.append(f"pymupdf: {exc}")
+
+    joined = " | ".join(errors) if errors else "unknown error"
+    raise RuntimeError(f"PDF 解析失败: {joined}")
+
+
+def _cleanup_task_files(task: dict) -> None:
+    if not isinstance(task, dict):
+        return
+
+    sub_tasks = task.get("sub_tasks")
+    if not isinstance(sub_tasks, list):
+        return
+
+    for sub in sub_tasks:
+        if not isinstance(sub, dict):
+            continue
+        raw_path = str(sub.get("path") or "").strip()
+        if not raw_path:
+            continue
+        try:
+            if os.path.exists(raw_path):
+                os.remove(raw_path)
+        except OSError:
+            pass
+
 @router.get("/api/config")
 def get_config():
     config = get_public_config_data()
@@ -231,8 +324,9 @@ def process_task_background(task_id: str):
 async def upload_resource(
     background_tasks: BackgroundTasks, 
     files: List[UploadFile] = File(...),
-    taskName: str = Form(""),    
-    startPage: int = Form(1)
+    taskName: str = Form(""),
+    startPage: int = Form(1),
+    autoProcess: bool = Form(True),
 ):
     sub_tasks_paths = []
     try:
@@ -242,14 +336,11 @@ async def upload_resource(
             
             if file.filename.lower().endswith(".pdf"):
                 try:
-                    from pdf2image import convert_from_path
-                    pdf_images = convert_from_path(saved_path)
-                    for i, img in enumerate(pdf_images):
-                        img_path = f"{saved_path}_page_{i}.jpg"
-                        img.save(img_path, "JPEG")
-                        sub_tasks_paths.append(img_path)
+                    sub_tasks_paths.extend(_convert_pdf_to_images(saved_path))
+                    if os.path.exists(saved_path):
+                        os.remove(saved_path)
                 except Exception as pdf_error:
-                    raise Exception(f"PDF 解析失败，请检查服务器 poppler 配置: {str(pdf_error)}")
+                    raise Exception(str(pdf_error))
             else:
                 sub_tasks_paths.append(saved_path)
 
@@ -257,11 +348,20 @@ async def upload_resource(
         task_id = create_task(
             final_name,
             sub_tasks_paths,
-            startPage
+            startPage,
+            auto_process=autoProcess,
         )
-        background_tasks.add_task(process_task_background, task_id)
+        if autoProcess:
+            background_tasks.add_task(process_task_background, task_id)
         
-        return {"status": "success", "task_id": task_id}
+        return {
+            "status": "success",
+            "task_id": task_id,
+            "task_name": final_name,
+            "total": len(sub_tasks_paths),
+            "start_page": startPage,
+            "auto_process": bool(autoProcess),
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -304,6 +404,7 @@ def get_image(path: str):
 def delete_task(task_id: str):
     tasks = load_tasks()
     if task_id in tasks:
+        _cleanup_task_files(tasks[task_id])
         del tasks[task_id]
         save_tasks(tasks)
         return {"status": "success"}

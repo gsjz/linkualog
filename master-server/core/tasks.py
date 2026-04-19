@@ -26,15 +26,16 @@ def save_tasks(tasks_dict):
         with open(TASKS_FILE, "w", encoding="utf-8") as f: 
             json.dump(tasks_dict, f, ensure_ascii=False, indent=2)
 
-def create_task(name: str, sub_tasks_paths: list, start_page: int = 1) -> str:
+def create_task(name: str, sub_tasks_paths: list, start_page: int = 1, auto_process: bool = True) -> str:
     tasks = load_tasks()
     task_id = str(uuid.uuid4())
     tasks[task_id] = {
         "name": name,
-        "status": "pending",
+        "status": "pending" if auto_process else "collected",
         "total": len(sub_tasks_paths),
         "completed": 0,
-        "start_page": start_page, 
+        "start_page": start_page,
+        "auto_process": bool(auto_process),
         "sub_tasks": [{"path": p, "status": "pending", "result": None} for p in sub_tasks_paths]
     }
     save_tasks(tasks)

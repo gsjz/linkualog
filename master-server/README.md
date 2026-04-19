@@ -54,6 +54,19 @@ uv sync
 uv run main.py
 ```
 
+如果你之前用 root 或 Docker 在宿主机写过 `master-server/local_data/`，再切回本机用户直接跑时，可能会遇到权限问题。最直接的处理方式是二选一：
+
+```bash
+sudo chown -R "$USER":"$USER" /path/to/linkualog/master-server/local_data
+```
+
+或：
+
+```bash
+rm -rf /path/to/linkualog/master-server/local_data
+mkdir -p /path/to/linkualog/master-server/local_data
+```
+
 默认行为：
 
 - 非 Docker 环境下，主前端默认地址是 `http://localhost:8000`
@@ -65,6 +78,13 @@ uv run main.py
 ```bash
 cd /path/to/linkualog/master-server
 MASTER_SERVER_DISABLE_FRONTEND=1 uv run main.py
+```
+
+如果你要跑当前这次补上的 QQ connector 回归测试：
+
+```bash
+cd /path/to/linkualog/master-server
+uv run --no-sync python -m unittest discover -s tests -v
 ```
 
 ## 服务器 Docker 部署
@@ -79,6 +99,8 @@ cp .env.example .env
 
 docker compose up -d --build master-server
 ```
+
+当前 Docker 路径以 `master-server/pyproject.toml + master-server/uv.lock` 为唯一 Python 依赖来源。构建阶段会执行 `uv sync --frozen`，避免再维护一套独立的 Docker Python 依赖清单。
 
 默认对外端口：
 
@@ -102,4 +124,5 @@ docker compose restart master-server
 
 - OCR 下划线词坐标现在默认开启，不再需要实验开关
 - Docker 镜像里已经安装 `poppler-utils`，PDF 分页可直接使用
+- 本机或容器处理 PDF 时，当前支持三层路径：`pdf2image`、`pdftoppm`、`pymupdf`
 - 如果你想让 FastAPI 直接托管构建产物，Compose 默认已经启用 `MASTER_SERVER_SERVE_BUILT_FRONTEND=1`
