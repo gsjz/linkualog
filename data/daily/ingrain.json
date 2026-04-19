@@ -9,6 +9,10 @@
     {
       "date": "2026-04-13",
       "score": 2
+    },
+    {
+      "date": "2026-04-19",
+      "score": 2
     }
   ],
   "definitions": [
@@ -33,5 +37,30 @@
   ],
   "mergedFrom": [
     "ingrained"
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-19T16:07:52",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "ingrain",
+      "example_text": "This would be hard to handle for any animal, so it makes sense that we continue to follow the impulses so deeply ingrained in us.",
+      "expected_definitions": [
+        "v. 使深深扎根；灌输；adj. 根深蒂固的（常用 ingrained）"
+      ],
+      "user_answer": "植入",
+      "score": 2,
+      "feedback": "答案只答到“植入”，与“灌输/使深深扎根”有部分关联，但本句中 ingrained 表示“根深蒂固的”，理解不够准确。",
+      "matched_points": [
+        "与“使进入、植入”有一定语义关联",
+        "部分接近动词义“灌输/使深深扎根”"
+      ],
+      "missing_points": [
+        "未体现本句中的形容词义“根深蒂固的”",
+        "未表达“深入骨髓、深深扎根”这一程度感",
+        "未结合例句中修饰 impulses 的用法理解词性"
+      ]
+    }
   ]
 }

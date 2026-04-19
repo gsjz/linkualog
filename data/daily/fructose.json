@@ -13,6 +13,10 @@
     {
       "date": "2026-04-13",
       "score": 2
+    },
+    {
+      "date": "2026-04-19",
+      "score": 5
     }
   ],
   "definitions": [
@@ -33,6 +37,30 @@
         "url": "https://www.youtube.com/watch?v=lEXBxijQREo",
         "timestamp": 34
       }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-19T15:45:29",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "fructose",
+      "example_text": "It's found in a wide variety of food and drink. Just check the labels on sweet products you buy. Glucose, fructose, sucrose, maltose, lactose, dextrose, and starch are all forms of sugar.",
+      "expected_definitions": [
+        "n. 果糖"
+      ],
+      "user_answer": "I think it's a type of sugar. Maybe 单糖 in Chinese?",
+      "score": 5,
+      "feedback": "答案准确，指出了它是糖的一种，且“单糖”理解到位；若补充“果糖”会更完整。",
+      "matched_points": [
+        "是糖的一种",
+        "理解为单糖基本正确",
+        "与例句中列举的糖类一致"
+      ],
+      "missing_points": [
+        "未直接写出标准释义“果糖”"
+      ]
     }
   ]
 }

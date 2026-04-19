@@ -1,0 +1,20 @@
+{
+  "word": "test",
+  "createdAt": "2026-04-19",
+  "reviews": [],
+  "definitions": [],
+  "examples": [
+    {
+      "text": "test",
+      "explanation": "",
+      "focusWords": [
+        "test"
+      ],
+      "source": {
+        "text": "example.com",
+        "url": ""
+      }
+    }
+  ],
+  "marked": true
+}

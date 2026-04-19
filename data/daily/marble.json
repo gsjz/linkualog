@@ -5,6 +5,10 @@
     {
       "date": "2026-04-13",
       "score": 2
+    },
+    {
+      "date": "2026-04-19",
+      "score": 0
     }
   ],
   "definitions": [
@@ -21,6 +25,28 @@
         "text": "CET6 23 12 2 匹配",
         "url": ""
       }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-19T15:49:22",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "marble",
+      "example_text": "a famous marble column carved with the coat of arms of France",
+      "expected_definitions": [
+        "a hard, fine-grained metamorphic rock used for sculpture and building"
+      ],
+      "user_answer": "不记得。并且我不认识旁边的 carve 单词是什么意思",
+      "score": 0,
+      "feedback": "未作答词义；可补记为“大理石”。例句里的 carve 是“雕刻”。",
+      "matched_points": [],
+      "missing_points": [
+        "marble 指“大理石”",
+        "是一种坚硬、细密的变质岩",
+        "常用于建筑或雕塑"
+      ]
     }
   ]
 }

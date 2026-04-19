@@ -5,6 +5,10 @@
     {
       "date": "2026-04-13",
       "score": 3
+    },
+    {
+      "date": "2026-04-19",
+      "score": 5
     }
   ],
   "definitions": [
@@ -26,5 +30,26 @@
       ]
     }
   ],
-  "marked": true
+  "marked": true,
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-19T16:09:26",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "artifact",
+      "example_text": "The artifacts indicated the divers had likely found the wreck of La Trinité.",
+      "expected_definitions": [
+        "n. 文物；手工艺品"
+      ],
+      "user_answer": "文物",
+      "score": 5,
+      "feedback": "答案准确，和句中含义完全一致。",
+      "matched_points": [
+        "对应释义“文物”",
+        "符合例句中水下考古发现的古代遗物含义"
+      ],
+      "missing_points": []
+    }
+  ]
 }

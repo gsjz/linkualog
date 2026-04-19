@@ -9,6 +9,10 @@
     {
       "date": "2026-04-13",
       "score": 3
+    },
+    {
+      "date": "2026-04-19",
+      "score": 4
     }
   ],
   "definitions": [
@@ -29,6 +33,31 @@
         "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
         "timestamp": 343
       }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-19T16:09:01",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "devoid",
+      "example_text": "In nature we see great beauty but also endless violence and struggle, devoid of morals or kindness.",
+      "expected_definitions": [
+        "adj. 完全没有；缺乏（常接 of）"
+      ],
+      "user_answer": "void就是写代码的空嘛。结合语境，devoid 就是没有",
+      "score": 4,
+      "feedback": "理解基本正确，答出了“没有/缺乏”之意，但未体现常用搭配 devoid of 及“完全没有”的程度。",
+      "matched_points": [
+        "指出了 devoid 表示“没有”",
+        "与例句语境基本对应，理解为缺乏某种东西"
+      ],
+      "missing_points": [
+        "未说明常见搭配为 devoid of",
+        "未体现“完全没有/缺乏”的语义程度",
+        "未结合例句中的 morals or kindness 说明是缺乏某种品质"
+      ]
     }
   ]
 }
