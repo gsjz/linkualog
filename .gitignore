@@ -41,9 +41,14 @@ repomix-output.xml
 
 # Local Data for master-server
 local_data/
+local_data_runtime/
 .local-notes/
 
 .codex
 
 # Server-local deployment files
 deploy/nginx/*.private.conf
+
+# QQ bot local runtime files
+qq-bot/.env.local
+qq-bot/local_data/
