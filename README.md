@@ -86,6 +86,7 @@ Do not commit:
 - `qq-bot/.env.local`
 - `master-server/local_data/`
 - `qq-bot/local_data/`
+- QQ connector e2e / pre-deploy / post-deploy sample vocab in `data/`
 - generated static output such as `site/` and `docs/dictionary/`
 - `browser-plugin/dev/node_modules/`, `master-server/frontend/node_modules/`
 - server-private Nginx configs
