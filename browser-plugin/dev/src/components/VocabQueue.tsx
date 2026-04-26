@@ -14,8 +14,133 @@ export interface VocabTask {
   status: 'idle' | 'fetching_llm' | 'sending' | 'success' | 'failed';
   error: string | null;
   rawJson?: string;
-  llmResult?: { pronunciation?: string, definitions?: string[], explanation?: string };
+  llmResult?: VocabLlmResult;
 }
+
+interface VocabLlmResult {
+  definitions?: string[];
+  examples?: Array<{
+    text?: string;
+    explanation?: string;
+    focusWords?: string[];
+  }>;
+  explanation?: string;
+  context_translation?: string;
+}
+
+const VOCAB_LLM_SYSTEM_PROMPT = `你是一个专业的英文翻译和词典 API 引擎。
+请根据目标词或短语及其上下文，生成适合写入生词本的 JSON。
+
+要求：
+1. 不要输出 pronunciation、音标或任何发音字段。
+2. definitions 只给目标词在当前上下文中最贴切的 1-3 条中文释义，格式为“词性. 中文释义”，释义必须以中文为主，不能是纯英文。
+3. examples 必须包含且只包含一个例句对象；text 必须与用户提供的上下文完全一致。
+4. examples[0].explanation 必须是自然、完整的中文解释，既翻译上下文，也点明目标词在此处的具体含义。
+5. examples[0].focusWords 只放真正需要聚焦的词或最小必要词组，优先使用上下文中出现的原始形态。
+6. 只输出合法 JSON，不要输出 markdown、代码块、注释或额外说明。
+
+JSON 格式：
+{
+  "definitions": ["vt. 放弃，抛弃（在此语境下）"],
+  "examples": [
+    {
+      "text": "原始上下文句子",
+      "explanation": "自然中文解释。",
+      "focusWords": ["目标词"]
+    }
+  ]
+}`;
+
+const parseLlmJson = (rawText: string): unknown => {
+  const trimmed = rawText.trim();
+  const fenced = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
+  const candidate = fenced ? fenced[1] : (trimmed.match(/\{[\s\S]*\}/)?.[0] || trimmed);
+  return JSON.parse(candidate);
+};
+
+const sanitizeLlmResult = (value: unknown): VocabLlmResult => {
+  if (!value || typeof value !== 'object') return {};
+
+  const raw = value as Record<string, unknown>;
+  const result: VocabLlmResult = {};
+
+  if (Array.isArray(raw.definitions)) {
+    const definitions = raw.definitions
+      .map(item => String(item || '').trim())
+      .filter(Boolean);
+    if (definitions.length > 0) result.definitions = definitions;
+  }
+
+  if (Array.isArray(raw.examples)) {
+    const examples = raw.examples
+      .filter(item => item && typeof item === 'object')
+      .map((item) => {
+        const rawExample = item as Record<string, unknown>;
+        const example: NonNullable<VocabLlmResult['examples']>[number] = {};
+        const text = String(rawExample.text || '').trim();
+        const explanation = String(rawExample.explanation || '').trim();
+        const focusWords = Array.isArray(rawExample.focusWords)
+          ? rawExample.focusWords.map(word => String(word || '').trim()).filter(Boolean)
+          : [];
+
+        if (text) example.text = text;
+        if (explanation) example.explanation = explanation;
+        if (focusWords.length > 0) example.focusWords = focusWords;
+        return example;
+      })
+      .filter(example => example.text || example.explanation || example.focusWords?.length);
+
+    if (examples.length > 0) result.examples = examples;
+  }
+
+  const explanation = String(raw.explanation || '').trim();
+  if (explanation) result.explanation = explanation;
+
+  const contextTranslation = String(raw.context_translation || '').trim();
+  if (contextTranslation) result.context_translation = contextTranslation;
+
+  return result;
+};
+
+const getLlmExplanation = (result?: VocabLlmResult) => (
+  result?.examples?.find(example => example.explanation)?.explanation
+  || result?.explanation
+  || result?.context_translation
+  || ''
+);
+
+const hasUsableLlmResult = (result?: VocabLlmResult) => Boolean(
+  result?.definitions?.length
+  || result?.examples?.length
+  || getLlmExplanation(result)
+);
+
+const LlmResultPreview: React.FC<{ result?: VocabLlmResult }> = ({ result }) => {
+  if (!hasUsableLlmResult(result)) return null;
+
+  const explanation = getLlmExplanation(result);
+
+  return (
+    <div style={{ background: '#f4f4f5', padding: '8px', borderRadius: '6px', fontSize: '12px', marginBottom: '10px' }}>
+      {result?.definitions?.length ? (
+        <ul style={{ margin: '4px 0', paddingLeft: '16px', color: '#444' }}>
+          {result.definitions.map((d: string, i: number) => <li key={i}>{d}</li>)}
+        </ul>
+      ) : null}
+      {explanation ? (
+        <div style={{ color: '#1976d2', fontStyle: 'italic' }}>解析: {explanation}</div>
+      ) : null}
+    </div>
+  );
+};
+
+const sanitizeTask = (task: VocabTask): VocabTask => {
+  const sanitizedResult = sanitizeLlmResult(task.llmResult);
+  return {
+    ...task,
+    llmResult: hasUsableLlmResult(sanitizedResult) ? sanitizedResult : undefined,
+  };
+};
 
 const VocabQueue: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -25,7 +150,7 @@ const VocabQueue: React.FC = () => {
   const [tasks, setTasks] = useState<VocabTask[]>(() => {
     try {
       const saved = localStorage.getItem('linkual_vocab_queue');
-      if (saved) return JSON.parse(saved);
+      if (saved) return JSON.parse(saved).map(sanitizeTask);
     } catch(e) {}
     return [];
   });
@@ -38,7 +163,7 @@ const VocabQueue: React.FC = () => {
     const syncAcrossTabs = (e: StorageEvent) => {
       if (e.key === 'linkual_vocab_queue' && e.newValue) {
         try {
-          setTasks(JSON.parse(e.newValue));
+          setTasks(JSON.parse(e.newValue).map(sanitizeTask));
         } catch(err) {}
       }
     };
@@ -137,8 +262,8 @@ const VocabQueue: React.FC = () => {
     let generatedJsonStr = '';
     fetchLlmStream({
       apiUrl, apiKey, apiModel,
-      systemPrompt: "你是一个翻译和词典助手。请提取目标单词在给定上下文中的含义。必须严格以 JSON 格式输出，不要包含任何 markdown 代码块标记或其他纯文本。\n格式要求：\n{\n  \"pronunciation\": \"音标\",\n  \"definitions\": [\"词性. 解释 1\", \"词性. 解释 2\"],\n  \"explanation\": \"在当前上下文中的准确翻译\"\n}",
-      userPrompt: `目标单词：${task.word}\n所在上下文：${task.context}`,
+      systemPrompt: VOCAB_LLM_SYSTEM_PROMPT,
+      userPrompt: `目标词或短语：${task.word}\n上下文：${task.context}`,
       timeoutSec: 30,
       onData: (chunk) => {
         generatedJsonStr += chunk;
@@ -148,15 +273,20 @@ const VocabQueue: React.FC = () => {
         setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: 'failed', error: err } : t));
       },
       onDone: () => {
-        let parsed = {};
+        let parsed: VocabLlmResult = {};
         try {
-          const jsonRegex = new RegExp("```json\\n([\\s\\S]*?)\\n```");
-          const replaceRegex = new RegExp("```json\\n|\\n```", "g");
-          const match = generatedJsonStr.match(jsonRegex) || generatedJsonStr.match(/\{[\s\S]*\}/);
-          const cleanStr = match ? match[0].replace(replaceRegex, '') : generatedJsonStr;
-          parsed = JSON.parse(cleanStr);
-        } catch(e) {}
-        
+          parsed = sanitizeLlmResult(parseLlmJson(generatedJsonStr));
+        } catch(e) {
+          const message = e instanceof Error ? e.message : String(e);
+          setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: 'failed', error: `LLM 返回 JSON 解析失败: ${message}`, rawJson: generatedJsonStr } : t));
+          return;
+        }
+
+        if (!hasUsableLlmResult(parsed)) {
+          setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: 'failed', error: 'LLM 未返回可用释义 JSON', rawJson: generatedJsonStr } : t));
+          return;
+        }
+
         setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: 'idle', llmResult: parsed, rawJson: generatedJsonStr } : t));
       }
     });
@@ -176,11 +306,12 @@ const VocabQueue: React.FC = () => {
       source: sendingTask.source,
       youtube: sendingTask.youtube,
       date: sendingTask.date,
-      llm_result: sendingTask.llmResult || {}, 
-      raw_json: sendingTask.rawJson,
+      llm_result: sanitizeLlmResult(sendingTask.llmResult),
       fetch_llm: false,
       category: sendingTask.category
     };
+
+    console.info('[Linkual] 发送生词到后端:', serverUrl, payload);
 
     requestJson({
       url: serverUrl,
@@ -190,6 +321,7 @@ const VocabQueue: React.FC = () => {
       timeoutMs: 15000,
     })
     .then(() => {
+      console.info('[Linkual] 生词发送成功:', sendingTask.word);
       if (deleteOnSuccess) {
         setTasks(prev => prev.filter(t => t.id !== taskId));
       } else {
@@ -198,6 +330,7 @@ const VocabQueue: React.FC = () => {
     })
     .catch((err: unknown) => {
       const message = err instanceof Error ? err.message : '请求异常';
+      console.error('[Linkual] 生词发送失败:', message, { url: serverUrl, task: sendingTask });
       setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: 'failed', error: message } : t));
     });
   };
@@ -240,7 +373,7 @@ const VocabQueue: React.FC = () => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                   <strong style={{ fontSize: '16px', color: '#333' }}>{t.word}</strong>
                   <span style={{ fontSize: '11px', padding: '2px 6px', borderRadius: '10px', background: t.status === 'success' ? '#e8f5e9' : t.status === 'failed' ? '#ffebee' : '#e3f2fd', color: t.status === 'success' ? '#4caf50' : t.status === 'failed' ? '#f44336' : '#1976d2' }}>
-                    {t.status === 'idle' && (t.llmResult ? '释义已就绪' : '等待操作')}
+                    {t.status === 'idle' && (hasUsableLlmResult(t.llmResult) ? '释义已就绪' : '等待操作')}
                     {t.status === 'fetching_llm' && '正在解析...'}
                     {t.status === 'sending' && '发送中...'}
                     {t.status === 'success' && '发送成功'}
@@ -259,15 +392,7 @@ const VocabQueue: React.FC = () => {
                   </span>
                 </div>
                 
-                {t.llmResult && Object.keys(t.llmResult).length > 0 && (
-                  <div style={{ background: '#f4f4f5', padding: '8px', borderRadius: '6px', fontSize: '12px', marginBottom: '10px' }}>
-                    <div style={{ fontWeight: 'bold', color: '#111' }}>{t.llmResult.pronunciation}</div>
-                    <ul style={{ margin: '4px 0', paddingLeft: '16px', color: '#444' }}>
-                      {t.llmResult.definitions?.map((d: string, i: number) => <li key={i}>{d}</li>)}
-                    </ul>
-                    <div style={{ color: '#1976d2', fontStyle: 'italic' }}>翻译: {t.llmResult.explanation}</div>
-                  </div>
-                )}
+                <LlmResultPreview result={t.llmResult} />
 
                 {t.error && <div style={{ color: '#f44336', fontSize: '11px', marginBottom: '8px' }}>{t.error}</div>}
 

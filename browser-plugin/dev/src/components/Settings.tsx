@@ -9,6 +9,25 @@ interface SettingsProps { adapter: IVideoAdapter; onClose: () => void; }
 
 type CfgKey = keyof typeof DEFAULTS;
 
+const LAN_SYNC_API_PATH = '/api/vocabulary/add';
+const LAN_SYNC_PROTOCOL = 'http://';
+
+const normalizeLanPrefix = (prefix: string) => prefix.trim().replace(/\/+$/, '');
+
+const buildLanSyncUrl = (prefix: string) => {
+  const normalizedPrefix = normalizeLanPrefix(prefix)
+    .replace(/^https?:\/\//i, '')
+    .replace(/\/api\/vocabulary\/add$/i, '');
+  return normalizedPrefix ? `${LAN_SYNC_PROTOCOL}${normalizeLanPrefix(normalizedPrefix)}${LAN_SYNC_API_PATH}` : '';
+};
+
+const getLanPrefix = (url: string) => {
+  const trimmedUrl = url.trim();
+  return trimmedUrl.startsWith(LAN_SYNC_PROTOCOL) && trimmedUrl.endsWith(LAN_SYNC_API_PATH)
+    ? normalizeLanPrefix(trimmedUrl.slice(LAN_SYNC_PROTOCOL.length, -LAN_SYNC_API_PATH.length))
+    : '';
+};
+
 const Settings: React.FC<SettingsProps> = ({ adapter, onClose }) => {
   const [activeTab, setActiveTab] = useState<'api' | 'ui' | 'lan'>('api');
 
@@ -40,6 +59,10 @@ const Settings: React.FC<SettingsProps> = ({ adapter, onClose }) => {
     setCfg(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleLanPrefixChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCfg(prev => ({ ...prev, lanUrl: buildLanSyncUrl(e.target.value) }));
+  };
+
   const handleSave = () => {
     ConfigService.set('theme_color', cfg.color);
     ConfigService.set('done_color', cfg.doneColor);
@@ -50,7 +73,7 @@ const Settings: React.FC<SettingsProps> = ({ adapter, onClose }) => {
     ConfigService.set('api_prompt', cfg.prompt);
     ConfigService.set('api_timeout', cfg.timeout);
     ConfigService.set('api_ctxSize', cfg.ctxSize);
-    ConfigService.set('lan_sync_url', cfg.lanUrl); 
+    ConfigService.set('lan_sync_url', cfg.lanUrl.trim());
     ConfigService.set('lan_action', cfg.lanAction);
     
     ConfigService.set(`layout_position_${adapter.platformName}` as any, cfg.layout);
@@ -76,6 +99,8 @@ const Settings: React.FC<SettingsProps> = ({ adapter, onClose }) => {
   const handleBackdropMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) onClose();
   };
+
+  const lanPrefix = getLanPrefix(cfg.lanUrl);
 
   return (
     <div className="modal" onMouseDown={handleBackdropMouseDown}>
@@ -165,7 +190,16 @@ const Settings: React.FC<SettingsProps> = ({ adapter, onClose }) => {
           {activeTab === 'lan' && (
             <div className="tab-pane fade-in">
               <div className="setting-col">
-                <label>后端生词添加 API 地址</label>
+                <label>后端服务前缀（快捷）</label>
+                <div className="url-prefix-row">
+                  <span className="url-fixed-prefix">{LAN_SYNC_PROTOCOL}</span>
+                  <input value={lanPrefix} onChange={handleLanPrefixChange} placeholder="127.0.0.1:8000" />
+                  <span className="url-fixed-suffix">{LAN_SYNC_API_PATH}</span>
+                </div>
+                <div className="setting-help">只填写主机和端口会自动生成下方完整地址；如需自定义协议或路径，可直接编辑完整 API 地址。</div>
+              </div>
+              <div className="setting-col">
+                <label>后端生词添加 API 地址（完整）</label>
                 <input name="lanUrl" value={cfg.lanUrl} onChange={handleChange} placeholder="http://127.0.0.1:8000/api/vocabulary/add" />
               </div>
               <div className="setting-col">

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Linkual Log
 // @namespace    npm/vite-plugin-monkey
-// @version      0.0.5
+// @version      0.0.6
 // @author       Sergio Gao
 // @icon         https://vitejs.dev/logo.svg
 // @downloadURL  https://raw.githubusercontent.com/gsjz/linkualog/main/browser-plugin/user/linkualog.user.js
@@ -17,7 +17,7 @@
 // @grant        unsafeWindow
 // ==/UserScript==
 
-(e=>{if(typeof GM_addStyle=="function"){GM_addStyle(e);return}const o=document.createElement("style");o.textContent=e,document.head.append(o)})(" .modal{position:fixed;top:0;left:0;width:100%;height:100%;background:#00000080;display:flex;justify-content:center;align-items:center;z-index:10000;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}.modal-box{background:#fff;border-radius:12px;width:380px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 10px 30px #0003;animation:slideIn .2s ease-out}@keyframes slideIn{0%{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}.modal-header{padding:16px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #eee}.modal-header h3{margin:0;font-size:16px;color:#333}.close-btn{font-size:24px;line-height:1;color:#999;cursor:pointer;transition:color .2s}.close-btn:hover{color:#333}.tabs{display:flex;background:#fafafa;border-bottom:1px solid #eee}.tab{flex:1;text-align:center;padding:12px 0;font-size:14px;color:#666;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;-webkit-user-select:none;user-select:none}.tab:hover{color:#333;background:#00000005}.tab.active{color:var(--linkual-theme, #6a1b9a);font-weight:700;border-bottom:2px solid var(--linkual-theme, #6a1b9a);background:#fff}.tab-content{padding:20px;overflow-y:auto;flex:1}.fade-in{animation:fadeIn .3s ease}@keyframes fadeIn{0%{opacity:0}to{opacity:1}}.setting-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}.setting-row label{font-size:13px;font-weight:700;flex:1;color:#444}.setting-row input[type=color]{width:50px;height:32px;padding:0;cursor:pointer;border:1px solid #ddd;border-radius:4px}.setting-col{margin-bottom:16px}.setting-col label{font-size:13px;font-weight:700;display:block;margin-bottom:6px;color:#444}.setting-col input,.setting-col textarea{width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box;font-family:inherit;font-size:13px;transition:border-color .2s}.setting-col input:focus,.setting-col textarea:focus{outline:none;border-color:var(--linkual-theme, #6a1b9a)}.setting-col textarea{resize:vertical;min-height:80px;line-height:1.5}.modal-footer{padding:16px 20px;display:flex;gap:12px;border-top:1px solid #eee;background:#fafafa}.btn{flex:1;padding:10px;border:none;border-radius:6px;cursor:pointer;font-weight:700;font-size:14px;transition:opacity .2s}.btn:hover{opacity:.9}.reset-btn{background:#e0e0e0;color:#555}.save-btn{box-shadow:0 2px 6px #0000001a}:root{--linkual-theme: #6a1b9a;--linkual-done: #e8f5e9;--linkual-error: #ffebee}.linkual-wrap{position:fixed;z-index:2147483647;background:#fff;display:flex;flex-direction:column;font-family:sans-serif;color:#333}.linkual-wrap.layout-right{top:0;right:0;height:100vh;box-shadow:-5px 0 15px #0000001a}.linkual-wrap.layout-bottom{bottom:0;left:0;width:100vw!important;box-shadow:0 -5px 15px #0000001a}.resizer{position:absolute;background:transparent;z-index:999;transition:background .2s}.linkual-wrap.layout-right .resizer{left:0;top:0;bottom:0;width:5px;cursor:ew-resize}.linkual-wrap.layout-bottom .resizer{top:0;left:0;right:0;height:5px;cursor:ns-resize}.resizer:hover,.resizer:active{background:var(--linkual-theme)}.header{background:var(--linkual-theme);color:#fff;padding:16px;font-weight:700;display:flex;justify-content:space-between;align-items:center}.settings-icon{cursor:pointer;-webkit-user-select:none;user-select:none}.list{flex:1;overflow-y:auto;padding:12px}.empty-tip{padding:50px 20px;text-align:center;color:#999;font-style:italic}.item{padding:12px;margin-bottom:10px;border-radius:8px;border:1px solid #f0f0f0;transition:.2s}.item.active{border-left:5px solid var(--linkual-theme);background:#6a1b9a0d}.ctrl-bar{display:flex;gap:8px;margin-bottom:8px;align-items:center;padding:4px;border-radius:4px;background:transparent;transition:background .2s}.ctrl-bar.done{background-color:var(--linkual-done, #e8f5e9)}.ctrl-bar.error{background-color:var(--linkual-error, #ffebee);border:1px solid rgba(255,0,0,.1)}.tag-btn{font-size:11px;padding:3px 8px;border-radius:12px;display:inline-flex;align-items:center;cursor:pointer;transition:.2s;-webkit-user-select:none;user-select:none}.tag-play{background:#eee;color:#666}.tag-play:hover{background:var(--linkual-theme);color:#fff}.tag-pin{background:#e3f2fd;color:#1976d2}.tag-pin:hover{background:#1976d2;color:#fff}.btn-parse{flex:1;text-align:right;font-size:11px;color:#aaa;cursor:pointer;-webkit-user-select:none;user-select:none;padding:4px;transition:.2s}.btn-parse:hover{color:#333}.btn-chevron{font-size:12px;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:4px;cursor:pointer;transition:.2s;-webkit-user-select:none;user-select:none;color:#666}.btn-chevron:hover{background:#0000001a}.text-content{font-size:14px;line-height:1.5;padding:2px 0;color:#333}.ai-box{border-top:1px dashed #ccc;margin-top:8px;padding-top:8px;font-size:13px;white-space:pre-wrap;line-height:1.6;cursor:text}.lan-sync-module{border-top:1px solid #eee;padding:12px 16px;background:#fafafa;display:flex;flex-direction:column;gap:10px;margin-top:auto}.sync-input{width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;font-size:12px;box-sizing:border-box;outline:none;transition:border-color .2s}.sync-input:focus{border-color:var(--linkual-theme)}.sync-btn{width:100%;padding:10px;border:none;border-radius:6px;font-size:13px;font-weight:700;color:#fff;background-color:var(--linkual-theme);cursor:pointer;transition:all .2s}.sync-btn:hover{opacity:.9}.sync-btn:disabled{opacity:.6;cursor:not-allowed}.sync-btn.success{background-color:#4caf50}.sync-btn.error{background-color:#f44336} ");
+(e=>{if(typeof GM_addStyle=="function"){GM_addStyle(e);return}const o=document.createElement("style");o.textContent=e,document.head.append(o)})(" .modal{position:fixed;top:0;left:0;width:100%;height:100%;background:#00000080;display:flex;justify-content:center;align-items:center;z-index:10000;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}.modal-box{background:#fff;border-radius:12px;width:380px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 10px 30px #0003;animation:slideIn .2s ease-out}@keyframes slideIn{0%{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}.modal-header{padding:16px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #eee}.modal-header h3{margin:0;font-size:16px;color:#333}.close-btn{font-size:24px;line-height:1;color:#999;cursor:pointer;transition:color .2s}.close-btn:hover{color:#333}.tabs{display:flex;background:#fafafa;border-bottom:1px solid #eee}.tab{flex:1;text-align:center;padding:12px 0;font-size:14px;color:#666;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;-webkit-user-select:none;user-select:none}.tab:hover{color:#333;background:#00000005}.tab.active{color:var(--linkual-theme, #6a1b9a);font-weight:700;border-bottom:2px solid var(--linkual-theme, #6a1b9a);background:#fff}.tab-content{padding:20px;overflow-y:auto;flex:1}.fade-in{animation:fadeIn .3s ease}@keyframes fadeIn{0%{opacity:0}to{opacity:1}}.setting-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}.setting-row label{font-size:13px;font-weight:700;flex:1;color:#444}.setting-row input[type=color]{width:50px;height:32px;padding:0;cursor:pointer;border:1px solid #ddd;border-radius:4px}.setting-col{margin-bottom:16px}.setting-col label{font-size:13px;font-weight:700;display:block;margin-bottom:6px;color:#444}.setting-col input,.setting-col textarea{width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box;font-family:inherit;font-size:13px;transition:border-color .2s}.setting-col input:focus,.setting-col textarea:focus{outline:none;border-color:var(--linkual-theme, #6a1b9a)}.setting-col textarea{resize:vertical;min-height:80px;line-height:1.5}.url-prefix-row{display:flex;align-items:stretch}.url-prefix-row input{border-radius:0;min-width:0}.url-fixed-prefix,.url-fixed-suffix{display:inline-flex;align-items:center;padding:0 10px;border:1px solid #ddd;background:#f7f7f7;color:#666;font-size:12px;white-space:nowrap}.url-fixed-prefix{border-right:0;border-radius:6px 0 0 6px}.url-fixed-suffix{border-left:0;border-radius:0 6px 6px 0}.url-prefix-row:focus-within .url-fixed-prefix{border-color:var(--linkual-theme, #6a1b9a);border-right:0}.url-prefix-row:focus-within .url-fixed-suffix{border-color:var(--linkual-theme, #6a1b9a);border-left:0}.setting-help{margin-top:6px;color:#888;font-size:12px;line-height:1.4}.modal-footer{padding:16px 20px;display:flex;gap:12px;border-top:1px solid #eee;background:#fafafa}.btn{flex:1;padding:10px;border:none;border-radius:6px;cursor:pointer;font-weight:700;font-size:14px;transition:opacity .2s}.btn:hover{opacity:.9}.reset-btn{background:#e0e0e0;color:#555}.save-btn{box-shadow:0 2px 6px #0000001a}:root{--linkual-theme: #6a1b9a;--linkual-done: #e8f5e9;--linkual-error: #ffebee}.linkual-wrap{position:fixed;z-index:2147483647;background:#fff;display:flex;flex-direction:column;font-family:sans-serif;color:#333}.linkual-wrap.layout-right{top:0;right:0;height:100vh;box-shadow:-5px 0 15px #0000001a}.linkual-wrap.layout-bottom{bottom:0;left:0;width:100vw!important;box-shadow:0 -5px 15px #0000001a}.resizer{position:absolute;background:transparent;z-index:999;transition:background .2s}.linkual-wrap.layout-right .resizer{left:0;top:0;bottom:0;width:5px;cursor:ew-resize}.linkual-wrap.layout-bottom .resizer{top:0;left:0;right:0;height:5px;cursor:ns-resize}.resizer:hover,.resizer:active{background:var(--linkual-theme)}.header{background:var(--linkual-theme);color:#fff;padding:16px;font-weight:700;display:flex;justify-content:space-between;align-items:center}.settings-icon{cursor:pointer;-webkit-user-select:none;user-select:none}.list{flex:1;overflow-y:auto;padding:12px;scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch}.list::-webkit-scrollbar{display:none}.empty-tip{padding:50px 20px;text-align:center;color:#999;font-style:italic}.load-more-tip{padding:16px 12px 22px;text-align:center;color:#999;font-size:12px}.item{padding:12px;margin-bottom:10px;border-radius:8px;border:1px solid #f0f0f0;transition:.2s}.item.active{border-left:5px solid var(--linkual-theme);background:#6a1b9a0d}.ctrl-bar{display:flex;gap:8px;margin-bottom:8px;align-items:center;padding:4px;border-radius:4px;background:transparent;transition:background .2s}.ctrl-bar.done{background-color:var(--linkual-done, #e8f5e9)}.ctrl-bar.error{background-color:var(--linkual-error, #ffebee);border:1px solid rgba(255,0,0,.1)}.tag-btn{font-size:11px;padding:3px 8px;border-radius:12px;display:inline-flex;align-items:center;cursor:pointer;transition:.2s;-webkit-user-select:none;user-select:none}.tag-play{background:#eee;color:#666}.tag-play:hover{background:var(--linkual-theme);color:#fff}.tag-pin{background:#e3f2fd;color:#1976d2}.tag-pin:hover{background:#1976d2;color:#fff}.btn-parse{flex:1;text-align:right;font-size:11px;color:#aaa;cursor:pointer;-webkit-user-select:none;user-select:none;padding:4px;transition:.2s}.btn-parse:hover{color:#333}.btn-chevron{font-size:12px;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:4px;cursor:pointer;transition:.2s;-webkit-user-select:none;user-select:none;color:#666}.btn-chevron:hover{background:#0000001a}.text-content{font-size:14px;line-height:1.5;padding:2px 0;color:#333}.ai-box{border-top:1px dashed #ccc;margin-top:8px;padding-top:8px;font-size:13px;white-space:pre-wrap;line-height:1.6;cursor:text}.lan-sync-module{border-top:1px solid #eee;padding:12px 16px;background:#fafafa;display:flex;flex-direction:column;gap:10px;margin-top:auto}.sync-input{width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;font-size:12px;box-sizing:border-box;outline:none;transition:border-color .2s}.sync-input:focus{border-color:var(--linkual-theme)}.sync-btn{width:100%;padding:10px;border:none;border-radius:6px;font-size:13px;font-weight:700;color:#fff;background-color:var(--linkual-theme);cursor:pointer;transition:all .2s}.sync-btn:hover{opacity:.9}.sync-btn:disabled{opacity:.6;cursor:not-allowed}.sync-btn.success{background-color:#4caf50}.sync-btn.error{background-color:#f44336} ");
 
 (function () {
   'use strict';
@@ -12525,7 +12525,10 @@
     }, [subs, adapter]);
     return activeIndex;
   }
-  const isGreaseMonkey$1 = typeof GM_xmlhttpRequest !== "undefined";
+  var _GM_deleteValue = /* @__PURE__ */ (() => typeof GM_deleteValue != "undefined" ? GM_deleteValue : void 0)();
+  var _GM_getValue = /* @__PURE__ */ (() => typeof GM_getValue != "undefined" ? GM_getValue : void 0)();
+  var _GM_setValue = /* @__PURE__ */ (() => typeof GM_setValue != "undefined" ? GM_setValue : void 0)();
+  var _GM_xmlhttpRequest = /* @__PURE__ */ (() => typeof GM_xmlhttpRequest != "undefined" ? GM_xmlhttpRequest : void 0)();
   function fetchLlmStream(options) {
     let isAborted = false;
     let gmReq = null;
@@ -12558,9 +12561,9 @@
         messages: finalMessages,
         stream: true
       };
-      if (isGreaseMonkey$1) {
+      if (typeof _GM_xmlhttpRequest !== "undefined") {
         let streamAttached = false;
-        gmReq = GM_xmlhttpRequest({
+        gmReq = _GM_xmlhttpRequest({
           method: "POST",
           url: options.apiUrl,
           headers: {
@@ -12627,6 +12630,7 @@
         });
       } else {
         try {
+          console.warn("[Linkual] GM_xmlhttpRequest 不可用，正在使用 fetch 请求 LLM:", options.apiUrl);
           const res = await fetch(options.apiUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json", "Authorization": `Bearer ${options.apiKey}` },
@@ -12675,9 +12679,6 @@
     execute();
     return { abort: () => abort("ABORTED") };
   }
-  var _GM_deleteValue = /* @__PURE__ */ (() => typeof GM_deleteValue != "undefined" ? GM_deleteValue : void 0)();
-  var _GM_getValue = /* @__PURE__ */ (() => typeof GM_getValue != "undefined" ? GM_getValue : void 0)();
-  var _GM_setValue = /* @__PURE__ */ (() => typeof GM_setValue != "undefined" ? GM_setValue : void 0)();
   const DEFAULTS = {
     theme_color: "#000000",
     done_color: "#e8f5e9",
@@ -12937,6 +12938,17 @@ ${contextBlock}`,
       isExpanded && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "ai-box", style: { color: isError ? "#c62828" : "#444" }, children: aiContent })
     ] });
   };
+  const LAN_SYNC_API_PATH = "/api/vocabulary/add";
+  const LAN_SYNC_PROTOCOL = "http://";
+  const normalizeLanPrefix = (prefix2) => prefix2.trim().replace(/\/+$/, "");
+  const buildLanSyncUrl = (prefix2) => {
+    const normalizedPrefix = normalizeLanPrefix(prefix2).replace(/^https?:\/\//i, "").replace(/\/api\/vocabulary\/add$/i, "");
+    return normalizedPrefix ? `${LAN_SYNC_PROTOCOL}${normalizeLanPrefix(normalizedPrefix)}${LAN_SYNC_API_PATH}` : "";
+  };
+  const getLanPrefix = (url) => {
+    const trimmedUrl = url.trim();
+    return trimmedUrl.startsWith(LAN_SYNC_PROTOCOL) && trimmedUrl.endsWith(LAN_SYNC_API_PATH) ? normalizeLanPrefix(trimmedUrl.slice(LAN_SYNC_PROTOCOL.length, -LAN_SYNC_API_PATH.length)) : "";
+  };
   const Settings = ({ adapter, onClose }) => {
     const [activeTab, setActiveTab] = reactExports.useState("api");
     const getAdpCfg = (key) => {
@@ -12963,6 +12975,9 @@ ${contextBlock}`,
       const { name, value } = e.target;
       setCfg((prev) => ({ ...prev, [name]: value }));
     };
+    const handleLanPrefixChange = (e) => {
+      setCfg((prev) => ({ ...prev, lanUrl: buildLanSyncUrl(e.target.value) }));
+    };
     const handleSave = () => {
       ConfigService.set("theme_color", cfg.color);
       ConfigService.set("done_color", cfg.doneColor);
@@ -12973,7 +12988,7 @@ ${contextBlock}`,
       ConfigService.set("api_prompt", cfg.prompt);
       ConfigService.set("api_timeout", cfg.timeout);
       ConfigService.set("api_ctxSize", cfg.ctxSize);
-      ConfigService.set("lan_sync_url", cfg.lanUrl);
+      ConfigService.set("lan_sync_url", cfg.lanUrl.trim());
       ConfigService.set("lan_action", cfg.lanAction);
       ConfigService.set(`layout_position_${adapter.platformName}`, cfg.layout);
       ConfigService.set(`sidebar_width_${adapter.platformName}`, cfg.sidebarWidth);
@@ -12994,6 +13009,7 @@ ${contextBlock}`,
     const handleBackdropMouseDown = (e) => {
       if (e.target === e.currentTarget) onClose();
     };
+    const lanPrefix = getLanPrefix(cfg.lanUrl);
     return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "modal", onMouseDown: handleBackdropMouseDown, children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "modal-box", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "modal-header", children: [
         /* @__PURE__ */ jsxRuntimeExports.jsx("h3", { children: "全局设置" }),
@@ -13067,7 +13083,16 @@ ${contextBlock}`,
         ] }),
         activeTab === "lan" && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "tab-pane fade-in", children: [
           /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-col", children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "后端生词添加 API 地址" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "后端服务前缀（快捷）" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "url-prefix-row", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "url-fixed-prefix", children: LAN_SYNC_PROTOCOL }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("input", { value: lanPrefix, onChange: handleLanPrefixChange, placeholder: "127.0.0.1:8000" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "url-fixed-suffix", children: LAN_SYNC_API_PATH })
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "setting-help", children: "只填写主机和端口会自动生成下方完整地址；如需自定义协议或路径，可直接编辑完整 API 地址。" })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-col", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "后端生词添加 API 地址（完整）" }),
             /* @__PURE__ */ jsxRuntimeExports.jsx("input", { name: "lanUrl", value: cfg.lanUrl, onChange: handleChange, placeholder: "http://127.0.0.1:8000/api/vocabulary/add" })
           ] }),
           /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-col", children: [
@@ -13082,7 +13107,6 @@ ${contextBlock}`,
       ] })
     ] }) });
   };
-  const isGreaseMonkey = typeof GM_xmlhttpRequest !== "undefined";
   const formatHttpError = (status, responseText) => {
     const detail = (responseText || "").trim();
     return detail ? `HTTP ${status}: ${detail}` : `HTTP ${status}`;
@@ -13094,9 +13118,9 @@ ${contextBlock}`,
     body,
     timeoutMs = 15e3
   }) {
-    if (isGreaseMonkey) {
+    if (typeof _GM_xmlhttpRequest !== "undefined") {
       return new Promise((resolve, reject) => {
-        GM_xmlhttpRequest({
+        _GM_xmlhttpRequest({
           method,
           url,
           headers,
@@ -13119,7 +13143,7 @@ ${contextBlock}`,
               reject(new Error(`响应 JSON 解析失败: ${message}`));
             }
           },
-          onerror: () => reject(new Error("网络请求被拦截或断开")),
+          onerror: () => reject(new Error(`GM_xmlhttpRequest 网络请求被拦截或断开: ${url}`)),
           ontimeout: () => reject(new Error(`请求超时 (${Math.ceil(timeoutMs / 1e3)}s)`)),
           onabort: () => reject(new Error("请求已取消"))
         });
@@ -13128,6 +13152,7 @@ ${contextBlock}`,
     const abortController = new AbortController();
     const timeoutId = setTimeout(() => abortController.abort(), timeoutMs);
     try {
+      console.warn("[Linkual] GM_xmlhttpRequest 不可用，正在使用 fetch 发送请求:", url);
       const response = await fetch(url, {
         method,
         headers,
@@ -13144,13 +13169,103 @@ ${contextBlock}`,
       return JSON.parse(text);
     } catch (err) {
       if ((err == null ? void 0 : err.name) === "AbortError") {
-        throw new Error(`请求超时 (${Math.ceil(timeoutMs / 1e3)}s)`);
+        throw new Error(`fetch 请求超时 (${Math.ceil(timeoutMs / 1e3)}s): ${url}`);
       }
-      throw err;
+      const message = err instanceof Error ? err.message : String(err);
+      throw new Error(`fetch 请求失败: ${message}`);
     } finally {
       clearTimeout(timeoutId);
     }
   }
+  const VOCAB_LLM_SYSTEM_PROMPT = `你是一个专业的英文翻译和词典 API 引擎。
+请根据目标词或短语及其上下文，生成适合写入生词本的 JSON。
+
+要求：
+1. 不要输出 pronunciation、音标或任何发音字段。
+2. definitions 只给目标词在当前上下文中最贴切的 1-3 条中文释义，格式为“词性. 中文释义”，释义必须以中文为主，不能是纯英文。
+3. examples 必须包含且只包含一个例句对象；text 必须与用户提供的上下文完全一致。
+4. examples[0].explanation 必须是自然、完整的中文解释，既翻译上下文，也点明目标词在此处的具体含义。
+5. examples[0].focusWords 只放真正需要聚焦的词或最小必要词组，优先使用上下文中出现的原始形态。
+6. 只输出合法 JSON，不要输出 markdown、代码块、注释或额外说明。
+
+JSON 格式：
+{
+  "definitions": ["vt. 放弃，抛弃（在此语境下）"],
+  "examples": [
+    {
+      "text": "原始上下文句子",
+      "explanation": "自然中文解释。",
+      "focusWords": ["目标词"]
+    }
+  ]
+}`;
+  const parseLlmJson = (rawText) => {
+    var _a;
+    const trimmed = rawText.trim();
+    const fenced = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
+    const candidate = fenced ? fenced[1] : ((_a = trimmed.match(/\{[\s\S]*\}/)) == null ? void 0 : _a[0]) || trimmed;
+    return JSON.parse(candidate);
+  };
+  const sanitizeLlmResult = (value) => {
+    if (!value || typeof value !== "object") return {};
+    const raw = value;
+    const result = {};
+    if (Array.isArray(raw.definitions)) {
+      const definitions = raw.definitions.map((item) => String(item || "").trim()).filter(Boolean);
+      if (definitions.length > 0) result.definitions = definitions;
+    }
+    if (Array.isArray(raw.examples)) {
+      const examples = raw.examples.filter((item) => item && typeof item === "object").map((item) => {
+        const rawExample = item;
+        const example = {};
+        const text = String(rawExample.text || "").trim();
+        const explanation2 = String(rawExample.explanation || "").trim();
+        const focusWords = Array.isArray(rawExample.focusWords) ? rawExample.focusWords.map((word) => String(word || "").trim()).filter(Boolean) : [];
+        if (text) example.text = text;
+        if (explanation2) example.explanation = explanation2;
+        if (focusWords.length > 0) example.focusWords = focusWords;
+        return example;
+      }).filter((example) => {
+        var _a;
+        return example.text || example.explanation || ((_a = example.focusWords) == null ? void 0 : _a.length);
+      });
+      if (examples.length > 0) result.examples = examples;
+    }
+    const explanation = String(raw.explanation || "").trim();
+    if (explanation) result.explanation = explanation;
+    const contextTranslation = String(raw.context_translation || "").trim();
+    if (contextTranslation) result.context_translation = contextTranslation;
+    return result;
+  };
+  const getLlmExplanation = (result) => {
+    var _a, _b;
+    return ((_b = (_a = result == null ? void 0 : result.examples) == null ? void 0 : _a.find((example) => example.explanation)) == null ? void 0 : _b.explanation) || (result == null ? void 0 : result.explanation) || (result == null ? void 0 : result.context_translation) || "";
+  };
+  const hasUsableLlmResult = (result) => {
+    var _a, _b;
+    return Boolean(
+      ((_a = result == null ? void 0 : result.definitions) == null ? void 0 : _a.length) || ((_b = result == null ? void 0 : result.examples) == null ? void 0 : _b.length) || getLlmExplanation(result)
+    );
+  };
+  const LlmResultPreview = ({ result }) => {
+    var _a;
+    if (!hasUsableLlmResult(result)) return null;
+    const explanation = getLlmExplanation(result);
+    return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { background: "#f4f4f5", padding: "8px", borderRadius: "6px", fontSize: "12px", marginBottom: "10px" }, children: [
+      ((_a = result == null ? void 0 : result.definitions) == null ? void 0 : _a.length) ? /* @__PURE__ */ jsxRuntimeExports.jsx("ul", { style: { margin: "4px 0", paddingLeft: "16px", color: "#444" }, children: result.definitions.map((d, i) => /* @__PURE__ */ jsxRuntimeExports.jsx("li", { children: d }, i)) }) : null,
+      explanation ? /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { color: "#1976d2", fontStyle: "italic" }, children: [
+        "解析: ",
+        explanation
+      ] }) : null
+    ] });
+  };
+  const sanitizeTask = (task) => {
+    const sanitizedResult = sanitizeLlmResult(task.llmResult);
+    return {
+      ...task,
+      llmResult: hasUsableLlmResult(sanitizedResult) ? sanitizedResult : void 0
+    };
+  };
   const VocabQueue = () => {
     const [isOpen, setIsOpen] = reactExports.useState(false);
     const [selectedCategory, setSelectedCategory] = reactExports.useState(ConfigService.get("lan_action") || "Video_Sync");
@@ -13158,7 +13273,7 @@ ${contextBlock}`,
     const [tasks, setTasks] = reactExports.useState(() => {
       try {
         const saved = localStorage.getItem("linkual_vocab_queue");
-        if (saved) return JSON.parse(saved);
+        if (saved) return JSON.parse(saved).map(sanitizeTask);
       } catch (e) {
       }
       return [];
@@ -13170,7 +13285,7 @@ ${contextBlock}`,
       const syncAcrossTabs = (e) => {
         if (e.key === "linkual_vocab_queue" && e.newValue) {
           try {
-            setTasks(JSON.parse(e.newValue));
+            setTasks(JSON.parse(e.newValue).map(sanitizeTask));
           } catch (err) {
           }
         }
@@ -13266,9 +13381,9 @@ ${contextBlock}`,
         apiUrl,
         apiKey,
         apiModel,
-        systemPrompt: '你是一个翻译和词典助手。请提取目标单词在给定上下文中的含义。必须严格以 JSON 格式输出，不要包含任何 markdown 代码块标记或其他纯文本。\n格式要求：\n{\n  "pronunciation": "音标",\n  "definitions": ["词性. 解释 1", "词性. 解释 2"],\n  "explanation": "在当前上下文中的准确翻译"\n}',
-        userPrompt: `目标单词：${task.word}
-所在上下文：${task.context}`,
+        systemPrompt: VOCAB_LLM_SYSTEM_PROMPT,
+        userPrompt: `目标词或短语：${task.word}
+上下文：${task.context}`,
         timeoutSec: 30,
         onData: (chunk) => {
           generatedJsonStr += chunk;
@@ -13280,12 +13395,15 @@ ${contextBlock}`,
         onDone: () => {
           let parsed = {};
           try {
-            const jsonRegex = new RegExp("```json\\n([\\s\\S]*?)\\n```");
-            const replaceRegex = new RegExp("```json\\n|\\n```", "g");
-            const match = generatedJsonStr.match(jsonRegex) || generatedJsonStr.match(/\{[\s\S]*\}/);
-            const cleanStr = match ? match[0].replace(replaceRegex, "") : generatedJsonStr;
-            parsed = JSON.parse(cleanStr);
+            parsed = sanitizeLlmResult(parseLlmJson(generatedJsonStr));
           } catch (e) {
+            const message = e instanceof Error ? e.message : String(e);
+            setTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, status: "failed", error: `LLM 返回 JSON 解析失败: ${message}`, rawJson: generatedJsonStr } : t));
+            return;
+          }
+          if (!hasUsableLlmResult(parsed)) {
+            setTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, status: "failed", error: "LLM 未返回可用释义 JSON", rawJson: generatedJsonStr } : t));
+            return;
           }
           setTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, status: "idle", llmResult: parsed, rawJson: generatedJsonStr } : t));
         }
@@ -13302,11 +13420,11 @@ ${contextBlock}`,
         source: sendingTask.source,
         youtube: sendingTask.youtube,
         date: sendingTask.date,
-        llm_result: sendingTask.llmResult || {},
-        raw_json: sendingTask.rawJson,
+        llm_result: sanitizeLlmResult(sendingTask.llmResult),
         fetch_llm: false,
         category: sendingTask.category
       };
+      console.info("[Linkual] 发送生词到后端:", serverUrl, payload);
       requestJson({
         url: serverUrl,
         method: "POST",
@@ -13314,6 +13432,7 @@ ${contextBlock}`,
         body: JSON.stringify(payload),
         timeoutMs: 15e3
       }).then(() => {
+        console.info("[Linkual] 生词发送成功:", sendingTask.word);
         if (deleteOnSuccess) {
           setTasks((prev) => prev.filter((t) => t.id !== taskId));
         } else {
@@ -13321,6 +13440,7 @@ ${contextBlock}`,
         }
       }).catch((err) => {
         const message = err instanceof Error ? err.message : "请求异常";
+        console.error("[Linkual] 生词发送失败:", message, { url: serverUrl, task: sendingTask });
         setTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, status: "failed", error: message } : t));
       });
     };
@@ -13352,49 +13472,39 @@ ${contextBlock}`,
         ] }),
         /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { flex: 1, overflowY: "auto", padding: "12px", display: "flex", flexDirection: "column", gap: "12px", background: "#f9f9f9" }, children: [
           tasks.length === 0 && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { style: { textAlign: "center", color: "#999", marginTop: "40px", fontSize: "13px" }, children: "暂无待处理单词" }),
-          tasks.map((t) => {
-            var _a;
-            return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { padding: "12px", border: "1px solid #eaeaea", borderRadius: "8px", background: "#fff", boxShadow: "0 2px 5px rgba(0,0,0,0.02)" }, children: [
-              /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }, children: [
-                /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { style: { fontSize: "16px", color: "#333" }, children: t.word }),
-                /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { style: { fontSize: "11px", padding: "2px 6px", borderRadius: "10px", background: t.status === "success" ? "#e8f5e9" : t.status === "failed" ? "#ffebee" : "#e3f2fd", color: t.status === "success" ? "#4caf50" : t.status === "failed" ? "#f44336" : "#1976d2" }, children: [
-                  t.status === "idle" && (t.llmResult ? "释义已就绪" : "等待操作"),
-                  t.status === "fetching_llm" && "正在解析...",
-                  t.status === "sending" && "发送中...",
-                  t.status === "success" && "发送成功",
-                  t.status === "failed" && "操作失败"
-                ] })
-              ] }),
-              /* @__PURE__ */ jsxRuntimeExports.jsx("div", { style: { fontSize: "12px", color: "#666", marginBottom: "8px", paddingBottom: "8px", borderBottom: "1px dashed #eee" }, children: t.context }),
-              /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { fontSize: "11px", color: "#e53935", marginBottom: "8px", display: "flex", justifyContent: "space-between" }, children: [
-                /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: t.youtube ? `▶ YouTube 捕获: ${t.youtube.timestamp}s` : "本地字幕记录" }),
-                /* @__PURE__ */ jsxRuntimeExports.jsx("span", { style: { color: "#888", fontStyle: "italic", maxWidth: "150px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: t.source })
-              ] }),
-              t.llmResult && Object.keys(t.llmResult).length > 0 && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { background: "#f4f4f5", padding: "8px", borderRadius: "6px", fontSize: "12px", marginBottom: "10px" }, children: [
-                /* @__PURE__ */ jsxRuntimeExports.jsx("div", { style: { fontWeight: "bold", color: "#111" }, children: t.llmResult.pronunciation }),
-                /* @__PURE__ */ jsxRuntimeExports.jsx("ul", { style: { margin: "4px 0", paddingLeft: "16px", color: "#444" }, children: (_a = t.llmResult.definitions) == null ? void 0 : _a.map((d, i) => /* @__PURE__ */ jsxRuntimeExports.jsx("li", { children: d }, i)) }),
-                /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { color: "#1976d2", fontStyle: "italic" }, children: [
-                  "翻译: ",
-                  t.llmResult.explanation
-                ] })
-              ] }),
-              t.error && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { style: { color: "#f44336", fontSize: "11px", marginBottom: "8px" }, children: t.error }),
-              /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "12px" }, children: [
-                /* @__PURE__ */ jsxRuntimeExports.jsx(
-                  "button",
-                  {
-                    onClick: () => handleFetchLlm(t.id),
-                    disabled: t.status === "fetching_llm" || t.status === "sending",
-                    style: { flex: "1 1 auto", padding: "6px 10px", background: "#f4f4f5", color: "#333", border: "1px solid #ccc", borderRadius: "4px", cursor: "pointer", fontSize: "12px", fontWeight: "bold" },
-                    children: "请求释义"
-                  }
-                ),
-                /* @__PURE__ */ jsxRuntimeExports.jsx("button", { onClick: () => handleSend(t.id, true), style: { flex: "1 1 auto", padding: "6px 10px", background: "#10b981", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer", fontSize: "12px", fontWeight: "bold" }, children: "发送并删除" }),
-                /* @__PURE__ */ jsxRuntimeExports.jsx("button", { onClick: () => handleSend(t.id, false), style: { flex: "1 1 auto", padding: "6px 10px", background: "#3b82f6", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer", fontSize: "12px", fontWeight: "bold" }, children: "发送并保留" }),
-                /* @__PURE__ */ jsxRuntimeExports.jsx("button", { onClick: () => handleDeleteTask(t.id), style: { padding: "6px 12px", background: "transparent", color: "#f44336", border: "1px solid #f44336", borderRadius: "4px", cursor: "pointer", fontSize: "12px" }, children: "丢弃" })
+          tasks.map((t) => /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { padding: "12px", border: "1px solid #eaeaea", borderRadius: "8px", background: "#fff", boxShadow: "0 2px 5px rgba(0,0,0,0.02)" }, children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }, children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { style: { fontSize: "16px", color: "#333" }, children: t.word }),
+              /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { style: { fontSize: "11px", padding: "2px 6px", borderRadius: "10px", background: t.status === "success" ? "#e8f5e9" : t.status === "failed" ? "#ffebee" : "#e3f2fd", color: t.status === "success" ? "#4caf50" : t.status === "failed" ? "#f44336" : "#1976d2" }, children: [
+                t.status === "idle" && (hasUsableLlmResult(t.llmResult) ? "释义已就绪" : "等待操作"),
+                t.status === "fetching_llm" && "正在解析...",
+                t.status === "sending" && "发送中...",
+                t.status === "success" && "发送成功",
+                t.status === "failed" && "操作失败"
               ] })
-            ] }, t.id);
-          })
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("div", { style: { fontSize: "12px", color: "#666", marginBottom: "8px", paddingBottom: "8px", borderBottom: "1px dashed #eee" }, children: t.context }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { fontSize: "11px", color: "#e53935", marginBottom: "8px", display: "flex", justifyContent: "space-between" }, children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: t.youtube ? `▶ YouTube 捕获: ${t.youtube.timestamp}s` : "本地字幕记录" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { style: { color: "#888", fontStyle: "italic", maxWidth: "150px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: t.source })
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(LlmResultPreview, { result: t.llmResult }),
+            t.error && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { style: { color: "#f44336", fontSize: "11px", marginBottom: "8px" }, children: t.error }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "12px" }, children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "button",
+                {
+                  onClick: () => handleFetchLlm(t.id),
+                  disabled: t.status === "fetching_llm" || t.status === "sending",
+                  style: { flex: "1 1 auto", padding: "6px 10px", background: "#f4f4f5", color: "#333", border: "1px solid #ccc", borderRadius: "4px", cursor: "pointer", fontSize: "12px", fontWeight: "bold" },
+                  children: "请求释义"
+                }
+              ),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("button", { onClick: () => handleSend(t.id, true), style: { flex: "1 1 auto", padding: "6px 10px", background: "#10b981", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer", fontSize: "12px", fontWeight: "bold" }, children: "发送并删除" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("button", { onClick: () => handleSend(t.id, false), style: { flex: "1 1 auto", padding: "6px 10px", background: "#3b82f6", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer", fontSize: "12px", fontWeight: "bold" }, children: "发送并保留" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("button", { onClick: () => handleDeleteTask(t.id), style: { padding: "6px 12px", background: "transparent", color: "#f44336", border: "1px solid #f44336", borderRadius: "4px", cursor: "pointer", fontSize: "12px" }, children: "丢弃" })
+            ] })
+          ] }, t.id))
         ] })
       ] }),
       /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -13412,6 +13522,9 @@ ${contextBlock}`,
       )
     ] });
   };
+  const INITIAL_RENDER_LIMIT = 80;
+  const RENDER_BATCH_SIZE = 80;
+  const ACTIVE_RENDER_BUFFER = 20;
   const App = ({ adapter }) => {
     const [subs, setSubs] = reactExports.useState([]);
     const [inVideo, setInVideo] = reactExports.useState(adapter.isVideoPage());
@@ -13426,7 +13539,8 @@ ${contextBlock}`,
     const [doneColor, setDoneColor] = reactExports.useState(ConfigService.get("done_color"));
     const [errorColor, setErrorColor] = reactExports.useState(ConfigService.get("error_color"));
     const [isSettingsOpen, setIsSettingsOpen] = reactExports.useState(false);
-    const [renderLimit, setRenderLimit] = reactExports.useState(50);
+    const [renderLimit, setRenderLimit] = reactExports.useState(INITIAL_RENDER_LIMIT);
+    const listRef = reactExports.useRef(null);
     const activeIndex = useVideoSync(subs, adapter);
     reactExports.useEffect(() => {
       const checkVideo = () => {
@@ -13445,7 +13559,7 @@ ${contextBlock}`,
     reactExports.useEffect(() => {
       adapter.onSubtitleDetected((newSubs) => {
         setSubs(newSubs);
-        setRenderLimit(50);
+        if (newSubs.length === 0) setRenderLimit(INITIAL_RENDER_LIMIT);
       });
       const handleSettingsUpdate = () => {
         setThemeColor(ConfigService.get("theme_color"));
@@ -13458,6 +13572,12 @@ ${contextBlock}`,
       window.addEventListener("linkual_settings_updated", handleSettingsUpdate);
       return () => window.removeEventListener("linkual_settings_updated", handleSettingsUpdate);
     }, [adapter]);
+    reactExports.useEffect(() => {
+      if (activeIndex < 0 || subs.length === 0) return;
+      if (activeIndex >= renderLimit - ACTIVE_RENDER_BUFFER) {
+        setRenderLimit((prev) => Math.min(subs.length, Math.max(prev, activeIndex + RENDER_BATCH_SIZE)));
+      }
+    }, [activeIndex, renderLimit, subs.length]);
     reactExports.useEffect(() => {
       if (adapter.resizeHost) {
         if (inVideo) {
@@ -13517,6 +13637,16 @@ ${contextBlock}`,
       "--linkual-done": doneColor,
       "--linkual-error": errorColor
     };
+    const handleListScroll = () => {
+      const listEl = listRef.current;
+      if (!listEl || renderLimit >= subs.length) return;
+      const distanceToBottom = listEl.scrollHeight - listEl.scrollTop - listEl.clientHeight;
+      if (distanceToBottom < 160) {
+        setRenderLimit((prev) => Math.min(subs.length, prev + RENDER_BATCH_SIZE));
+      }
+    };
+    const visibleSubs = subs.slice(0, renderLimit);
+    const hasMoreSubs = visibleSubs.length < subs.length;
     return /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: `linkual-wrap layout-${layout}`, style: wrapStyle, children: [
         /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "resizer", onMouseDown: startResize, title: layout === "right" ? "左右拖拽调整宽度" : "上下拖拽调整高度" }),
@@ -13528,7 +13658,16 @@ ${contextBlock}`,
           ] }),
           /* @__PURE__ */ jsxRuntimeExports.jsx("div", { children: /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "settings-icon", onClick: () => setIsSettingsOpen(true), title: "全局设置", children: "⚙️" }) })
         ] }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "list", children: subs.length === 0 ? /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "empty-tip", children: "等待字幕数据..." }) : subs.slice(0, renderLimit).map((sub, index2) => /* @__PURE__ */ jsxRuntimeExports.jsx(SubtitleItem, { data: sub, index: index2, allSubs: subs, isActive: index2 === activeIndex, adapter }, index2)) }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "list", ref: listRef, onScroll: handleListScroll, children: subs.length === 0 ? /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "empty-tip", children: "等待字幕数据..." }) : /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+          visibleSubs.map((sub, index2) => /* @__PURE__ */ jsxRuntimeExports.jsx(SubtitleItem, { data: sub, index: index2, allSubs: subs, isActive: index2 === activeIndex, adapter }, index2)),
+          hasMoreSubs && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "load-more-tip", children: [
+            "向下滚动加载更多字幕（",
+            visibleSubs.length,
+            "/",
+            subs.length,
+            "）"
+          ] })
+        ] }) }),
         isSettingsOpen && /* @__PURE__ */ jsxRuntimeExports.jsx(Settings, { adapter, onClose: () => setIsSettingsOpen(false) })
       ] }),
       inVideo && /* @__PURE__ */ jsxRuntimeExports.jsx(VocabQueue, {})

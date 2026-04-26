@@ -1,5 +1,4 @@
-const isGreaseMonkey = typeof GM_xmlhttpRequest !== 'undefined';
-declare const GM_xmlhttpRequest: any;
+import { GM_xmlhttpRequest } from '$';
 
 export interface JsonRequestOptions {
   url: string;
@@ -21,7 +20,7 @@ export async function requestJson<T = unknown>({
   body,
   timeoutMs = 15000,
 }: JsonRequestOptions): Promise<T> {
-  if (isGreaseMonkey) {
+  if (typeof GM_xmlhttpRequest !== 'undefined') {
     return new Promise<T>((resolve, reject) => {
       GM_xmlhttpRequest({
         method,
@@ -48,7 +47,7 @@ export async function requestJson<T = unknown>({
             reject(new Error(`响应 JSON 解析失败: ${message}`));
           }
         },
-        onerror: () => reject(new Error('网络请求被拦截或断开')),
+        onerror: () => reject(new Error(`GM_xmlhttpRequest 网络请求被拦截或断开: ${url}`)),
         ontimeout: () => reject(new Error(`请求超时 (${Math.ceil(timeoutMs / 1000)}s)`)),
         onabort: () => reject(new Error('请求已取消')),
       });
@@ -59,6 +58,7 @@ export async function requestJson<T = unknown>({
   const timeoutId = setTimeout(() => abortController.abort(), timeoutMs);
 
   try {
+    console.warn('[Linkual] GM_xmlhttpRequest 不可用，正在使用 fetch 发送请求:', url);
     const response = await fetch(url, {
       method,
       headers,
@@ -78,9 +78,10 @@ export async function requestJson<T = unknown>({
     return JSON.parse(text) as T;
   } catch (err: any) {
     if (err?.name === 'AbortError') {
-      throw new Error(`请求超时 (${Math.ceil(timeoutMs / 1000)}s)`);
+      throw new Error(`fetch 请求超时 (${Math.ceil(timeoutMs / 1000)}s): ${url}`);
     }
-    throw err;
+    const message = err instanceof Error ? err.message : String(err);
+    throw new Error(`fetch 请求失败: ${message}`);
   } finally {
     clearTimeout(timeoutId);
   }

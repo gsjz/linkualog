@@ -1,5 +1,4 @@
-const isGreaseMonkey = typeof GM_xmlhttpRequest !== 'undefined';
-declare const GM_xmlhttpRequest: any;
+import { GM_xmlhttpRequest } from '$';
 
 export interface FetchLlmOptions {
   apiUrl: string;
@@ -52,7 +51,7 @@ export function fetchLlmStream(options: FetchLlmOptions): { abort: () => void } 
       stream: true
     };
 
-    if (isGreaseMonkey) {
+    if (typeof GM_xmlhttpRequest !== 'undefined') {
       let streamAttached = false;
       gmReq = GM_xmlhttpRequest({
         method: 'POST',
@@ -117,6 +116,7 @@ export function fetchLlmStream(options: FetchLlmOptions): { abort: () => void } 
       });
     } else {
       try {
+        console.warn('[Linkual] GM_xmlhttpRequest 不可用，正在使用 fetch 请求 LLM:', options.apiUrl);
         const res = await fetch(options.apiUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${options.apiKey}` },

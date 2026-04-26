@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useVideoSync } from '../hooks/useVideoSync';
 import SubtitleItem from '../components/SubtitleItem';
 import Settings from '../components/Settings';
@@ -12,6 +12,10 @@ import './App.css';
 interface AppProps { adapter: IVideoAdapter; }
 
 type CfgKey = keyof typeof DEFAULTS;
+
+const INITIAL_RENDER_LIMIT = 80;
+const RENDER_BATCH_SIZE = 80;
+const ACTIVE_RENDER_BUFFER = 20;
 
 const App: React.FC<AppProps> = ({ adapter }) => {
   const [subs, setSubs] = useState<Subtitle[]>([]);
@@ -32,7 +36,8 @@ const App: React.FC<AppProps> = ({ adapter }) => {
   const [errorColor, setErrorColor] = useState(ConfigService.get('error_color') as string);
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [renderLimit, setRenderLimit] = useState(50);
+  const [renderLimit, setRenderLimit] = useState(INITIAL_RENDER_LIMIT);
+  const listRef = useRef<HTMLDivElement | null>(null);
   const activeIndex = useVideoSync(subs, adapter);
 
   useEffect(() => {
@@ -55,7 +60,7 @@ const App: React.FC<AppProps> = ({ adapter }) => {
   useEffect(() => {
     adapter.onSubtitleDetected((newSubs) => {
       setSubs(newSubs);
-      setRenderLimit(50);
+      if (newSubs.length === 0) setRenderLimit(INITIAL_RENDER_LIMIT);
     });
 
     const handleSettingsUpdate = () => {
@@ -70,6 +75,14 @@ const App: React.FC<AppProps> = ({ adapter }) => {
     window.addEventListener('linkual_settings_updated', handleSettingsUpdate);
     return () => window.removeEventListener('linkual_settings_updated', handleSettingsUpdate);
   }, [adapter]);
+
+  useEffect(() => {
+    if (activeIndex < 0 || subs.length === 0) return;
+
+    if (activeIndex >= renderLimit - ACTIVE_RENDER_BUFFER) {
+      setRenderLimit((prev) => Math.min(subs.length, Math.max(prev, activeIndex + RENDER_BATCH_SIZE)));
+    }
+  }, [activeIndex, renderLimit, subs.length]);
 
   useEffect(() => {
     if (adapter.resizeHost) {
@@ -133,6 +146,19 @@ const App: React.FC<AppProps> = ({ adapter }) => {
     '--linkual-error': errorColor
   } as React.CSSProperties;
 
+  const handleListScroll = () => {
+    const listEl = listRef.current;
+    if (!listEl || renderLimit >= subs.length) return;
+
+    const distanceToBottom = listEl.scrollHeight - listEl.scrollTop - listEl.clientHeight;
+    if (distanceToBottom < 160) {
+      setRenderLimit((prev) => Math.min(subs.length, prev + RENDER_BATCH_SIZE));
+    }
+  };
+
+  const visibleSubs = subs.slice(0, renderLimit);
+  const hasMoreSubs = visibleSubs.length < subs.length;
+
   return (
     <>
       <div className={`linkual-wrap layout-${layout}`} style={wrapStyle}>
@@ -141,13 +167,20 @@ const App: React.FC<AppProps> = ({ adapter }) => {
           <span>Link-ual Log [{adapter.platformName}]</span>
           <div><span className="settings-icon" onClick={() => setIsSettingsOpen(true)} title="全局设置">⚙️</span></div>
         </div>
-        <div className="list">
+        <div className="list" ref={listRef} onScroll={handleListScroll}>
           {subs.length === 0 ? (
             <div className="empty-tip">等待字幕数据...</div>
           ) : (
-            subs.slice(0, renderLimit).map((sub, index) => (
-              <SubtitleItem key={index} data={sub} index={index} allSubs={subs} isActive={index === activeIndex} adapter={adapter} />
-            ))
+            <>
+              {visibleSubs.map((sub, index) => (
+                <SubtitleItem key={index} data={sub} index={index} allSubs={subs} isActive={index === activeIndex} adapter={adapter} />
+              ))}
+              {hasMoreSubs && (
+                <div className="load-more-tip">
+                  向下滚动加载更多字幕（{visibleSubs.length}/{subs.length}）
+                </div>
+              )}
+            </>
           )}
         </div>
         {isSettingsOpen && <Settings adapter={adapter} onClose={() => setIsSettingsOpen(false)} />}
