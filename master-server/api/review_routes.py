@@ -66,6 +66,13 @@ class VocabSaveRequest(BaseModel):
     data: dict
 
 
+class VocabRenameRequest(BaseModel):
+    category: str
+    filename: str
+    word: str
+    data: dict | None = None
+
+
 class MergeApplyRequest(BaseModel):
     category: str
     source_filename: str
@@ -91,6 +98,20 @@ def _normalize_json_filename(filename: str) -> str:
     if not name.endswith(".json"):
         name = f"{name}.json"
     return os.path.basename(name)
+
+
+def _normalize_vocab_word(word: str) -> str:
+    text = _WS_RE.sub(" ", str(word or "")).strip().lower()
+    text = re.sub(r"\.json$", "", text, flags=re.IGNORECASE)
+    text = re.sub(r"[\s_]+", "-", text)
+    return text.strip("-")
+
+
+def _build_vocab_filename(word: str) -> str:
+    normalized = _normalize_vocab_word(word)
+    if not normalized:
+        raise ValueError("word 不能为空")
+    return _normalize_json_filename(normalized)
 
 
 def _safe_created_at(raw_value: str | None) -> str:
@@ -339,6 +360,43 @@ def _normalize_vocab_payload(raw_payload: dict, fallback_word: str, fallback_cre
     return payload
 
 
+def _rewrite_vocab_word_references(payload: dict, source_words: set[str], target_word: str) -> dict:
+    normalized_sources = {_normalize_vocab_word(item) for item in source_words if _normalize_vocab_word(item)}
+    payload["word"] = target_word
+    if not normalized_sources:
+        return payload
+
+    examples = payload.get("examples")
+    if isinstance(examples, list):
+        for example in examples:
+            if not isinstance(example, dict):
+                continue
+            focus_words = example.get("focusWords")
+            if not isinstance(focus_words, list):
+                continue
+            rewritten: list[str] = []
+            for item in focus_words:
+                text = str(item or "").strip()
+                if not text:
+                    continue
+                if _normalize_vocab_word(text) in normalized_sources:
+                    text = target_word
+                if text not in rewritten:
+                    rewritten.append(text)
+            example["focusWords"] = rewritten
+
+    review_sessions = payload.get("reviewSessions")
+    if isinstance(review_sessions, list):
+        for session in review_sessions:
+            if not isinstance(session, dict):
+                continue
+            raw_word = str(session.get("word") or "").strip()
+            if _normalize_vocab_word(raw_word) in normalized_sources:
+                session["word"] = target_word
+
+    return payload
+
+
 def _merge_vocab_payload(target_payload: dict, source_payload: dict, target_fallback_word: str) -> dict:
     target = _normalize_vocab_payload(target_payload, target_fallback_word)
     source = _normalize_vocab_payload(source_payload, str(source_payload.get("word") or ""))
@@ -381,6 +439,63 @@ def save_vocab(req: VocabSaveRequest):
             "status": "success",
             "category": category,
             "file": os.path.basename(path),
+            "data": normalized,
+        }
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@router.post("/api/vocabulary/rename")
+def rename_vocab(req: VocabRenameRequest):
+    try:
+        category = _require_category(req.category)
+        source_path, existing = load_vocab_entry(category, req.filename)
+        source_file = os.path.basename(source_path)
+        source_word = str(existing.get("word") or os.path.splitext(source_file)[0]).strip() or os.path.splitext(source_file)[0]
+
+        target_word = _normalize_vocab_word(req.word)
+        if not target_word:
+            raise ValueError("word 不能为空")
+        target_filename = _build_vocab_filename(target_word)
+        target_path = resolve_vocab_file_for_write(category, target_filename)
+        same_target = os.path.abspath(target_path) == os.path.abspath(source_path)
+        if not same_target and os.path.exists(target_path):
+            raise ValueError(f"目标词条已存在: {target_filename}")
+
+        payload_source = req.data if isinstance(req.data, dict) else existing
+        normalized = _normalize_vocab_payload(
+            payload_source,
+            fallback_word=target_word,
+            fallback_created_at=str(existing.get("createdAt", "")),
+        )
+        normalized = _rewrite_vocab_word_references(
+            normalized,
+            source_words={
+                source_word,
+                os.path.splitext(source_file)[0],
+                str(req.filename or ""),
+            },
+            target_word=target_word,
+        )
+        save_vocab_file(target_path, normalized)
+
+        if not same_target:
+            try:
+                os.remove(source_path)
+            except FileNotFoundError:
+                pass
+
+        return {
+            "status": "success",
+            "category": category,
+            "source_file": source_file,
+            "file": os.path.basename(target_path),
+            "target_file": os.path.basename(target_path),
+            "word": target_word,
             "data": normalized,
         }
     except FileNotFoundError as exc:

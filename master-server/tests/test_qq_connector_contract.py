@@ -6,8 +6,8 @@ from tempfile import TemporaryDirectory
 from fastapi import BackgroundTasks
 from starlette.datastructures import UploadFile
 
-from api import routes
-from core import storage, tasks, vocabulary
+from api import review_routes, routes
+from core import review_vocabulary, storage, tasks, vocabulary
 
 
 class QQConnectorContractTests(unittest.IsolatedAsyncioTestCase):
@@ -22,11 +22,13 @@ class QQConnectorContractTests(unittest.IsolatedAsyncioTestCase):
 
         self.original_storage_dir = storage.STORAGE_DIR
         self.original_vocab_dir = vocabulary.VOCAB_DIR
+        self.original_review_vocab_dir = review_vocabulary.VOCAB_DIR
         self.original_tasks_file = tasks.TASKS_FILE
         self.original_lock_file = tasks.LOCK_FILE
 
         storage.STORAGE_DIR = str(self.storage_dir)
         vocabulary.VOCAB_DIR = str(self.vocab_dir)
+        review_vocabulary.VOCAB_DIR = str(self.vocab_dir)
         tasks.TASKS_FILE = str(self.tasks_file)
         tasks.LOCK_FILE = str(self.lock_file)
 
@@ -37,6 +39,7 @@ class QQConnectorContractTests(unittest.IsolatedAsyncioTestCase):
     def tearDown(self):
         storage.STORAGE_DIR = self.original_storage_dir
         vocabulary.VOCAB_DIR = self.original_vocab_dir
+        review_vocabulary.VOCAB_DIR = self.original_review_vocab_dir
         tasks.TASKS_FILE = self.original_tasks_file
         tasks.LOCK_FILE = self.original_lock_file
         self.tempdir.cleanup()
@@ -117,6 +120,75 @@ class QQConnectorContractTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(delete_result["status"], "success")
         self.assertFalse(saved_path.exists())
         self.assertNotIn(task_id, tasks.load_tasks())
+
+    def test_rename_vocabulary_updates_filename_and_word_references(self):
+        source_path = self.vocab_dir / "daily" / "tam.json"
+        source_path.parent.mkdir(parents=True, exist_ok=True)
+        source_path.write_text(
+            """{
+  "word": "tam",
+  "createdAt": "2026-04-20",
+  "reviews": [],
+  "definitions": ["vt. 驯服"],
+  "examples": [
+    {
+      "text": "They tamed fire.",
+      "explanation": "",
+      "focusWords": ["tam"]
+    }
+  ],
+  "reviewSessions": [
+    {
+      "word": "tam",
+      "score": 0
+    }
+  ]
+}
+""",
+            encoding="utf-8",
+        )
+
+        result = review_routes.rename_vocab(
+            review_routes.VocabRenameRequest(
+                category="daily",
+                filename="tam.json",
+                word="tame",
+                data={
+                    "word": "tam",
+                    "createdAt": "2026-04-20",
+                    "reviews": [],
+                    "definitions": ["vt. 驯服"],
+                    "examples": [
+                        {
+                            "text": "They prayed to the stars, tamed fire, and turned stones into tools.",
+                            "explanation": "这里表示人类驯服并掌控了火。",
+                            "focusWords": ["tam"],
+                        }
+                    ],
+                    "reviewSessions": [
+                        {
+                            "word": "tam",
+                            "score": 0,
+                        }
+                    ],
+                },
+            )
+        )
+
+        self.assertEqual(result["status"], "success")
+        self.assertEqual(result["file"], "tame.json")
+        self.assertFalse(source_path.exists())
+
+        target_path = self.vocab_dir / "daily" / "tame.json"
+        self.assertTrue(target_path.exists())
+        renamed = review_vocabulary.load_vocab_file(str(target_path))
+        self.assertEqual(renamed["word"], "tame")
+        self.assertEqual(renamed["examples"][0]["focusWords"], ["tame"])
+        self.assertEqual(renamed["reviewSessions"][0]["word"], "tame")
+        self.assertEqual(
+            renamed["examples"][0]["explanation"],
+            "这里表示人类驯服并掌控了火。",
+        )
 
 
 if __name__ == "__main__":
