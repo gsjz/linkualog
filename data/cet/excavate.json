@@ -17,6 +17,10 @@
     {
       "date": "2026-04-17",
       "score": 2
+    },
+    {
+      "date": "2026-04-20",
+      "score": 0
     }
   ],
   "definitions": [
@@ -37,5 +41,28 @@
   ],
   "mergedFrom": [
     "excavates"
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-20T16:38:26",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "excavate",
+      "example_text": "Who is more at fault, Bass asks, the professional archaeologist who carefully excavates a site and never publishes on it or the treasure hunter who locates a submerged wreck, salvages part, conserves part, and publishes a book on the operation?",
+      "expected_definitions": [
+        "vt. 发掘；挖掘"
+      ],
+      "review_mode": 1,
+      "user_answer": "bzd",
+      "score": 0,
+      "feedback": "答案为空或无关，未体现“发掘；挖掘”的意思。",
+      "matched_points": [],
+      "missing_points": [
+        "发掘",
+        "挖掘",
+        "语境中指仔细发掘遗址"
+      ]
+    }
   ]
 }

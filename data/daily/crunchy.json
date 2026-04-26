@@ -1,25 +1,51 @@
 {
-    "word": "crunchy",
-    "createdAt": "2026-03-27",
-    "reviews": [],
-    "definitions": [
+  "word": "crunchy",
+  "createdAt": "2026-03-27",
+  "reviews": [
+    {
+      "date": "2026-04-20",
+      "score": 5
+    }
+  ],
+  "definitions": [
+    "adj. 酥脆的"
+  ],
+  "examples": [
+    {
+      "text": "Picture warm, gooey cookies, crunchy candies, velvety cakes, waffle cones piled high with ice cream. Is your mouth watering?",
+      "explanation": "想象一下温热的、软糯的饼干，酥脆的糖果，丝绒般的蛋糕，以及堆满冰淇淋的华夫筒。你的口水是不是流出来了？",
+      "focusWords": [
+        "crunchy"
+      ],
+      "source": {
+        "text": "糖类怎样影响大脑 -Nicole Avena",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=lEXBxijQREo",
+        "timestamp": 9
+      }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-20T11:03:11",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "crunchy",
+      "example_text": "Picture warm, gooey cookies, crunchy candies, velvety cakes, waffle cones piled high with ice cream. Is your mouth watering?",
+      "expected_definitions": [
         "adj. 酥脆的"
-    ],
-    "examples": [
-        {
-            "text": "Picture warm, gooey cookies, crunchy candies, velvety cakes, waffle cones piled high with ice cream. Is your mouth watering?",
-            "explanation": "想象一下温热的、软糯的饼干，酥脆的糖果，丝绒般的蛋糕，以及堆满冰淇淋的华夫筒。你的口水是不是流出来了？",
-            "focusWords": [
-                "crunchy"
-            ],
-            "source": {
-                "text": "糖类怎样影响大脑 -Nicole Avena",
-                "url": ""
-            },
-            "youtube": {
-                "url": "https://www.youtube.com/watch?v=lEXBxijQREo",
-                "timestamp": 9
-            }
-        }
-    ]
+      ],
+      "review_mode": 2,
+      "user_answer": "crunchy",
+      "score": 5,
+      "feedback": "填空正确。",
+      "matched_points": [
+        "准确回忆出目标词 crunchy"
+      ],
+      "missing_points": []
+    }
+  ]
 }

@@ -5,6 +5,10 @@
     {
       "date": "2026-04-17",
       "score": 2
+    },
+    {
+      "date": "2026-04-21",
+      "score": 5
     }
   ],
   "definitions": [
@@ -13,7 +17,7 @@
   "examples": [
     {
       "text": "Yet some of Cape Canaveral’s most legendary attractions lie unseen, wedged under the sea’s surface in mud and sand, for this part of the world has a reputation as a deadly ship trap.",
-      "explanation": "",
+      "explanation": "wedge 在句中表示“楔入、卡住”。这里的 wedged 指一些著名的遗物沉在海面下，紧紧卡在泥沙之中。",
       "focusWords": [
         "wedge"
       ],
@@ -28,5 +32,27 @@
   ],
   "mergedFrom": [
     "wedged"
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-21T05:24:54",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "wedge",
+      "example_text": "Yet some of Cape Canaveral’s most legendary attractions lie unseen, wedged under the sea’s surface in mud and sand, for this part of the world has a reputation as a deadly ship trap.",
+      "expected_definitions": [
+        "v. 楔入；嵌入（在此语境下指被紧紧卡在泥沙中）"
+      ],
+      "review_mode": 1,
+      "user_answer": "楔进",
+      "score": 5,
+      "feedback": "答案准确，抓住了“楔入、卡住”的核心含义。",
+      "matched_points": [
+        "表达了“楔入/嵌入”的意思",
+        "与语境中“被紧紧卡在泥沙中”基本一致"
+      ],
+      "missing_points": []
+    }
   ]
 }

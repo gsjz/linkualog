@@ -1,0 +1,23 @@
+{
+  "word": "street name",
+  "createdAt": "2026-04-26",
+  "reviews": [],
+  "definitions": [],
+  "examples": [
+    {
+      "text": "or manipulating numbers in a structured and purposeful way, like adding two numbers together. These operations are handled by a computer’s Arithmetic and Logic Unit, but most people call it by its street name: the ALU. The ALU is the mathematical brain of a computer. When you understand an ALU’s design and function, you’ll understand a fundamental",
+      "explanation": "",
+      "focusWords": [
+        "street name"
+      ],
+      "source": {
+        "text": "How Computers Calculate - the ALU: Crash Course Computer Science #5",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=1I5ZMmrOfnA&list=PL8dPuuaLjXtNlUrzyH5r6jN9ulIgZBpdo&index=6",
+        "timestamp": 27
+      }
+    }
+  ]
+}

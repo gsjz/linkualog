@@ -1,7 +1,12 @@
 {
   "word": "vast",
   "createdAt": "2026-04-12",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-21",
+      "score": 1
+    }
+  ],
   "definitions": [
     "极大地"
   ],
@@ -20,5 +25,30 @@
   ],
   "mergedFrom": [
     "vastly"
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-21T15:43:53",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "vast",
+      "example_text": "Africa is particularly vulnerable, in part because it is already struggling to feed itself and it will have to vastly increase yields and productivity if it is to put food on the plates of a fast-growing population, even without climate change.",
+      "expected_definitions": [
+        "极大地"
+      ],
+      "review_mode": 1,
+      "user_answer": "宽广的",
+      "score": 1,
+      "feedback": "答案与词条常见义有关，但不符合本句中“vastly”的意思；此处应为“大幅地、极大地”。",
+      "matched_points": [
+        "知道 vast 常见义可表示“巨大的/广阔的”相关概念"
+      ],
+      "missing_points": [
+        "未识别本句考查的是副词 vastly",
+        "未答出“极大地/大幅地”这一义项",
+        "未结合例句中 increase 的程度意义理解"
+      ]
+    }
   ]
 }

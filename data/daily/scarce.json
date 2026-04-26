@@ -1,25 +1,52 @@
 {
-    "word": "scarce",
-    "createdAt": "2026-03-27",
-    "reviews": [],
-    "definitions": [
+  "word": "scarce",
+  "createdAt": "2026-03-27",
+  "reviews": [
+    {
+      "date": "2026-04-20",
+      "score": 1
+    }
+  ],
+  "definitions": [
+    "adj. 稀缺的（指资源或机会不足的状态）"
+  ],
+  "examples": [
+    {
+      "text": "We are trapped in the present and the mindset of a scarce world.",
+      "explanation": "这里的 scarce 表示“稀缺的、匮乏的”，指一种资源不足、机会有限的世界观。",
+      "focusWords": [
+        "scarce"
+      ],
+      "source": {
+        "text": "Tired of Doomscrolling?",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
+        "timestamp": 375
+      }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-20T14:07:42",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "scarce",
+      "example_text": "The real tragedy of humanity today is that we are these amazingly powerful beings that have not awoken to their potential. We are trapped in the present and the mindset of a scarce world. But aside from the physical limits of the universe there is nothing stopping us from creating a literal paradise for ourselves. This seems so daft, but it is true. If we dare to tell ourselves a different story about who we are and who we could be.",
+      "expected_definitions": [
         "adj. 稀缺的（指资源或机会不足的状态）"
-    ],
-    "examples": [
-        {
-            "text": "The real tragedy of humanity today is that \nwe are these amazingly powerful beings that have not awoken to their potential. We are \ntrapped in the present and the mindset of a scarce world. But aside from the physical \nlimits of the universe there is nothing stopping us from creating a literal paradise \nfor ourselves. This seems so daft, but it is true. If we dare to tell ourselves a different \nstory about who we are and who we could be.",
-            "explanation": "",
-            "focusWords": [
-                "scarce"
-            ],
-            "source": {
-                "text": "Tired of Doomscrolling?",
-                "url": ""
-            },
-            "youtube": {
-                "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
-                "timestamp": 375
-            }
-        }
-    ]
+      ],
+      "review_mode": 1,
+      "user_answer": "残忍的",
+      "score": 1,
+      "feedback": "答案不正确。“scarce”表示“稀缺的、不足的”，不是“残忍的”。",
+      "matched_points": [],
+      "missing_points": [
+        "稀缺的",
+        "资源或机会不足的状态"
+      ]
+    }
+  ]
 }

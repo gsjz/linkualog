@@ -13,6 +13,14 @@
     {
       "date": "2026-04-17",
       "score": 1
+    },
+    {
+      "date": "2026-04-19",
+      "score": 3
+    },
+    {
+      "date": "2026-04-20",
+      "score": 5
     }
   ],
   "definitions": [
@@ -33,6 +41,49 @@
         "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
         "timestamp": 311
       }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-19T16:13:07",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "lurk",
+      "example_text": "We are scared by the dangers that lurk in the dark, imagined and real ones.",
+      "expected_definitions": [
+        "v. 潜伏；潜藏"
+      ],
+      "user_answer": "hide",
+      "score": 3,
+      "feedback": "答案抓住了“隐藏”这一核心，但缺少“潜伏、暗中存在”以及多指危险事物的含义。",
+      "matched_points": [
+        "体现了“隐藏/藏着”的基本意思"
+      ],
+      "missing_points": [
+        "“lurk”更强调潜伏、暗中存在",
+        "常用于危险、威胁等负面事物隐藏在暗处的语境",
+        "未体现“潜藏”这一较准确的中文义"
+      ]
+    },
+    {
+      "timestamp": "2026-04-20T05:58:42",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "lurk",
+      "example_text": "We are scared by the dangers that lurk in the dark, imagined and real ones.",
+      "expected_definitions": [
+        "v. 潜伏；潜藏"
+      ],
+      "review_mode": 2,
+      "user_answer": "lurk",
+      "score": 5,
+      "feedback": "填空正确。",
+      "matched_points": [
+        "准确回忆出目标词 lurk"
+      ],
+      "missing_points": []
     }
   ]
 }

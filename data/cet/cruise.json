@@ -1,12 +1,17 @@
 {
   "word": "cruise",
   "createdAt": "2026-04-11",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-21",
+      "score": 4
+    }
+  ],
   "definitions": [],
   "examples": [
     {
       "text": "It’s home to the second-busiest cruise ship port in the world and is a gateway to the cosmos.",
-      "explanation": "",
+      "explanation": "这里的 cruise 用在 cruise ship 中，表示“邮轮；游船（航行）”。整句意思是：这里拥有世界第二繁忙的邮轮港口，也是通往太空的门户。",
       "focusWords": [
         "cruise"
       ],
@@ -16,6 +21,29 @@
       },
       "focusPositions": [
         9
+      ]
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-21T16:32:49",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "cruise",
+      "example_text": "It’s home to the second-busiest cruise ship port in the world and is a gateway to the cosmos.",
+      "expected_definitions": [],
+      "review_mode": 1,
+      "user_answer": "航行",
+      "score": 4,
+      "feedback": "答案基本正确，表达了“航行/巡航”的核心意思；但例句中 cruise 修饰 ship，整体更接近“邮轮、游轮”。",
+      "matched_points": [
+        "包含“航行/巡航”的核心含义",
+        "与单词 cruise 的基础义相关"
+      ],
+      "missing_points": [
+        "未体现例句中的名词用法",
+        "未指出 cruise ship 是“邮轮/游轮”"
       ]
     }
   ]

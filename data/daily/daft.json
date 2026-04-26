@@ -1,25 +1,51 @@
 {
-    "word": "daft",
-    "createdAt": "2026-03-27",
-    "reviews": [],
-    "definitions": [
+  "word": "daft",
+  "createdAt": "2026-03-27",
+  "reviews": [
+    {
+      "date": "2026-04-20",
+      "score": 0
+    }
+  ],
+  "definitions": [
+    "adj. 愚蠢的，荒谬的"
+  ],
+  "examples": [
+    {
+      "text": "have not awoken to their potential. We are \ntrapped in the present and the mindset of a scarce world. But aside from the physical \nlimits of the universe there is nothing stopping us from creating a literal paradise \nfor ourselves. This seems so daft, but it is true. If we dare to tell ourselves a different \nstory about who we are and who we could be. Humans throughout history felt like \nthey would witness the apocalypse and",
+      "explanation": "adj. 愚蠢的，荒谬的",
+      "focusWords": [
+        "daft"
+      ],
+      "source": {
+        "text": "Tired of Doomscrolling?",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
+        "timestamp": 379
+      }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-20T11:05:04",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "daft",
+      "example_text": "have not awoken to their potential. We are trapped in the present and the mindset of a scarce world. But aside from the physical limits of the universe there is nothing stopping us from creating a literal paradise for ourselves. This seems so daft, but it is true. If we dare to tell ourselves a different story about who we are and who we could be. Humans throughout history felt like they would witness the apocalypse and",
+      "expected_definitions": [
         "adj. 愚蠢的，荒谬的"
-    ],
-    "examples": [
-        {
-            "text": "have not awoken to their potential. We are \ntrapped in the present and the mindset of a scarce world. But aside from the physical \nlimits of the universe there is nothing stopping us from creating a literal paradise \nfor ourselves. This seems so daft, but it is true. If we dare to tell ourselves a different \nstory about who we are and who we could be. Humans throughout history felt like \nthey would witness the apocalypse and",
-            "explanation": "",
-            "focusWords": [
-                "daft"
-            ],
-            "source": {
-                "text": "Tired of Doomscrolling?",
-                "url": ""
-            },
-            "youtube": {
-                "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
-                "timestamp": 379
-            }
-        }
-    ]
+      ],
+      "review_mode": 2,
+      "user_answer": "bzd",
+      "score": 0,
+      "feedback": "这次没填对，正确答案是 daft。",
+      "matched_points": [],
+      "missing_points": [
+        "需要回忆出目标词 daft"
+      ]
+    }
+  ]
 }

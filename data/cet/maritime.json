@@ -5,6 +5,10 @@
     {
       "date": "2026-04-17",
       "score": 4
+    },
+    {
+      "date": "2026-04-21",
+      "score": 5
     }
   ],
   "definitions": [
@@ -13,7 +17,7 @@
   "examples": [
     {
       "text": "\"Treasure hunters can be naive,\" says attorney David Concannon, who has had several maritime archaeologists as clients and represented two sides in the battles over the Titanic for 20 years.",
-      "explanation": "",
+      "explanation": "这里的 maritime 意为“海洋的、海事的”，用来修饰 archaeologists，指从事海洋或水下考古研究的考古学家。",
       "focusWords": [
         "maritime"
       ],
@@ -21,6 +25,28 @@
         "text": "CET6 23 12 2 匹配",
         "url": ""
       }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-21T15:29:20",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "maritime",
+      "example_text": "\"Treasure hunters can be naive,\" says attorney David Concannon, who has had several maritime archaeologists as clients and represented two sides in the battles over the Titanic for 20 years.",
+      "expected_definitions": [
+        "海洋的"
+      ],
+      "review_mode": 1,
+      "user_answer": "海洋的",
+      "score": 5,
+      "feedback": "答案准确，和参考释义完全一致。",
+      "matched_points": [
+        "对应“海洋的”这一核心含义",
+        "与例句中 maritime archaeologists 的语境相符"
+      ],
+      "missing_points": []
     }
   ]
 }

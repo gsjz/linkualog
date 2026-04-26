@@ -1,14 +1,19 @@
 {
   "word": "tempt",
   "createdAt": "2026-04-11",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-21",
+      "score": 2
+    }
+  ],
   "definitions": [
     "adj. 被诱惑的；难以抗拒的"
   ],
   "examples": [
     {
-      "text": "M: Not at all. It was hard to quit. I was tempted to stay in the game, because I love basketball and I loved my team.",
-      "explanation": "男士表示戒掉很难，他因热爱篮球和球队而忍不住想继续参赛。",
+      "text": "It was hard to quit. I was tempted to stay in the game, because I love basketball and I loved my team.",
+      "explanation": "他说自己很难退出，因为热爱篮球和球队，所以一度“tempted”表示“受到诱惑、很想”继续留在比赛中。",
       "focusWords": [
         "tempted"
       ],
@@ -20,5 +25,30 @@
   ],
   "mergedFrom": [
     "tempted"
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-21T17:27:08",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "tempt",
+      "example_text": "M: Not at all. It was hard to quit. I was tempted to stay in the game, because I love basketball and I loved my team.",
+      "expected_definitions": [
+        "adj. 被诱惑的；难以抗拒的"
+      ],
+      "review_mode": 1,
+      "user_answer": "吸引",
+      "score": 2,
+      "feedback": "答案只抓到“吸引/诱惑”的部分意思，但词性和语境不对，未体现“tempted to do”表示“忍不住想做某事”。",
+      "matched_points": [
+        "涉及“诱惑/吸引”这一核心语义"
+      ],
+      "missing_points": [
+        "未体现本句中 tempted 表示“被诱惑的/忍不住想继续”",
+        "将词义答成单纯“吸引”，不够准确完整",
+        "未注意题目给出的词性与例句语境"
+      ]
+    }
   ]
 }

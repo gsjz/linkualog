@@ -5,6 +5,10 @@
     {
       "date": "2026-04-17",
       "score": 4
+    },
+    {
+      "date": "2026-04-21",
+      "score": 4
     }
   ],
   "definitions": [
@@ -22,6 +26,30 @@
         "text": "CET6 23 12 1 听力",
         "url": ""
       }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-21T15:11:27",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "genre",
+      "example_text": "Whatever genre Atkinson writes in, her books touch on the themes of love and loss and how to carry on.",
+      "expected_definitions": [
+        "文学或艺术作品的体裁",
+        "n. 体裁"
+      ],
+      "review_mode": 1,
+      "user_answer": "题材",
+      "score": 4,
+      "feedback": "“题材”与 genre 相关，能表达作品类别的大意，但更准确是“体裁/类型”。",
+      "matched_points": [
+        "表示文学或艺术作品的类别/类型"
+      ],
+      "missing_points": [
+        "更准确应译为“体裁”"
+      ]
     }
   ]
 }

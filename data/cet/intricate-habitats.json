@@ -5,6 +5,10 @@
     {
       "date": "2026-04-17",
       "score": 2
+    },
+    {
+      "date": "2026-04-20",
+      "score": 4
     }
   ],
   "definitions": [
@@ -21,6 +25,31 @@
         "text": "CET6 23 12 1 听力",
         "url": ""
       }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-20T16:46:30",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "intricate habitats",
+      "example_text": "We build intricate habitats, devise complex recipes for our food, wear clothes that reflect constant changes in fashion,",
+      "expected_definitions": [
+        "复杂的栖息环境"
+      ],
+      "review_mode": 1,
+      "user_answer": "复杂的栖息地",
+      "score": 4,
+      "feedback": "答案基本正确，准确表达了“复杂的栖息环境”，但“habitats”更贴近“栖息环境”而不只是“栖息地”。",
+      "matched_points": [
+        "理解了 intricate 表示“复杂的”",
+        "理解了 habitats 与居住/栖息相关",
+        "整体含义与参考释义基本一致"
+      ],
+      "missing_points": [
+        "未完整体现“环境”这一层含义，译为“栖息地”稍窄"
+      ]
     }
   ]
 }

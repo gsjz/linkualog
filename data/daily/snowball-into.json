@@ -1,0 +1,55 @@
+{
+  "word": "snowball-into",
+  "createdAt": "2026-03-27",
+  "reviews": [
+    {
+      "date": "2026-04-20",
+      "score": 4
+    }
+  ],
+  "definitions": [
+    "vi. 迅速发展成；滚雪球般演变为"
+  ],
+  "examples": [
+    {
+      "text": "Agriculture and the first villages and temples snowballed into civilization.",
+      "explanation": "“snowballed into”在句中表示“迅速发展成、滚雪球般演变为”，说明农业以及最早的村庄和神庙逐渐并快速发展成了文明。",
+      "focusWords": [
+        "snowball-into"
+      ],
+      "source": {
+        "text": "Tired of Doomscrolling?",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
+        "timestamp": 260
+      }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-20T14:09:23",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "snowball-into",
+      "example_text": "better. So they made better tools and learned to preserve their knowledge beyond death. Progress started slow. And then suddenly they (or better WE) made the planet our own. Agriculture and the first villages and temples snowballed into civilization. Kingdoms and empires, technology, writing, astronomy, medicine, philosophy. A hot second later, science, industrialization, the modern world, the information age where we are today.",
+      "expected_definitions": [
+        "vi. 迅速发展成；滚雪球般演变为"
+      ],
+      "review_mode": 1,
+      "user_answer": "滚雪球式地积累形成",
+      "score": 4,
+      "feedback": "理解基本正确，表达出“滚雪球般发展形成”的意思，但缺少“迅速演变成/发展成”的动态含义。",
+      "matched_points": [
+        "滚雪球式地发展/积累的含义",
+        "表示逐步形成某种结果"
+      ],
+      "missing_points": [
+        "迅速发展成",
+        "演变为某种更大的事物或阶段"
+      ]
+    }
+  ]
+}

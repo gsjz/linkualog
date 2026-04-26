@@ -1,7 +1,12 @@
 {
   "word": "nomadic",
   "createdAt": "2026-03-27",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-20",
+      "score": 5
+    }
+  ],
   "definitions": [
     "(adj.) Relating to or characteristic of nomads.",
     "(adj.) Moving from place to place rather than settling permanently."
@@ -21,6 +26,29 @@
         "url": "https://www.youtube.com/watch?v=26EivpCPHnQ",
         "timestamp": 31
       }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-20T11:52:37",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "nomadic",
+      "example_text": "\"What a wonderful time to be alive! Hey, the Yellow River flooded again and destroyed all your crops. aaand also we're being raided by nomadic tribesmen, aaaand also this period of Chinese history may be entirely mythical, meaning you may not even exist. Well, that would certainly explain the laser eyes.",
+      "expected_definitions": [
+        "(adj.) Relating to or characteristic of nomads.",
+        "(adj.) Moving from place to place rather than settling permanently."
+      ],
+      "review_mode": 1,
+      "user_answer": "游牧的",
+      "score": 5,
+      "feedback": "答案准确，抓住了核心含义。",
+      "matched_points": [
+        "对应“游牧的；与游牧民族有关的”",
+        "体现了“不断迁徙、不定居”的特征"
+      ],
+      "missing_points": []
     }
   ]
 }

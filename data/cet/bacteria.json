@@ -5,6 +5,10 @@
     {
       "date": "2026-04-17",
       "score": 2
+    },
+    {
+      "date": "2026-04-20",
+      "score": 5
     }
   ],
   "definitions": [
@@ -21,6 +25,28 @@
         "text": "CET6 23 12 1 听力",
         "url": ""
       }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-20T16:46:01",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "bacteria",
+      "example_text": "[20] If a person is infected with a virus or bacteria, for example, their odor will be abnormal, and dogs are able to smell that change even if the human can't, because dogs have a much more powerful sense of smell than humans.",
+      "expected_definitions": [
+        "细菌"
+      ],
+      "review_mode": 1,
+      "user_answer": "细菌",
+      "score": 5,
+      "feedback": "答案准确，释义完整。",
+      "matched_points": [
+        "正确对应释义“细菌”",
+        "与例句中的用法一致"
+      ],
+      "missing_points": []
     }
   ]
 }

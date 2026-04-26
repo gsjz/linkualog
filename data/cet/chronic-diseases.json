@@ -1,7 +1,12 @@
 {
   "word": "chronic diseases",
   "createdAt": "2026-03-30",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-22",
+      "score": 4
+    }
+  ],
   "definitions": [
     "慢性疾病"
   ],
@@ -16,6 +21,30 @@
         "text": "CET6 23 12 1 听力",
         "url": ""
       }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-22T16:37:51",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "chronic diseases",
+      "example_text": "Dogs also help people relax, and they can be a particular comfort to those with chronic diseases.",
+      "expected_definitions": [
+        "慢性疾病"
+      ],
+      "review_mode": 1,
+      "user_answer": "长期疾病",
+      "score": 4,
+      "feedback": "意思基本正确，但更地道的对应是“慢性疾病”，不建议译为“长期疾病”。",
+      "matched_points": [
+        "理解为持续时间较长的疾病，核心方向正确"
+      ],
+      "missing_points": [
+        "标准对应应为“慢性疾病”",
+        "未体现医学语境下固定说法"
+      ]
     }
   ]
 }

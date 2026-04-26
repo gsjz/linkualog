@@ -1,7 +1,12 @@
 {
   "word": "crave",
   "createdAt": "2026-03-27",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-20",
+      "score": 0
+    }
+  ],
   "definitions": [
     "v. 渴望；渴求"
   ],
@@ -39,5 +44,26 @@
   ],
   "mergedFrom": [
     "craving"
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-20T10:02:50",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "crave",
+      "example_text": "...to new sustainable ways of harvesting the energy we crave.",
+      "expected_definitions": [
+        "v. 渴望；渴求"
+      ],
+      "review_mode": 2,
+      "user_answer": "bzd",
+      "score": 0,
+      "feedback": "这次没填对，正确答案是 crave。",
+      "matched_points": [],
+      "missing_points": [
+        "需要回忆出目标词 crave"
+      ]
+    }
   ]
 }

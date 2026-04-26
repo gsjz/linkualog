@@ -5,6 +5,10 @@
     {
       "date": "2026-04-17",
       "score": 4
+    },
+    {
+      "date": "2026-04-21",
+      "score": 5
     }
   ],
   "definitions": [
@@ -12,8 +16,8 @@
   ],
   "examples": [
     {
-      "text": "M: Not at all. It was hard to quit. I was tempted to stay in the game, because I love basketball and I loved my team. As for money, I turned professional at 18. So I'd actually earned a lot and saved most of it, because I had great financial advisers. [6] I knew basketball wasn't a career with a lot of longevity for most players, so I wanted to change careers while I was still young.",
-      "explanation": "男：一点也不。这很难戒掉。我曾动念留在赛场上，因为我热爱篮球，也热爱我的球队。至于钱，我18岁就转为职业选手了。所以我实际上赚了很多钱，并存下了大部分，因为我有出色的理财顾问。[6] 我知道对于大多数球员来说，篮球并不是一份具有长久持续性的职业，所以我想趁年轻转换职业。",
+      "text": "Not at all. It was hard to quit. I was tempted to stay in the game, because I love basketball and I loved my team. As for money, I turned professional at 18. So I'd actually earned a lot and saved most of it, because I had great financial advisers. I knew basketball wasn't a career with a lot of longevity for most players, so I wanted to change careers while I was still young.",
+      "explanation": "这里的 longevity 指“持续时间长、能长久维持”。句子意思是：对大多数球员来说，篮球并不是一种能长期从事的职业，所以说话者想趁自己还年轻时转行。",
       "focusWords": [
         "longevity"
       ],
@@ -21,6 +25,27 @@
         "text": "CET6 23 12 1 听力",
         "url": ""
       }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-21T15:14:26",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "longevity",
+      "example_text": "M: Not at all. It was hard to quit. I was tempted to stay in the game, because I love basketball and I loved my team. As for money, I turned professional at 18. So I'd actually earned a lot and saved most of it, because I had great financial advisers. [6] I knew basketball wasn't a career with a lot of longevity for most players, so I wanted to change careers while I was still young.",
+      "expected_definitions": [
+        "n. 持久性；长期性（在此语境下指职业生涯的持续时间）"
+      ],
+      "review_mode": 1,
+      "user_answer": "持久性",
+      "score": 5,
+      "feedback": "准确，对应此处“职业生涯的持久性/长期性”。",
+      "matched_points": [
+        "持久性"
+      ],
+      "missing_points": []
     }
   ]
 }

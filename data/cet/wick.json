@@ -1,7 +1,12 @@
 {
   "word": "wick",
   "createdAt": "2026-04-11",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-22",
+      "score": 3
+    }
+  ],
   "definitions": [
     "adj. 调皮的；绝妙的"
   ],
@@ -20,5 +25,30 @@
   ],
   "mergedFrom": [
     "wicked"
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-22T04:46:39",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "wick",
+      "example_text": "They are always presented with ingenuity and a wicked sense of humor.",
+      "expected_definitions": [
+        "adj. 调皮的；绝妙的"
+      ],
+      "review_mode": 1,
+      "user_answer": "轻佻",
+      "score": 3,
+      "feedback": "“轻佻”与调皮、带点不正经的幽默感有一定关联，但不够准确，未体现“调皮的/淘气的”或“绝妙的”含义。",
+      "matched_points": [
+        "含有不太正经、玩笑式的意味"
+      ],
+      "missing_points": [
+        "调皮的",
+        "淘气的",
+        "绝妙的/很棒的"
+      ]
+    }
   ]
 }

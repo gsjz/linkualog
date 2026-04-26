@@ -5,6 +5,10 @@
     {
       "date": "2026-04-17",
       "score": 3
+    },
+    {
+      "date": "2026-04-19",
+      "score": 4
     }
   ],
   "definitions": [
@@ -26,6 +30,30 @@
         "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
         "timestamp": 120
       }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-19T16:57:14",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "cosmic",
+      "example_text": "ever be born had been born. And then, on one planet, where the conditions were just right, dead particles and molecules combined to make another jump in complexity. Maybe the laws that govern everything were destined to make life happen. Maybe it was just a cosmic dice throw. But life, now the most complex thing in existence, wasted no time and spread to even the tiniest corners. For billions of years cells held on, fighting against the elements and each other,",
+      "expected_definitions": [
+        "宇宙的；天体的",
+        "宇宙的；宏大的"
+      ],
+      "user_answer": "宇宙的",
+      "score": 4,
+      "feedback": "答案正确，抓住了核心义项，但未覆盖“宏大的”等延伸义。",
+      "matched_points": [
+        "宇宙的；天体的",
+        "符合例句中 cosmic 的常见含义"
+      ],
+      "missing_points": [
+        "宇宙的；宏大的"
+      ]
     }
   ]
 }

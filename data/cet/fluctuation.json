@@ -9,6 +9,10 @@
     {
       "date": "2026-04-16",
       "score": 4
+    },
+    {
+      "date": "2026-04-22",
+      "score": 1
     }
   ],
   "definitions": [
@@ -29,5 +33,30 @@
   ],
   "mergedFrom": [
     "fluctuations"
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-22T04:45:43",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "fluctuation",
+      "example_text": "Not only can your dog sense when you have a cold, but domestic dogs have shown an aptitude for detecting both much smaller mood fluctuations and far more serious physical conditions.",
+      "expected_definitions": [
+        "n. 波动（指情绪或状态的起伏变化）"
+      ],
+      "review_mode": 1,
+      "user_answer": "振动",
+      "score": 1,
+      "feedback": "答案与“波动、起伏变化”有些关联，但“振动”偏向物理震动，不符合句中“情绪波动”的意思。",
+      "matched_points": [
+        "与“变化、起伏”有一定相关性"
+      ],
+      "missing_points": [
+        "“波动”而非“振动”",
+        "强调状态或情绪上的起伏变化",
+        "需结合例句理解为“情绪波动”"
+      ]
+    }
   ]
 }

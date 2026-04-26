@@ -1,12 +1,17 @@
 {
   "word": "setback",
   "createdAt": "2026-04-12",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-20",
+      "score": 5
+    }
+  ],
   "definitions": [],
   "examples": [
     {
-      "text": "death itself. We have the potential to restore \nbalance to the climate and heal the planet again. We may be able to adapt to the information \nage and make lasting peace. None of this is guaranteed and it will be hard and full of \nfailure and setbacks. Some things will get worse before they get better. We will run \nup against our nature over and over again. But if we manage to clean up our act \nwe could create a world better than we",
-      "explanation": "",
+      "text": "None of this is guaranteed, and it will be hard and full of failure and setbacks.",
+      "explanation": "setback 在句中表示“挫折、阻碍”，指在实现这些目标的过程中会遇到很多失败和挫折。",
       "focusWords": [
         "setbacks"
       ],
@@ -22,5 +27,43 @@
   ],
   "mergedFrom": [
     "setbacks"
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-20T02:00:08",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "setback",
+      "example_text": "death itself. We have the potential to restore balance to the climate and heal the planet again. We may be able to adapt to the information age and make lasting peace. None of this is guaranteed and it will be hard and full of failure and setbacks. Some things will get worse before they get better. We will run up against our nature over and over again. But if we manage to clean up our act we could create a world better than we",
+      "expected_definitions": [],
+      "user_answer": "重启",
+      "score": 1,
+      "feedback": "答案“重启”与 setback 的含义不符。这里指前进过程中的挫折、阻碍或倒退。",
+      "matched_points": [],
+      "missing_points": [
+        "挫折",
+        "阻碍",
+        "倒退/受挫"
+      ]
+    },
+    {
+      "timestamp": "2026-04-20T15:10:29",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "setback",
+      "example_text": "death itself. We have the potential to restore balance to the climate and heal the planet again. We may be able to adapt to the information age and make lasting peace. None of this is guaranteed and it will be hard and full of failure and setbacks. Some things will get worse before they get better. We will run up against our nature over and over again. But if we manage to clean up our act we could create a world better than we",
+      "expected_definitions": [],
+      "review_mode": 1,
+      "user_answer": "挫折",
+      "score": 5,
+      "feedback": "答案准确，切中核心含义。",
+      "matched_points": [
+        "表示“挫折、阻碍、倒退”之意",
+        "符合例句中“failure and setbacks”表示前进过程中遭遇的挫折"
+      ],
+      "missing_points": []
+    }
   ]
 }

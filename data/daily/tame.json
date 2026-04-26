@@ -1,0 +1,77 @@
+{
+  "word": "tame",
+  "createdAt": "2026-04-11",
+  "reviews": [
+    {
+      "date": "2026-04-20",
+      "score": 2
+    }
+  ],
+  "definitions": [
+    "vt. 驯服 (在此语境下的释义)"
+  ],
+  "examples": [
+    {
+      "text": "evolving further or disappearing again. But for \nsome reason their evolutionary niche enabled their brains to grow and they learned more about \nthis strange world. They prayed to the stars, they tamed fire and turned stones into tools. \nThey celebrated and cried together. Life was hard and brutally short but together they \nendured – probably by telling themselves stories about the world. For almost 250,000 \ngenerations they built a biological foundation.",
+      "explanation": "vt. 驯服 (在此语境下的释义)",
+      "focusWords": [
+        "tamed"
+      ],
+      "source": {
+        "text": "Tired of Doomscrolling?",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
+        "timestamp": 211
+      }
+    }
+  ],
+  "mergedFrom": [
+    "tamed"
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-20T07:59:30",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "tame",
+      "example_text": "evolving further or disappearing again. But for some reason their evolutionary niche enabled their brains to grow and they learned more about this strange world. They prayed to the stars, they tamed fire and turned stones into tools. They celebrated and cried together. Life was hard and brutally short but together they endured – probably by telling themselves stories about the world. For almost 250,000 generations they built a biological foundation.",
+      "expected_definitions": [
+        "vt. 驯服 (在此语境下的释义)"
+      ],
+      "review_mode": 2,
+      "user_answer": "bzd",
+      "score": 0,
+      "feedback": "这次没填对，正确答案是 tam。",
+      "matched_points": [],
+      "missing_points": [
+        "需要回忆出目标词 tam"
+      ]
+    },
+    {
+      "timestamp": "2026-04-20T14:55:56",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "tame",
+      "example_text": "evolving further or disappearing again. But for some reason their evolutionary niche enabled their brains to grow and they learned more about this strange world. They prayed to the stars, they tamed fire and turned stones into tools. They celebrated and cried together. Life was hard and brutally short but together they endured – probably by telling themselves stories about the world. For almost 250,000 generations they built a biological foundation.",
+      "expected_definitions": [
+        "vt. 驯服 (在此语境下的释义)"
+      ],
+      "review_mode": 1,
+      "user_answer": "生火",
+      "score": 2,
+      "feedback": "答案与语境有关，但把“tamed fire”理解成“生火”不准确；这里强调“驯服/掌控火”。",
+      "matched_points": [
+        "涉及火这一对象",
+        "理解到与人类使用火有关"
+      ],
+      "missing_points": [
+        "“tam/tame”的核心含义是驯服、控制",
+        "在例句中应译为“驯服火/掌控火”，不是单纯“生火”"
+      ]
+    }
+  ]
+}

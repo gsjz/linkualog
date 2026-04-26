@@ -1,7 +1,12 @@
 {
   "word": "blast off",
   "createdAt": "2026-03-31",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-22",
+      "score": 4
+    }
+  ],
   "definitions": [
     "vi. 发射升空"
   ],
@@ -16,6 +21,29 @@
         "text": "CET6 23 12 2 匹配",
         "url": ""
       }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-22T16:18:33",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "blast off",
+      "example_text": "Nearly 1.5 million visitors flock here every year to watch rockets, spacecraft, and satellites blast off into the solar system from Kennedy Space Center Visitor Complex.",
+      "expected_definitions": [
+        "vi. 发射升空"
+      ],
+      "review_mode": 1,
+      "user_answer": "升空",
+      "score": 4,
+      "feedback": "答案抓住了“升空”的核心意思，但缺少“发射”这一层含义。",
+      "matched_points": [
+        "升空"
+      ],
+      "missing_points": [
+        "发射"
+      ]
     }
   ]
 }

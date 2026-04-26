@@ -9,6 +9,10 @@
     {
       "date": "2026-04-16",
       "score": 2
+    },
+    {
+      "date": "2026-04-20",
+      "score": 5
     }
   ],
   "definitions": [
@@ -29,5 +33,27 @@
   ],
   "mergedFrom": [
     "renders"
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-20T15:44:55",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "render",
+      "example_text": "As technology renders the seabed more accessible, the hunt for treasure-filled ships",
+      "expected_definitions": [
+        "vt. 使变得"
+      ],
+      "review_mode": 1,
+      "user_answer": "使得",
+      "score": 5,
+      "feedback": "答案准确，符合例句中“使……变得”的含义。",
+      "matched_points": [
+        "使得",
+        "使变得"
+      ],
+      "missing_points": []
+    }
   ]
 }

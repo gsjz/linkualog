@@ -9,6 +9,10 @@
     {
       "date": "2026-04-16",
       "score": 2
+    },
+    {
+      "date": "2026-04-20",
+      "score": 3
     }
   ],
   "definitions": [
@@ -29,5 +33,30 @@
   ],
   "mergedFrom": [
     "artifacts"
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-20T15:43:17",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "artifact",
+      "example_text": "The artifacts indicated the divers had likely found the wreck of La Trinité",
+      "expected_definitions": [
+        "n. 文物；人工制品"
+      ],
+      "review_mode": 1,
+      "user_answer": "工艺品",
+      "score": 3,
+      "feedback": "答案部分正确，接近“人工制品”，但未体现“文物”这一常见义项，且“工艺品”语义偏窄。",
+      "matched_points": [
+        "理解到是人造物品，接近“人工制品”"
+      ],
+      "missing_points": [
+        "未答出“文物”义项",
+        "“工艺品”范围较窄，不完全等同于 artifact",
+        "结合例句语境，更应理解为“文物”"
+      ]
+    }
   ]
 }

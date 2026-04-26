@@ -1,25 +1,51 @@
 {
-    "word": "predator",
-    "createdAt": "2026-03-27",
-    "reviews": [],
-    "definitions": [
+  "word": "predator",
+  "createdAt": "2026-03-27",
+  "reviews": [
+    {
+      "date": "2026-04-20",
+      "score": 5
+    }
+  ],
+  "definitions": [
+    "n. 掠食者"
+  ],
+  "examples": [
+    {
+      "text": "We are an instinct-driven apex predator that survived in an uncaring world, only now we have coal plants, nuclear weapons, and social media.",
+      "explanation": "这里的 predator 意思是“捕食者、掠食者”，指人类作为处于食物链顶端、会猎食其他生物的动物。",
+      "focusWords": [
+        "predator"
+      ],
+      "source": {
+        "text": "Tired of Doomscrolling?",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
+        "timestamp": 343
+      }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-20T14:06:16",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "predator",
+      "example_text": "Humans are not nice and if we look at our history, how could we expect ourselves to be? In nature we see great beauty but also endless violence and struggle, devoid of morals or kindness. We are an instinct driven apex predator that survived in an uncaring world, only now we have coal plants, nuclear weapons and social media. This would be hard to handle for any animal,",
+      "expected_definitions": [
         "n. 掠食者"
-    ],
-    "examples": [
-        {
-            "text": "Humans are not nice and if we look at our \nhistory, how could we expect ourselves to be? In nature we see great beauty but \nalso endless violence and struggle, devoid of morals or kindness. We are an instinct \ndriven apex predator that survived in an uncaring world, only now we have coal plants, \nnuclear weapons and social media. This would be hard to handle for any animal,",
-            "explanation": "",
-            "focusWords": [
-                "predator"
-            ],
-            "source": {
-                "text": "Tired of Doomscrolling?",
-                "url": ""
-            },
-            "youtube": {
-                "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
-                "timestamp": 343
-            }
-        }
-    ]
+      ],
+      "review_mode": 1,
+      "user_answer": "掠食者",
+      "score": 5,
+      "feedback": "准确，完全匹配该词在例句中的含义。",
+      "matched_points": [
+        "掠食者"
+      ],
+      "missing_points": []
+    }
+  ]
 }

@@ -1,14 +1,19 @@
 {
   "word": "majestic",
   "createdAt": "2026-03-27",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-20",
+      "score": 0
+    }
+  ],
   "definitions": [
     "庄严的 (在此语境下指平凡中蕴含的崇高感)"
   ],
   "examples": [
     {
       "text": "Until a few million years ago an animal \nlooked at the night sky. It looked at its hands. It saw its reflection in a puddle. And it \nrealised it existed. That it was alive. Here and now. You probably had such a moment as a small \nchild, mundane and majestic at the same time. This is where the human story begins, about \nsix million years ago, with the hominins. Still just another animal among many others. \nThey split into many families and lineages",
-      "explanation": "",
+      "explanation": "庄严的 (在此语境下指平凡中蕴含的崇高感)",
       "focusWords": [
         "majestic"
       ],
@@ -22,5 +27,26 @@
       }
     }
   ],
-  "marked": true
+  "marked": true,
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-20T11:26:49",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "majestic",
+      "example_text": "Until a few million years ago an animal looked at the night sky. It looked at its hands. It saw its reflection in a puddle. And it realised it existed. That it was alive. Here and now. You probably had such a moment as a small child, mundane and majestic at the same time. This is where the human story begins, about six million years ago, with the hominins. Still just another animal among many others. They split into many families and lineages",
+      "expected_definitions": [
+        "庄严的 (在此语境下指平凡中蕴含的崇高感)"
+      ],
+      "review_mode": 2,
+      "user_answer": "bzd",
+      "score": 0,
+      "feedback": "这次没填对，正确答案是 majestic。",
+      "matched_points": [],
+      "missing_points": [
+        "需要回忆出目标词 majestic"
+      ]
+    }
+  ]
 }

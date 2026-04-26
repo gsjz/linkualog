@@ -9,6 +9,10 @@
     {
       "date": "2026-04-16",
       "score": 4
+    },
+    {
+      "date": "2026-04-22",
+      "score": 4
     }
   ],
   "definitions": [
@@ -27,6 +31,31 @@
       },
       "focusPositions": [
         14
+      ]
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-22T04:43:49",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "district",
+      "example_text": "In 2018, two long years after Pritchett’s discovery, the federal district court ruled in favor of France.",
+      "expected_definitions": [
+        "an administrative division of a city or town"
+      ],
+      "review_mode": 1,
+      "user_answer": "地区",
+      "score": 4,
+      "feedback": "答案基本正确，表达了“地区”的意思，但未体现“城市或城镇的行政区”这一更具体含义。",
+      "matched_points": [
+        "地区",
+        "区域划分"
+      ],
+      "missing_points": [
+        "行政区",
+        "城市或城镇的辖区"
       ]
     }
   ]

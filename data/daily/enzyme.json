@@ -1,7 +1,12 @@
 {
   "word": "enzyme",
   "createdAt": "2026-04-11",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-20",
+      "score": 0
+    }
+  ],
   "definitions": [
     "酶（在此语境下指帮助消化乳糖的酶）"
   ],
@@ -24,5 +29,47 @@
   ],
   "mergedFrom": [
     "enzymes"
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-20T02:11:15",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "enzyme",
+      "example_text": "Babies have a lot of it in their system, so they can break down the milk-sugar lactose and digest milk easily. But the older we grow, the fewer lactase enzymes our body produces. Worldwide, about 65% of the population do not have the enzyme after infancy, which means they are not able to digest more than about 150 milliliters each day.",
+      "expected_definitions": [
+        "酶（在此语境下指帮助消化乳糖的酶）"
+      ],
+      "user_answer": "不会",
+      "score": 0,
+      "feedback": "答案为空泛且不符合词义。enzyme 指“酶”，此处特指帮助分解乳糖的乳糖酶。",
+      "matched_points": [],
+      "missing_points": [
+        "基本词义：酶",
+        "语境义：帮助消化乳糖的酶（乳糖酶）"
+      ]
+    },
+    {
+      "timestamp": "2026-04-20T14:25:18",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "enzyme",
+      "example_text": "Babies have a lot of it in their system, so they can break down the milk-sugar lactose and digest milk easily. But the older we grow, the fewer lactase enzymes our body produces. Worldwide, about 65% of the population do not have the enzyme after infancy, which means they are not able to digest more than about 150 milliliters each day.",
+      "expected_definitions": [
+        "酶（在此语境下指帮助消化乳糖的酶）"
+      ],
+      "review_mode": 1,
+      "user_answer": "bzd",
+      "score": 0,
+      "feedback": "答案无效，未体现“酶/乳糖消化酶”的含义。",
+      "matched_points": [],
+      "missing_points": [
+        "酶",
+        "帮助分解乳糖",
+        "与消化牛奶有关"
+      ]
+    }
   ]
 }

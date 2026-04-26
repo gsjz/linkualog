@@ -1,25 +1,53 @@
 {
-    "word": "sucrose",
-    "createdAt": "2026-03-27",
-    "reviews": [],
-    "definitions": [
+  "word": "sucrose",
+  "createdAt": "2026-03-27",
+  "reviews": [
+    {
+      "date": "2026-04-20",
+      "score": 4
+    }
+  ],
+  "definitions": [
+    "n. 蔗糖"
+  ],
+  "examples": [
+    {
+      "text": "and it's found in a wide variety\nof food and drink. Just check the labels\non sweet products you buy. Glucose, fructose, sucrose, maltose, lactose, dextrose, and starch are all forms of sugar.",
+      "explanation": "它广泛存在于各种食物和饮料中。只需查看你购买的甜味产品的标签。葡萄糖、果糖、蔗糖、麦芽糖、乳糖、右旋糖和淀粉都是糖的形式。",
+      "focusWords": [
+        "sucrose"
+      ],
+      "source": {
+        "text": "糖类怎样影响大脑 -Nicole Avena",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=lEXBxijQREo",
+        "timestamp": 34
+      }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-20T14:12:54",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "sucrose",
+      "example_text": "and it's found in a wide variety of food and drink. Just check the labels on sweet products you buy. Glucose, fructose, sucrose, maltose, lactose, dextrose, and starch are all forms of sugar.",
+      "expected_definitions": [
         "n. 蔗糖"
-    ],
-    "examples": [
-        {
-            "text": "and it's found in a wide variety\nof food and drink. Just check the labels\non sweet products you buy. Glucose, fructose, sucrose, maltose, lactose, dextrose, and starch are all forms of sugar.",
-            "explanation": "它广泛存在于各种食物和饮料中。只需查看你购买的甜味产品的标签。葡萄糖、果糖、蔗糖、麦芽糖、乳糖、右旋糖和淀粉都是糖的形式。",
-            "focusWords": [
-                "sucrose"
-            ],
-            "source": {
-                "text": "糖类怎样影响大脑 -Nicole Avena",
-                "url": ""
-            },
-            "youtube": {
-                "url": "https://www.youtube.com/watch?v=lEXBxijQREo",
-                "timestamp": 34
-            }
-        }
-    ]
+      ],
+      "review_mode": 1,
+      "user_answer": "一种糖",
+      "score": 4,
+      "feedback": "回答大体正确，sucrose 是蔗糖，确实是一种糖；但未明确指出“蔗糖”。",
+      "matched_points": [
+        "指出它是一种糖"
+      ],
+      "missing_points": [
+        "未给出准确释义：蔗糖"
+      ]
+    }
+  ]
 }

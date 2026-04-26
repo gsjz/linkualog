@@ -9,6 +9,10 @@
     {
       "date": "2026-04-19",
       "score": 0
+    },
+    {
+      "date": "2026-04-20",
+      "score": 4
     }
   ],
   "definitions": [
@@ -46,6 +50,52 @@
         "marble 指“大理石”",
         "是一种坚硬、细密的变质岩",
         "常用于建筑或雕塑"
+      ]
+    },
+    {
+      "timestamp": "2026-04-20T01:27:10",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "marble",
+      "example_text": "a famous marble column carved with the coat of arms of France",
+      "expected_definitions": [
+        "a hard, fine-grained metamorphic rock used for sculpture and building"
+      ],
+      "user_answer": "大理石的",
+      "score": 4,
+      "feedback": "答案基本正确，表达出“大理石”的意思，但未体现其作为石材、用于建筑或雕刻的含义。",
+      "matched_points": [
+        "对应“大理石”这一核心词义",
+        "与例句中的建筑材料含义相关"
+      ],
+      "missing_points": [
+        "未体现这是一种坚硬、细颗粒的变质岩",
+        "未说明常用于雕塑和建筑"
+      ]
+    },
+    {
+      "timestamp": "2026-04-20T15:31:40",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "marble",
+      "example_text": "a famous marble column carved with the coat of arms of France",
+      "expected_definitions": [
+        "a hard, fine-grained metamorphic rock used for sculpture and building"
+      ],
+      "review_mode": 1,
+      "user_answer": "大理石的",
+      "score": 4,
+      "feedback": "理解基本正确，答出了“大理石”的意思，但未体现“石材/岩石”这一完整词义，且原词在例句中不是单纯形容词释义。",
+      "matched_points": [
+        "答出了“marble”与“大理石”相关",
+        "与例句中建筑用石材的语境基本吻合"
+      ],
+      "missing_points": [
+        "未完整表达“硬质细粒变质岩/石材”这一核心定义",
+        "将其答成“……的”不够准确，例句中更接近名词或材质定语用法",
+        "未体现其常用于雕刻和建筑"
       ]
     }
   ]

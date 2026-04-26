@@ -5,6 +5,10 @@
     {
       "date": "2026-04-17",
       "score": 3
+    },
+    {
+      "date": "2026-04-21",
+      "score": 5
     }
   ],
   "definitions": [
@@ -21,6 +25,28 @@
         "text": "CET6 2023 12 2 匹配",
         "url": ""
       }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-21T05:26:16",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "clash",
+      "example_text": "This kind of clash inevitably takes place on a grand scale",
+      "expected_definitions": [
+        "n. 冲突"
+      ],
+      "review_mode": 1,
+      "user_answer": "冲突",
+      "score": 5,
+      "feedback": "答案准确，完整对应“clash”在此处作名词时的含义。",
+      "matched_points": [
+        "正确答出名词义“冲突”",
+        "与例句语境一致"
+      ],
+      "missing_points": []
     }
   ]
 }

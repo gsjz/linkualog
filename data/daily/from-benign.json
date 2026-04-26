@@ -1,25 +1,51 @@
 {
-    "word": "from benign",
-    "createdAt": "2026-03-26",
-    "reviews": [],
-    "definitions": [
+  "word": "from benign",
+  "createdAt": "2026-03-26",
+  "reviews": [
+    {
+      "date": "2026-04-20",
+      "score": 0
+    }
+  ],
+  "definitions": [
+    "adj. 良性的（在此语境下的释义）"
+  ],
+  "examples": [
+    {
+      "text": "On top of that, talking about menstrual\ncramps can feel awkward or even taboo, leading many people to feel that they\nhave to simply put up with the pain. But regularly suffering from\nsevere cramping is far from benign. Some experts believe\nthat repeated exposure to pain can cause the nervous system\nto become more sensitive,",
+      "explanation": "adj. 良性的（在此语境下的释义）",
+      "focusWords": [
+        "from benign"
+      ],
+      "source": {
+        "text": "3 things that can cause painful periods - Chen X. Chen",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=NOaeKRft-gc",
+        "timestamp": 276
+      }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-20T11:14:53",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "from benign",
+      "example_text": "On top of that, talking about menstrual cramps can feel awkward or even taboo, leading many people to feel that they have to simply put up with the pain. But regularly suffering from severe cramping is far from benign. Some experts believe that repeated exposure to pain can cause the nervous system to become more sensitive,",
+      "expected_definitions": [
         "adj. 良性的（在此语境下的释义）"
-    ],
-    "examples": [
-        {
-            "text": "On top of that, talking about menstrual\ncramps can feel awkward or even taboo, leading many people to feel that they\nhave to simply put up with the pain. But regularly suffering from\nsevere cramping is far from benign. Some experts believe\nthat repeated exposure to pain can cause the nervous system\nto become more sensitive,",
-            "explanation": "",
-            "focusWords": [
-                "from benign"
-            ],
-            "source": {
-                "text": "3 things that can cause painful periods - Chen X. Chen",
-                "url": ""
-            },
-            "youtube": {
-                "url": "https://www.youtube.com/watch?v=NOaeKRft-gc",
-                "timestamp": 276
-            }
-        }
-    ]
+      ],
+      "review_mode": 2,
+      "user_answer": "bzd",
+      "score": 0,
+      "feedback": "这次没填对，正确答案是 from benign。",
+      "matched_points": [],
+      "missing_points": [
+        "需要回忆出目标词 from benign"
+      ]
+    }
+  ]
 }

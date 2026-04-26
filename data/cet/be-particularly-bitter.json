@@ -1,21 +1,51 @@
 {
-    "word": "be particularly bitter",
-    "createdAt": "2026-03-25",
-    "reviews": [],
-    "definitions": [
+  "word": "be particularly bitter",
+  "createdAt": "2026-03-25",
+  "reviews": [
+    {
+      "date": "2026-04-22",
+      "score": 1
+    }
+  ],
+  "definitions": [
+    "（后果）尤为严酷的"
+  ],
+  "examples": [
+    {
+      "text": "For Africans its consequences will be particularly bitter, whereas other regions were able to grow rich by burning coal and oil, Africa will pay much of the human price without having enjoyed the benefits.",
+      "explanation": "对非洲而言，其后果将尤为严酷；而其他一些地区通过燃烧煤炭和石油实现了富裕，非洲却需承担巨大的人类代价，却无法享受相应利益。",
+      "focusWords": [
+        "be particularly bitter"
+      ],
+      "source": {
+        "text": "cet6 23 12 1 匹配",
+        "url": ""
+      }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-22T16:17:10",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "be particularly bitter",
+      "example_text": "For Africans its consequences will be particularly bitter, whereas other regions were able to grow rich by burning coal and oil, Africa will pay much of the human price without having enjoyed the benefits.",
+      "expected_definitions": [
         "（后果）尤为严酷的"
-    ],
-    "examples": [
-        {
-            "text": "For Africans its consequences will be particularly bitter, whereas other regions were able to grow rich by burning coal and oil, Africa will pay much of the human price without having enjoyed the benefits.",
-            "explanation": "对非洲而言，其后果将尤为严酷；而其他一些地区通过燃烧煤炭和石油实现了富裕，非洲却需承担巨大的人类代价，却无法享受相应利益。",
-            "focusWords": [
-                "be particularly bitter"
-            ],
-            "source": {
-                "text": "cet6 23 12 1 匹配",
-                "url": ""
-            }
-        }
-    ]
+      ],
+      "review_mode": 1,
+      "user_answer": "特别地苦",
+      "score": 1,
+      "feedback": "把 bitter 按字面理解成“苦”，未结合语境表示“后果尤为严酷”。",
+      "matched_points": [
+        "理解了 particularly 有“特别/尤其”之意"
+      ],
+      "missing_points": [
+        "bitter 在此处不是“苦”，而是“严酷的/令人痛苦的”",
+        "整体应表达“（后果）尤为严酷的”",
+        "需结合语境理解其描述的是 consequences（后果）"
+      ]
+    }
+  ]
 }

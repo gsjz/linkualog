@@ -1,7 +1,12 @@
 {
   "word": "raid",
   "createdAt": "2026-04-11",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-20",
+      "score": 0
+    }
+  ],
   "definitions": [],
   "examples": [
     {
@@ -22,5 +27,42 @@
   ],
   "mergedFrom": [
     "raided"
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-20T02:18:17",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "raid",
+      "example_text": "\"What a wonderful time to be alive! Hey, the Yellow River flooded again and destroyed all your crops. aaand also we're being raided by nomadic tribesmen, aaaand also this period of Chinese history may be entirely mythical, meaning you may not even exist. Well, that would certainly explain the laser eyes.",
+      "expected_definitions": [],
+      "user_answer": "不知道",
+      "score": 0,
+      "feedback": "未作答，未体现对 raid 的理解。",
+      "matched_points": [],
+      "missing_points": [
+        "作名词/动词可指“袭击、突袭、劫掠”",
+        "结合例句应理解为“遭到游牧部落袭击/劫掠”"
+      ]
+    },
+    {
+      "timestamp": "2026-04-20T14:53:07",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "raid",
+      "example_text": "\"What a wonderful time to be alive! Hey, the Yellow River flooded again and destroyed all your crops. aaand also we're being raided by nomadic tribesmen, aaaand also this period of Chinese history may be entirely mythical, meaning you may not even exist. Well, that would certainly explain the laser eyes.",
+      "expected_definitions": [],
+      "review_mode": 1,
+      "user_answer": "bzd",
+      "score": 0,
+      "feedback": "未作有效回答，无法判断你对 raid 的理解。",
+      "matched_points": [],
+      "missing_points": [
+        "raid 作动词常指“袭击、突袭、劫掠”",
+        "在例句中 being raided 表示“正遭到（游牧部落）袭击/劫掠”"
+      ]
+    }
   ]
 }

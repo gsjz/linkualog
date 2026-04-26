@@ -5,6 +5,10 @@
     {
       "date": "2026-04-17",
       "score": 4
+    },
+    {
+      "date": "2026-04-21",
+      "score": 4
     }
   ],
   "definitions": [
@@ -21,6 +25,31 @@
         "text": "cet6 23 12 1 匹配",
         "url": ""
       }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-21T15:36:46",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "relentless propagation",
+      "example_text": "One of the great successes of the Republican Party in recent decades is the relentless propagation of a simple formula for economic growth: tax cuts.",
+      "expected_definitions": [
+        "不懈的传播 (在此语境下的释义)"
+      ],
+      "review_mode": 1,
+      "user_answer": "不停的传播",
+      "score": 4,
+      "feedback": "理解基本准确，但缺少“不懈/持续不断”的强调，且未体现语境色彩。",
+      "matched_points": [
+        "理解了 propagation 表示“传播”",
+        "理解了 relentless 表示“持续不停”"
+      ],
+      "missing_points": [
+        "未准确体现“不懈地传播”的语气强度",
+        "未结合例句语境说明其指对某种经济主张的持续宣传"
+      ]
     }
   ]
 }

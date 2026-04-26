@@ -5,6 +5,10 @@
     {
       "date": "2026-04-17",
       "score": 3
+    },
+    {
+      "date": "2026-04-21",
+      "score": 3
     }
   ],
   "definitions": [
@@ -25,5 +29,29 @@
   ],
   "mergedFrom": [
     "inflated"
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-21T08:01:26",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "inflate",
+      "example_text": "K) Putting an inflated price on artifacts rather than viewing them as cultural and historical treasures that transcend any price",
+      "expected_definitions": [
+        "adj. 虚高的 (在此语境下指价格被不合理抬高)"
+      ],
+      "review_mode": 1,
+      "user_answer": "高昂的",
+      "score": 3,
+      "feedback": "“高昂的”表达了价格很高，但未体现“不合理抬高、虚高”的含义。",
+      "matched_points": [
+        "价格高"
+      ],
+      "missing_points": [
+        "不合理抬高",
+        "虚高/夸大的价格"
+      ]
+    }
   ]
 }

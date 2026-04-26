@@ -5,6 +5,10 @@
     {
       "date": "2026-04-13",
       "score": 3
+    },
+    {
+      "date": "2026-04-19",
+      "score": 5
     }
   ],
   "definitions": [
@@ -29,5 +33,26 @@
   ],
   "mergedFrom": [
     "hominins"
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-19T16:11:24",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "hominin",
+      "example_text": "But while the hominins found themselves powerless in a world they had to adapt to, our starting conditions could not be more different.",
+      "expected_definitions": [
+        "n. 人科动物（特指人类及其已灭绝的近亲）"
+      ],
+      "user_answer": "人类祖先",
+      "score": 5,
+      "feedback": "答案准确，抓住了“人类祖先/人类及其近亲”这一核心含义。",
+      "matched_points": [
+        "对应“人类祖先”的意思",
+        "与例句中指代早期人类、和现代人类对比的用法一致"
+      ],
+      "missing_points": []
+    }
   ]
 }

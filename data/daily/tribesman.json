@@ -5,6 +5,14 @@
     {
       "date": "2026-04-17",
       "score": 2
+    },
+    {
+      "date": "2026-04-19",
+      "score": 4
+    },
+    {
+      "date": "2026-04-20",
+      "score": 5
     }
   ],
   "definitions": [
@@ -13,8 +21,8 @@
   ],
   "examples": [
     {
-      "text": "\"What a wonderful time to be alive! Hey, the Yellow River flooded again and destroyed all your crops. aaand also we're being raided by nomadic tribesmen, aaaand also this period of Chinese history may be entirely mythical, meaning you may not even exist. Well, that would certainly explain the laser eyes.",
-      "explanation": "",
+      "text": "The Yellow River flooded again and destroyed all your crops, and we're being raided by nomadic tribesmen.",
+      "explanation": "这句话的意思是：黄河又泛滥了，毁掉了你所有的庄稼，而且我们还正遭到游牧部落成员的劫掠。tribesmen 在句中指“游牧部落成员”，这里特指前来劫掠的人。",
       "focusWords": [
         "tribesmen"
       ],
@@ -30,5 +38,51 @@
   ],
   "mergedFrom": [
     "tribesmen"
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-19T16:16:47",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "tribesman",
+      "example_text": "\"What a wonderful time to be alive! Hey, the Yellow River flooded again and destroyed all your crops. aaand also we're being raided by nomadic tribesmen, aaaand also this period of Chinese history may be entirely mythical, meaning you may not even exist. Well, that would certainly explain the laser eyes.",
+      "expected_definitions": [
+        "部落成员（尤指游牧部落的男性成员）",
+        "n. 部落成员（在此语境下指从事劫掠的游牧部族人员）"
+      ],
+      "user_answer": "tribe 是部落，tribesman 可能是部落成员。不知道 nomadic 什么意思",
+      "score": 4,
+      "feedback": "理解基本正确，准确指出 tribesman 是部落成员；但未体现“男性成员”及例句中“游牧部族劫掠者”的语境。nomadic 不懂不影响主词太多。",
+      "matched_points": [
+        "tribesman = 部落成员",
+        "能由 tribe 推出核心含义"
+      ],
+      "missing_points": [
+        "尤指男性部落成员",
+        "例句中指游牧部落成员/劫掠者",
+        "nomadic = 游牧的"
+      ]
+    },
+    {
+      "timestamp": "2026-04-20T06:37:28",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "tribesman",
+      "example_text": "\"What a wonderful time to be alive! Hey, the Yellow River flooded again and destroyed all your crops. aaand also we're being raided by nomadic tribesmen, aaaand also this period of Chinese history may be entirely mythical, meaning you may not even exist. Well, that would certainly explain the laser eyes.",
+      "expected_definitions": [
+        "部落成员（尤指游牧部落的男性成员）",
+        "n. 部落成员（在此语境下指从事劫掠的游牧部族人员）"
+      ],
+      "review_mode": 2,
+      "user_answer": "tribesman",
+      "score": 5,
+      "feedback": "填空正确。",
+      "matched_points": [
+        "准确回忆出目标词 tribesman"
+      ],
+      "missing_points": []
+    }
   ]
 }

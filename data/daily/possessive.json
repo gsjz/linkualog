@@ -1,12 +1,17 @@
 {
   "word": "possessive",
   "createdAt": "2026-03-27",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-20",
+      "score": 3
+    }
+  ],
   "definitions": [],
   "examples": [
     {
-      "text": "desperate to be accepted by our peers. We are \nscared by the dangers that lurk in the dark, imagined and real ones. We are still brutal to \neach other and the animals we hold power over. We are still territorial and possessive, \nwe fear losing what we have, and we fear change. We downplay the damage we cause and \nignore the people in need outside our tribes. Humans are not nice and if we look at our \nhistory, how could we expect ourselves to",
-      "explanation": "",
+      "text": "We are still territorial and possessive; we fear losing what we have, and we fear change.",
+      "explanation": "“possessive”在句中表示“占有欲强的”，指人们害怕失去已有的东西，因此对其有强烈的占有和控制欲。",
       "focusWords": [
         "possessive"
       ],
@@ -20,5 +25,29 @@
       }
     }
   ],
-  "marked": true
+  "marked": true,
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-20T13:46:48",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "possessive",
+      "example_text": "desperate to be accepted by our peers. We are scared by the dangers that lurk in the dark, imagined and real ones. We are still brutal to each other and the animals we hold power over. We are still territorial and possessive, we fear losing what we have, and we fear change. We downplay the damage we cause and ignore the people in need outside our tribes. Humans are not nice and if we look at our history, how could we expect ourselves to",
+      "expected_definitions": [],
+      "review_mode": 1,
+      "user_answer": "有物欲的",
+      "score": 3,
+      "feedback": "理解到“想占有”的方向，但“possessive”更常指“占有欲强的、控制欲强的”。",
+      "matched_points": [
+        "涉及“占有、物欲”这一核心语义",
+        "与语境中“害怕失去已有之物”有一定对应"
+      ],
+      "missing_points": [
+        "未体现“占有欲强”的性格特征",
+        "“有物欲的”偏重物质欲望，语义较窄",
+        "未体现对人或物强烈占有、控制的意味"
+      ]
+    }
+  ]
 }

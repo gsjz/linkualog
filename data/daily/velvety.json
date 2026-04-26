@@ -5,6 +5,10 @@
     {
       "date": "2026-04-17",
       "score": 3
+    },
+    {
+      "date": "2026-04-19",
+      "score": 5
     }
   ],
   "definitions": [
@@ -25,6 +29,27 @@
         "url": "https://www.youtube.com/watch?v=lEXBxijQREo",
         "timestamp": 9
       }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-19T16:58:06",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "velvety",
+      "example_text": "Picture warm, gooey cookies, crunchy candies, velvety cakes, waffle cones piled high with ice cream. Is your mouth watering?",
+      "expected_definitions": [
+        "丝滑的（形容质地细腻柔顺）"
+      ],
+      "user_answer": "顺滑的",
+      "score": 5,
+      "feedback": "答案准确，抓住了“velvety”表示丝滑、柔顺细腻的意思。",
+      "matched_points": [
+        "体现了“丝滑/顺滑”的核心含义",
+        "与例句中形容蛋糕质地细腻柔滑相符"
+      ],
+      "missing_points": []
     }
   ]
 }

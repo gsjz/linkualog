@@ -1,7 +1,12 @@
 {
   "word": "corpse",
   "createdAt": "2026-04-11",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-20",
+      "score": 5
+    }
+  ],
   "definitions": [
     "n. 尸体；遗体 (在此语境下指已灭绝生物的遗骸)"
   ],
@@ -24,5 +29,26 @@
   ],
   "mergedFrom": [
     "corpses"
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-20T02:00:47",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "corpse",
+      "example_text": "Earth was now the stage of something grand, a complexity acceleration machine going at full speed. Millions of new species emerged and vanished. Life was beaten down over and over, but every time it came back stronger. Resettling niches filled with corpses of the ones that came before. Most of these beings are hidden in time forever, we only know their faint echoes. Until a few million years ago an animal looked at the night sky. It looked at its",
+      "expected_definitions": [
+        "n. 尸体；遗体 (在此语境下指已灭绝生物的遗骸)"
+      ],
+      "user_answer": "尸体",
+      "score": 5,
+      "feedback": "答案准确，抓住了 corpse 在此处的核心含义。",
+      "matched_points": [
+        "对应“尸体；遗体”含义",
+        "能用于指前代生物留下的遗骸"
+      ],
+      "missing_points": []
+    }
   ]
 }

@@ -5,6 +5,10 @@
     {
       "date": "2026-04-17",
       "score": 1
+    },
+    {
+      "date": "2026-04-20",
+      "score": 0
     }
   ],
   "definitions": [
@@ -21,6 +25,29 @@
         "text": "CET6 23 12 1 听力",
         "url": ""
       }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-20T15:50:41",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "elaborate signs",
+      "example_text": "communicate with elaborate signs, symbols, and sounds, and travel between habitats on wings and wheels of our own design.",
+      "expected_definitions": [
+        "复杂的符号"
+      ],
+      "review_mode": 1,
+      "user_answer": "不知道",
+      "score": 0,
+      "feedback": "未作有效回答，未体现词义理解。",
+      "matched_points": [],
+      "missing_points": [
+        "复杂的符号",
+        "指用于交流的复杂标志/信号系统",
+        "结合例句可理解为通过复杂符号进行交流"
+      ]
     }
   ]
 }

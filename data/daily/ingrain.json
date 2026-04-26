@@ -13,6 +13,10 @@
     {
       "date": "2026-04-19",
       "score": 2
+    },
+    {
+      "date": "2026-04-20",
+      "score": 2
     }
   ],
   "definitions": [
@@ -60,6 +64,48 @@
         "未体现本句中的形容词义“根深蒂固的”",
         "未表达“深入骨髓、深深扎根”这一程度感",
         "未结合例句中修饰 impulses 的用法理解词性"
+      ]
+    },
+    {
+      "timestamp": "2026-04-20T05:47:36",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "ingrain",
+      "example_text": "This would be hard to handle for any animal, so it makes sense that we continue to follow the impulses so deeply ingrained in us.",
+      "expected_definitions": [
+        "v. 使深深扎根；灌输；adj. 根深蒂固的（常用 ingrained）"
+      ],
+      "review_mode": 2,
+      "user_answer": "ingrain",
+      "score": 5,
+      "feedback": "填空正确。",
+      "matched_points": [
+        "准确回忆出目标词 ingrain"
+      ],
+      "missing_points": []
+    },
+    {
+      "timestamp": "2026-04-20T15:32:33",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "ingrain",
+      "example_text": "This would be hard to handle for any animal, so it makes sense that we continue to follow the impulses so deeply ingrained in us.",
+      "expected_definitions": [
+        "v. 使深深扎根；灌输；adj. 根深蒂固的（常用 ingrained）"
+      ],
+      "review_mode": 1,
+      "user_answer": "植入",
+      "score": 2,
+      "feedback": "答案有一定关联，但未体现“根深蒂固、深深扎根”这一关键含义。",
+      "matched_points": [
+        "涉及“使进入内部”的方向，和 ingrain 有部分语义关联"
+      ],
+      "missing_points": [
+        "未体现“深深扎根”或“根深蒂固”",
+        "忽略了例句中 ingrained 作形容词的用法",
+        "未准确表达句中“深入骨髓的冲动/本能”之意"
       ]
     }
   ]

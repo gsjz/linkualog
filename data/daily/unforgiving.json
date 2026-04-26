@@ -1,0 +1,77 @@
+{
+  "word": "unforgiving",
+  "createdAt": "2026-04-11",
+  "reviews": [
+    {
+      "date": "2026-04-20",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "严酷的"
+  ],
+  "examples": [
+    {
+      "text": "Their world was still hard and unforgiving, but out of pure stubbornness they did not accept that.",
+      "explanation": "unforgiving 在句中表示“严酷的、艰难的”，用来形容他们所处的世界条件恶劣、不宽容。",
+      "focusWords": [
+        "unforgiving"
+      ],
+      "source": {
+        "text": "Tired of Doomscrolling?",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
+        "timestamp": 239
+      }
+    }
+  ],
+  "mergedFrom": [
+    "unforgiving"
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-20T08:02:45",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "unforgiving",
+      "example_text": "And then, at some point 200,000 years or about 10,000 generations ago they became us. Humanity had arrived. Our ancestors did not waste any time. Their world was still hard and unforgiving, but out of pure stubbornness they did not accept that. They wanted their lives to be better. So they made better tools and learned to preserve their knowledge beyond death. Progress",
+      "expected_definitions": [
+        "严酷的"
+      ],
+      "review_mode": 2,
+      "user_answer": "bzd",
+      "score": 0,
+      "feedback": "这次没填对，正确答案是 unforgive。",
+      "matched_points": [],
+      "missing_points": [
+        "需要回忆出目标词 unforgive"
+      ]
+    },
+    {
+      "timestamp": "2026-04-20T14:57:12",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "unforgiving",
+      "example_text": "And then, at some point 200,000 years or about 10,000 generations ago they became us. Humanity had arrived. Our ancestors did not waste any time. Their world was still hard and unforgiving, but out of pure stubbornness they did not accept that. They wanted their lives to be better. So they made better tools and learned to preserve their knowledge beyond death. Progress",
+      "expected_definitions": [
+        "严酷的"
+      ],
+      "review_mode": 1,
+      "user_answer": "残忍的",
+      "score": 3,
+      "feedback": "答案部分贴近语境，但“unforgiving”更准确是“严酷的、冷酷无情的”，不只是“残忍的”。",
+      "matched_points": [
+        "抓到了负面、苛刻的语义色彩",
+        "与语境中“世界艰难”有一定关联"
+      ],
+      "missing_points": [
+        "未准确对应参考释义“严酷的”",
+        "忽略了 unforgiving 在此处强调环境冷酷、艱难而非单指对人“残忍”"
+      ]
+    }
+  ]
+}

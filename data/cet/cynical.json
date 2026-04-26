@@ -9,6 +9,10 @@
     {
       "date": "2026-04-16",
       "score": 3
+    },
+    {
+      "date": "2026-04-22",
+      "score": 4
     }
   ],
   "definitions": [
@@ -29,5 +33,29 @@
   ],
   "mergedFrom": [
     "cynically"
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-22T04:02:19",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "cynical",
+      "example_text": "A bit cynically, Bass describes colleagues who never published because they waited so long they became ill or died.",
+      "expected_definitions": [
+        "略带讽刺地"
+      ],
+      "review_mode": 1,
+      "user_answer": "讽刺地",
+      "score": 4,
+      "feedback": "答案基本正确，抓住了“讽刺地”，但缺少“略带”这一语气程度。",
+      "matched_points": [
+        "理解了 cynical 在此处表示“讽刺地”",
+        "与例句语境基本一致"
+      ],
+      "missing_points": [
+        "未体现“A bit”带来的“略带、稍微”语气"
+      ]
+    }
   ]
 }

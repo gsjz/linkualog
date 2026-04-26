@@ -5,6 +5,10 @@
     {
       "date": "2026-04-17",
       "score": 4
+    },
+    {
+      "date": "2026-04-21",
+      "score": 4
     }
   ],
   "definitions": [
@@ -21,6 +25,31 @@
         "text": "CET6 23 12 1 听力",
         "url": ""
       }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-21T15:39:12",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "stun by",
+      "example_text": "Today on People in the News, our guest is John Williams. The name may not sound familiar to you, but John was once an acclaimed basketball player. John, you stunned fans by leaving the sport at just 25. Why did you retire so early?",
+      "expected_definitions": [
+        "使...震惊"
+      ],
+      "review_mode": 1,
+      "user_answer": "用 震惊",
+      "score": 4,
+      "feedback": "答案抓住了核心义“使……震惊”，但未体现短语搭配 by 的用法。",
+      "matched_points": [
+        "理解核心含义：震惊",
+        "与参考释义“使……震惊”基本一致"
+      ],
+      "missing_points": [
+        "未体现短语整体用法 stun by 在句中的搭配关系",
+        "表达不够完整，可写为“使……因某事而震惊/让……感到震惊”"
+      ]
     }
   ]
 }

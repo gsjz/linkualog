@@ -5,6 +5,14 @@
     {
       "date": "2026-04-17",
       "score": 1
+    },
+    {
+      "date": "2026-04-19",
+      "score": 5
+    },
+    {
+      "date": "2026-04-20",
+      "score": 5
     }
   ],
   "definitions": [
@@ -25,6 +33,65 @@
         "url": "https://www.youtube.com/watch?v=26EivpCPHnQ",
         "timestamp": 11
       }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-19T16:15:32",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "merch",
+      "example_text": "Support my channel by using the link in the description down below to buy the game on Steam. Also, new merch available now in the store, including a mystery new character pin. I wonder who it could be? Ancient China.",
+      "expected_definitions": [
+        "n. 商品（尤指周边产品）"
+      ],
+      "user_answer": "商品",
+      "score": 5,
+      "feedback": "答案准确，抓住了 merch 表示“商品/周边产品”的意思。",
+      "matched_points": [
+        "理解为“商品”",
+        "与参考义“尤指周边产品”方向一致"
+      ],
+      "missing_points": []
+    },
+    {
+      "timestamp": "2026-04-20T07:00:34",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "merch",
+      "example_text": "Support my channel by using the link in the description down below to buy the game on Steam. Also, new merch available now in the store, including a mystery new character pin. I wonder who it could be? Ancient China.",
+      "expected_definitions": [
+        "n. 商品（尤指周边产品）"
+      ],
+      "review_mode": 2,
+      "user_answer": "mench",
+      "score": 0,
+      "feedback": "这次没填对，正确答案是 merch。",
+      "matched_points": [],
+      "missing_points": [
+        "需要回忆出目标词 merch"
+      ]
+    },
+    {
+      "timestamp": "2026-04-20T09:05:17",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "merch",
+      "example_text": "Support my channel by using the link in the description down below to buy the game on Steam. Also, new merch available now in the store, including a mystery new character pin. I wonder who it could be? Ancient China.",
+      "expected_definitions": [
+        "n. 商品（尤指周边产品）"
+      ],
+      "review_mode": 2,
+      "user_answer": "merch",
+      "score": 5,
+      "feedback": "填空正确。",
+      "matched_points": [
+        "准确回忆出目标词 merch"
+      ],
+      "missing_points": []
     }
   ]
 }

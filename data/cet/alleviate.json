@@ -1,21 +1,49 @@
 {
-    "word": "alleviate",
-    "createdAt": "2026-03-30",
-    "reviews": [],
-    "definitions": [
+  "word": "alleviate",
+  "createdAt": "2026-03-30",
+  "reviews": [
+    {
+      "date": "2026-04-22",
+      "score": 0
+    }
+  ],
+  "definitions": [
+    "vt. 减轻；缓解"
+  ],
+  "examples": [
+    {
+      "text": "I went to university and I studied public health and learned about the seriousness of the obesity epidemic, particularly among kids and adolescents in poor communities. [8] I've spent the last two decades trying to alleviate the problem.",
+      "explanation": "我上大学时学习公共卫生，了解到肥胖流行的严重性，尤其在贫困社区的儿童和青少年中。[8] 过去二十年我一直在努力缓解这一问题。",
+      "focusWords": [
+        "alleviate"
+      ],
+      "source": {
+        "text": "CET6 23 12 1 听力",
+        "url": ""
+      }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-22T04:48:41",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "alleviate",
+      "example_text": "I went to university and I studied public health and learned about the seriousness of the obesity epidemic, particularly among kids and adolescents in poor communities. [8] I've spent the last two decades trying to alleviate the problem.",
+      "expected_definitions": [
         "vt. 减轻；缓解"
-    ],
-    "examples": [
-        {
-            "text": "I went to university and I studied public health and learned about the seriousness of the obesity epidemic, particularly among kids and adolescents in poor communities. [8] I've spent the last two decades trying to alleviate the problem.",
-            "explanation": "我上大学时学习公共卫生，了解到肥胖流行的严重性，尤其在贫困社区的儿童和青少年中。[8] 过去二十年我一直在努力缓解这一问题。",
-            "focusWords": [
-                "alleviate"
-            ],
-            "source": {
-                "text": "CET6 23 12 1 听力",
-                "url": ""
-            }
-        }
-    ]
+      ],
+      "review_mode": 1,
+      "user_answer": "y",
+      "score": 0,
+      "feedback": "答案为空或无关，未体现 alleviate 的含义。",
+      "matched_points": [],
+      "missing_points": [
+        "减轻",
+        "缓解",
+        "在例句中指努力缓解这一问题"
+      ]
+    }
+  ]
 }

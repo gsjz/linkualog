@@ -5,6 +5,10 @@
     {
       "date": "2026-04-17",
       "score": 1
+    },
+    {
+      "date": "2026-04-20",
+      "score": 0
     }
   ],
   "definitions": [
@@ -21,6 +25,29 @@
         "text": "CET6 2023 12 2 匹配",
         "url": ""
       }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-20T15:49:55",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "contemptuous",
+      "example_text": "now they belong to opposing, and equally contemptuous, tribes",
+      "expected_definitions": [
+        "adj. 轻蔑的；鄙夷的"
+      ],
+      "review_mode": 1,
+      "user_answer": "bzd",
+      "score": 0,
+      "feedback": "答案为空或无关，未体现 contemptuous 表示“轻蔑的、鄙夷的”。",
+      "matched_points": [],
+      "missing_points": [
+        "轻蔑的",
+        "鄙夷的",
+        "形容带有看不起、蔑视态度"
+      ]
     }
   ]
 }

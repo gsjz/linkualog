@@ -1,7 +1,16 @@
 {
   "word": "circumnavigating",
   "createdAt": "2026-04-16",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-19",
+      "score": 0
+    },
+    {
+      "date": "2026-04-20",
+      "score": 5
+    }
+  ],
   "definitions": [],
   "examples": [
     {
@@ -18,6 +27,43 @@
         "url": "https://www.youtube.com/watch?v=eEWa7cpiyD8",
         "timestamp": 17
       }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-19T17:00:40",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "circumnavigating",
+      "example_text": "Jean Béliveau jumped at the opportunity. For the past three years, Béliveau had been walking from country to country, with the goal of circumnavigating the globe on foot. This required sleeping in tents, strangers’ homes, and the occasional jail cell along the way.",
+      "expected_definitions": [],
+      "user_answer": "不懂",
+      "score": 0,
+      "feedback": "未作出有效释义。结合例句，circumnavigating 指“环绕……一周、周游（地球）”。",
+      "matched_points": [],
+      "missing_points": [
+        "环绕一周",
+        "周游全球/地球",
+        "在句中指徒步环游地球"
+      ]
+    },
+    {
+      "timestamp": "2026-04-20T03:37:25",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "circumnavigating",
+      "example_text": "Jean Béliveau jumped at the opportunity. For the past three years, Béliveau had been walking from country to country, with the goal of circumnavigating the globe on foot. This required sleeping in tents, strangers’ homes, and the occasional jail cell along the way.",
+      "expected_definitions": [],
+      "review_mode": 2,
+      "user_answer": "circumnavigating",
+      "score": 5,
+      "feedback": "填空正确。",
+      "matched_points": [
+        "准确回忆出目标词 circumnavigating"
+      ],
+      "missing_points": []
     }
   ]
 }

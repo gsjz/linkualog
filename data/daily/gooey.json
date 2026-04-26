@@ -1,25 +1,51 @@
 {
-    "word": "gooey",
-    "createdAt": "2026-03-27",
-    "reviews": [],
-    "definitions": [
+  "word": "gooey",
+  "createdAt": "2026-03-27",
+  "reviews": [
+    {
+      "date": "2026-04-20",
+      "score": 0
+    }
+  ],
+  "definitions": [
+    "黏糊糊的"
+  ],
+  "examples": [
+    {
+      "text": "Picture warm, gooey cookies, crunchy candies, velvety cakes, waffle cones piled high with ice cream.",
+      "explanation": "想象一下温热的、黏糊糊的饼干，脆脆的糖果，丝滑的蛋糕，还有高高堆满冰淇淋的华夫筒。",
+      "focusWords": [
+        "gooey"
+      ],
+      "source": {
+        "text": "糖类怎样影响大脑 -Nicole Avena",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=lEXBxijQREo",
+        "timestamp": 6
+      }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-20T11:15:58",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "gooey",
+      "example_text": "Picture warm, gooey cookies, crunchy candies, velvety cakes, waffle cones piled high with ice cream.",
+      "expected_definitions": [
         "黏糊糊的"
-    ],
-    "examples": [
-        {
-            "text": "Picture warm, gooey cookies, crunchy candies, velvety cakes, waffle cones piled high with ice cream.",
-            "explanation": "想象一下温热的、黏糊糊的饼干，脆脆的糖果，丝滑的蛋糕，还有高高堆满冰淇淋的华夫筒。",
-            "focusWords": [
-                "gooey"
-            ],
-            "source": {
-                "text": "糖类怎样影响大脑 -Nicole Avena",
-                "url": ""
-            },
-            "youtube": {
-                "url": "https://www.youtube.com/watch?v=lEXBxijQREo",
-                "timestamp": 6
-            }
-        }
-    ]
+      ],
+      "review_mode": 2,
+      "user_answer": "bzd",
+      "score": 0,
+      "feedback": "这次没填对，正确答案是 gooey。",
+      "matched_points": [],
+      "missing_points": [
+        "需要回忆出目标词 gooey"
+      ]
+    }
+  ]
 }

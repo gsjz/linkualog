@@ -1,25 +1,52 @@
 {
-    "word": "unfathomable",
-    "createdAt": "2026-03-27",
-    "reviews": [],
-    "definitions": [
+  "word": "unfathomable",
+  "createdAt": "2026-03-27",
+  "reviews": [
+    {
+      "date": "2026-04-20",
+      "score": 0
+    }
+  ],
+  "definitions": [
+    "adj. 难以想象的 (在此语境下的释义)"
+  ],
+  "examples": [
+    {
+      "text": "Earth is truly ours now. We changed it in ways unfathomable a few short generations ago.",
+      "explanation": "地球如今确实属于我们。我们以几代人以前难以想象的方式改变了它。这里的“unfathomable”表示“难以想象的、难以理解的”。",
+      "focusWords": [
+        "unfathomable"
+      ],
+      "source": {
+        "text": "Tired of Doomscrolling?",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
+        "timestamp": 277
+      }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-20T14:16:26",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "unfathomable",
+      "example_text": "industrialization, the modern world, the information age where we are today. Earth is truly ours now. We changed it in ways unfathomable a few short generations ago. We turned the land into fields worked by millions of machines, built thousands of gigantic jungles made of sand and metal. We split the atom and travelled to other worlds. Everything is different today.",
+      "expected_definitions": [
         "adj. 难以想象的 (在此语境下的释义)"
-    ],
-    "examples": [
-        {
-            "text": "industrialization, the modern world, \nthe information age where we are today. Earth is truly ours now. We changed it in ways unfathomable a few \nshort generations ago. We turned the land into fields worked by millions of machines, \nbuilt thousands of gigantic jungles made of sand and metal. We split the atom and travelled \nto other worlds. Everything is different today.",
-            "explanation": "",
-            "focusWords": [
-                "unfathomable"
-            ],
-            "source": {
-                "text": "Tired of Doomscrolling?",
-                "url": ""
-            },
-            "youtube": {
-                "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
-                "timestamp": 277
-            }
-        }
-    ]
+      ],
+      "review_mode": 1,
+      "user_answer": "bzd",
+      "score": 0,
+      "feedback": "答案无关，未体现“unfathomable”在此处“难以想象的”含义。",
+      "matched_points": [],
+      "missing_points": [
+        "难以想象的",
+        "在语境中表示几代人之前无法设想的巨大变化"
+      ]
+    }
+  ]
 }

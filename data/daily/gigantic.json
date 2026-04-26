@@ -13,6 +13,10 @@
     {
       "date": "2026-04-13",
       "score": 4
+    },
+    {
+      "date": "2026-04-19",
+      "score": 5
     }
   ],
   "definitions": [
@@ -48,6 +52,27 @@
         "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
         "timestamp": 282
       }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-19T16:59:03",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "gigantic",
+      "example_text": "From these ingredients stars arose, gigantic engines, turning simple stuff into complex stuff only to die violently and spread the new complexity around.",
+      "expected_definitions": [
+        "adj. 巨大的（在此语境下形容恒星的规模）"
+      ],
+      "user_answer": "巨大的",
+      "score": 5,
+      "feedback": "答案准确，抓住了 gigantic 在句中表示“巨大的”的核心含义。",
+      "matched_points": [
+        "巨大",
+        "形容恒星规模很大"
+      ],
+      "missing_points": []
     }
   ]
 }

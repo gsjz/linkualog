@@ -1,7 +1,12 @@
 {
   "word": "puberty",
   "createdAt": "2026-04-12",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-20",
+      "score": 5
+    }
+  ],
   "definitions": [
     "The period during which adolescents reach sexual maturity.",
     "The process of physical changes through which a child's body matures into an adult body capable of sexual reproduction."
@@ -36,6 +41,51 @@
         "url": "https://www.youtube.com/watch?v=deNGkzUlhZU",
         "timestamp": 6
       }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-20T01:32:50",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "puberty",
+      "example_text": "While we often talk about puberty’s effect on the body, what gets overlooked are the fascinating changes that happen in the brain.",
+      "expected_definitions": [
+        "The period during which adolescents reach sexual maturity.",
+        "The process of physical changes through which a child's body matures into an adult body capable of sexual reproduction."
+      ],
+      "user_answer": "不知道",
+      "score": 0,
+      "feedback": "答案为空白，未体现 puberty 的含义。它指“青春期；性成熟发育阶段”。",
+      "matched_points": [],
+      "missing_points": [
+        "青春期这一阶段",
+        "达到性成熟的时期",
+        "儿童身体发育为具备生殖能力的成人身体的过程"
+      ]
+    },
+    {
+      "timestamp": "2026-04-20T14:37:58",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "puberty",
+      "example_text": "While we often talk about puberty’s effect on the body, what gets overlooked are the fascinating changes that happen in the brain.",
+      "expected_definitions": [
+        "The period during which adolescents reach sexual maturity.",
+        "The process of physical changes through which a child's body matures into an adult body capable of sexual reproduction."
+      ],
+      "review_mode": 1,
+      "user_answer": "青春期？",
+      "score": 5,
+      "feedback": "答案准确，抓住了核心含义。",
+      "matched_points": [
+        "对应“青春期”这一核心义项",
+        "与“达到性成熟的时期/过程”相符",
+        "符合例句中谈论身体与大脑变化的语境"
+      ],
+      "missing_points": []
     }
   ]
 }

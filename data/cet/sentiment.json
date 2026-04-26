@@ -5,6 +5,10 @@
     {
       "date": "2026-04-17",
       "score": 3
+    },
+    {
+      "date": "2026-04-21",
+      "score": 2
     }
   ],
   "definitions": [
@@ -21,6 +25,30 @@
         "text": "CET6 23 12 1 听力",
         "url": ""
       }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-21T08:07:26",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "sentiment",
+      "example_text": "W: What you have just described is a common sentiment.",
+      "expected_definitions": [
+        "n. 观点；情绪（在此语境下指普遍的看法或感受）"
+      ],
+      "review_mode": 1,
+      "user_answer": "情感",
+      "score": 2,
+      "feedback": "抓到了“情绪/感情”相关义，但本句更应译为“看法、观点”，答案不够准确。",
+      "matched_points": [
+        "理解到 sentiment 可表示情感、情绪相关含义"
+      ],
+      "missing_points": [
+        "未体现本句语境中的“普遍的看法/观点”义",
+        "未结合 common sentiment 理解为“普遍看法”而非单纯“情感”"
+      ]
     }
   ]
 }

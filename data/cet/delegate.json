@@ -1,14 +1,19 @@
 {
   "word": "delegate",
   "createdAt": "2026-04-11",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-21",
+      "score": 2
+    }
+  ],
   "definitions": [
     "vt. 委派（在此语境下的释义）"
   ],
   "examples": [
     {
-      "text": "W: I recommend you think about delegating some responsibilities to someone else.",
-      "explanation": "我建议考虑将一些责任委派给其他人。",
+      "text": "I recommend you think about delegating some responsibilities to someone else.",
+      "explanation": "这里的 delegating 是 delegate 的动名词形式，意思是“委派、交托（职责）”。整句意思是：我建议你考虑把一些职责委派给别人。",
       "focusWords": [
         "delegating"
       ],
@@ -20,5 +25,30 @@
   ],
   "mergedFrom": [
     "delegating"
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-21T16:47:39",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "delegate",
+      "example_text": "W: I recommend you think about delegating some responsibilities to someone else.",
+      "expected_definitions": [
+        "vt. 委派（在此语境下的释义）"
+      ],
+      "review_mode": 1,
+      "user_answer": "让给",
+      "score": 2,
+      "feedback": "答案方向相关，但“让给”过于笼统，未准确体现“委派、交托职责给他人”的意思。",
+      "matched_points": [
+        "表达了把某事交给别人"
+      ],
+      "missing_points": [
+        "未体现“委派”这一较准确含义",
+        "未明确是把责任或任务交由他人处理",
+        "语义偏口语化，和例句语境不完全对应"
+      ]
+    }
   ]
 }

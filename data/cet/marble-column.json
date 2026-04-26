@@ -5,6 +5,10 @@
     {
       "date": "2026-04-17",
       "score": 1
+    },
+    {
+      "date": "2026-04-20",
+      "score": 5
     }
   ],
   "definitions": [
@@ -21,6 +25,28 @@
         "text": "CET6 2023 12 2 匹配",
         "url": ""
       }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-20T16:38:00",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "marble column",
+      "example_text": "not far off, a famous marble column carved with the coat of arms of France",
+      "expected_definitions": [
+        "大理石柱"
+      ],
+      "review_mode": 1,
+      "user_answer": "大理石柱",
+      "score": 5,
+      "feedback": "准确完整，完全匹配参考释义。",
+      "matched_points": [
+        "大理石",
+        "柱"
+      ],
+      "missing_points": []
     }
   ]
 }

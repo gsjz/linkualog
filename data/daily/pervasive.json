@@ -1,25 +1,53 @@
 {
-    "word": "pervasive",
-    "createdAt": "2026-03-27",
-    "reviews": [],
-    "definitions": [
+  "word": "pervasive",
+  "createdAt": "2026-03-27",
+  "reviews": [
+    {
+      "date": "2026-04-20",
+      "score": 0
+    }
+  ],
+  "definitions": [
+    "adj. 普遍存在的；广泛流传的（在此语境下指故事非常流行且常见）"
+  ],
+  "examples": [
+    {
+      "text": "It is one of the most pervasive stories of our time, and there is a lot of truth to it.",
+      "explanation": "pervasive 在句中表示“普遍存在的、广泛流传的”，说明这个故事是我们这个时代非常常见、影响广泛的叙事之一。",
+      "focusWords": [
+        "pervasive"
+      ],
+      "source": {
+        "text": "Tired of Doomscrolling?",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
+        "timestamp": 46
+      }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-20T13:45:12",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "pervasive",
+      "example_text": "disconnected and powerless in the face of problems too big to solve. And so the state of the world fills many of us with doom, hopelessness and sadness. We feel it too. It is one of the most pervasive stories of our time and there is a lot of truth to it. But as Terry Pratchett said, we are the storytelling ape, we think in narratives and live in a network of stories that make up our world. So without minimising the darkness,",
+      "expected_definitions": [
         "adj. 普遍存在的；广泛流传的（在此语境下指故事非常流行且常见）"
-    ],
-    "examples": [
-        {
-            "text": "disconnected and powerless in the face of \nproblems too big to solve. And so the state of the world fills many of us with doom, \nhopelessness and sadness. We feel it too. It is one of the most pervasive stories of \nour time and there is a lot of truth to it. But as Terry Pratchett said, we are the \nstorytelling ape, we think in narratives and live in a network of stories that make up \nour world. So without minimising the darkness,",
-            "explanation": "",
-            "focusWords": [
-                "pervasive"
-            ],
-            "source": {
-                "text": "Tired of Doomscrolling?",
-                "url": ""
-            },
-            "youtube": {
-                "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
-                "timestamp": 46
-            }
-        }
-    ]
+      ],
+      "review_mode": 1,
+      "user_answer": "不记得",
+      "score": 0,
+      "feedback": "你未作答，未体现出 pervasive 的含义。",
+      "matched_points": [],
+      "missing_points": [
+        "普遍存在的",
+        "广泛流传的",
+        "在语境中指这种故事非常流行且常见"
+      ]
+    }
+  ]
 }

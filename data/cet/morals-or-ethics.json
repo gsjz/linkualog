@@ -5,6 +5,10 @@
     {
       "date": "2026-04-17",
       "score": 2
+    },
+    {
+      "date": "2026-04-21",
+      "score": 4
     }
   ],
   "definitions": [
@@ -21,6 +25,29 @@
         "text": "CET6 23 12 1 听力",
         "url": ""
       }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-21T05:24:11",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "morals or ethics",
+      "example_text": "Some philosophers argue it's morals or ethics, while some scientists assert it's our greater cognitive development.",
+      "expected_definitions": [
+        "道德或伦理"
+      ],
+      "review_mode": 1,
+      "user_answer": "道德",
+      "score": 4,
+      "feedback": "答案正确但不够完整，只写了“道德”，遗漏了“伦理”的含义。",
+      "matched_points": [
+        "道德"
+      ],
+      "missing_points": [
+        "伦理"
+      ]
     }
   ]
 }

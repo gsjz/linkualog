@@ -1,7 +1,12 @@
 {
   "word": "acclaim",
   "createdAt": "2026-04-11",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-21",
+      "score": 5
+    }
+  ],
   "definitions": [
     "adj. 备受赞誉的；享有盛誉的"
   ],
@@ -20,5 +25,27 @@
   ],
   "mergedFrom": [
     "acclaimed"
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-21T15:53:00",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "acclaim",
+      "example_text": "Today on People in the News, our guest is John Williams. The name may not sound familiar to you, but John was once an acclaimed basketball player.",
+      "expected_definitions": [
+        "adj. 备受赞誉的；享有盛誉的"
+      ],
+      "review_mode": 1,
+      "user_answer": "备受赞誉的",
+      "score": 5,
+      "feedback": "答案准确，符合句中含义。",
+      "matched_points": [
+        "“备受赞誉的”与参考释义完全对应",
+        "符合例句中 acclaimed basketball player 的意思"
+      ],
+      "missing_points": []
+    }
   ]
 }

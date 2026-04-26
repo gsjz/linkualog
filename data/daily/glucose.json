@@ -5,6 +5,14 @@
     {
       "date": "2026-04-17",
       "score": 2
+    },
+    {
+      "date": "2026-04-19",
+      "score": 4
+    },
+    {
+      "date": "2026-04-20",
+      "score": 2
     }
   ],
   "definitions": [
@@ -25,6 +33,68 @@
         "url": "https://www.youtube.com/watch?v=lEXBxijQREo",
         "timestamp": 34
       }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-19T16:15:53",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "Glucose",
+      "example_text": "and it's found in a wide variety of food and drink. Just check the labels on sweet products you buy. Glucose, fructose, sucrose, maltose, lactose, dextrose, and starch are all forms of sugar.",
+      "expected_definitions": [
+        "n. 葡萄糖"
+      ],
+      "user_answer": "一种糖，不知道 glu 前缀",
+      "score": 4,
+      "feedback": "答案大体正确，glucose 确实是一种糖，具体指“葡萄糖”。前缀不影响本词释义掌握。",
+      "matched_points": [
+        "知道它是一种糖"
+      ],
+      "missing_points": [
+        "未明确说出“葡萄糖”这一准确中文释义"
+      ]
+    },
+    {
+      "timestamp": "2026-04-20T06:33:57",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "Glucose",
+      "example_text": "and it's found in a wide variety of food and drink. Just check the labels on sweet products you buy. Glucose, fructose, sucrose, maltose, lactose, dextrose, and starch are all forms of sugar.",
+      "expected_definitions": [
+        "n. 葡萄糖"
+      ],
+      "review_mode": 2,
+      "user_answer": "bzd",
+      "score": 0,
+      "feedback": "这次没填对，正确答案是 Glucose。",
+      "matched_points": [],
+      "missing_points": [
+        "需要回忆出目标词 Glucose"
+      ]
+    },
+    {
+      "timestamp": "2026-04-20T09:04:34",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "Glucose",
+      "example_text": "and it's found in a wide variety of food and drink. Just check the labels on sweet products you buy. Glucose, fructose, sucrose, maltose, lactose, dextrose, and starch are all forms of sugar.",
+      "expected_definitions": [
+        "n. 葡萄糖"
+      ],
+      "review_mode": 2,
+      "user_answer": "glutose",
+      "score": 2,
+      "feedback": "和正确答案 Glucose 很接近，像是拼写或形式差了一点。",
+      "matched_points": [
+        "已经接近正确答案"
+      ],
+      "missing_points": [
+        "正确答案是 Glucose"
+      ]
     }
   ]
 }

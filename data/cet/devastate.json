@@ -5,6 +5,10 @@
     {
       "date": "2026-04-17",
       "score": 4
+    },
+    {
+      "date": "2026-04-21",
+      "score": 5
     }
   ],
   "definitions": [
@@ -25,5 +29,27 @@
   ],
   "mergedFrom": [
     "devastating"
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-21T15:10:38",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "devastate",
+      "example_text": "For Pritchett, the decision was devastating",
+      "expected_definitions": [
+        "毁灭性的"
+      ],
+      "review_mode": 1,
+      "user_answer": "毁灭性的",
+      "score": 5,
+      "feedback": "答案准确，完整对应参考释义。",
+      "matched_points": [
+        "准确回答“毁灭性的”",
+        "与例句中 devastating 的含义一致"
+      ],
+      "missing_points": []
+    }
   ]
 }

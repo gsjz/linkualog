@@ -1,12 +1,21 @@
 {
   "word": "timber",
   "createdAt": "2026-04-17",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-19",
+      "score": 0
+    },
+    {
+      "date": "2026-04-20",
+      "score": 0
+    }
+  ],
   "definitions": [],
   "examples": [
     {
-      "text": "However, it was on the verge\nof ecological collapse. Years of intense logging had led\nto massive deforestation. The city now faced timber shortages\nand the impacts of severe erosion and frequent flooding\nthat threatened food supplies. But over just a few decades,",
-      "explanation": "",
+      "text": "The city now faced timber shortages and the impacts of severe erosion and frequent flooding that threatened food supplies.",
+      "explanation": "这句话的意思是：这座城市如今面临木材短缺，以及严重侵蚀和频繁洪水对粮食供应造成的威胁。其中 timber 在句中意思是“木材”。",
       "focusWords": [
         "timber"
       ],
@@ -18,6 +27,59 @@
         "url": "https://www.youtube.com/watch?v=t0h8Dmni8g8",
         "timestamp": 28
       }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-19T17:00:25",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "timber",
+      "example_text": "However, it was on the verge of ecological collapse. Years of intense logging had led to massive deforestation. The city now faced timber shortages and the impacts of severe erosion and frequent flooding that threatened food supplies. But over just a few decades,",
+      "expected_definitions": [],
+      "user_answer": "不懂",
+      "score": 0,
+      "feedback": "未作答，未体现对 timber 的理解。这里 timber 指“木材、木料”。",
+      "matched_points": [],
+      "missing_points": [
+        "timber 表示“木材、木料”",
+        "在句中 timber shortages 指“木材短缺”"
+      ]
+    },
+    {
+      "timestamp": "2026-04-20T05:40:55",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "timber",
+      "example_text": "However, it was on the verge of ecological collapse. Years of intense logging had led to massive deforestation. The city now faced timber shortages and the impacts of severe erosion and frequent flooding that threatened food supplies. But over just a few decades,",
+      "expected_definitions": [],
+      "review_mode": 2,
+      "user_answer": "不会",
+      "score": 0,
+      "feedback": "还没有真正作答，正确答案是 timber。",
+      "matched_points": [],
+      "missing_points": [
+        "需要直接填英文单词或短语"
+      ]
+    },
+    {
+      "timestamp": "2026-04-20T14:24:00",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "timber",
+      "example_text": "The city now faced timber shortages and the impacts of severe erosion and frequent flooding that threatened food supplies.",
+      "expected_definitions": [],
+      "review_mode": 1,
+      "user_answer": "bzd",
+      "score": 0,
+      "feedback": "答案无意义，未体现 timber 在句中“木材”的意思。",
+      "matched_points": [],
+      "missing_points": [
+        "timber 在句中指“木材”"
+      ]
     }
   ]
 }

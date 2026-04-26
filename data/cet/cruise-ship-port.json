@@ -5,6 +5,10 @@
     {
       "date": "2026-04-17",
       "score": 3
+    },
+    {
+      "date": "2026-04-21",
+      "score": 4
     }
   ],
   "definitions": [
@@ -21,6 +25,30 @@
         "text": "CET6 2023 12 2 匹配",
         "url": ""
       }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-21T07:57:55",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "cruise ship port",
+      "example_text": "It's home to the second-busiest cruise ship port in the world and is a gateway to the cosmos.",
+      "expected_definitions": [
+        "邮轮港口"
+      ],
+      "review_mode": 1,
+      "user_answer": "邮船港口",
+      "score": 4,
+      "feedback": "答案基本正确，表达了“邮轮/邮船港口”的意思，但“cruise ship”更常对应“邮轮”，可更准确写为“邮轮港口”。",
+      "matched_points": [
+        "理解了 port 表示“港口”",
+        "理解了 cruise ship port 指邮船/邮轮相关港口"
+      ],
+      "missing_points": [
+        "未准确对应参考释义中的“邮轮”这一常用表达"
+      ]
     }
   ]
 }

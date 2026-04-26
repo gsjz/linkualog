@@ -13,6 +13,14 @@
     {
       "date": "2026-04-13",
       "score": 3
+    },
+    {
+      "date": "2026-04-19",
+      "score": 1
+    },
+    {
+      "date": "2026-04-20",
+      "score": 0
     }
   ],
   "definitions": [
@@ -37,5 +45,48 @@
   ],
   "mergedFrom": [
     "fungi"
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-19T16:58:41",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "fungus",
+      "example_text": "...until one day they came together and made another jump in complexity, to plants, animals and fungi.",
+      "expected_definitions": [
+        "n. 真菌"
+      ],
+      "user_answer": "细菌",
+      "score": 1,
+      "feedback": "答案与词义不符。fungus 指“真菌”，不是“细菌”；结合例句 fungi 为其复数，指真菌类生物。",
+      "matched_points": [
+        "答案涉及微生物/生物类别，方向有一定关联"
+      ],
+      "missing_points": [
+        "fungus 的正确含义是真菌",
+        "未区分真菌与细菌",
+        "未识别 fungi 是 fungus 的复数形式"
+      ]
+    },
+    {
+      "timestamp": "2026-04-20T05:42:59",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "fungus",
+      "example_text": "...until one day they came together and made another jump in complexity, to plants, animals and fungi.",
+      "expected_definitions": [
+        "n. 真菌"
+      ],
+      "review_mode": 2,
+      "user_answer": "fungi",
+      "score": 0,
+      "feedback": "这次没填对，正确答案是 fungus。",
+      "matched_points": [],
+      "missing_points": [
+        "需要回忆出目标词 fungus"
+      ]
+    }
   ]
 }

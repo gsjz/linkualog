@@ -1,25 +1,51 @@
 {
-    "word": "downplay",
-    "createdAt": "2026-03-27",
-    "reviews": [],
-    "definitions": [
+  "word": "downplay",
+  "createdAt": "2026-03-27",
+  "reviews": [
+    {
+      "date": "2026-04-20",
+      "score": 0
+    }
+  ],
+  "definitions": [
+    "vt. 淡化；轻描淡写"
+  ],
+  "examples": [
+    {
+      "text": "imagined and real ones. We are still brutal to \neach other and the animals we hold power over. We are still territorial and possessive, \nwe fear losing what we have, and we fear change. We downplay the damage we cause and \nignore the people in need outside our tribes. Humans are not nice and if we look at our \nhistory, how could we expect ourselves to be? In nature we see great beauty but \nalso endless violence and struggle,",
+      "explanation": "vt. 淡化；轻描淡写",
+      "focusWords": [
+        "downplay"
+      ],
+      "source": {
+        "text": "Tired of Doomscrolling?",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
+        "timestamp": 327
+      }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-20T11:14:05",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "downplay",
+      "example_text": "imagined and real ones. We are still brutal to each other and the animals we hold power over. We are still territorial and possessive, we fear losing what we have, and we fear change. We downplay the damage we cause and ignore the people in need outside our tribes. Humans are not nice and if we look at our history, how could we expect ourselves to be? In nature we see great beauty but also endless violence and struggle,",
+      "expected_definitions": [
         "vt. 淡化；轻描淡写"
-    ],
-    "examples": [
-        {
-            "text": "imagined and real ones. We are still brutal to \neach other and the animals we hold power over. We are still territorial and possessive, \nwe fear losing what we have, and we fear change. We downplay the damage we cause and \nignore the people in need outside our tribes. Humans are not nice and if we look at our \nhistory, how could we expect ourselves to be? In nature we see great beauty but \nalso endless violence and struggle,",
-            "explanation": "",
-            "focusWords": [
-                "downplay"
-            ],
-            "source": {
-                "text": "Tired of Doomscrolling?",
-                "url": ""
-            },
-            "youtube": {
-                "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
-                "timestamp": 327
-            }
-        }
-    ]
+      ],
+      "review_mode": 2,
+      "user_answer": "bzd",
+      "score": 0,
+      "feedback": "这次没填对，正确答案是 downplay。",
+      "matched_points": [],
+      "missing_points": [
+        "需要回忆出目标词 downplay"
+      ]
+    }
+  ]
 }

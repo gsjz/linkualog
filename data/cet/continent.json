@@ -5,6 +5,10 @@
     {
       "date": "2026-04-17",
       "score": 4
+    },
+    {
+      "date": "2026-04-21",
+      "score": 5
     }
   ],
   "definitions": [
@@ -21,6 +25,28 @@
         "text": "cet6 23 12 1 匹配",
         "url": ""
       }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-21T14:50:08",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "continent",
+      "example_text": "Africa only represents 2% of global greenhouse-gas emissions but it is the continent that is expected to suffer the most from climate impacts,",
+      "expected_definitions": [
+        "大陆 (指地球上的主要陆地板块)"
+      ],
+      "review_mode": 1,
+      "user_answer": "大洲",
+      "score": 5,
+      "feedback": "准确。“continent”可译为“大洲/大陆”，在例句中指非洲这个洲。",
+      "matched_points": [
+        "大洲/大陆的含义",
+        "符合例句中非洲作为一个洲的用法"
+      ],
+      "missing_points": []
     }
   ]
 }

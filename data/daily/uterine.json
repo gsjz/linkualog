@@ -1,25 +1,54 @@
 {
-    "word": "uterine",
-    "createdAt": "2026-03-26",
-    "reviews": [],
-    "definitions": [
+  "word": "uterine",
+  "createdAt": "2026-03-26",
+  "reviews": [
+    {
+      "date": "2026-04-20",
+      "score": 2
+    }
+  ],
+  "definitions": [
+    "子宫的"
+  ],
+  "examples": [
+    {
+      "text": "like naproxen and ibuprofen,\nwork by targeting prostaglandins, they can provide relief\nfor some people with period pain. Others find hormone-based contraceptives\nthat thin the uterine lining and, in turn, reduce prostaglandin production\nto be helpful. But while prostaglandin research\nwas foundational",
+      "explanation": "像萘普生和布洛芬一样，它们通过靶向前列腺素起作用，可以为一些经期疼痛的人提供缓解。其他人发现，基于激素的避孕药能变薄子宫内膜，进而减少前列腺素的产生，从而感到有帮助。然而，尽管前列腺素的研究是基础性的……",
+      "focusWords": [
+        "uterine"
+      ],
+      "source": {
+        "text": "3 things that can cause painful periods - Chen X. Chen",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=NOaeKRft-gc",
+        "timestamp": 230
+      }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-20T14:19:57",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "uterine",
+      "example_text": "like naproxen and ibuprofen, work by targeting prostaglandins, they can provide relief for some people with period pain. Others find hormone-based contraceptives that thin the uterine lining and, in turn, reduce prostaglandin production to be helpful. But while prostaglandin research was foundational",
+      "expected_definitions": [
         "子宫的"
-    ],
-    "examples": [
-        {
-            "text": "like naproxen and ibuprofen,\nwork by targeting prostaglandins, they can provide relief\nfor some people with period pain. Others find hormone-based contraceptives\nthat thin the uterine lining and, in turn, reduce prostaglandin production\nto be helpful. But while prostaglandin research\nwas foundational",
-            "explanation": "像萘普生和布洛芬一样，它们通过靶向前列腺素起作用，可以为一些经期疼痛的人提供缓解。其他人发现，基于激素的避孕药能变薄子宫内膜，进而减少前列腺素的产生，从而感到有帮助。然而，尽管前列腺素的研究是基础性的……",
-            "focusWords": [
-                "uterine"
-            ],
-            "source": {
-                "text": "3 things that can cause painful periods - Chen X. Chen",
-                "url": ""
-            },
-            "youtube": {
-                "url": "https://www.youtube.com/watch?v=NOaeKRft-gc",
-                "timestamp": 230
-            }
-        }
-    ]
+      ],
+      "review_mode": 1,
+      "user_answer": "子宫",
+      "score": 2,
+      "feedback": "理解接近，但词性和含义不完整；uterine 是“子宫的”，不是“子宫”。",
+      "matched_points": [
+        "与“子宫”相关，抓住了核心对象"
+      ],
+      "missing_points": [
+        "遗漏形容词含义“……的”",
+        "未完整表达为“子宫的”"
+      ]
+    }
+  ]
 }

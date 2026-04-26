@@ -1,7 +1,16 @@
 {
   "word": "gearing up",
   "createdAt": "2026-04-16",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-19",
+      "score": 0
+    },
+    {
+      "date": "2026-04-20",
+      "score": 5
+    }
+  ],
   "definitions": [],
   "examples": [
     {
@@ -18,6 +27,43 @@
         "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
         "timestamp": 463
       }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-19T17:01:28",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "gearing up",
+      "example_text": "how much free time we have, what kind of luxuries are ordinary to us, what technological wonders we take for granted, how few of us die in war, how many live in a democracy. And today we might very well be gearing up for a jump like our ancestors 10,000 years ago, when agriculture changed everything for everybody. From AI possibly transforming the information age, to biotechnology enabling us to manipulate the language of life itself,",
+      "expected_definitions": [],
+      "user_answer": "不懂",
+      "score": 0,
+      "feedback": "答案为空/表示不懂，未体现词义。这里“gearing up”指“正在准备、蓄势待发/为某事做准备”。",
+      "matched_points": [],
+      "missing_points": [
+        "正在准备",
+        "蓄势待发",
+        "为即将发生的重大变化做准备"
+      ]
+    },
+    {
+      "timestamp": "2026-04-20T03:38:24",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "gearing up",
+      "example_text": "Today we might very well be gearing up for a jump like our ancestors 10,000 years ago, when agriculture changed everything for everybody.",
+      "expected_definitions": [],
+      "review_mode": 2,
+      "user_answer": "gearing up",
+      "score": 5,
+      "feedback": "填空正确。",
+      "matched_points": [
+        "准确回忆出目标词 gearing up"
+      ],
+      "missing_points": []
     }
   ]
 }

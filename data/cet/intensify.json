@@ -5,6 +5,10 @@
     {
       "date": "2026-04-17",
       "score": 3
+    },
+    {
+      "date": "2026-04-21",
+      "score": 5
     }
   ],
   "definitions": [
@@ -21,6 +25,28 @@
         "text": "cet6 23 12 1 匹配",
         "url": ""
       }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-21T08:06:18",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "intensify",
+      "example_text": "Even if the world were to cut emissions enough to keep global warming below 1.5°C, heat-waves would intensify in Africa and diseases would spread to areas not currently affected.",
+      "expected_definitions": [
+        "v. 加剧 (在此语境下的释义)"
+      ],
+      "review_mode": 1,
+      "user_answer": "加剧",
+      "score": 5,
+      "feedback": "答案准确，符合例句语境。",
+      "matched_points": [
+        "对应释义“加剧”",
+        "与例句中 heat-waves would intensify 的意思一致"
+      ],
+      "missing_points": []
     }
   ]
 }

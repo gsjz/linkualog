@@ -5,6 +5,10 @@
     {
       "date": "2026-04-17",
       "score": 2
+    },
+    {
+      "date": "2026-04-20",
+      "score": 0
     }
   ],
   "definitions": [
@@ -21,6 +25,29 @@
         "text": "CET6 23 12 1 听力",
         "url": ""
       }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-20T17:37:35",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "mandate",
+      "example_text": "This makes being creative a biological mandate, as what we seek in art and technology is surprise, not simply a fulfillment of expectations.",
+      "expected_definitions": [
+        "n. 必然要求"
+      ],
+      "review_mode": 1,
+      "user_answer": "不记得",
+      "score": 0,
+      "feedback": "未作出有效释义，未体现“必然要求”的含义。",
+      "matched_points": [],
+      "missing_points": [
+        "mandate 在此处表示“必然要求”",
+        "句中 biological mandate 指“生物性的必然要求”",
+        "整体句意与创造力是人类/生物层面的要求有关"
+      ]
     }
   ]
 }

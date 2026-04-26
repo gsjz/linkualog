@@ -1,14 +1,19 @@
 {
   "word": "smash",
   "createdAt": "2026-04-11",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-21",
+      "score": 5
+    }
+  ],
   "definitions": [
     "vi./vt. （船只）猛烈撞击后破碎，撞毁"
   ],
   "examples": [
     {
       "text": "Over the centuries, dozens of majestic Old World sailing ships smashed and sank on this irregular stretch of windy Florida coast.",
-      "explanation": "",
+      "explanation": "这里的 smash 表示“猛烈撞击后破碎、撞毁”。整句意思是：几个世纪以来，数十艘雄伟的旧大陆帆船在佛罗里达这段风大、海岸线曲折的海岸上猛撞后沉没了。",
       "focusWords": [
         "smash"
       ],
@@ -34,5 +39,27 @@
   ],
   "mergedFrom": [
     "smashed"
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-21T17:26:01",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "smash",
+      "example_text": "Over the centuries, dozens of majestic Old World sailing ships smashed and sank on this irregular stretch of windy Florida coast.",
+      "expected_definitions": [
+        "vi./vt. （船只）猛烈撞击后破碎，撞毁"
+      ],
+      "review_mode": 1,
+      "user_answer": "撞毁",
+      "score": 5,
+      "feedback": "准确对应例句中船只撞毁并沉没的含义。",
+      "matched_points": [
+        "撞毁",
+        "猛烈撞击后破碎/失事"
+      ],
+      "missing_points": []
+    }
   ]
 }

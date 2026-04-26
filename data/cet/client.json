@@ -1,12 +1,17 @@
 {
   "word": "client",
   "createdAt": "2026-04-11",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-21",
+      "score": 5
+    }
+  ],
   "definitions": [],
   "examples": [
     {
       "text": "\"Treasure hunters can be naive,\" says attorney David Concannon, who has had several maritime archaeologists as clients and represented two sides in the battles over the Titanic for 20 years.",
-      "explanation": "",
+      "explanation": "这里的 client 表示“客户、委托人”。句中 as clients 指“作为他的客户”，意思是这位律师曾有几位海洋考古学家是他的委托人。",
       "focusWords": [
         "client"
       ],
@@ -17,6 +22,26 @@
       "focusPositions": [
         20
       ]
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-21T16:29:06",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "client",
+      "example_text": "\"Treasure hunters can be naive,\" says attorney David Concannon, who has had several maritime archaeologists as clients and represented two sides in the battles over the Titanic for 20 years.",
+      "expected_definitions": [],
+      "review_mode": 1,
+      "user_answer": "客户",
+      "score": 5,
+      "feedback": "答案准确，client 在此处就是“客户、委托人”的意思。",
+      "matched_points": [
+        "client = 客户",
+        "在律师语境中也可指“委托人”"
+      ],
+      "missing_points": []
     }
   ]
 }

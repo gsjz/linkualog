@@ -1,14 +1,19 @@
 {
   "word": "numb",
   "createdAt": "2026-04-11",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-20",
+      "score": 4
+    }
+  ],
   "definitions": [
     "adj. 令人麻木的（在此语境下指使思维迟钝）"
   ],
   "examples": [
     {
       "text": "This would be hard to handle for any animal, so it makes sense that we continue to follow \nthe impulses so deeply ingrained in us. But this is only because we have not yet caught up \nwith the mind numbing gift we have been handed. The real tragedy of humanity today is that \nwe are these amazingly powerful beings that have not awoken to their potential. We are \ntrapped in the present and the mindset of a",
-      "explanation": "",
+      "explanation": "adj. 令人麻木的（在此语境下指使思维迟钝）",
       "focusWords": [
         "numbing"
       ],
@@ -24,5 +29,52 @@
   ],
   "mergedFrom": [
     "numbing"
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-20T02:12:27",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "numb",
+      "example_text": "This would be hard to handle for any animal, so it makes sense that we continue to follow the impulses so deeply ingrained in us. But this is only because we have not yet caught up with the mind numbing gift we have been handed. The real tragedy of humanity today is that we are these amazingly powerful beings that have not awoken to their potential. We are trapped in the present and the mindset of a",
+      "expected_definitions": [
+        "adj. 令人麻木的（在此语境下指使思维迟钝）"
+      ],
+      "user_answer": "麻",
+      "score": 2,
+      "feedback": "只答到“麻”，方向相关，但此处更准确是“使思维麻木、迟钝的”。",
+      "matched_points": [
+        "抓到了 numb 的“麻木”核心含义"
+      ],
+      "missing_points": [
+        "未体现形容词义",
+        "未结合语境表达“令人思维麻木/迟钝”",
+        "答案过于简略，不够完整"
+      ]
+    },
+    {
+      "timestamp": "2026-04-20T15:25:52",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "numb",
+      "example_text": "This would be hard to handle for any animal, so it makes sense that we continue to follow the impulses so deeply ingrained in us. But this is only because we have not yet caught up with the mind numbing gift we have been handed. The real tragedy of humanity today is that we are these amazingly powerful beings that have not awoken to their potential. We are trapped in the present and the mindset of a",
+      "expected_definitions": [
+        "adj. 令人麻木的（在此语境下指使思维迟钝）"
+      ],
+      "review_mode": 1,
+      "user_answer": "麻木的",
+      "score": 4,
+      "feedback": "答案基本正确，表达了“麻木的”之意，但未体现此处更偏“使思维迟钝、令人麻木”的语境。",
+      "matched_points": [
+        "理解了 numb 的核心义：麻木的",
+        "与参考释义有较高对应"
+      ],
+      "missing_points": [
+        "未体现语境中的“令人麻木的”含义",
+        "未点出这里偏“使思维迟钝”而非单纯身体或情感麻木"
+      ]
+    }
   ]
 }

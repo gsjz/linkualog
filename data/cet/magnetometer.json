@@ -13,6 +13,10 @@
     {
       "date": "2026-04-16",
       "score": 4
+    },
+    {
+      "date": "2026-04-22",
+      "score": 5
     }
   ],
   "definitions": [
@@ -20,8 +24,8 @@
   ],
   "examples": [
     {
-      "text": "One day in 2015, the magnetometer (磁力计) picked up metal that turned out to be an iron cannon; when the divers blew the sand away, they also discovered a more precious bronze cannon with markings indicating French royalty...",
-      "explanation": "",
+      "text": "One day in 2015, the magnetometer picked up metal that turned out to be an iron cannon; when the divers blew the sand away, they also discovered a more precious bronze cannon with markings indicating French royalty...",
+      "explanation": "magnetometer 在句中指“磁力计”，是一种用来测量磁场、探测金属信号的设备。句子里说它探测到了金属，后来证明那是一门铁炮。",
       "focusWords": [
         "magnetometer"
       ],
@@ -29,6 +33,29 @@
         "text": "CET6 23 12 2 匹配",
         "url": ""
       }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-22T04:14:28",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "magnetometer",
+      "example_text": "One day in 2015, the magnetometer (磁力计) picked up metal that turned out to be an iron cannon; when the divers blew the sand away, they also discovered a more precious bronze cannon with markings indicating French royalty...",
+      "expected_definitions": [
+        "A device that measures magnetic fields."
+      ],
+      "review_mode": 1,
+      "user_answer": "磁力测量仪",
+      "score": 5,
+      "feedback": "答案准确，表达了“测量磁场的仪器”这一核心意思。",
+      "matched_points": [
+        "“磁力”对应 magnetic",
+        "“测量仪”对应 device that measures",
+        "整体含义与“测量磁场的设备/磁力计”一致"
+      ],
+      "missing_points": []
     }
   ]
 }

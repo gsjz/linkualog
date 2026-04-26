@@ -1,7 +1,12 @@
 {
   "word": "volcano",
   "createdAt": "2026-04-16",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-21",
+      "score": 5
+    }
+  ],
   "definitions": [
     "火山"
   ],
@@ -23,5 +28,27 @@
   ],
   "mergedFrom": [
     "volcanoes"
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-21T15:42:51",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "volcano",
+      "example_text": "During my last outing, I was surprised to see how much of the area was shaped by ancient volcanoes and geological forces, much of which remains today, giving the area a unique feel and painting a colorful background for great photographs.",
+      "expected_definitions": [
+        "火山"
+      ],
+      "review_mode": 1,
+      "user_answer": "火山",
+      "score": 5,
+      "feedback": "答案准确完整。",
+      "matched_points": [
+        "正确对应“volcano”为“火山”",
+        "与参考释义完全一致"
+      ],
+      "missing_points": []
+    }
   ]
 }

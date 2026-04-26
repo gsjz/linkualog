@@ -9,6 +9,10 @@
     {
       "date": "2026-04-13",
       "score": 4
+    },
+    {
+      "date": "2026-04-21",
+      "score": 5
     }
   ],
   "definitions": [
@@ -16,8 +20,8 @@
   ],
   "examples": [
     {
-      "text": "M: I went to university and I studied public health and learned about the seriousness of the obesity epidemic, particularly among kids and adolescents in poor communities.",
-      "explanation": "我上了大学并学习公共卫生，了解到肥胖流行病的严重性，尤其是在贫困社区的孩子和青少年中。",
+      "text": "I went to university and I studied public health and learned about the seriousness of the obesity epidemic, particularly among kids and adolescents in poor communities.",
+      "explanation": "这里的 adolescent 指“青少年”。整句话是在说：我上大学学习了公共卫生，也了解到肥胖流行问题的严重性，尤其是在贫困社区的儿童和青少年当中。",
       "focusWords": [
         "adolescents"
       ],
@@ -29,5 +33,26 @@
   ],
   "mergedFrom": [
     "adolescents"
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-21T15:41:14",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "adolescent",
+      "example_text": "M: I went to university and I studied public health and learned about the seriousness of the obesity epidemic, particularly among kids and adolescents in poor communities.",
+      "expected_definitions": [
+        "青少年"
+      ],
+      "review_mode": 1,
+      "user_answer": "青少年",
+      "score": 5,
+      "feedback": "准确完整，意思与参考释义一致。",
+      "matched_points": [
+        "青少年"
+      ],
+      "missing_points": []
+    }
   ]
 }

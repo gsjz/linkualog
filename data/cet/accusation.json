@@ -1,7 +1,12 @@
 {
   "word": "accusation",
   "createdAt": "2026-04-11",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-21",
+      "score": 2
+    }
+  ],
   "definitions": [
     "相互指责"
   ],
@@ -20,5 +25,30 @@
   ],
   "mergedFrom": [
     "accusations"
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-21T16:18:41",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "accusation",
+      "example_text": "High-stakes fights over shipwrecks pit archaeologists against treasure hunters in a vicious cycle of accusations",
+      "expected_definitions": [
+        "相互指责"
+      ],
+      "review_mode": 1,
+      "user_answer": "控告",
+      "score": 2,
+      "feedback": "答案只覆盖“指控/控告”之意，未体现本句中“相互指责”的复数语境，理解偏弱。",
+      "matched_points": [
+        "涉及 accusation 的“指控/指责”核心含义"
+      ],
+      "missing_points": [
+        "未体现参考释义“相互指责”",
+        "未体现例句中 accusations 表示多次/彼此的指责语境",
+        "“控告”更偏正式法律语境，与本句语义不完全贴合"
+      ]
+    }
   ]
 }

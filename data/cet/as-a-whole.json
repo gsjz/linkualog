@@ -5,6 +5,10 @@
     {
       "date": "2026-04-17",
       "score": 4
+    },
+    {
+      "date": "2026-04-21",
+      "score": 5
     }
   ],
   "definitions": [
@@ -21,6 +25,28 @@
         "text": "CET6 23 12 1 听力",
         "url": ""
       }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-21T12:38:17",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "as a whole",
+      "example_text": "5 years after graduation. [25] This suggests that the problem isn't really to do with specific students studying specific degrees, but really with the economy as a whole. Regardless of what they've studied,",
+      "expected_definitions": [
+        "整体；总体上"
+      ],
+      "review_mode": 1,
+      "user_answer": "整体来说",
+      "score": 5,
+      "feedback": "答案准确，表达了“总体上、整体而言”的意思。",
+      "matched_points": [
+        "对应“整体；总体上”",
+        "结合例句可理解为“就经济整体而言/从整体来看”"
+      ],
+      "missing_points": []
     }
   ]
 }

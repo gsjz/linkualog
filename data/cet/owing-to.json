@@ -5,6 +5,10 @@
     {
       "date": "2026-04-17",
       "score": 3
+    },
+    {
+      "date": "2026-04-21",
+      "score": 5
     }
   ],
   "definitions": [
@@ -21,6 +25,28 @@
         "text": "cet6 23 12 1 匹配",
         "url": ""
       }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-21T08:06:43",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "owing to",
+      "example_text": "quite limited, especially owing to the warming climate and a growing population.",
+      "expected_definitions": [
+        "由于"
+      ],
+      "review_mode": 1,
+      "user_answer": "归因于",
+      "score": 5,
+      "feedback": "答案准确。“归因于”与“由于/因为”含义一致，适合该词组。",
+      "matched_points": [
+        "表示原因",
+        "与参考释义“由于”一致"
+      ],
+      "missing_points": []
     }
   ]
 }

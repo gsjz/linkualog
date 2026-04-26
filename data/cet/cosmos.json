@@ -5,6 +5,10 @@
     {
       "date": "2026-04-17",
       "score": 3
+    },
+    {
+      "date": "2026-04-21",
+      "score": 5
     }
   ],
   "definitions": [
@@ -13,7 +17,7 @@
   "examples": [
     {
       "text": "It’s home to the second-busiest cruise ship port in the world and is a gateway to the cosmos.",
-      "explanation": "",
+      "explanation": "这句话中，cosmos 指“宇宙”，表示这里是通往太空探索的门户。",
       "focusWords": [
         "cosmos"
       ],
@@ -21,6 +25,28 @@
         "text": "CET6 23 12 2 匹配",
         "url": ""
       }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-21T05:29:38",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "cosmos",
+      "example_text": "It’s home to the second-busiest cruise ship port in the world and is a gateway to the cosmos.",
+      "expected_definitions": [
+        "n. 宇宙"
+      ],
+      "review_mode": 1,
+      "user_answer": "宇宙",
+      "score": 5,
+      "feedback": "答案准确，和参考释义完全一致。",
+      "matched_points": [
+        "对应释义“宇宙”",
+        "词性理解正确，为名词"
+      ],
+      "missing_points": []
     }
   ]
 }

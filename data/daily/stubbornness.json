@@ -1,25 +1,55 @@
 {
-    "word": "stubbornness",
-    "createdAt": "2026-03-27",
-    "reviews": [],
-    "definitions": [
+  "word": "stubbornness",
+  "createdAt": "2026-03-27",
+  "reviews": [
+    {
+      "date": "2026-04-20",
+      "score": 4
+    }
+  ],
+  "definitions": [
+    "n. 倔强 (在此语境下指坚持不懈的精神)"
+  ],
+  "examples": [
+    {
+      "text": "Their world was still hard and unforgiving, but out of pure stubbornness they did not accept that.",
+      "explanation": "这里的 stubbornness 指“倔强、不轻易屈服的劲头”，表示他们不肯接受艰难残酷的现实。",
+      "focusWords": [
+        "stubbornness"
+      ],
+      "source": {
+        "text": "Tired of Doomscrolling?",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
+        "timestamp": 243
+      }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-20T14:11:28",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "stubbornness",
+      "example_text": "ago they became us. Humanity had arrived. Our ancestors did not waste any time. Their world was still hard and unforgiving, but out of pure stubbornness they did not accept that. They wanted their lives to be better. So they made better tools and learned to preserve their knowledge beyond death. Progress started slow. And then suddenly they (or better WE) made the planet our own. Agriculture and",
+      "expected_definitions": [
         "n. 倔强 (在此语境下指坚持不懈的精神)"
-    ],
-    "examples": [
-        {
-            "text": "ago they became us. Humanity had arrived. Our ancestors did not waste any time. \nTheir world was still hard and unforgiving, but out of pure stubbornness they did not \naccept that. They wanted their lives to be better. So they made better tools and learned to \npreserve their knowledge beyond death. Progress started slow. And then suddenly they (or better WE) \nmade the planet our own. Agriculture and",
-            "explanation": "",
-            "focusWords": [
-                "stubbornness"
-            ],
-            "source": {
-                "text": "Tired of Doomscrolling?",
-                "url": ""
-            },
-            "youtube": {
-                "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
-                "timestamp": 243
-            }
-        }
-    ]
+      ],
+      "review_mode": 1,
+      "user_answer": "固执（这里是一个偏褒义的）",
+      "score": 4,
+      "feedback": "理解基本正确，点出了“固执”且注意到此处带褒义，但未明确“坚持不懈、顽强不认输”的意味。",
+      "matched_points": [
+        "指出了 stubbornness 的核心义：固执/倔强",
+        "注意到该语境下不是单纯贬义，而有偏褒义色彩"
+      ],
+      "missing_points": [
+        "未明确表达语境中的“坚持不懈、顽强努力”含义",
+        "未充分体现文中“拒绝接受艰难现状、想让生活变得更好”的精神"
+      ]
+    }
+  ]
 }

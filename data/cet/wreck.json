@@ -1,7 +1,12 @@
 {
   "word": "wreck",
   "createdAt": "2026-04-11",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-22",
+      "score": 2
+    }
+  ],
   "definitions": [
     "adj. 沉没的；残骸状态的"
   ],
@@ -34,5 +39,29 @@
   ],
   "mergedFrom": [
     "wrecked"
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-22T04:47:45",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "wreck",
+      "example_text": "Nearly three million vessels lie wrecked on the Earth’s ocean floor—from old canoes to the Titanic—and likely less than one percent have been explored.",
+      "expected_definitions": [
+        "adj. 沉没的；残骸状态的"
+      ],
+      "review_mode": 1,
+      "user_answer": "破坏",
+      "score": 2,
+      "feedback": "“破坏”只表达了 wreck 作为动词/名词的相关含义，但例句中 wrecked 指“失事的、沉没的、成残骸的”。",
+      "matched_points": [
+        "理解到与损坏、破坏有关"
+      ],
+      "missing_points": [
+        "未体现例句中形容词 wrecked 的含义",
+        "缺少“沉没的/失事的/成残骸状态的”"
+      ]
+    }
   ]
 }

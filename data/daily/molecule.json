@@ -9,6 +9,10 @@
     {
       "date": "2026-04-19",
       "score": 0
+    },
+    {
+      "date": "2026-04-20",
+      "score": 5
     }
   ],
   "definitions": [
@@ -68,6 +72,45 @@
         "n. 分子",
         "指构成物质的微小单位，如例句中的碳水化合物分子"
       ]
+    },
+    {
+      "timestamp": "2026-04-20T01:27:43",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "molecule",
+      "example_text": "Sugar is a general term used to describe a class of molecules called carbohydrates, and it's found in a wide variety of food and drink.",
+      "expected_definitions": [
+        "n. 分子"
+      ],
+      "user_answer": "分子",
+      "score": 5,
+      "feedback": "答案准确，和参考释义完全一致。",
+      "matched_points": [
+        "对应释义“分子”",
+        "词性理解正确，为名词"
+      ],
+      "missing_points": []
+    },
+    {
+      "timestamp": "2026-04-20T15:33:58",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "molecule",
+      "example_text": "Sugar is a general term used to describe a class of molecules called carbohydrates, and it's found in a wide variety of food and drink.",
+      "expected_definitions": [
+        "n. 分子"
+      ],
+      "review_mode": 1,
+      "user_answer": "分子",
+      "score": 5,
+      "feedback": "答案准确，和参考释义完全一致。",
+      "matched_points": [
+        "对应释义“分子”",
+        "词性和核心含义理解正确"
+      ],
+      "missing_points": []
     }
   ]
 }

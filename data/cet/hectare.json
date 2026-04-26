@@ -5,6 +5,10 @@
     {
       "date": "2026-04-13",
       "score": 4
+    },
+    {
+      "date": "2026-04-20",
+      "score": 5
     }
   ],
   "definitions": [
@@ -24,6 +28,30 @@
       "focusPositions": [
         18
       ]
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-20T15:38:37",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "hectare",
+      "example_text": "A World Bank irrigation project in Ethiopia helped farmers increase their potato harvest from about 8 tonnes per hectare to 35 tonnes.",
+      "expected_definitions": [
+        "a metric unit of area equal to 10,000 square meters"
+      ],
+      "review_mode": 1,
+      "user_answer": "公顷",
+      "score": 5,
+      "feedback": "答案准确，和参考释义完全对应。",
+      "matched_points": [
+        "公顷对应 hectare",
+        "表示面积单位",
+        "等于 10,000 平方米",
+        "常用于农业和土地测量"
+      ],
+      "missing_points": []
     }
   ]
 }

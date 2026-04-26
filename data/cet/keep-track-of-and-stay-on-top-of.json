@@ -5,6 +5,10 @@
     {
       "date": "2026-04-17",
       "score": 4
+    },
+    {
+      "date": "2026-04-21",
+      "score": 3
     }
   ],
   "definitions": [
@@ -21,6 +25,30 @@
         "text": "CET6 23 12 1 听力",
         "url": ""
       }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-21T15:13:35",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "keep track of and stay on top of",
+      "example_text": "There are many things to keep track of and stay on top of.",
+      "expected_definitions": [
+        "持续跟进并确保一切尽在掌握"
+      ],
+      "review_mode": 1,
+      "user_answer": "跟进",
+      "score": 3,
+      "feedback": "答案抓住了“跟进”这一核心，但缺少“持续记录/掌握进展、确保不失控”的意思，不够完整。",
+      "matched_points": [
+        "表达了“跟进”的核心含义"
+      ],
+      "missing_points": [
+        "缺少“持续记录/追踪”的意思",
+        "缺少“确保一切尽在掌握、及时处理”的意思"
+      ]
     }
   ]
 }

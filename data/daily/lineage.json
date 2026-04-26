@@ -9,6 +9,14 @@
     {
       "date": "2026-04-16",
       "score": 1
+    },
+    {
+      "date": "2026-04-19",
+      "score": 5
+    },
+    {
+      "date": "2026-04-20",
+      "score": 0
     }
   ],
   "definitions": [
@@ -16,8 +24,8 @@
   ],
   "examples": [
     {
-      "text": "They split into many families and lineages evolving further or disappearing again.",
-      "explanation": "Refers to evolutionary branches in biological context.",
+      "text": "They split into many families and lineages, evolving further or disappearing again.",
+      "explanation": "这里的“lineages”指生物演化中的谱系或血统分支，即一系列连续的世代。",
       "focusWords": [
         "lineages"
       ],
@@ -33,5 +41,65 @@
   ],
   "mergedFrom": [
     "lineages"
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-19T16:12:38",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "lineage",
+      "example_text": "They split into many families and lineages evolving further or disappearing again.",
+      "expected_definitions": [
+        "a line of descent; a sequence of generations"
+      ],
+      "user_answer": "谱系",
+      "score": 5,
+      "feedback": "答案准确，抓住了“世系/谱系、血统沿袭”的核心含义，也符合例句中的生物进化分支语境。",
+      "matched_points": [
+        "表示谱系、世系",
+        "对应世代延续/血统传承的含义",
+        "符合例句中的生物演化分支语境"
+      ],
+      "missing_points": []
+    },
+    {
+      "timestamp": "2026-04-20T06:49:21",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "lineage",
+      "example_text": "They split into many families and lineages evolving further or disappearing again.",
+      "expected_definitions": [
+        "a line of descent; a sequence of generations"
+      ],
+      "review_mode": 2,
+      "user_answer": "bzd",
+      "score": 0,
+      "feedback": "这次没填对，正确答案是 lineage。",
+      "matched_points": [],
+      "missing_points": [
+        "需要回忆出目标词 lineage"
+      ]
+    },
+    {
+      "timestamp": "2026-04-20T09:00:53",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "lineage",
+      "example_text": "They split into many families and lineages, evolving further or disappearing again.",
+      "expected_definitions": [
+        "a line of descent; a sequence of generations"
+      ],
+      "review_mode": 3,
+      "user_answer": "不会",
+      "score": 0,
+      "feedback": "答案为空，至少先写一句英文。",
+      "matched_points": [],
+      "missing_points": [
+        "需要给出完整英文句子"
+      ]
+    }
   ]
 }

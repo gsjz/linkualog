@@ -1,7 +1,12 @@
 {
   "word": "narrative",
   "createdAt": "2026-04-12",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-20",
+      "score": 5
+    }
+  ],
   "definitions": [
     "叙事；故事线"
   ],
@@ -24,5 +29,47 @@
   ],
   "mergedFrom": [
     "narratives"
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-20T01:26:47",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "narrative",
+      "example_text": "of the world fills many of us with doom, hopelessness and sadness. We feel it too. It is one of the most pervasive stories of our time and there is a lot of truth to it. But as Terry Pratchett said, we are the storytelling ape, we think in narratives and live in a network of stories that make up our world. So without minimising the darkness, we want to add a story that we find helpful for dealing with the world.",
+      "expected_definitions": [
+        "叙事；故事线"
+      ],
+      "user_answer": "方向",
+      "score": 1,
+      "feedback": "“方向”与 narrative 在语境中的“叙事/故事线/叙述框架”关联很弱，基本不准确。",
+      "matched_points": [],
+      "missing_points": [
+        "叙事",
+        "故事线",
+        "叙述框架/故事"
+      ]
+    },
+    {
+      "timestamp": "2026-04-20T15:05:07",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "narrative",
+      "example_text": "of the world fills many of us with doom, hopelessness and sadness. We feel it too. It is one of the most pervasive stories of our time and there is a lot of truth to it. But as Terry Pratchett said, we are the storytelling ape, we think in narratives and live in a network of stories that make up our world. So without minimising the darkness, we want to add a story that we find helpful for dealing with the world.",
+      "expected_definitions": [
+        "叙事；故事线"
+      ],
+      "review_mode": 1,
+      "user_answer": "叙事",
+      "score": 5,
+      "feedback": "答案准确，抓住了核心含义。",
+      "matched_points": [
+        "对应释义“叙事”",
+        "符合语境中 narratives 表示故事/叙事框架的意思"
+      ],
+      "missing_points": []
+    }
   ]
 }

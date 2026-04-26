@@ -5,6 +5,10 @@
     {
       "date": "2026-04-17",
       "score": 1
+    },
+    {
+      "date": "2026-04-20",
+      "score": 0
     }
   ],
   "definitions": [
@@ -21,6 +25,30 @@
         "text": "CET6 2023 12 2 匹配",
         "url": ""
       }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-20T16:37:19",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "gears and dials",
+      "example_text": "carrying astonishingly sophisticated gears and dials for navigating by the sun",
+      "expected_definitions": [
+        "齿轮和表盘"
+      ],
+      "review_mode": 1,
+      "user_answer": "gearing up 好像是准备。",
+      "score": 0,
+      "feedback": "答案与词条意思不符。gears and dials 指“齿轮和表盘”，不是 gearing up（准备）。",
+      "matched_points": [],
+      "missing_points": [
+        "“gears”指齿轮",
+        "“dials”指表盘/刻度盘",
+        "整体意思是“齿轮和表盘”",
+        "在例句中指用于借助太阳导航的精密机械部件"
+      ]
     }
   ]
 }

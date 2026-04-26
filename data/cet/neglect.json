@@ -1,7 +1,12 @@
 {
   "word": "neglect",
   "createdAt": "2026-04-11",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-21",
+      "score": 5
+    }
+  ],
   "definitions": [
     "vt. 忽视 (在此语境下的释义)"
   ],
@@ -20,5 +25,27 @@
   ],
   "mergedFrom": [
     "neglected"
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-21T16:49:37",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "neglect",
+      "example_text": "One reason is that in the first few decades of independence, many African governments neglected farming as they focused on industrialising their economies.",
+      "expected_definitions": [
+        "vt. 忽视 (在此语境下的释义)"
+      ],
+      "review_mode": 1,
+      "user_answer": "忽略",
+      "score": 5,
+      "feedback": "正确。“忽略”与此处 neglect 的“忽视”意思一致。",
+      "matched_points": [
+        "表达了“忽视/忽略”的核心含义",
+        "符合例句中政府没有重视农业的语境"
+      ],
+      "missing_points": []
+    }
   ]
 }

@@ -9,6 +9,10 @@
     {
       "date": "2026-04-16",
       "score": 4
+    },
+    {
+      "date": "2026-04-21",
+      "score": 2
     }
   ],
   "definitions": [
@@ -29,5 +33,29 @@
   ],
   "mergedFrom": [
     "rivals"
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-21T05:25:42",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "rival",
+      "example_text": "And while the cult of tax cuts has attracted many critics, it lacks for obvious rivals.",
+      "expected_definitions": [
+        "n. 竞争对手（在此语境下的释义）"
+      ],
+      "review_mode": 1,
+      "user_answer": "匹敌",
+      "score": 2,
+      "feedback": "答案抓到“对抗/匹敌”的关系，但词性和语境义不够准确；此处应为名词“竞争对手”。",
+      "matched_points": [
+        "体现了可与其相抗衡、相竞争的含义"
+      ],
+      "missing_points": [
+        "未准确给出名词义“竞争对手”",
+        "未体现复数语境中“明显的竞争者/对手”这一用法"
+      ]
+    }
   ]
 }

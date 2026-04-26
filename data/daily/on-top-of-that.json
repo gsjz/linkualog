@@ -1,21 +1,48 @@
 {
-    "word": "On top of that",
-    "createdAt": "2026-03-27",
-    "reviews": [],
-    "definitions": [
+  "word": "On top of that",
+  "createdAt": "2026-03-27",
+  "reviews": [
+    {
+      "date": "2026-04-20",
+      "score": 5
+    }
+  ],
+  "definitions": [
+    "此外"
+  ],
+  "examples": [
+    {
+      "text": "On top of that, for a while after birth, it also contains antibodies and proteins that protect us from infections and regulate our immune system.",
+      "explanation": "此外，出生后的一段时间内，它还会含有抗体和蛋白质，这些成分能保护我们免受感染，并调节我们的免疫系统。",
+      "focusWords": [
+        "On top of that"
+      ],
+      "source": {
+        "text": "",
+        "url": ""
+      }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-20T11:54:50",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "On top of that",
+      "example_text": "On top of that, for a while after birth, it also contains antibodies and proteins that protect us from infections and regulate our immune system.",
+      "expected_definitions": [
         "此外"
-    ],
-    "examples": [
-        {
-            "text": "On top of that, for a while after birth, it also contains antibodies and proteins that protect us from infections and regulate our immune system.",
-            "explanation": "此外，出生后的一段时间内，它还会含有抗体和蛋白质，这些成分能保护我们免受感染，并调节我们的免疫系统。",
-            "focusWords": [
-                "On top of that"
-            ],
-            "source": {
-                "text": "",
-                "url": ""
-            }
-        }
-    ]
+      ],
+      "review_mode": 1,
+      "user_answer": "除此之外",
+      "score": 5,
+      "feedback": "答案准确，符合参考释义。",
+      "matched_points": [
+        "正确表达“此外/除此之外”的递进补充含义",
+        "与例句中的连接作用一致"
+      ],
+      "missing_points": []
+    }
+  ]
 }

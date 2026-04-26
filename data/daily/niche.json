@@ -1,7 +1,12 @@
 {
   "word": "niche",
   "createdAt": "2026-04-12",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-20",
+      "score": 5
+    }
+  ],
   "definitions": [
     "生态位；生存空间"
   ],
@@ -24,5 +29,46 @@
   ],
   "mergedFrom": [
     "niches"
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-20T01:30:46",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "niche",
+      "example_text": "Earth was now the stage of something grand, a complexity acceleration machine going at full speed. Millions of new species emerged and vanished. Life was beaten down over and over, but every time it came back stronger. Resettling niches filled with corpses of the ones that came before. Most of these beings are hidden in time forever, we only know their faint echoes. Until a few million years ago an animal looked at the night sky. It looked at its",
+      "expected_definitions": [
+        "生态位；生存空间"
+      ],
+      "user_answer": "尸体",
+      "score": 0,
+      "feedback": "答案错误。niche 在此指“生态位/生存空间”，不是“尸体”。",
+      "matched_points": [],
+      "missing_points": [
+        "生态位",
+        "生存空间",
+        "某物种所占据的位置或角色"
+      ]
+    },
+    {
+      "timestamp": "2026-04-20T14:26:07",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "niche",
+      "example_text": "Earth was now the stage of something grand, a complexity acceleration machine going at full speed. Millions of new species emerged and vanished. Life was beaten down over and over, but every time it came back stronger. Resettling niches filled with corpses of the ones that came before. Most of these beings are hidden in time forever, we only know their faint echoes. Until a few million years ago an animal looked at the night sky. It looked at its",
+      "expected_definitions": [
+        "生态位；生存空间"
+      ],
+      "review_mode": 1,
+      "user_answer": "生态位",
+      "score": 5,
+      "feedback": "准确，对应词义“生态位”。",
+      "matched_points": [
+        "生态位"
+      ],
+      "missing_points": []
+    }
   ]
 }

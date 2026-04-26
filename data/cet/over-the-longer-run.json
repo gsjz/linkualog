@@ -5,6 +5,10 @@
     {
       "date": "2026-04-17",
       "score": 4
+    },
+    {
+      "date": "2026-04-21",
+      "score": 5
     }
   ],
   "definitions": [
@@ -21,6 +25,28 @@
         "text": "cet6 23 12 1 匹配",
         "url": ""
       }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-21T15:32:49",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "over the longer run",
+      "example_text": "But over the longer run small-scale farming can go only so far, especially in the face of climate change and population pressure",
+      "expected_definitions": [
+        "从长远来看"
+      ],
+      "review_mode": 1,
+      "user_answer": "长期来看",
+      "score": 5,
+      "feedback": "答案准确，和参考释义基本一致。",
+      "matched_points": [
+        "表达了“从长远来看”的时间视角",
+        "与参考答案“从长远来看”同义"
+      ],
+      "missing_points": []
     }
   ]
 }

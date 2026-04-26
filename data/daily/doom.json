@@ -1,25 +1,51 @@
 {
-    "word": "doom",
-    "createdAt": "2026-03-27",
-    "reviews": [],
-    "definitions": [
+  "word": "doom",
+  "createdAt": "2026-03-27",
+  "reviews": [
+    {
+      "date": "2026-04-20",
+      "score": 5
+    }
+  ],
+  "definitions": [
+    "n. 厄运；毁灭（在此语境下的释义）"
+  ],
+  "examples": [
+    {
+      "text": "In many ways the vibe is that we live \nin dark times. It is so easy to feel disconnected and powerless in the face of \nproblems too big to solve. And so the state of the world fills many of us with doom, \nhopelessness and sadness. We feel it too. It is one of the most pervasive stories of \nour time and there is a lot of truth to it. But as Terry Pratchett said, we are the \nstorytelling ape, we think in narratives",
+      "explanation": "n. 厄运；毁灭（在此语境下的释义）",
+      "focusWords": [
+        "doom"
+      ],
+      "source": {
+        "text": "Tired of Doomscrolling?",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
+        "timestamp": 40
+      }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-20T11:11:24",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "doom",
+      "example_text": "In many ways the vibe is that we live in dark times. It is so easy to feel disconnected and powerless in the face of problems too big to solve. And so the state of the world fills many of us with doom, hopelessness and sadness. We feel it too. It is one of the most pervasive stories of our time and there is a lot of truth to it. But as Terry Pratchett said, we are the storytelling ape, we think in narratives",
+      "expected_definitions": [
         "n. 厄运；毁灭（在此语境下的释义）"
-    ],
-    "examples": [
-        {
-            "text": "In many ways the vibe is that we live \nin dark times. It is so easy to feel disconnected and powerless in the face of \nproblems too big to solve. And so the state of the world fills many of us with doom, \nhopelessness and sadness. We feel it too. It is one of the most pervasive stories of \nour time and there is a lot of truth to it. But as Terry Pratchett said, we are the \nstorytelling ape, we think in narratives",
-            "explanation": "",
-            "focusWords": [
-                "doom"
-            ],
-            "source": {
-                "text": "Tired of Doomscrolling?",
-                "url": ""
-            },
-            "youtube": {
-                "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
-                "timestamp": 40
-            }
-        }
-    ]
+      ],
+      "review_mode": 2,
+      "user_answer": "doom",
+      "score": 5,
+      "feedback": "填空正确。",
+      "matched_points": [
+        "准确回忆出目标词 doom"
+      ],
+      "missing_points": []
+    }
+  ]
 }

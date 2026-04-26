@@ -9,6 +9,10 @@
     {
       "date": "2026-04-16",
       "score": 2
+    },
+    {
+      "date": "2026-04-20",
+      "score": 5
     }
   ],
   "definitions": [
@@ -29,5 +33,26 @@
   ],
   "mergedFrom": [
     "propels"
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-20T15:44:12",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "propel",
+      "example_text": "However, the reality is that, across the spectrum of human activities, prior work propels the creative process.",
+      "expected_definitions": [
+        "vt. 推动"
+      ],
+      "review_mode": 1,
+      "user_answer": "推动",
+      "score": 5,
+      "feedback": "答案准确，完全匹配该词在例句中的含义。",
+      "matched_points": [
+        "推动"
+      ],
+      "missing_points": []
+    }
   ]
 }

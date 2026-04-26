@@ -1,21 +1,51 @@
 {
-    "word": "catching up to you",
-    "createdAt": "2026-03-30",
-    "reviews": [],
-    "definitions": [
+  "word": "catching up to you",
+  "createdAt": "2026-03-30",
+  "reviews": [
+    {
+      "date": "2026-04-22",
+      "score": 4
+    }
+  ],
+  "definitions": [
+    "（长期潜伏的问题或后果）终于显现并影响到你"
+  ],
+  "examples": [
+    {
+      "text": "That doesn't matter. You could have been suffering from stress for 20 years without knowing it, and now it's catching up to you.",
+      "explanation": "这里的 catch up to you 指“（长期潜伏的问题或后果）终于显现并开始影响你”。整句意思是：这没关系。你可能在不知不觉中承受了 20 年的压力，现在它的影响开始显现到你身上了。",
+      "focusWords": [
+        "catching up to you"
+      ],
+      "source": {
+        "text": "CET6 23 12 1 听力",
+        "url": ""
+      }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-22T16:22:43",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "catching up to you",
+      "example_text": "W: That doesn't matter. You could have been suffering from stress for 20 years without knowing it, and now it's catching up to you.",
+      "expected_definitions": [
         "（长期潜伏的问题或后果）终于显现并影响到你"
-    ],
-    "examples": [
-        {
-            "text": "W: That doesn't matter. You could have been suffering from stress for 20 years without knowing it, and now it's catching up to you.",
-            "explanation": "女：那没关系。你可能已经承受了 20 年的压力而不自知，现在它开始找上门了。",
-            "focusWords": [
-                "catching up to you"
-            ],
-            "source": {
-                "text": "CET6 23 12 1 听力",
-                "url": ""
-            }
-        }
-    ]
+      ],
+      "review_mode": 1,
+      "user_answer": "开始影响你",
+      "score": 4,
+      "feedback": "理解基本准确，抓住了“开始对你产生影响”，但缺少“长期潜伏的问题/后果终于显现”的意味。",
+      "matched_points": [
+        "表达了“开始影响你”这一核心含义",
+        "与例句中压力后果开始显现的语境基本一致"
+      ],
+      "missing_points": [
+        "未体现“长期潜伏”的背景",
+        "未明确“问题或后果终于显现并影响到你”的完整语义"
+      ]
+    }
+  ]
 }

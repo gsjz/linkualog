@@ -1,7 +1,12 @@
 {
   "word": "wreck",
   "createdAt": "2026-04-12",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-04-20",
+      "score": 5
+    }
+  ],
   "definitions": [],
   "examples": [
     {
@@ -17,6 +22,25 @@
       "focusPositions": [
         16
       ]
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-20T02:00:31",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "wreck",
+      "example_text": "The discovery was cause for celebration. The artifacts indicated the divers had likely found the wreck of La Trinité, a 16th-century French vessel that had been at the center of a bloody battle between France and Spain that changed the fate of the United States of America.",
+      "expected_definitions": [],
+      "user_answer": "残骸",
+      "score": 5,
+      "feedback": "答案准确，结合例句中船只语境，wreck 表示“沉船/失事船只的残骸”。",
+      "matched_points": [
+        "理解为“残骸”正确",
+        "符合例句中指代船只失事遗迹的含义"
+      ],
+      "missing_points": []
     }
   ]
 }

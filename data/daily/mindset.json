@@ -1,25 +1,51 @@
 {
-    "word": "mindset",
-    "createdAt": "2026-03-27",
-    "reviews": [],
-    "definitions": [
+  "word": "mindset",
+  "createdAt": "2026-03-27",
+  "reviews": [
+    {
+      "date": "2026-04-20",
+      "score": 0
+    }
+  ],
+  "definitions": [
+    "n. 心态；思维模式"
+  ],
+  "examples": [
+    {
+      "text": "this is only because we have not yet caught up \nwith the mind numbing gift we have been handed. The real tragedy of humanity today is that \nwe are these amazingly powerful beings that have not awoken to their potential. We are \ntrapped in the present and the mindset of a scarce world. But aside from the physical \nlimits of the universe there is nothing stopping us from creating a literal paradise \nfor ourselves. This seems so daft, but it is",
+      "explanation": "n. 心态；思维模式",
+      "focusWords": [
+        "mindset"
+      ],
+      "source": {
+        "text": "Tired of Doomscrolling?",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
+        "timestamp": 370
+      }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-20T11:38:57",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "mindset",
+      "example_text": "this is only because we have not yet caught up with the mind numbing gift we have been handed. The real tragedy of humanity today is that we are these amazingly powerful beings that have not awoken to their potential. We are trapped in the present and the mindset of a scarce world. But aside from the physical limits of the universe there is nothing stopping us from creating a literal paradise for ourselves. This seems so daft, but it is",
+      "expected_definitions": [
         "n. 心态；思维模式"
-    ],
-    "examples": [
-        {
-            "text": "this is only because we have not yet caught up \nwith the mind numbing gift we have been handed. The real tragedy of humanity today is that \nwe are these amazingly powerful beings that have not awoken to their potential. We are \ntrapped in the present and the mindset of a scarce world. But aside from the physical \nlimits of the universe there is nothing stopping us from creating a literal paradise \nfor ourselves. This seems so daft, but it is",
-            "explanation": "",
-            "focusWords": [
-                "mindset"
-            ],
-            "source": {
-                "text": "Tired of Doomscrolling?",
-                "url": ""
-            },
-            "youtube": {
-                "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
-                "timestamp": 370
-            }
-        }
-    ]
+      ],
+      "review_mode": 2,
+      "user_answer": "bzd",
+      "score": 0,
+      "feedback": "这次没填对，正确答案是 mindset。",
+      "matched_points": [],
+      "missing_points": [
+        "需要回忆出目标词 mindset"
+      ]
+    }
+  ]
 }
