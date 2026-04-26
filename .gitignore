@@ -45,6 +45,7 @@ local_data_runtime/
 .local-notes/
 
 .codex
+.codex-local.md
 
 # Server-local deployment files
 deploy/nginx/*.private.conf

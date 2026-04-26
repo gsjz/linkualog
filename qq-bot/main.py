@@ -4,6 +4,7 @@ import asyncio
 from collections import deque
 from dataclasses import dataclass
 from datetime import datetime
+from difflib import SequenceMatcher
 import hashlib
 import json
 import mimetypes
@@ -20,6 +21,11 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
+APP_DIR = Path(__file__).resolve().parent
+if str(APP_DIR) not in sys.path:
+    sys.path.insert(0, str(APP_DIR))
+
+import review_teaching as review_teaching_mod
 import websockets
 
 
@@ -27,7 +33,6 @@ TOKEN_URL = "https://bots.qq.com/app/getAppAccessToken"
 GATEWAY_URL = "https://api.sgroup.qq.com/gateway/bot"
 OPENAPI_BASE_URL = "https://api.sgroup.qq.com"
 C2C_AND_GROUP_INTENTS = 1 << 25
-APP_DIR = Path(__file__).resolve().parent
 REPO_ROOT = APP_DIR.parent
 APP_SLUG = "linkualog-qq-bot"
 COMMAND_PREFIX = "\\"
@@ -42,6 +47,7 @@ UPLOAD_COMMAND = f"{COMMAND_PREFIX}upload"
 NAME_COMMAND = f"{COMMAND_PREFIX}name"
 AUTO_COMMAND = f"{COMMAND_PREFIX}auto"
 REVIEW_COMMAND = f"{COMMAND_PREFIX}review"
+MODE_COMMAND = f"{COMMAND_PREFIX}mode"
 SKIP_COMMAND = f"{COMMAND_PREFIX}skip"
 TASK_COMMAND = f"{COMMAND_PREFIX}task"
 PROCESS_COMMAND = f"{COMMAND_PREFIX}process"
@@ -61,6 +67,9 @@ SAFE_WORD_CHARS_PATTERN = re.compile(r"[^a-z0-9-]+")
 DIRECT_WORD_PATTERN = re.compile(r"[a-z][a-z0-9-]{1,63}")
 CATEGORY_PATTERN = re.compile(r"[^a-z0-9._-]+")
 REVIEW_KEY_PATTERN = re.compile(r"^[^/]+/[^/]+\.json$")
+REVIEW_NOISE_MARKER_PATTERN = re.compile(r"(?:\[[0-9]{1,3}\]|https?://\S+|www\.\S+|example\.com)", re.IGNORECASE)
+REVIEW_TRANSCRIPT_PATTERN = re.compile(r"(?i)(?:^|[\s(（\"'])(?:m|w|q|a|man|woman)\s*[:：]")
+REVIEW_SPEAKER_PREFIX_PATTERN = re.compile(r"^(?:(?:m|w|q|a|man|woman|男|女|主持人|记者|旁白)\s*[:：]\s*)+", re.IGNORECASE)
 ATTACHMENT_URL_KEYS = (
     "url",
     "download_url",
@@ -87,9 +96,14 @@ ATTACHMENT_MIME_KEYS = (
 )
 YES_WORDS = {"y", "yes", "1", "ok", "okay", "确认", "同意", "继续"}
 NO_WORDS = {"n", "no", "0", "cancel", "取消", "算了", "不要"}
+CLEANUP_APPROVE_WORDS = {"y", "yes", "1", "ok", "okay", "确认", "同意"}
 ON_WORDS = {"1", "on", "true", "yes", "y", "enable", "enabled", "open", "开启", "打开", "开", "自动", "是"}
 OFF_WORDS = {"0", "off", "false", "no", "n", "disable", "disabled", "close", "关闭", "关", "手动", "否"}
 GREETING_WORDS = {"你好", "您好", "hi", "hello", "hey", "嗨", "哈喽", "在吗", "在么"}
+REVIEW_MODE_ALIASES = review_teaching_mod.REVIEW_MODE_ALIASES
+REVIEW_MODE_LABELS = review_teaching_mod.REVIEW_MODE_LABELS
+REVIEW_MODE_DESCRIPTIONS = review_teaching_mod.REVIEW_MODE_DESCRIPTIONS
+CREATIVE_REVIEW_TEMPLATES = review_teaching_mod.CREATIVE_REVIEW_TEMPLATES
 HELP_TEXT = (
     "### Linkualog QQ Bot\n\n"
     "**常用命令**\n\n"
@@ -107,12 +121,14 @@ HELP_TEXT = (
     f"- `{PROCESS_COMMAND} [task_id]` 开始处理最近任务或指定任务\n"
     f"- `{TASK_COMMAND} [task_id]` 查看最近任务或指定任务\n"
     f"- `{REVIEW_COMMAND}` 进入复习模式\n"
+    f"- `{MODE_COMMAND} 1|2|3` 设置复习题型，并记住下次默认值\n"
     f"- `{SKIP_COMMAND}` 复习时跳过当前词\n"
     f"- `{END_COMMAND}` 结束当前模式\n\n"
     "**上传 OCR 流程**\n\n"
     f"`{UPLOAD_COMMAND}` -> 发送图片/PDF -> `{END_COMMAND}` -> `{PROCESS_COMMAND}` -> `{TASK_COMMAND}`\n\n"
     "**说明**\n\n"
     "- 直接发送英文单词会自动查词。\n"
+    "- `review` 支持 3 种题型：释义理解 / 场景填空 / 创意输出。\n"
     "- 自由聊天会优先尝试 LLM 路由，失败后保存为普通消息记录。"
 )
 
@@ -143,10 +159,11 @@ def load_env_file(path: Path) -> None:
 
 
 def load_local_env() -> None:
-    load_env_file(APP_DIR / ".env.local")
-    env_file = os.environ.get("QQ_LINKUALOG_ENV_FILE", "").strip() or DEFAULT_LINKUALOG_ENV_FILE
+    env_file = os.environ.get("QQ_LINKUALOG_ENV_FILE", "").strip()
     if env_file:
         load_env_file(Path(env_file).expanduser())
+        return
+    load_env_file(Path(DEFAULT_LINKUALOG_ENV_FILE))
 
 
 def require_env(name: str) -> str:
@@ -236,6 +253,62 @@ def normalize_json_filename(filename: str) -> str:
     return os.path.basename(name)
 
 
+def parse_review_mode(value: object, default: int | None = None) -> int | None:
+    return review_teaching_mod.parse_review_mode(value, default)
+
+
+def review_mode_label(mode: object) -> str:
+    return review_teaching_mod.review_mode_label(mode)
+
+
+def review_mode_description(mode: object) -> str:
+    return review_teaching_mod.review_mode_description(mode)
+
+
+def normalize_answer_key(text: str) -> str:
+    return review_teaching_mod.normalize_answer_key(text)
+
+
+def normalize_review_surface_text(text: str) -> str:
+    return review_teaching_mod.normalize_review_surface_text(text)
+
+
+def review_target_surface_forms(current: dict) -> list[str]:
+    return review_teaching_mod.review_target_surface_forms(current)
+
+
+def text_contains_review_target(current: dict, text: str) -> bool:
+    return review_teaching_mod.text_contains_review_target(current, text)
+
+
+def contains_cjk(text: str) -> bool:
+    return review_teaching_mod.contains_cjk(text)
+
+
+def looks_mostly_english(text: str) -> bool:
+    return review_teaching_mod.looks_mostly_english(text)
+
+
+def strip_review_noise(text: str) -> str:
+    return review_teaching_mod.strip_review_noise(text)
+
+
+def simple_english_lemma(token: str) -> str:
+    return review_teaching_mod.simple_english_lemma(token)
+
+
+def inflection_base_candidates(token: str) -> list[str]:
+    return review_teaching_mod.inflection_base_candidates(token)
+
+
+def cleanup_word_candidates(current: dict, example_text: str, explanation: str) -> list[str]:
+    return review_teaching_mod.cleanup_word_candidates(current, example_text, explanation)
+
+
+def guess_cleanup_word_candidate(current: dict, example_text: str, explanation: str) -> str:
+    return review_teaching_mod.guess_cleanup_word_candidate(current, example_text, explanation)
+
+
 def shorten_text(text: str, limit: int = 96) -> str:
     collapsed = collapse_ws(text)
     if len(collapsed) <= limit:
@@ -251,12 +324,33 @@ def sanitize_filename(name: str, fallback: str) -> str:
     return cleaned or fallback
 
 
+def pick_review_reference_hint(current: dict, limit: int = 72) -> str:
+    return review_teaching_mod.pick_review_reference_hint(current, limit)
+
+
+def looks_generic_creative_task(text: str) -> bool:
+    return review_teaching_mod.looks_generic_creative_task(text)
+
+
+def looks_generic_creative_tip(text: str) -> bool:
+    return review_teaching_mod.looks_generic_creative_tip(text)
+
+
+def select_creative_review_template(current: dict) -> dict:
+    return review_teaching_mod.select_creative_review_template(current)
+
+
 def strip_json_fence(text: str) -> str:
     body = str(text or "").strip()
     if body.startswith("```"):
         body = re.sub(r"^```[a-zA-Z0-9_-]*\s*", "", body)
         body = re.sub(r"\s*```$", "", body)
     return body.strip()
+
+
+def markdown_quote(text: str, fallback: str = "暂无") -> str:
+    body = str(text or "").strip() or fallback
+    return "\n".join(f"> {line}" if line else ">" for line in body.splitlines())
 
 
 def parse_json_loose(text: str) -> dict:
@@ -548,6 +642,7 @@ class SessionStore:
             "mode": "idle",
             "current_category": "daily",
             "pending_confirmation": None,
+            "review_preferences": {"mode": 1},
             "upload": None,
             "review": None,
             "add": None,
@@ -563,10 +658,21 @@ class SessionStore:
         payload.setdefault("mode", "idle")
         payload.setdefault("current_category", "daily")
         payload.setdefault("pending_confirmation", None)
+        if not isinstance(payload.get("review_preferences"), dict):
+            payload["review_preferences"] = {"mode": 1}
+        payload["review_preferences"]["mode"] = parse_review_mode(
+            payload["review_preferences"].get("mode"),
+            1,
+        ) or 1
         payload.setdefault("upload", None)
         payload.setdefault("review", None)
         payload.setdefault("add", None)
         payload.setdefault("last_task_id", "")
+        if isinstance(payload.get("review"), dict):
+            payload["review"]["mode"] = parse_review_mode(
+                payload["review"].get("mode"),
+                payload["review_preferences"]["mode"],
+            ) or payload["review_preferences"]["mode"]
         payload["last_updated_at"] = now_iso()
         return payload
 
@@ -637,6 +743,21 @@ class LinkuaLogClient:
             "POST",
             self._url("/api/vocabulary/save"),
             data={"category": category, "filename": filename, "data": data},
+            timeout=30.0,
+        )
+
+    def rename_vocab(self, *, category: str, filename: str, word: str, data: dict | None = None) -> dict:
+        payload: dict[str, Any] = {
+            "category": category,
+            "filename": filename,
+            "word": word,
+        }
+        if isinstance(data, dict):
+            payload["data"] = data
+        return http_json(
+            "POST",
+            self._url("/api/vocabulary/rename"),
+            data=payload,
             timeout=30.0,
         )
 
@@ -734,6 +855,27 @@ class LLMClient:
         self.model = model.strip()
         self.api_key = api_key.strip()
         self.enabled = bool(enabled and self.provider and self.model and self.api_key)
+        self.max_retries = 2
+
+    @staticmethod
+    def ensure_json_instruction(system_prompt: str, user_prompt: str) -> str:
+        combined = f"{system_prompt}\n{user_prompt}"
+        if "json" in combined:
+            return system_prompt
+        prefix = "Return valid json only. "
+        return prefix + system_prompt
+
+    @staticmethod
+    def ensure_json_user_prompt(user_prompt: str) -> str:
+        if "json" in user_prompt:
+            return user_prompt
+        prefix = "Reply with json only.\n"
+        return prefix + user_prompt
+
+    @staticmethod
+    def is_json_word_requirement_error(exc: Exception) -> bool:
+        message = str(exc)
+        return "must contain the word 'json'" in message and "json_object" in message
 
     def chat_json(
         self,
@@ -747,23 +889,47 @@ class LLMClient:
         if not self.enabled:
             raise RuntimeError("llm disabled")
 
+        safe_system_prompt = self.ensure_json_instruction(system_prompt, user_prompt)
+        safe_user_prompt = user_prompt
         payload = {
             "model": self.model,
             "messages": [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
+                {"role": "system", "content": safe_system_prompt},
+                {"role": "user", "content": safe_user_prompt},
             ],
             "temperature": temperature,
             "max_tokens": max_tokens,
             "response_format": {"type": "json_object"},
         }
-        result = http_json(
-            "POST",
-            self.provider,
-            headers={"Authorization": f"Bearer {self.api_key}"},
-            data=payload,
-            timeout=timeout,
-        )
+        last_exc: Exception | None = None
+        result = None
+        attempts = max(1, self.max_retries + 1)
+        for attempt in range(attempts):
+            request_payload = dict(payload)
+            if attempt > 0:
+                request_payload["messages"] = [
+                    {"role": "system", "content": self.ensure_json_instruction(safe_system_prompt, safe_user_prompt)},
+                    {"role": "user", "content": self.ensure_json_user_prompt(safe_user_prompt)},
+                ]
+            try:
+                result = http_json(
+                    "POST",
+                    self.provider,
+                    headers={"Authorization": f"Bearer {self.api_key}"},
+                    data=request_payload,
+                    timeout=timeout,
+                )
+                break
+            except RuntimeError as exc:
+                last_exc = exc
+                if self.is_json_word_requirement_error(exc) and attempt + 1 < attempts:
+                    continue
+                if attempt + 1 < attempts:
+                    continue
+                raise
+        if result is None:
+            assert last_exc is not None
+            raise last_exc
         choices = result.get("choices")
         if not isinstance(choices, list) or not choices:
             raise RuntimeError(f"llm choices missing: {result}")
@@ -866,8 +1032,48 @@ class QQLinkuaLogApp:
     def reply(self, tool_name: str, text: str, **metadata: object) -> ToolResult:
         return ToolResult(tool_name=tool_name, reply_text=text, metadata=metadata, should_reply=True)
 
+    def reply_md(self, tool_name: str, text: str, **metadata: object) -> ToolResult:
+        metadata["message_format"] = "markdown"
+        return self.reply(tool_name, text, **metadata)
+
     def silent(self, tool_name: str, **metadata: object) -> ToolResult:
         return ToolResult(tool_name=tool_name, reply_text="", metadata=metadata, should_reply=False)
+
+    def get_review_preferences(self, session: dict) -> dict:
+        preferences = session.get("review_preferences")
+        if not isinstance(preferences, dict):
+            preferences = {"mode": 1}
+            session["review_preferences"] = preferences
+        preferences["mode"] = parse_review_mode(preferences.get("mode"), 1) or 1
+        return preferences
+
+    def get_active_review_mode(self, session: dict) -> int:
+        review = session.get("review") if isinstance(session.get("review"), dict) else None
+        if review:
+            review["mode"] = parse_review_mode(
+                review.get("mode"),
+                self.get_review_preferences(session).get("mode", 1),
+            ) or 1
+            return int(review["mode"])
+        return int(self.get_review_preferences(session).get("mode", 1) or 1)
+
+    def combine_markdown_reply(
+        self,
+        tool_name: str,
+        lead_text: str,
+        next_result: ToolResult | None = None,
+        **metadata: object,
+    ) -> ToolResult:
+        parts = [str(lead_text or "").strip()]
+        merged_metadata = dict(next_result.metadata or {}) if next_result else {}
+        merged_metadata.update(metadata)
+        if next_result and next_result.should_reply and next_result.reply_text:
+            parts.append(str(next_result.reply_text).strip())
+        return self.reply_md(
+            tool_name,
+            "\n\n".join(part for part in parts if part),
+            **merged_metadata,
+        )
 
     def handle_pending_confirmation(self, envelope: dict, session: dict, normalized_text: str) -> ToolResult:
         lowered = normalized_text.lower()
@@ -906,16 +1112,19 @@ class QQLinkuaLogApp:
             return self.reply("help", HELP_TEXT, status="success", message_format="markdown")
 
         if command == STATUS_COMMAND:
-            return self.reply("status", self.build_status_text(session), status="success")
+            return self.reply_md("status", self.build_status_text(session), status="success")
 
         if command == CATEGORIES_COMMAND:
-            return self.reply("categories", self.build_categories_text(), status="success")
+            return self.reply_md("categories", self.build_categories_text(), status="success")
 
         if command == CD_COMMAND:
             return self.change_category(session, argument)
 
         if command == SEARCH_COMMAND:
             return self.search_vocab(argument, session.get("current_category", "daily"))
+
+        if command == MODE_COMMAND:
+            return self.set_review_mode(session, argument)
 
         if command == TASK_COMMAND:
             return self.show_task_status(session, argument)
@@ -979,47 +1188,89 @@ class QQLinkuaLogApp:
     def build_status_text(self, session: dict) -> str:
         mode = str(session.get("mode") or "idle")
         current_category = str(session.get("current_category") or "daily")
-        lines = [f"当前目录: {current_category}", f"当前模式: [{mode}]"]
+        default_review_mode = self.get_active_review_mode(session)
+        lines = [
+            "### 当前状态",
+            "",
+            f"- 当前目录: `{current_category}`",
+            f"- 当前模式: `{mode}`",
+            f"- 默认复习题型: `模式 {default_review_mode} · {review_mode_label(default_review_mode)}`",
+        ]
 
         upload = session.get("upload") if isinstance(session.get("upload"), dict) else None
         if upload:
             task_name = collapse_ws(str(upload.get("task_name") or "未命名任务"))
             auto_process = bool(upload.get("auto_process", True))
-            lines.append(
-                "upload 收集: "
-                f"{task_name}, "
-                f"{len(upload.get('files', []))} 个文件, "
-                f"{len(upload.get('notes', []))} 条文本备注, "
-                f"自动分析={'开' if auto_process else '关'}"
+            lines.extend(
+                [
+                    "",
+                    "### Upload",
+                    "",
+                    f"- 任务名: **{task_name}**",
+                    f"- 已收集文件: `{len(upload.get('files', []))}`",
+                    f"- 文本备注: `{len(upload.get('notes', []))}`",
+                    f"- 自动分析: `{'开' if auto_process else '关'}`",
+                ]
             )
 
         review = session.get("review") if isinstance(session.get("review"), dict) else None
         if review:
             current = review.get("current") if isinstance(review.get("current"), dict) else None
+            review_mode = parse_review_mode(review.get("mode"), default_review_mode) or default_review_mode
+            lines.extend(
+                [
+                    "",
+                    "### Review",
+                    "",
+                    f"- 当前题型: `模式 {review_mode} · {review_mode_label(review_mode)}`",
+                    f"- 已排除词条: `{len(review.get('excluded_keys', []))}`",
+                ]
+            )
             if current:
-                lines.append(
-                    "review 当前题: "
-                    f"{current.get('word', '')} [{current.get('category', '')}]"
-                )
-            lines.append(f"review 已排除: {len(review.get('excluded_keys', []))}")
+                lines.append(f"- 当前词条: **{current.get('word', '')}** `[{current.get('category', '')}]`")
+            pending_cleanup = review.get("pending_cleanup") if isinstance(review.get("pending_cleanup"), dict) else None
+            if pending_cleanup:
+                lines.append(f"- 脏内容提醒: `待确认` ({'；'.join(pending_cleanup.get('issues', [])[:3])})")
 
         last_task_id = str(session.get("last_task_id") or "").strip()
         if last_task_id:
-            lines.append(f"最近任务: {last_task_id}")
+            lines.append(f"- 最近任务: `{last_task_id}`")
 
         pending = session.get("pending_confirmation")
         if isinstance(pending, dict) and pending:
-            lines.append(f"待确认动作: {pending.get('summary', 'unknown')}")
+            lines.append(f"- 待确认动作: `{pending.get('summary', 'unknown')}`")
         return "\n".join(lines)
 
     def build_categories_text(self) -> str:
         categories = self.safe_list_categories()
         if not categories:
             return "当前没有可用目录。"
-        preview = ", ".join(categories[:20])
+        lines = ["### 可用词库目录", ""]
+        for item in categories[:20]:
+            lines.append(f"- `{item}`")
         if len(categories) > 20:
-            preview += f" ... 共 {len(categories)} 个"
-        return f"可用目录: {preview}"
+            lines.extend(["", f"_仅显示前 20 个，当前共 {len(categories)} 个目录。_"])
+        return "\n".join(lines)
+
+    def format_review_mode_help(self, mode: int, *, active: bool) -> str:
+        lines = [
+            "### 复习题型",
+            "",
+            f"- 当前默认: `模式 {mode} · {review_mode_label(mode)}`",
+        ]
+        if active:
+            lines.append("- 这次切换会立刻作用到当前复习题。")
+        else:
+            lines.append(f"- 下次发 `{REVIEW_COMMAND}` 会直接用这个模式。")
+        lines.extend(
+            [
+                "",
+                f"- `{MODE_COMMAND} 1` 释义理解",
+                f"- `{MODE_COMMAND} 2` 场景填空",
+                f"- `{MODE_COMMAND} 3` 创意输出",
+            ]
+        )
+        return "\n".join(lines)
 
     def safe_list_categories(self) -> list[str]:
         try:
@@ -1032,6 +1283,61 @@ class QQLinkuaLogApp:
         if self.linkualog_data_dir.exists():
             return sorted(path.name for path in self.linkualog_data_dir.iterdir() if path.is_dir())
         return []
+
+    def set_review_mode(self, session: dict, raw_argument: str) -> ToolResult:
+        current_mode = self.get_active_review_mode(session)
+        mode = parse_review_mode(raw_argument)
+        review = session.get("review") if isinstance(session.get("review"), dict) else None
+
+        if mode is None:
+            return self.reply_md(
+                "review_mode",
+                self.format_review_mode_help(current_mode, active=bool(review)),
+                status="noop",
+                mode=current_mode,
+            )
+
+        preferences = self.get_review_preferences(session)
+        preferences["mode"] = mode
+
+        if not review:
+            return self.reply_md(
+                "review_mode",
+                (
+                    "### 已更新复习题型\n\n"
+                    f"- 当前默认: `模式 {mode} · {review_mode_label(mode)}`\n"
+                    f"- 说明: {review_mode_description(mode)}\n\n"
+                    f"下次发 `{REVIEW_COMMAND}` 会直接使用这个模式。"
+                ),
+                status="success",
+                mode=mode,
+            )
+
+        review["mode"] = mode
+        current = review.get("current")
+        if isinstance(current, dict):
+            current.pop("challenge", None)
+
+        if isinstance(review.get("pending_cleanup"), dict):
+            review["pending_cleanup"] = None
+            next_result = self.prepare_next_review_prompt(session, intro=False)
+            return self.combine_markdown_reply(
+                "review_mode",
+                (
+                    "### 已更新复习题型\n\n"
+                    f"- 当前题型: `模式 {mode} · {review_mode_label(mode)}`\n"
+                    "- 上一题的清理请求已按未同意处理。"
+                ),
+                next_result,
+                status="success",
+                mode=mode,
+            )
+
+        return self.prepare_current_review_prompt(
+            session,
+            intro=False,
+            note=f"已切到模式 {mode} · {review_mode_label(mode)}。",
+        )
 
     def change_category(self, session: dict, raw_argument: str) -> ToolResult:
         category = normalize_category_name(raw_argument)
@@ -1068,22 +1374,37 @@ class QQLinkuaLogApp:
 
         matches = self.search_linkualog_vocab(query, preferred_category=current_category)
         if not matches:
-            return self.reply(
+            return self.reply_md(
                 "search_vocab",
-                f"linkualog 里暂时没找到 `{query}`。可用 {ADD_COMMAND} 进入添加模式。",
+                (
+                    "### 查词结果\n\n"
+                    f"- 查询: `{query}`\n"
+                    "- 结果: 暂未找到\n\n"
+                    f"可用 `{ADD_COMMAND}` 进入添加模式。"
+                ),
                 status="not_found",
                 query=query,
             )
 
-        lines = [f"找到 {len(matches)} 个候选词条:"]
-        for item in matches:
+        lines = ["### 查词结果", "", f"- 查询: `{query}`", f"- 命中: `{len(matches)}`", ""]
+        for index, item in enumerate(matches, start=1):
             definition = shorten_text(item["definition_preview"], 56) if item["definition_preview"] else "暂无释义"
-            lines.append(
-                f"{item['word']} [{item['category']}] "
-                f"defs={item['definition_count']} ex={item['example_count']} marked={item['marked']} "
-                f"{definition}"
+            lines.extend(
+                [
+                    f"{index}. **{item['word']}**",
+                    f"- 目录: `{item['category']}`",
+                    f"- 内容: definitions `{item['definition_count']}` · examples `{item['example_count']}` · marked `{item['marked']}`",
+                    f"- 释义预览: {definition}",
+                    "",
+                ]
             )
-        return self.reply("search_vocab", "\n".join(lines), status="success", query=query, match_count=len(matches))
+        return self.reply_md(
+            "search_vocab",
+            "\n".join(lines).rstrip(),
+            status="success",
+            query=query,
+            match_count=len(matches),
+        )
 
     def search_linkualog_vocab(self, query: str, preferred_category: str = "", limit: int = 3) -> list[dict]:
         if not query or not self.linkualog_data_dir.exists():
@@ -1155,15 +1476,16 @@ class QQLinkuaLogApp:
         completed = int(result.get("completed", 0) or 0)
         auto_process = bool(result.get("auto_process", True))
         start_page = int(result.get("start_page", 1) or 1)
-        return self.reply(
+        return self.reply_md(
             "task_status",
             (
-                f"任务 {task_id}\n"
-                f"名称: {result.get('name', '未命名任务')}\n"
-                f"状态: {status}\n"
-                f"页数: {completed}/{total}\n"
-                f"起始页: {start_page}\n"
-                f"自动分析: {'是' if auto_process else '否'}"
+                "### 任务状态\n\n"
+                f"- ID: `{task_id}`\n"
+                f"- 名称: **{result.get('name', '未命名任务')}**\n"
+                f"- 状态: `{status}`\n"
+                f"- 进度: `{completed}/{total}`\n"
+                f"- 起始页: `{start_page}`\n"
+                f"- 自动分析: `{'是' if auto_process else '否'}`"
             ),
             status="success",
             task_id=task_id,
@@ -1224,9 +1546,13 @@ class QQLinkuaLogApp:
             return self.reply("process_task", f"启动分析失败: {exc}", status="error", task_id=task_id)
 
         session["last_task_id"] = task_id
-        return self.reply(
+        return self.reply_md(
             "process_task",
-            f"已请求开始处理任务 {task_id}，可稍后用 {TASK_COMMAND} {task_id} 查看进度。",
+            (
+                "### 已提交处理请求\n\n"
+                f"- 任务 ID: `{task_id}`\n"
+                f"- 查看进度: `{TASK_COMMAND} {task_id}`"
+            ),
             status="success",
             task_id=task_id,
             api_result=result,
@@ -1259,13 +1585,16 @@ class QQLinkuaLogApp:
             "auto_process": True,
             "started_at": now_iso(),
         }
-        return self.reply(
+        return self.reply_md(
             "start_upload",
             (
-                f"已进入 [upload] 模式，任务名: {task_name}\n"
-                "上传结束后会自动开始分析。\n"
-                f"可用 {NAME_COMMAND} 任务名 修改名称，用 {AUTO_COMMAND} off 改为只收集不分析。\n"
-                f"现在开始发图片/PDF/文件即可。期间我会静默收集，发 {END_COMMAND} 结束。"
+                "### 已进入 Upload 模式\n\n"
+                f"- 任务名: **{task_name}**\n"
+                "- 默认行为: 上传结束后自动开始分析\n"
+                f"- 改名: `{NAME_COMMAND} 任务名`\n"
+                f"- 关闭自动分析: `{AUTO_COMMAND} off`\n"
+                f"- 结束收集: `{END_COMMAND}`\n\n"
+                "现在开始发图片 / PDF / 文件即可，我会先静默收集。"
             ),
             status="success",
             mode="upload",
@@ -1463,16 +1792,18 @@ class QQLinkuaLogApp:
         self.cleanup_upload_state(session)
         session["mode"] = "idle"
         session["upload"] = None
-        return self.reply(
+        return self.reply_md(
             "upload_finalize",
             (
-                f"已收集 {len(file_items)} 个文件，共 {total} 页内容。\n"
-                f"任务名: {task_name}\n"
-                f"已创建 linkualog 任务: {task_id}\n"
+                "### Upload 已完成\n\n"
+                f"- 文件数: `{len(file_items)}`\n"
+                f"- 总页数: `{total}`\n"
+                f"- 任务名: **{task_name}**\n"
+                f"- 任务 ID: `{task_id}`\n\n"
                 + (
-                    f"已自动开始分析，可发 {TASK_COMMAND} {task_id} 查看进度。"
+                    f"已自动开始分析，可发 `{TASK_COMMAND} {task_id}` 查看进度。"
                     if auto_process
-                    else f"当前不会自动分析。需要处理时可发 {PROCESS_COMMAND} {task_id}"
+                    else f"当前不会自动分析。需要处理时可发 `{PROCESS_COMMAND} {task_id}`。"
                 )
             ),
             status="success",
@@ -1489,11 +1820,13 @@ class QQLinkuaLogApp:
             "added_count": 0,
         }
         category = str(session.get("current_category") or "daily")
-        return self.reply(
+        return self.reply_md(
             "start_add",
             (
-                f"已进入 [add] 模式，当前目录: {category}\n"
-                f"直接发送 `word` 或 `word | 例句 | 来源`。发 {END_COMMAND} 退出。"
+                "### 已进入 Add 模式\n\n"
+                f"- 当前目录: `{category}`\n"
+                f"- 输入格式: `word` 或 `word | 例句 | 来源`\n"
+                f"- 退出: `{END_COMMAND}`"
             ),
             status="success",
             mode="add",
@@ -1553,9 +1886,15 @@ class QQLinkuaLogApp:
         data = result.get("data") if isinstance(result.get("data"), dict) else {}
         definition_count = len(data.get("definitions", [])) if isinstance(data.get("definitions"), list) else 0
         example_count = len(data.get("examples", [])) if isinstance(data.get("examples"), list) else 0
-        return self.reply(
+        return self.reply_md(
             "add_vocab",
-            f"已写入 {word} -> {category}，当前 defs={definition_count} ex={example_count}",
+            (
+                "### 已写入词条\n\n"
+                f"- 单词: **{word}**\n"
+                f"- 目录: `{category}`\n"
+                f"- Definitions: `{definition_count}`\n"
+                f"- Examples: `{example_count}`"
+            ),
             status="success",
             word=word,
             category=category,
@@ -1566,11 +1905,14 @@ class QQLinkuaLogApp:
     def start_review_mode(self, session: dict, raw_argument: str) -> ToolResult:
         scope = collapse_ws(raw_argument)
         current_category = str(session.get("current_category") or "daily")
+        review_mode = int(self.get_review_preferences(session).get("mode", 1) or 1)
         review_state = {
             "started_at": now_iso(),
             "excluded_keys": [],
             "history": [],
             "current": None,
+            "pending_cleanup": None,
+            "mode": review_mode,
             "scope_kind": "all" if scope.lower() in {"all", "*"} else "category",
             "category": current_category if not scope else normalize_category_name(scope),
         }
@@ -1621,16 +1963,24 @@ class QQLinkuaLogApp:
         data = detail.get("data") if isinstance(detail.get("data"), dict) else {}
         current = self.build_review_item(item, data)
         review["current"] = current
-        prompt = self.format_review_prompt(current, intro=intro)
-        return self.reply("review_prompt", prompt, status="success", category=category_name, word=current["word"])
+        review["pending_cleanup"] = None
+        return self.prepare_current_review_prompt(session, intro=intro)
 
     def build_review_item(self, item: dict, data: dict) -> dict:
         examples = data.get("examples") if isinstance(data.get("examples"), list) else []
         chosen_example = {}
-        for example in examples:
+        chosen_index = -1
+        for index, example in enumerate(examples):
             if isinstance(example, dict) and collapse_ws(example.get("text", "")):
                 chosen_example = example
+                chosen_index = index
                 break
+        if not chosen_example:
+            for index, example in enumerate(examples):
+                if isinstance(example, dict):
+                    chosen_example = example
+                    chosen_index = index
+                    break
         if not chosen_example:
             chosen_example = {"text": "", "explanation": ""}
 
@@ -1641,26 +1991,418 @@ class QQLinkuaLogApp:
             "file": file_name,
             "word_key": os.path.splitext(file_name)[0],
             "word": collapse_ws(str(item.get("word") or data.get("word") or "")),
-            "definitions": data.get("definitions") if isinstance(data.get("definitions"), list) else [],
+            "definitions": [
+                collapse_ws(str(definition))
+                for definition in (data.get("definitions") if isinstance(data.get("definitions"), list) else [])
+                if collapse_ws(str(definition))
+            ],
+            "example_index": chosen_index,
             "example_text": collapse_ws(str(chosen_example.get("text") or "")),
             "example_explanation": collapse_ws(str(chosen_example.get("explanation") or "")),
+            "focus_words": [
+                collapse_ws(str(focus))
+                for focus in (chosen_example.get("focusWords") if isinstance(chosen_example.get("focusWords"), list) else [])
+                if collapse_ws(str(focus))
+            ],
+            "example_source": dict(chosen_example.get("source") or {}) if isinstance(chosen_example.get("source"), dict) else {},
             "reason": collapse_ws(str(item.get("reason") or "")),
             "advice": item.get("advice") if isinstance(item.get("advice"), dict) else {},
+            "challenge": None,
         }
 
-    def format_review_prompt(self, current: dict, intro: bool) -> str:
-        prefix = "已进入 [review] 模式。\n" if intro else "下一题:\n"
-        example_text = current.get("example_text") or "暂无例句"
-        reason = current.get("reason") or ""
+    def inspect_review_content_issues(self, current: dict) -> dict | None:
+        raw_example_index = current.get("example_index", -1)
+        try:
+            example_index = int(raw_example_index)
+        except (TypeError, ValueError):
+            example_index = -1
+        if example_index < 0:
+            return None
+
+        example_text = str(current.get("example_text") or "")
+        explanation = str(current.get("example_explanation") or "")
+        issues: list[str] = []
+        severity = 0
+
+        example_has_noise = bool(REVIEW_NOISE_MARKER_PATTERN.search(example_text))
+        explanation_has_noise = bool(REVIEW_NOISE_MARKER_PATTERN.search(explanation))
+        example_transcript = bool(REVIEW_TRANSCRIPT_PATTERN.search(example_text) or REVIEW_SPEAKER_PREFIX_PATTERN.search(example_text))
+        explanation_transcript = bool(REVIEW_TRANSCRIPT_PATTERN.search(explanation) or REVIEW_SPEAKER_PREFIX_PATTERN.search(explanation))
+        explanation_mostly_english = looks_mostly_english(explanation)
+
+        if not collapse_ws(example_text):
+            issues.append("例句为空")
+            severity += 3
+        if not collapse_ws(explanation):
+            issues.append("explanation 为空")
+            severity += 3
+        if example_transcript:
+            issues.append("例句像转录稿，带说话人标记")
+            severity += 2
+        if explanation_transcript:
+            issues.append("explanation 带说话人标记")
+            severity += 2
+        if example_has_noise or explanation_has_noise:
+            issues.append("内容里有编号、链接或杂质标记")
+            severity += 1
+        if explanation_mostly_english:
+            issues.append("explanation 基本是英文，不利于当前中文记忆")
+            severity += 3
+        if len(example_text) > 240 and (example_transcript or example_has_noise):
+            issues.append("例句过长，建议精简")
+            severity += 2
+        if len(explanation) > 180 and (explanation_transcript or explanation_has_noise or explanation_mostly_english):
+            issues.append("explanation 过长或噪声较多")
+            severity += 2
+
+        if severity < 2:
+            return None
+        return {"issues": issues[:4], "severity": severity}
+
+    def format_review_cleanup_request(self, proposal: dict) -> str:
         lines = [
-            prefix.rstrip(),
-            f"词: {current.get('word', '')}",
-            f"例句: {example_text}",
+            "### 清理建议",
+            "",
+            "这题已经完成。我先把建议修改的前后差异给你看一下，你确认后我再保存。",
         ]
-        if reason:
-            lines.append(f"推荐原因: {reason}")
-        lines.append(f"请解释这个词在例句里的意思和用法。可用 {SKIP_COMMAND} 跳过，{END_COMMAND} 退出。")
+        issues = proposal.get("issues") if isinstance(proposal.get("issues"), list) else []
+        if issues:
+            lines.extend(["", "**发现的问题**"])
+            for item in issues[:4]:
+                lines.append(f"- {item}")
+
+        changed_fields = proposal.get("changed_fields") if isinstance(proposal.get("changed_fields"), list) else []
+        if "词条" in changed_fields:
+            lines.extend(
+                [
+                    "",
+                    "**词条 before**",
+                    markdown_quote(str(proposal.get("before_word") or ""), fallback="(空)"),
+                    "",
+                    "**词条 after**",
+                    markdown_quote(str(proposal.get("after_word") or ""), fallback="(空)"),
+                    "",
+                    "**文件 before**",
+                    markdown_quote(str(proposal.get("before_file") or ""), fallback="(空)"),
+                    "",
+                    "**文件 after**",
+                    markdown_quote(str(proposal.get("after_file") or ""), fallback="(空)"),
+                ]
+            )
+        if "例句" in changed_fields:
+            lines.extend(
+                [
+                    "",
+                    "**例句 before**",
+                    markdown_quote(str(proposal.get("before_example_text") or ""), fallback="(空)"),
+                    "",
+                    "**例句 after**",
+                    markdown_quote(str(proposal.get("after_example_text") or ""), fallback="(空)"),
+                ]
+            )
+        if "explanation" in changed_fields:
+            lines.extend(
+                [
+                    "",
+                    "**Explanation before**",
+                    markdown_quote(str(proposal.get("before_example_explanation") or ""), fallback="(空)"),
+                    "",
+                    "**Explanation after**",
+                    markdown_quote(str(proposal.get("after_example_explanation") or ""), fallback="(空)"),
+                ]
+            )
+
+        summary = collapse_ws(str(proposal.get("summary") or ""))
+        if summary:
+            lines.extend(["", f"_备注：{summary}_"])
+
+        lines.extend(
+            [
+                "",
+                "回复 `y` 才会保存这些修改。",
+                "回复 `n` 不保存。",
+                "如果你直接继续说别的，我会默认你不同意，并进入下一题。",
+            ]
+        )
         return "\n".join(lines)
+
+    def generate_review_cleanup_candidate(
+        self,
+        current: dict,
+        *,
+        original_text: str,
+        original_explanation: str,
+        allow_llm: bool = True,
+        allow_non_word_changes: bool = True,
+        word_hint: str = "",
+    ) -> dict:
+        cleaned_text = strip_review_noise(original_text) or original_text
+        cleaned_explanation = strip_review_noise(original_explanation) or original_explanation
+        llm_notes = ""
+        llm_word = ""
+        source_info = current.get("example_source") if isinstance(current.get("example_source"), dict) else {}
+        source_bound = any(collapse_ws(str(value)) for value in source_info.values())
+        fallback_word_candidates = cleanup_word_candidates(current, cleaned_text or original_text, cleaned_explanation or original_explanation)
+
+        def is_cleanup_text_trustworthy(candidate_text: str) -> bool:
+            proposed = collapse_ws(candidate_text)
+            baseline = collapse_ws(cleaned_text or original_text)
+            raw_original = collapse_ws(original_text)
+            if not proposed:
+                return False
+            if not looks_mostly_english(proposed):
+                return False
+            if not source_bound:
+                return True
+            if proposed.lower() == baseline.lower() or proposed.lower() == raw_original.lower():
+                return True
+            original_tokens = {
+                token.lower()
+                for token in re.findall(r"[A-Za-z][A-Za-z'-]{1,}", raw_original)
+            }
+            proposed_tokens = {
+                token.lower()
+                for token in re.findall(r"[A-Za-z][A-Za-z'-]{1,}", proposed)
+            }
+            if not proposed_tokens:
+                return False
+            return proposed_tokens.issubset(original_tokens)
+
+        def is_cleanup_word_trustworthy(candidate_word: str) -> bool:
+            proposed = normalize_word_key(candidate_word)
+            original_word = normalize_word_key(str(current.get("word") or current.get("word_key") or ""))
+            if not proposed:
+                return False
+            if proposed == original_word:
+                return True
+            direct_base_candidates = set(inflection_base_candidates(original_word))
+            trusted = set(fallback_word_candidates)
+            trusted.update(direct_base_candidates)
+            focus_words = current.get("focus_words") if isinstance(current.get("focus_words"), list) else []
+            for token in focus_words:
+                trusted.update(inflection_base_candidates(str(token)))
+            if len(proposed) < len(original_word):
+                return proposed in direct_base_candidates
+            return proposed in trusted
+
+        if allow_llm and self.llm_client.enabled:
+            cleanup_scope = "full" if allow_non_word_changes else "word_only"
+            system_prompt = (
+                "你是英语词汇卡片清洗助手。"
+                "请只返回 JSON，字段必须包含: word, example_text, explanation, notes。"
+                "要求: 1) 去掉说话人标记、编号、链接和明显 OCR 噪声；"
+                "2) example_text 只允许最小必要清洗，尽量保留原句措辞和结构，不能自由改写；"
+                "3) explanation 必须是自然、完整、简洁的中文，并点明目标词在句中的意思；"
+                "4) 如果例句绑定了来源，example_text 必须忠实原句，只去噪，不要换词、改写或补充原句没有的信息；"
+                "5) 只有在证据非常明确时才改 word，而且只能收敛到屈折变化对应的原型；不允许猜测性补字母；"
+                "6) 如果 cleanup_scope 是 word_only，就只判断 word 是否要改，example_text 和 explanation 保持原意，不要顺手改写；"
+                "7) 不要输出 markdown，不要编造原句没有的信息。"
+            )
+            user_prompt = json.dumps(
+                {
+                    "word": current.get("word", ""),
+                    "word_key": current.get("word_key", ""),
+                    "definitions": current.get("definitions", []),
+                    "focus_words": current.get("focus_words", []),
+                    "source": source_info,
+                    "cleanup_scope": cleanup_scope,
+                    "word_hint": word_hint,
+                    "example_text": original_text,
+                    "example_explanation": original_explanation,
+                },
+                ensure_ascii=False,
+            )
+            result = {}
+            for _attempt in range(2):
+                try:
+                    result = self.llm_client.chat_json(
+                        system_prompt=system_prompt,
+                        user_prompt=user_prompt,
+                        max_tokens=420,
+                        temperature=0.1,
+                        timeout=90.0,
+                    )
+                except Exception:
+                    result = {}
+                    continue
+
+                llm_text = collapse_ws(str(result.get("example_text") or result.get("text") or ""))
+                llm_explanation = collapse_ws(str(result.get("explanation") or ""))
+                candidate_word = normalize_word_key(str(result.get("word") or ""))
+                candidate_notes = collapse_ws(str(result.get("notes") or ""))
+
+                accepted = False
+                if allow_non_word_changes and llm_text and is_cleanup_text_trustworthy(llm_text):
+                    cleaned_text = llm_text
+                    accepted = True
+                if allow_non_word_changes and llm_explanation and contains_cjk(llm_explanation):
+                    cleaned_explanation = llm_explanation
+                    accepted = True
+                if candidate_word and is_cleanup_word_trustworthy(candidate_word):
+                    llm_word = candidate_word
+                    accepted = True
+                if candidate_notes:
+                    llm_notes = candidate_notes
+                if accepted:
+                    break
+
+        if not cleaned_explanation:
+            for item in current.get("definitions", []):
+                definition = collapse_ws(str(item))
+                if contains_cjk(definition):
+                    cleaned_explanation = definition
+                    break
+
+        original_word = normalize_word_key(str(current.get("word") or current.get("word_key") or ""))
+        cleaned_word = llm_word or original_word
+
+        return {
+            "word": cleaned_word,
+            "example_text": cleaned_text or original_text,
+            "explanation": cleaned_explanation or original_explanation,
+            "summary": llm_notes,
+        }
+
+    def build_review_cleanup_proposal(self, current: dict) -> dict | None:
+        report = self.inspect_review_content_issues(current)
+
+        detail = self.linkualog_client.get_vocab_detail(str(current.get("word_key") or ""), str(current.get("category") or ""))
+        payload = detail.get("data") if isinstance(detail.get("data"), dict) else {}
+        examples = payload.get("examples") if isinstance(payload.get("examples"), list) else []
+        raw_example_index = current.get("example_index", -1)
+        try:
+            example_index = int(raw_example_index)
+        except (TypeError, ValueError):
+            example_index = -1
+        if example_index < 0 or example_index >= len(examples) or not isinstance(examples[example_index], dict):
+            return None
+
+        example = dict(examples[example_index])
+        original_text = collapse_ws(str(example.get("text") or ""))
+        original_explanation = collapse_ws(str(example.get("explanation") or ""))
+        word_hint = guess_cleanup_word_candidate(current, original_text, original_explanation)
+        if not report and not (word_hint and self.llm_client.enabled):
+            return None
+
+        candidate = self.generate_review_cleanup_candidate(
+            current,
+            original_text=original_text,
+            original_explanation=original_explanation,
+            allow_llm=bool(report or word_hint),
+            allow_non_word_changes=bool(report),
+            word_hint=word_hint,
+        )
+        original_word = normalize_word_key(str(current.get("word") or current.get("word_key") or ""))
+        cleaned_text = collapse_ws(str(candidate.get("example_text") or "")) or original_text
+        cleaned_explanation = collapse_ws(str(candidate.get("explanation") or "")) or original_explanation
+        cleaned_word = normalize_word_key(str(candidate.get("word") or "")) or original_word
+        original_file = normalize_json_filename(str(current.get("file") or ""))
+        cleaned_file = normalize_json_filename(f"{cleaned_word}.json") if cleaned_word else original_file
+
+        changed_fields = []
+        if cleaned_word != original_word:
+            changed_fields.append("词条")
+        if cleaned_text != original_text:
+            changed_fields.append("例句")
+        if cleaned_explanation != original_explanation:
+            changed_fields.append("explanation")
+        if not changed_fields:
+            return None
+
+        issues = list(report.get("issues", [])) if isinstance(report, dict) else []
+        if "词条" in changed_fields and "词条名可能不完整或有误" not in issues:
+            issues.insert(0, "词条名可能不完整或有误")
+
+        return {
+            "word": current.get("word", ""),
+            "category": current.get("category", ""),
+            "file": original_file,
+            "word_key": current.get("word_key", ""),
+            "example_index": example_index,
+            "issues": issues[:4],
+            "changed_fields": changed_fields,
+            "before_word": original_word,
+            "after_word": cleaned_word,
+            "before_file": original_file,
+            "after_file": cleaned_file,
+            "before_example_text": original_text,
+            "after_example_text": cleaned_text,
+            "before_example_explanation": original_explanation,
+            "after_example_explanation": cleaned_explanation,
+            "summary": collapse_ws(str(candidate.get("summary") or "")),
+        }
+
+    def blank_target_in_text(self, current: dict, text: str) -> str:
+        raw_text = str(text or "").strip()
+        if not raw_text:
+            return ""
+        raw_candidates = [
+            str(current.get("word") or "").strip(),
+            str(current.get("word_key") or "").replace("-", " ").strip(),
+            str(current.get("word_key") or "").strip(),
+        ]
+        seen: set[str] = set()
+        for candidate in sorted(raw_candidates, key=len, reverse=True):
+            normalized = normalize_review_surface_text(candidate)
+            if not candidate or not normalized or normalized in seen:
+                continue
+            seen.add(normalized)
+            parts = [re.escape(part) for part in re.split(r"[\s-]+", candidate) if part]
+            if not parts:
+                continue
+            pattern = re.compile(
+                rf"(?<![A-Za-z0-9]){'[-\\s]+'.join(parts)}(?![A-Za-z0-9])",
+                flags=re.IGNORECASE,
+            )
+            replaced, count = pattern.subn("_____", raw_text, count=1)
+            if count:
+                return replaced
+        return ""
+
+    def build_fill_blank_challenge(self, current: dict) -> dict:
+        return review_teaching_mod.build_fill_blank_challenge(current, llm_client=self.llm_client)
+
+    def build_creative_challenge(self, current: dict) -> dict:
+        return review_teaching_mod.build_creative_challenge(current, llm_client=self.llm_client)
+
+    def ensure_review_challenge(self, current: dict, mode: int) -> dict:
+        return review_teaching_mod.ensure_review_challenge(current, mode, llm_client=self.llm_client)
+
+    def prepare_current_review_prompt(self, session: dict, *, intro: bool, note: str = "") -> ToolResult:
+        review = session.get("review")
+        if not isinstance(review, dict):
+            session["mode"] = "idle"
+            return self.reply("review_prepare", "review 状态异常，已退出。", status="error")
+
+        current = review.get("current")
+        if not isinstance(current, dict):
+            return self.prepare_next_review_prompt(session, intro=intro)
+
+        review["pending_cleanup"] = None
+        mode = self.get_active_review_mode(session)
+        challenge = self.ensure_review_challenge(current, mode)
+        prompt = self.format_review_prompt(current, intro=intro, mode=mode, challenge=challenge, note=note)
+        return self.reply_md(
+            "review_prompt",
+            prompt,
+            status="success",
+            category=current.get("category", ""),
+            word=current.get("word", ""),
+            mode=mode,
+        )
+
+    def format_review_prompt(self, current: dict, *, intro: bool, mode: int, challenge: dict, note: str = "") -> str:
+        return review_teaching_mod.format_review_prompt(
+            current,
+            intro=intro,
+            mode=mode,
+            challenge=challenge,
+            llm_client=self.llm_client,
+            note=note,
+            mode_command=MODE_COMMAND,
+            skip_command=SKIP_COMMAND,
+            end_command=END_COMMAND,
+        )
 
     def handle_review_message(self, envelope: dict, session: dict, normalized_text: str) -> ToolResult:
         review = session.get("review")
@@ -1668,14 +2410,23 @@ class QQLinkuaLogApp:
             session["mode"] = "idle"
             return self.reply("review_message", "review 状态异常，已退出。", status="error")
 
+        pending_cleanup = review.get("pending_cleanup")
+        if isinstance(pending_cleanup, dict):
+            return self.handle_review_cleanup_confirmation(session, normalized_text)
+
         current = review.get("current")
         if not isinstance(current, dict):
             return self.prepare_next_review_prompt(session)
 
         if not normalized_text:
-            return self.reply("review_message", f"请直接回答，或使用 {SKIP_COMMAND} {END_COMMAND}。", status="error")
+            return self.reply_md(
+                "review_message",
+                f"### 需要作答\n\n请直接回答，或使用 `{SKIP_COMMAND}` / `{END_COMMAND}`。",
+                status="error",
+            )
 
-        grade = self.grade_review_answer(current, normalized_text)
+        review_mode = self.get_active_review_mode(session)
+        grade = self.grade_review_answer(current, normalized_text, review_mode)
         if grade.get("status") == "error":
             return self.reply("review_grade", str(grade.get("message") or "批改失败"), status="error")
 
@@ -1709,18 +2460,174 @@ class QQLinkuaLogApp:
         )
         review["history"] = history[-50:]
 
+        cleanup_proposal = None
+        try:
+            cleanup_proposal = self.build_review_cleanup_proposal(current)
+        except Exception as exc:
+            print(f"[review-cleanup] proposal failed: {exc}")
+
+        feedback_text = self.format_review_feedback(current, grade, review_mode)
+        if isinstance(cleanup_proposal, dict):
+            review["pending_cleanup"] = cleanup_proposal
+            return self.reply_md(
+                "review_grade",
+                feedback_text + "\n\n" + self.format_review_cleanup_request(cleanup_proposal),
+                status="pending_cleanup",
+                score=score,
+                word=current.get("word", ""),
+            )
+
         next_result = self.prepare_next_review_prompt(session, intro=False)
-        feedback_text = self.format_review_feedback(current, grade)
         if next_result.should_reply and next_result.reply_text:
             combined = feedback_text + "\n\n" + next_result.reply_text
         else:
             combined = feedback_text
-        return self.reply(
+        return self.reply_md(
             "review_grade",
             combined,
             status="success",
             score=score,
             word=current.get("word", ""),
+        )
+
+    def handle_review_cleanup_confirmation(self, session: dict, normalized_text: str) -> ToolResult:
+        review = session.get("review")
+        if not isinstance(review, dict):
+            session["mode"] = "idle"
+            return self.reply("review_cleanup", "review 状态异常，已退出。", status="error")
+
+        lowered = normalized_text.lower()
+
+        if lowered in CLEANUP_APPROVE_WORDS:
+            return self.apply_review_cleanup(session)
+        review["pending_cleanup"] = None
+        note = (
+            "### 已跳过清理\n\n- 你没有同意保存这次清理建议。"
+            if lowered in NO_WORDS
+            else "### 已默认不保存清理\n\n- 未收到明确同意，已按未同意处理。"
+        )
+        next_result = self.prepare_next_review_prompt(session, intro=False)
+        return self.combine_markdown_reply(
+            "review_cleanup_skip",
+            note,
+            next_result,
+            status="success",
+        )
+
+    def apply_review_cleanup_proposal(self, proposal: dict) -> dict:
+        detail = self.linkualog_client.get_vocab_detail(str(proposal.get("word_key") or ""), str(proposal.get("category") or ""))
+        payload = detail.get("data") if isinstance(detail.get("data"), dict) else {}
+        examples = payload.get("examples") if isinstance(payload.get("examples"), list) else []
+        raw_example_index = proposal.get("example_index", -1)
+        try:
+            example_index = int(raw_example_index)
+        except (TypeError, ValueError):
+            example_index = -1
+        if example_index < 0 or example_index >= len(examples) or not isinstance(examples[example_index], dict):
+            raise RuntimeError("当前例句定位失败，未做保存。")
+
+        example = dict(examples[example_index])
+        changed_fields = proposal.get("changed_fields") if isinstance(proposal.get("changed_fields"), list) else []
+        if "例句" in changed_fields:
+            example["text"] = collapse_ws(str(proposal.get("after_example_text") or ""))
+        if "explanation" in changed_fields:
+            example["explanation"] = collapse_ws(str(proposal.get("after_example_explanation") or ""))
+
+        examples[example_index] = example
+        payload["examples"] = examples
+        before_word = normalize_word_key(str(proposal.get("before_word") or proposal.get("word") or ""))
+        after_word = normalize_word_key(str(proposal.get("after_word") or before_word))
+        if "词条" in changed_fields and after_word and after_word != before_word:
+            merged_from = payload.get("mergedFrom")
+            if not isinstance(merged_from, list):
+                merged_from = []
+            if before_word and before_word != after_word and before_word not in merged_from:
+                merged_from.append(before_word)
+            if merged_from:
+                payload["mergedFrom"] = merged_from
+            saved = self.linkualog_client.rename_vocab(
+                category=str(proposal.get("category") or ""),
+                filename=str(proposal.get("file") or ""),
+                word=after_word,
+                data=payload,
+            )
+        else:
+            saved = self.linkualog_client.save_vocab(
+                category=str(proposal.get("category") or ""),
+                filename=str(proposal.get("file") or ""),
+                data=payload,
+            )
+        saved_payload = saved.get("data") if isinstance(saved.get("data"), dict) else payload
+        summary = f"已保存{'、'.join(changed_fields)}。"
+        proposal_summary = collapse_ws(str(proposal.get("summary") or ""))
+        if proposal_summary:
+            summary += f" {proposal_summary}"
+        final_file = normalize_json_filename(str(saved.get("file") or saved.get("target_file") or proposal.get("after_file") or proposal.get("file") or ""))
+        final_word = collapse_ws(str(saved_payload.get("word") or after_word or proposal.get("after_word") or proposal.get("word") or ""))
+        return {
+            "data": saved_payload,
+            "summary": summary,
+            "file": final_file,
+            "word": final_word,
+        }
+
+    def apply_review_cleanup(self, session: dict) -> ToolResult:
+        review = session.get("review")
+        if not isinstance(review, dict):
+            session["mode"] = "idle"
+            return self.reply("review_cleanup", "review 状态异常，已退出。", status="error")
+
+        proposal = review.get("pending_cleanup")
+        if not isinstance(proposal, dict):
+            return self.prepare_next_review_prompt(session)
+
+        try:
+            saved_result = self.apply_review_cleanup_proposal(proposal)
+        except Exception as exc:
+            return self.reply_md(
+                "review_cleanup",
+                (
+                    "### 清理保存失败\n\n"
+                    f"- 错误: {shorten_text(str(exc), 160)}\n"
+                    "- 你可以回复 `y` 重试，或回复别的内容跳过。"
+                ),
+                status="error",
+            )
+
+        summary = collapse_ws(str(saved_result.get("summary") or "已保存清理。"))
+        final_file = normalize_json_filename(str(saved_result.get("file") or proposal.get("after_file") or proposal.get("file") or ""))
+        final_word = collapse_ws(str(saved_result.get("word") or proposal.get("after_word") or proposal.get("word") or ""))
+        if final_file:
+            next_key = f"{proposal.get('category', '')}/{final_file}".strip("/")
+            excluded = review.setdefault("excluded_keys", [])
+            if next_key and next_key not in excluded:
+                excluded.append(next_key)
+        current = review.get("current")
+        if isinstance(current, dict):
+            if final_file:
+                current["file"] = final_file
+                current["word_key"] = os.path.splitext(final_file)[0]
+            if final_word:
+                current["word"] = final_word
+            changed_fields = proposal.get("changed_fields") if isinstance(proposal.get("changed_fields"), list) else []
+            if "例句" in changed_fields:
+                current["example_text"] = collapse_ws(str(proposal.get("after_example_text") or current.get("example_text") or ""))
+            if "explanation" in changed_fields:
+                current["example_explanation"] = collapse_ws(str(proposal.get("after_example_explanation") or current.get("example_explanation") or ""))
+        review["pending_cleanup"] = None
+        next_result = self.prepare_next_review_prompt(session, intro=False)
+        word_line = f"**{proposal.get('word', '')}**"
+        if "词条" in (proposal.get("changed_fields") if isinstance(proposal.get("changed_fields"), list) else []):
+            word_line = f"**{proposal.get('word', '')}** -> **{final_word or proposal.get('after_word', '')}**"
+        return self.combine_markdown_reply(
+            "review_cleanup",
+            (
+                "### 已保存清理\n\n"
+                f"- 词条: {word_line}\n"
+                f"- 结果: {summary}"
+            ),
+            next_result,
+            status="success",
         )
 
     def skip_review_item(self, session: dict) -> ToolResult:
@@ -1729,27 +2636,49 @@ class QQLinkuaLogApp:
             session["mode"] = "idle"
             return self.reply("review_skip", "review 状态异常。", status="error")
         current = review.get("current")
+        review["pending_cleanup"] = None
         if isinstance(current, dict):
             key = str(current.get("key") or "")
             if key and key not in review.setdefault("excluded_keys", []):
                 review["excluded_keys"].append(key)
         return self.prepare_next_review_prompt(session, intro=False)
 
-    def format_review_feedback(self, current: dict, grade: dict) -> str:
+    def format_review_feedback(self, current: dict, grade: dict, mode: int) -> str:
         matched = grade.get("matched_points") if isinstance(grade.get("matched_points"), list) else []
         missing = grade.get("missing_points") if isinstance(grade.get("missing_points"), list) else []
+        reference = current.get("example_explanation") or (current.get("definitions") or [""])[0]
+        memory_hints = review_teaching_mod.infer_review_memory_hints(current, limit=2, llm_client=self.llm_client)
         lines = [
-            f"评分: {grade.get('score', 0)}/5",
-            f"词: {current.get('word', '')}",
-            f"评语: {grade.get('feedback', '')}",
+            "### 本题反馈",
+            "",
+            f"- 评分: `{grade.get('score', 0)}/5`",
+            f"- 模式: `模式 {mode} · {review_mode_label(mode)}`",
+            (
+                f"- 正确答案: **{current.get('word', '')}**"
+                if mode == 2
+                else f"- 词条: **{current.get('word', '')}**"
+            ),
+            f"- 评语: {grade.get('feedback', '')}",
         ]
+        if reference:
+            lines.append(f"- 参考理解: {shorten_text(str(reference), 120)}")
         if matched:
-            lines.append("答对点: " + "；".join(str(item) for item in matched[:3]))
+            lines.extend(["", "**答对点**"])
+            for item in matched[:3]:
+                lines.append(f"- {item}")
         if missing:
-            lines.append("遗漏点: " + "；".join(str(item) for item in missing[:3]))
+            lines.extend(["", "**待补强**"])
+            for item in missing[:3]:
+                lines.append(f"- {item}")
+        if memory_hints:
+            lines.extend(["", "**构词联想**"])
+            for item in memory_hints:
+                lines.append(f"- {item}")
+        if current.get("example_text"):
+            lines.extend(["", "**原例句**", markdown_quote(str(current.get("example_text") or ""))])
         return "\n".join(lines)
 
-    def grade_review_answer(self, current: dict, answer: str) -> dict:
+    def grade_review_explanation_answer(self, current: dict, answer: str) -> dict:
         if not self.llm_client.enabled:
             return {"status": "error", "message": "当前未配置可用 LLM，无法自动批改 review。"}
 
@@ -1797,6 +2726,147 @@ class QQLinkuaLogApp:
             "missing_points": [collapse_ws(str(item)) for item in missing if collapse_ws(str(item))],
         }
 
+    def grade_fill_blank_answer(self, current: dict, answer: str) -> dict:
+        challenge = self.ensure_review_challenge(current, 2)
+        raw_accepted = challenge.get("accepted_answers") if isinstance(challenge.get("accepted_answers"), list) else []
+        accepted_keys = {
+            normalize_answer_key(str(item))
+            for item in raw_accepted + [current.get("word", ""), current.get("word_key", "")]
+            if normalize_answer_key(str(item))
+        }
+        answer_key = normalize_answer_key(answer)
+        target = collapse_ws(str(current.get("word") or current.get("word_key") or ""))
+
+        if not answer_key:
+            return {
+                "status": "success",
+                "score": 0,
+                "feedback": f"还没有真正作答，正确答案是 {target}。",
+                "matched_points": [],
+                "missing_points": ["需要直接填英文单词或短语"],
+            }
+
+        if answer_key in accepted_keys:
+            return {
+                "status": "success",
+                "score": 5,
+                "feedback": "填空正确。",
+                "matched_points": [f"准确回忆出目标词 {target}"],
+                "missing_points": [],
+            }
+
+        if any(key and (answer_key in key or key in answer_key) for key in accepted_keys):
+            return {
+                "status": "success",
+                "score": 4,
+                "feedback": f"基本答对了，核心词就是 {target}。",
+                "matched_points": ["已经回忆到正确核心词形"],
+                "missing_points": ["格式还可以更精确一些"],
+            }
+
+        best_ratio = max((SequenceMatcher(None, answer_key, key).ratio() for key in accepted_keys), default=0.0)
+        if best_ratio >= 0.84:
+            return {
+                "status": "success",
+                "score": 2,
+                "feedback": f"和正确答案 {target} 很接近，像是拼写或形式差了一点。",
+                "matched_points": ["已经接近正确答案"],
+                "missing_points": [f"正确答案是 {target}"],
+            }
+
+        return {
+            "status": "success",
+            "score": 0,
+            "feedback": f"这次没填对，正确答案是 {target}。",
+            "matched_points": [],
+            "missing_points": [f"需要回忆出目标词 {target}"],
+        }
+
+    def grade_creative_answer(self, current: dict, answer: str) -> dict:
+        target_key = normalize_answer_key(str(current.get("word") or current.get("word_key") or ""))
+        answer_key = normalize_answer_key(answer)
+        if not answer_key:
+            return {
+                "status": "success",
+                "score": 0,
+                "feedback": "答案为空，至少先写一句英文。",
+                "matched_points": [],
+                "missing_points": ["需要给出完整英文句子"],
+            }
+
+        if target_key and target_key not in answer_key:
+            return {
+                "status": "success",
+                "score": 1,
+                "feedback": f"你已经开始造句了，但句子里还没有真正用到目标词 {current.get('word', '')}。",
+                "matched_points": [],
+                "missing_points": [f"必须实际用上 {current.get('word', '')}"],
+            }
+
+        if not self.llm_client.enabled:
+            return {
+                "status": "success",
+                "score": 3,
+                "feedback": "检测到你已经用上目标词了；若想精细批改自然度和准确性，需要配置 LLM。",
+                "matched_points": ["已经实际使用了目标词"],
+                "missing_points": ["尚未检查语法和自然度细节"],
+            }
+
+        challenge = self.ensure_review_challenge(current, 3)
+        system_prompt = (
+            "你是英语词汇复习批改器，负责模式3创意输出。"
+            "根据目标词、例句、参考释义、任务要求和用户答案，输出 JSON。"
+            "必须返回字段: score(0-5整数), feedback, matched_points(数组), missing_points(数组)。"
+            "评分重点: 是否真正用到目标词、是否完成题目要求、语义是否正确、句子是否自然。"
+            "如果只是生硬塞词、没有贴合给定微场景，最高不超过 3 分。"
+            "如果明显照抄参考例句或场景很空，要扣分。"
+            "feedback 用中文，短而明确。不要输出 JSON 以外内容。"
+        )
+        user_prompt = json.dumps(
+            {
+                "word": current.get("word", ""),
+                "definitions": current.get("definitions", []),
+                "example_text": current.get("example_text", ""),
+                "example_explanation": current.get("example_explanation", ""),
+                "challenge": challenge,
+                "user_answer": answer,
+            },
+            ensure_ascii=False,
+        )
+        try:
+            result = self.llm_client.chat_json(
+                system_prompt=system_prompt,
+                user_prompt=user_prompt,
+                max_tokens=500,
+                temperature=0.1,
+                timeout=90.0,
+            )
+        except Exception as exc:
+            return {"status": "error", "message": f"LLM 批改失败: {exc}"}
+
+        score = result.get("score")
+        try:
+            final_score = max(0, min(5, int(score)))
+        except (TypeError, ValueError):
+            final_score = 0
+        feedback = collapse_ws(str(result.get("feedback") or "")) or "已完成批改。"
+        matched = result.get("matched_points") if isinstance(result.get("matched_points"), list) else []
+        missing = result.get("missing_points") if isinstance(result.get("missing_points"), list) else []
+        return {
+            "status": "success",
+            "score": final_score,
+            "feedback": feedback,
+            "matched_points": [collapse_ws(str(item)) for item in matched if collapse_ws(str(item))],
+            "missing_points": [collapse_ws(str(item)) for item in missing if collapse_ws(str(item))],
+        }
+
+    def grade_review_answer(self, current: dict, answer: str, mode: int) -> dict:
+        if mode == 2:
+            return self.grade_fill_blank_answer(current, answer)
+        if mode == 3:
+            return self.grade_creative_answer(current, answer)
+        return self.grade_review_explanation_answer(current, answer)
+
     def append_review_session_log(self, *, current: dict, envelope: dict, answer: str, grade: dict) -> None:
         detail = self.linkualog_client.get_vocab_detail(str(current.get("word_key") or ""), str(current.get("category") or ""))
         payload = detail.get("data") if isinstance(detail.get("data"), dict) else {}
@@ -1813,6 +2883,7 @@ class QQLinkuaLogApp:
                 "word": current.get("word", ""),
                 "example_text": current.get("example_text", ""),
                 "expected_definitions": current.get("definitions", []),
+                "review_mode": int(current.get("challenge", {}).get("mode", 1) or 1),
                 "user_answer": answer,
                 "score": int(grade.get("score", 0) or 0),
                 "feedback": grade.get("feedback", ""),

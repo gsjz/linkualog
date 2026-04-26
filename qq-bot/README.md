@@ -8,9 +8,12 @@
 - 接收单聊和群里 `@机器人` 事件
 - 将 `\add`、`\upload`、`\review`、`\task`、`\process` 等指令路由到 `master-server`
 - 对 `\help` 使用 QQ markdown 消息，便于在客户端分行展示
+- `\status`、`\search`、`\review` 等结果会尽量使用 markdown 排版
 - `\task` 空参数会列出最近任务，避免手动查任务 ID
 - `\upload [任务名]` 支持命名任务，上传模式中可用 `\name` 修改名称
 - `\auto on|off` 可在上传模式中开关上传后自动分析，默认开启
+- `\review` 支持 `\mode 1|2|3` 三种题型，且题型选择会记忆化
+- `\review` 遇到脏的 example / explanation 时，会在答题后先展示改前 / 改后，再由用户决定是否保存
 - 复用仓库根目录 `.env` 里的 `MASTER_SERVER_LLM_*` 配置
 
 ## 目录文件
@@ -18,7 +21,6 @@
 - `main.py`: QQ 网关客户端、会话状态机、Linkualog API connector
 - `pyproject.toml` / `uv.lock`: `uv` 管理的 Python 依赖
 - `Dockerfile`: QQ bot 容器镜像
-- `.env.local.example`: 本机 `uv` 运行模板
 
 ## 本机运行
 
@@ -31,8 +33,9 @@ uv run main.py
 ```
 
 ```bash
-cd /home/ubuntu/linkualog/qq-bot
-cp .env.local.example .env.local
+cd /home/ubuntu/linkualog
+# 先确认项目根目录 .env 已填好 QQ_APP_ID / QQ_APP_SECRET
+cd qq-bot
 uv sync
 uv run main.py
 ```
@@ -70,7 +73,8 @@ cp .env.example .env
 - `QQ_LOCAL_DATA_DIR`
 - `QQ_SESSION_STATE_FILE`
 
-本机 `uv` 运行时，这些变量默认优先从 `qq-bot/.env.local` 读取，再回退到仓库根目录 `.env`。
+本机 `uv` 运行时，这些变量默认直接从项目根目录 `.env` 读取。
+如果需要改成别的配置文件，可以显式设置 `QQ_LINKUALOG_ENV_FILE=/abs/path/to/file`。
 
 ## 当前验证范围
 

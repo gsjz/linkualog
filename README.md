@@ -38,8 +38,9 @@ uv run main.py
 If you also want the QQ bot locally:
 
 ```bash
+cd /home/ubuntu/linkualog
+# 确保项目根目录 .env 已填好 QQ_APP_ID / QQ_APP_SECRET
 cd qq-bot
-cp .env.local.example .env.local
 uv sync
 uv run main.py
 ```
