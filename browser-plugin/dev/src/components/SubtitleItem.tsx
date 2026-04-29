@@ -103,8 +103,7 @@ const SubtitleItem: React.FC<SubtitleItemProps> = ({ data, index, allSubs, isAct
         word: word,
         context: contextBlock.trim(),
         source: videoTitle?.trim(),
-        youtube: { url: cleanUrl, timestamp: Math.floor(data.start) },
-        autoOpen: true
+        youtube: { url: cleanUrl, timestamp: Math.floor(data.start) }
       }
     }));
     

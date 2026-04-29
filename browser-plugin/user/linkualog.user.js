@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Linkual Log
 // @namespace    npm/vite-plugin-monkey
-// @version      0.0.6
+// @version      0.0.7
 // @author       Sergio Gao
 // @icon         https://vitejs.dev/logo.svg
 // @downloadURL  https://raw.githubusercontent.com/gsjz/linkualog/main/browser-plugin/user/linkualog.user.js
@@ -12815,8 +12815,7 @@
           word,
           context: contextBlock.trim(),
           source: videoTitle == null ? void 0 : videoTitle.trim(),
-          youtube: { url: cleanUrl, timestamp: Math.floor(data.start) },
-          autoOpen: true
+          youtube: { url: cleanUrl, timestamp: Math.floor(data.start) }
         }
       }));
       setSelectionBox(null);
@@ -13247,6 +13246,7 @@ JSON 格式：
       ((_a = result == null ? void 0 : result.definitions) == null ? void 0 : _a.length) || ((_b = result == null ? void 0 : result.examples) == null ? void 0 : _b.length) || getLlmExplanation(result)
     );
   };
+  const canSendTask = (task) => task.status === "idle" || task.status === "failed";
   const LlmResultPreview = ({ result }) => {
     var _a;
     if (!hasUsableLlmResult(result)) return null;
@@ -13268,6 +13268,7 @@ JSON 格式：
   };
   const VocabQueue = () => {
     const [isOpen, setIsOpen] = reactExports.useState(false);
+    const [isBulkSending, setIsBulkSending] = reactExports.useState(false);
     const [selectedCategory, setSelectedCategory] = reactExports.useState(ConfigService.get("lan_action") || "Video_Sync");
     const [themeColor, setThemeColor] = reactExports.useState(ConfigService.get("theme_color") || "#6a1b9a");
     const [tasks, setTasks] = reactExports.useState(() => {
@@ -13345,7 +13346,7 @@ JSON 格式：
     };
     reactExports.useEffect(() => {
       const handleEvent = (e) => {
-        const { word, context, source, youtube, autoOpen } = e.detail;
+        const { word, context, source, youtube } = e.detail;
         const dateObj = /* @__PURE__ */ new Date();
         const systemDate = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, "0")}-${String(dateObj.getDate()).padStart(2, "0")}`;
         const newTask = {
@@ -13360,7 +13361,6 @@ JSON 格式：
           error: null
         };
         setTasks((prev) => [newTask, ...prev]);
-        if (autoOpen) setIsOpen(true);
       };
       window.addEventListener("linkual-add-vocab", handleEvent);
       return () => window.removeEventListener("linkual-add-vocab", handleEvent);
@@ -13409,10 +13409,7 @@ JSON 格式：
         }
       });
     };
-    const handleSend = (taskId, deleteOnSuccess) => {
-      const sendingTask = tasks.find((t) => t.id === taskId);
-      if (!sendingTask) return;
-      setTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, status: "sending", error: null } : t));
+    const sendTaskToServer = (sendingTask) => {
       const serverUrl = ConfigService.get("lan_sync_url");
       const payload = {
         word: sendingTask.word,
@@ -13425,13 +13422,19 @@ JSON 格式：
         category: sendingTask.category
       };
       console.info("[Linkual] 发送生词到后端:", serverUrl, payload);
-      requestJson({
+      return requestJson({
         url: serverUrl,
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
         timeoutMs: 15e3
-      }).then(() => {
+      });
+    };
+    const handleSend = (taskId, deleteOnSuccess) => {
+      const sendingTask = tasks.find((t) => t.id === taskId);
+      if (!sendingTask || !canSendTask(sendingTask)) return;
+      setTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, status: "sending", error: null } : t));
+      sendTaskToServer(sendingTask).then(() => {
         console.info("[Linkual] 生词发送成功:", sendingTask.word);
         if (deleteOnSuccess) {
           setTasks((prev) => prev.filter((t) => t.id !== taskId));
@@ -13440,9 +13443,30 @@ JSON 格式：
         }
       }).catch((err) => {
         const message = err instanceof Error ? err.message : "请求异常";
-        console.error("[Linkual] 生词发送失败:", message, { url: serverUrl, task: sendingTask });
+        console.error("[Linkual] 生词发送失败:", message, { task: sendingTask });
         setTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, status: "failed", error: message } : t));
       });
+    };
+    const handleSendAllAndDelete = async () => {
+      const tasksToSend = tasks.filter(canSendTask);
+      if (tasksToSend.length === 0 || isBulkSending) return;
+      setIsBulkSending(true);
+      setTasks((prev) => prev.map((t) => canSendTask(t) ? { ...t, status: "sending", error: null } : t));
+      try {
+        for (const task of tasksToSend) {
+          try {
+            await sendTaskToServer(task);
+            console.info("[Linkual] 生词发送成功:", task.word);
+            setTasks((prev) => prev.filter((t) => t.id !== task.id));
+          } catch (err) {
+            const message = err instanceof Error ? err.message : "请求异常";
+            console.error("[Linkual] 生词发送失败:", message, { task });
+            setTasks((prev) => prev.map((t) => t.id === task.id ? { ...t, status: "failed", error: message } : t));
+          }
+        }
+      } finally {
+        setIsBulkSending(false);
+      }
     };
     const handleDeleteTask = (taskId) => {
       setTasks((prev) => prev.filter((t) => t.id !== taskId));
@@ -13454,9 +13478,11 @@ JSON 格式：
       }
     };
     const pendingCount = tasks.filter((t) => t.status !== "success").length;
+    const sendableCount = tasks.filter(canSendTask).length;
+    const bulkSendDisabled = isBulkSending || sendableCount === 0;
     return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { position: "fixed", left: `${position.left}px`, bottom: `${position.bottom}px`, zIndex: 2147483647, display: "flex", flexDirection: "column", alignItems: "flex-start", fontFamily: "sans-serif" }, children: [
       isOpen && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { width: "400px", height: "580px", background: "#fff", borderRadius: "8px", boxShadow: "0 10px 30px rgba(0,0,0,0.2)", border: "1px solid #e4e4e7", display: "flex", flexDirection: "column", marginBottom: "12px", overflow: "hidden" }, children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { padding: "12px", borderBottom: "1px solid #e4e4e7", background: "#fafafa", display: "flex", alignItems: "center", justifyContent: "space-between" }, children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { padding: "12px", borderBottom: "1px solid #e4e4e7", background: "#fafafa", display: "flex", flexDirection: "column", gap: "8px" }, children: [
           /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { display: "flex", alignItems: "center", gap: "8px" }, children: [
             /* @__PURE__ */ jsxRuntimeExports.jsx("label", { style: { fontSize: "13px", fontWeight: "bold", color: "#333" }, children: "生词本目录:" }),
             /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -13468,7 +13494,18 @@ JSON 格式：
               }
             )
           ] }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx("button", { onClick: handleClearAll, style: { border: "none", background: "none", color: "#f44336", cursor: "pointer", fontSize: "12px", fontWeight: "bold" }, children: "清空全部队列" })
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "8px", flexWrap: "wrap" }, children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "button",
+              {
+                onClick: handleSendAllAndDelete,
+                disabled: bulkSendDisabled,
+                style: { border: "none", background: bulkSendDisabled ? "#a7f3d0" : "#10b981", color: "#fff", cursor: bulkSendDisabled ? "not-allowed" : "pointer", fontSize: "12px", fontWeight: "bold", borderRadius: "4px", padding: "5px 9px" },
+                children: isBulkSending ? "批量发送中..." : "一键发送并删除"
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("button", { onClick: handleClearAll, style: { border: "none", background: "none", color: "#f44336", cursor: "pointer", fontSize: "12px", fontWeight: "bold" }, children: "清空全部队列" })
+          ] })
         ] }),
         /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { flex: 1, overflowY: "auto", padding: "12px", display: "flex", flexDirection: "column", gap: "12px", background: "#f9f9f9" }, children: [
           tasks.length === 0 && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { style: { textAlign: "center", color: "#999", marginTop: "40px", fontSize: "13px" }, children: "暂无待处理单词" }),
@@ -13500,8 +13537,24 @@ JSON 格式：
                   children: "请求释义"
                 }
               ),
-              /* @__PURE__ */ jsxRuntimeExports.jsx("button", { onClick: () => handleSend(t.id, true), style: { flex: "1 1 auto", padding: "6px 10px", background: "#10b981", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer", fontSize: "12px", fontWeight: "bold" }, children: "发送并删除" }),
-              /* @__PURE__ */ jsxRuntimeExports.jsx("button", { onClick: () => handleSend(t.id, false), style: { flex: "1 1 auto", padding: "6px 10px", background: "#3b82f6", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer", fontSize: "12px", fontWeight: "bold" }, children: "发送并保留" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "button",
+                {
+                  onClick: () => handleSend(t.id, true),
+                  disabled: !canSendTask(t),
+                  style: { flex: "1 1 auto", padding: "6px 10px", background: canSendTask(t) ? "#10b981" : "#a7f3d0", color: "#fff", border: "none", borderRadius: "4px", cursor: canSendTask(t) ? "pointer" : "not-allowed", fontSize: "12px", fontWeight: "bold" },
+                  children: "发送并删除"
+                }
+              ),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "button",
+                {
+                  onClick: () => handleSend(t.id, false),
+                  disabled: !canSendTask(t),
+                  style: { flex: "1 1 auto", padding: "6px 10px", background: canSendTask(t) ? "#3b82f6" : "#bfdbfe", color: "#fff", border: "none", borderRadius: "4px", cursor: canSendTask(t) ? "pointer" : "not-allowed", fontSize: "12px", fontWeight: "bold" },
+                  children: "发送并保留"
+                }
+              ),
               /* @__PURE__ */ jsxRuntimeExports.jsx("button", { onClick: () => handleDeleteTask(t.id), style: { padding: "6px 12px", background: "transparent", color: "#f44336", border: "1px solid #f44336", borderRadius: "4px", cursor: "pointer", fontSize: "12px" }, children: "丢弃" })
             ] })
           ] }, t.id))

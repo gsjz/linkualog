@@ -9,7 +9,7 @@ export default defineConfig({
       entry: 'src/apps/main.tsx',
       userscript: {
         name: 'Linkual Log',
-        version: '0.0.6',
+        version: '0.0.7',
         updateURL: 'https://raw.githubusercontent.com/gsjz/linkualog/main/browser-plugin/user/linkualog.user.js',
         downloadURL: 'https://raw.githubusercontent.com/gsjz/linkualog/main/browser-plugin/user/linkualog.user.js',
         author: 'Sergio Gao',

@@ -115,6 +115,8 @@ const hasUsableLlmResult = (result?: VocabLlmResult) => Boolean(
   || getLlmExplanation(result)
 );
 
+const canSendTask = (task: VocabTask) => task.status === 'idle' || task.status === 'failed';
+
 const LlmResultPreview: React.FC<{ result?: VocabLlmResult }> = ({ result }) => {
   if (!hasUsableLlmResult(result)) return null;
 
@@ -144,6 +146,7 @@ const sanitizeTask = (task: VocabTask): VocabTask => {
 
 const VocabQueue: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isBulkSending, setIsBulkSending] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(ConfigService.get('lan_action') as string || 'Video_Sync');
   const [themeColor, setThemeColor] = useState(ConfigService.get('theme_color') as string || '#6a1b9a');
 
@@ -226,7 +229,7 @@ const VocabQueue: React.FC = () => {
 
   useEffect(() => {
     const handleEvent = (e: any) => {
-      const { word, context, source, youtube, autoOpen } = e.detail;
+      const { word, context, source, youtube } = e.detail;
       
       const dateObj = new Date();
       const systemDate = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
@@ -238,7 +241,6 @@ const VocabQueue: React.FC = () => {
         status: 'idle', error: null
       };
       setTasks(prev => [newTask, ...prev]);
-      if (autoOpen) setIsOpen(true);
     };
     window.addEventListener('linkual-add-vocab', handleEvent);
     return () => window.removeEventListener('linkual-add-vocab', handleEvent);
@@ -292,14 +294,9 @@ const VocabQueue: React.FC = () => {
     });
   };
 
-  const handleSend = (taskId: string, deleteOnSuccess: boolean) => {
-    const sendingTask = tasks.find(t => t.id === taskId);
-    if (!sendingTask) return;
-
-    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: 'sending', error: null } : t));
-
+  const sendTaskToServer = (sendingTask: VocabTask) => {
     const serverUrl = ConfigService.get('lan_sync_url') as string;
-    
+
     const payload = {
       word: sendingTask.word,
       context: sendingTask.context,
@@ -313,13 +310,22 @@ const VocabQueue: React.FC = () => {
 
     console.info('[Linkual] 发送生词到后端:', serverUrl, payload);
 
-    requestJson({
+    return requestJson({
       url: serverUrl,
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
       timeoutMs: 15000,
-    })
+    });
+  };
+
+  const handleSend = (taskId: string, deleteOnSuccess: boolean) => {
+    const sendingTask = tasks.find(t => t.id === taskId);
+    if (!sendingTask || !canSendTask(sendingTask)) return;
+
+    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: 'sending', error: null } : t));
+
+    sendTaskToServer(sendingTask)
     .then(() => {
       console.info('[Linkual] 生词发送成功:', sendingTask.word);
       if (deleteOnSuccess) {
@@ -330,9 +336,33 @@ const VocabQueue: React.FC = () => {
     })
     .catch((err: unknown) => {
       const message = err instanceof Error ? err.message : '请求异常';
-      console.error('[Linkual] 生词发送失败:', message, { url: serverUrl, task: sendingTask });
+      console.error('[Linkual] 生词发送失败:', message, { task: sendingTask });
       setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: 'failed', error: message } : t));
     });
+  };
+
+  const handleSendAllAndDelete = async () => {
+    const tasksToSend = tasks.filter(canSendTask);
+    if (tasksToSend.length === 0 || isBulkSending) return;
+
+    setIsBulkSending(true);
+    setTasks(prev => prev.map(t => canSendTask(t) ? { ...t, status: 'sending', error: null } : t));
+
+    try {
+      for (const task of tasksToSend) {
+        try {
+          await sendTaskToServer(task);
+          console.info('[Linkual] 生词发送成功:', task.word);
+          setTasks(prev => prev.filter(t => t.id !== task.id));
+        } catch (err: unknown) {
+          const message = err instanceof Error ? err.message : '请求异常';
+          console.error('[Linkual] 生词发送失败:', message, { task });
+          setTasks(prev => prev.map(t => t.id === task.id ? { ...t, status: 'failed', error: message } : t));
+        }
+      }
+    } finally {
+      setIsBulkSending(false);
+    }
   };
 
   const handleDeleteTask = (taskId: string) => {
@@ -347,13 +377,15 @@ const VocabQueue: React.FC = () => {
   };
 
   const pendingCount = tasks.filter(t => t.status !== 'success').length;
+  const sendableCount = tasks.filter(canSendTask).length;
+  const bulkSendDisabled = isBulkSending || sendableCount === 0;
 
   return (
     <div style={{ position: 'fixed', left: `${position.left}px`, bottom: `${position.bottom}px`, zIndex: 2147483647, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', fontFamily: 'sans-serif' }}>
       {isOpen && (
         <div style={{ width: '400px', height: '580px', background: '#fff', borderRadius: '8px', boxShadow: '0 10px 30px rgba(0,0,0,0.2)', border: '1px solid #e4e4e7', display: 'flex', flexDirection: 'column', marginBottom: '12px', overflow: 'hidden' }}>
           
-          <div style={{ padding: '12px', borderBottom: '1px solid #e4e4e7', background: '#fafafa', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ padding: '12px', borderBottom: '1px solid #e4e4e7', background: '#fafafa', display: 'flex', flexDirection: 'column', gap: '8px' }}>
              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <label style={{ fontSize: '13px', fontWeight: 'bold', color: '#333' }}>生词本目录:</label>
                 <input 
@@ -362,7 +394,16 @@ const VocabQueue: React.FC = () => {
                   style={{ width: '120px', padding: '4px 8px', border: '1px solid #ddd', borderRadius: '4px', fontSize: '12px', outline: 'none' }}
                 />
              </div>
-             <button onClick={handleClearAll} style={{ border: 'none', background: 'none', color: '#f44336', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}>清空全部队列</button>
+             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px', flexWrap: 'wrap' }}>
+               <button
+                 onClick={handleSendAllAndDelete}
+                 disabled={bulkSendDisabled}
+                 style={{ border: 'none', background: bulkSendDisabled ? '#a7f3d0' : '#10b981', color: '#fff', cursor: bulkSendDisabled ? 'not-allowed' : 'pointer', fontSize: '12px', fontWeight: 'bold', borderRadius: '4px', padding: '5px 9px' }}
+               >
+                 {isBulkSending ? '批量发送中...' : '一键发送并删除'}
+               </button>
+               <button onClick={handleClearAll} style={{ border: 'none', background: 'none', color: '#f44336', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}>清空全部队列</button>
+             </div>
           </div>
 
           <div style={{ flex: 1, overflowY: 'auto', padding: '12px', display: 'flex', flexDirection: 'column', gap: '12px', background: '#f9f9f9' }}>
@@ -404,8 +445,20 @@ const VocabQueue: React.FC = () => {
                   >
                     请求释义
                   </button>
-                  <button onClick={() => handleSend(t.id, true)} style={{ flex: '1 1 auto', padding: '6px 10px', background: '#10b981', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}>发送并删除</button>
-                  <button onClick={() => handleSend(t.id, false)} style={{ flex: '1 1 auto', padding: '6px 10px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}>发送并保留</button>
+                  <button
+                    onClick={() => handleSend(t.id, true)}
+                    disabled={!canSendTask(t)}
+                    style={{ flex: '1 1 auto', padding: '6px 10px', background: canSendTask(t) ? '#10b981' : '#a7f3d0', color: '#fff', border: 'none', borderRadius: '4px', cursor: canSendTask(t) ? 'pointer' : 'not-allowed', fontSize: '12px', fontWeight: 'bold' }}
+                  >
+                    发送并删除
+                  </button>
+                  <button
+                    onClick={() => handleSend(t.id, false)}
+                    disabled={!canSendTask(t)}
+                    style={{ flex: '1 1 auto', padding: '6px 10px', background: canSendTask(t) ? '#3b82f6' : '#bfdbfe', color: '#fff', border: 'none', borderRadius: '4px', cursor: canSendTask(t) ? 'pointer' : 'not-allowed', fontSize: '12px', fontWeight: 'bold' }}
+                  >
+                    发送并保留
+                  </button>
                   <button onClick={() => handleDeleteTask(t.id)} style={{ padding: '6px 12px', background: 'transparent', color: '#f44336', border: '1px solid #f44336', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>丢弃</button>
                 </div>
               </div>
