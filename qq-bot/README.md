@@ -1,97 +1,85 @@
 # Linkualog QQ Bot
 
-`qq-bot/` 是 `linkualog` 正式仓库内的 QQ 机器人 connector。
+`qq-bot/` 是 Linkualog 的可选 QQ 机器人入口。它连接 QQ 机器人网关，把聊天中的加词、上传、任务处理和复习命令转发给 `master-server`。
 
-它负责：
+## 功能
 
-- 连接 QQ 机器人网关
-- 接收单聊和群里 `@机器人` 事件
-- 将 `\add`、`\upload`、`\review`、`\task`、`\process` 等指令路由到 `master-server`
-- 对 `\help` 使用 QQ markdown 消息，便于在客户端分行展示
-- `\status`、`\search`、`\review` 等结果会尽量使用 markdown 排版
-- `\task` 空参数会列出最近任务，避免手动查任务 ID
-- `\upload [任务名]` 支持命名任务，上传模式中可用 `\name` 修改名称
-- `\auto on|off` 可在上传模式中开关上传后自动分析，默认开启
-- `\review` 支持 `\mode 1|2|3` 三种题型，且题型选择会记忆化
-- `\review` 遇到脏的 example / explanation 时，会在答题后先展示改前 / 改后，再由用户决定是否保存
-- 复用仓库根目录 `.env` 里的 `MASTER_SERVER_LLM_*` 配置
+- 单聊和群聊 `@机器人` 触发
+- `\add` 添加词条
+- `\upload` 收集图片/PDF
+- `\process` 处理上传任务
+- `\task` 查看任务状态
+- `\review` 进入复习
+- `\search` 查词
+- `\status` 查看当前状态
 
-## 目录文件
+发送 `\help` 可以查看完整命令。
 
-- `main.py`: QQ 网关客户端、会话状态机、Linkualog API connector
-- `pyproject.toml` / `uv.lock`: `uv` 管理的 Python 依赖
-- `Dockerfile`: QQ bot 容器镜像
+## 配置
 
-## 本机运行
-
-先在仓库根目录准备 `.env`，然后按下面顺序启动：
+QQ bot 复用仓库根目录 `.env`：
 
 ```bash
-cd /home/ubuntu/linkualog/master-server
-uv sync
-uv run main.py
-```
-
-```bash
-cd /home/ubuntu/linkualog
-# 先确认项目根目录 .env 已填好 QQ_APP_ID / QQ_APP_SECRET
-cd qq-bot
-uv sync
-uv run main.py
-```
-
-## Docker 部署
-
-Docker 部署入口不在本目录，而在仓库根目录：
-
-```bash
-cd /home/ubuntu/linkualog
+cd /path/to/linkualog
 cp .env.example .env
-# 填入 MASTER_SERVER_LLM_API_KEY、QQ_APP_ID、QQ_APP_SECRET
+# 填写 MASTER_SERVER_LLM_API_KEY、QQ_APP_ID、QQ_APP_SECRET
+```
 
+必填：
+
+- `QQ_APP_ID`
+- `QQ_APP_SECRET`
+
+本机运行时默认连接 `http://127.0.0.1:8080`。如需覆盖：
+
+- `QQ_LINKUALOG_BASE_URL`
+- `QQ_LINKUALOG_DATA_DIR`
+- `QQ_LOCAL_DATA_DIR`
+- `QQ_LINKUALOG_ENV_FILE`
+
+## 本地运行
+
+先启动 `master-server`：
+
+```bash
+cd /path/to/linkualog/master-server
+uv sync
+uv run main.py
+```
+
+再启动 QQ bot：
+
+```bash
+cd /path/to/linkualog/qq-bot
+uv sync
+uv run main.py
+```
+
+## Docker 运行
+
+推荐使用仓库根目录的 `deploy.sh`：
+
+```bash
+cd /path/to/linkualog
 ./deploy.sh
 ```
 
-根目录 `deploy.sh` 会通过 `docker compose --profile qq-bot up -d --build` 一次启动：
+它会通过 `docker compose --profile qq-bot up -d --build` 启动：
 
 - `master-server`
 - `qq-bot`
 
-## 主要环境变量
-
-- `QQ_APP_ID`
-- `QQ_APP_SECRET`
-- `QQ_INTENTS`
-- `QQ_SHARD_ID`
-- `QQ_SHARD_COUNT`
-- `QQ_RUN_SECONDS`
-- `QQ_LLM_ROUTE_ENABLED`
-- `QQ_LLM_ROUTE_CONFIDENCE`
-- `QQ_ADD_FETCH_LLM`
-- `QQ_LINKUALOG_BASE_URL`
-- `QQ_LINKUALOG_DATA_DIR`
-- `QQ_LOCAL_DATA_DIR`
-- `QQ_SESSION_STATE_FILE`
-
-本机 `uv` 运行时，这些变量默认直接从项目根目录 `.env` 读取。
-如果需要改成别的配置文件，可以显式设置 `QQ_LINKUALOG_ENV_FILE=/abs/path/to/file`。
-
-## 当前验证范围
-
-截至 2026-04-19，这个 connector 已完成：
-
-- `Access Token` 获取成功
-- `/gateway/bot` 获取成功
-- `Hello / Identify / READY` 成功
-- 心跳与 `Heartbeat ACK` 成功
-- 单聊消息被动回复跑通
-- `\upload -> \process -> \task` 图片 OCR 联调跑通
-- `\upload PDF -> \process -> \task` PDF OCR 联调跑通
-
-## 日志与状态
+查看状态和日志：
 
 ```bash
-cd /home/ubuntu/linkualog
-sudo -n docker compose --profile qq-bot logs -f qq-bot
-sudo -n docker compose --profile qq-bot ps
+docker compose --profile qq-bot ps
+docker compose --profile qq-bot logs -f qq-bot
 ```
+
+如果当前用户没有 Docker 权限，可以按环境改用 `sudo docker compose ...`。
+
+## 数据
+
+- 词条数据仍在仓库根目录 `data/`
+- bot 会把会话状态写入 `qq-bot/local_data/`
+- Docker 中 `data/` 以只读方式挂载给 bot
