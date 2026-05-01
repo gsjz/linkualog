@@ -77,7 +77,7 @@ P.S. 'Link-ual' 听起来像 'lingual'（语言的）。系统的输出结果正
 
 这张图反映的是旧版的大方向。当前模块边界已经更新，所以请以本文文字说明为准。
 
-![workflow](assets/workflow.svg)
+![architecture](assets/architecture.svg)
 
 ### 数据采集 (Data Acquisition)
 
