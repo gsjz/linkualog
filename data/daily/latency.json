@@ -1,0 +1,23 @@
+{
+  "word": "latency",
+  "createdAt": "2026-04-29",
+  "reviews": [],
+  "definitions": [],
+  "examples": [
+    {
+      "text": "For instance, Kubernetes \nuses Envoy as an Ambassador to simplify communication between services. The Ambassador pattern can help reduce latency, enhance security, and improve the overall \narchitecture of your distributed systems. Next is Circuit Breaker",
+      "explanation": "",
+      "focusWords": [
+        "latency"
+      ],
+      "source": {
+        "text": "Top 7 Most-Used Distributed System Patterns",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=nH4qjmP2KEE",
+        "timestamp": 49
+      }
+    }
+  ]
+}

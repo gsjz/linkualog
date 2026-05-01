@@ -1,0 +1,23 @@
+{
+  "word": "cascading",
+  "createdAt": "2026-04-29",
+  "reviews": [],
+  "definitions": [],
+  "examples": [
+    {
+      "text": "The first thing you'd do is shut off the \nmain valve to prevent further damage. The Circuit Breaker pattern works similarly, preventing cascading failures \nin distributed systems. When a service becomes unavailable, the Circuit \nBreaker stops requests, allowing it to recover. Netflix's Hystrix library uses this pattern.",
+      "explanation": "",
+      "focusWords": [
+        "cascading"
+      ],
+      "source": {
+        "text": "Top 7 Most-Used Distributed System Patterns",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=nH4qjmP2KEE",
+        "timestamp": 70
+      }
+    }
+  ]
+}

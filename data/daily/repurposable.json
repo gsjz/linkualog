@@ -1,0 +1,23 @@
+{
+  "word": "repurposable",
+  "createdAt": "2026-04-29",
+  "reviews": [],
+  "definitions": [],
+  "examples": [
+    {
+      "text": "How did graphical processing units, or GPUs, which were originally built as hardware for video gaming, become the most popular and ubiquitous infrastructure used in generative AI today? And why are traditional CPU-based data centers not repurposable for AI in all cases? And does everyone need expensive hardware to build and run AI systems? The breakthrough behind the rise of generative AI is often credited to software innovations,",
+      "explanation": "",
+      "focusWords": [
+        "repurposable"
+      ],
+      "source": {
+        "text": "What is a Supercomputer for AI? How GPUs Drive Machine Learning",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=zocwmW5wZe8",
+        "timestamp": 18
+      }
+    }
+  ]
+}

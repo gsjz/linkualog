@@ -1,0 +1,23 @@
+{
+  "word": "scalable",
+  "createdAt": "2026-04-29",
+  "reviews": [],
+  "definitions": [],
+  "examples": [
+    {
+      "text": "In today's video,  we'll  explore the top 7 distributed system \npatterns with real-world examples. They can help us design more \nefficient and scalable systems. So, let's dive in! First is Ambassador.",
+      "explanation": "",
+      "focusWords": [
+        "scalable"
+      ],
+      "source": {
+        "text": "Top 7 Most-Used Distributed System Patterns",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=nH4qjmP2KEE",
+        "timestamp": 13
+      }
+    }
+  ]
+}

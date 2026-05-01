@@ -1,0 +1,26 @@
+{
+  "word": "Condolences",
+  "createdAt": "2026-04-26",
+  "reviews": [],
+  "definitions": [
+    "n. 慰问，吊唁",
+    "n. 表示哀悼的话语"
+  ],
+  "examples": [
+    {
+      "text": "through a difficult level on Minesweeper on\nyour desktop, and your dog came by, tripped and pulled the power cord out of the wall,\nyou know the agony of losing all your progress. Condolences. But the reason for your loss is that your\nconsole, your laptop and your computers make use of Random Access Memory, or RAM, which\nstores things like game state - as long as",
+      "explanation": "此处为幽默夸张用法，虽字面意为‘吊唁’，但实际是将游戏进度丢失视为一种‘不幸’，译为‘深表同情’或‘真是遗憾’。",
+      "focusWords": [
+        "Condolences"
+      ],
+      "source": {
+        "text": "Registers and RAM: Crash Course Computer Science #6",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=fpnE6UAfbtU&list=PL8dPuuaLjXtNlUrzyH5r6jN9ulIgZBpdo&index=14",
+        "timestamp": 36
+      }
+    }
+  ]
+}

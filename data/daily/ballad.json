@@ -1,0 +1,32 @@
+{
+  "word": "ballad",
+  "createdAt": "2026-04-29",
+  "reviews": [],
+  "definitions": [
+    "ballads：民谣；叙事歌；抒情歌曲（在这里更接近“抒情歌曲”）"
+  ],
+  "examples": [
+    {
+      "text": "Still nothing? Let me give you a hint. They are all ballads! Now I know what you must be saying. Ballads are a very common choice for\nmovie theme songs, even in the West.",
+      "explanation": "",
+      "focusWords": [
+        "ballads"
+      ],
+      "source": {
+        "text": "Chinese Music - It's Not Dead, It's Misunderstood...",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=1qiv68LKZjo",
+        "timestamp": 304
+      },
+      "focusPositions": [
+        13,
+        24
+      ]
+    }
+  ],
+  "mergedFrom": [
+    "ballads"
+  ]
+}
