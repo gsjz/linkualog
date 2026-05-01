@@ -275,3 +275,11 @@ def save_config_data(payload: dict | None = None) -> dict:
         json.dump(saved, f, ensure_ascii=False, indent=2)
 
     return get_config_data()
+
+
+def reset_config_data() -> dict:
+    """Drop local overrides so .env and built-in defaults take effect again."""
+    if CONFIG_FILE.exists():
+        CONFIG_FILE.unlink()
+
+    return get_config_data()

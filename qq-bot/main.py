@@ -3297,7 +3297,7 @@ async def async_main() -> int:
     intents = env_int("QQ_INTENTS", C2C_AND_GROUP_INTENTS)
     shard_id = env_int("QQ_SHARD_ID", 0)
     shard_count = env_int("QQ_SHARD_COUNT", 1)
-    run_seconds = env_int("QQ_RUN_SECONDS", 90)
+    run_seconds = env_int("QQ_RUN_SECONDS", 0)
     linkualog_data_dir = env_path("QQ_LINKUALOG_DATA_DIR", Path(DEFAULT_LINKUALOG_DATA_DIR))
     local_data_dir = env_path("QQ_LOCAL_DATA_DIR", Path(__file__).with_name("local_data"))
     linkualog_base_url = os.environ.get("QQ_LINKUALOG_BASE_URL", DEFAULT_LINKUALOG_BASE_URL).strip() or DEFAULT_LINKUALOG_BASE_URL

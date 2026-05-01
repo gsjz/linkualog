@@ -1221,6 +1221,19 @@
   gap: 10px;
 }
 
+.drawer-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.success {
+  color: var(--ok);
+  font-size: 13px;
+  font-weight: 650;
+}
+
 .global-error,
 .global-notice {
   position: fixed;

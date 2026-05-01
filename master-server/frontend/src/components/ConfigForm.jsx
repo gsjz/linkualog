@@ -1,9 +1,13 @@
 import React, { useEffect, useState } from 'react';
 
-import { fetchConfig, saveConfig } from '../api/client';
+import { fetchConfig, resetConfig, saveConfig } from '../api/client';
 
 const DEFAULT_PROVIDER = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions';
 const DEFAULT_MODEL = 'qwen3.5-flash';
+const DEFAULT_UI_CONFIG = {
+  defaultFoldedKeys: 'extracted_text,bbox',
+  defaultCategory: '',
+};
 const PAGES = [
   { id: 'llm', label: '1. LLM' },
   { id: 'runtime', label: '2. 服务' },
@@ -13,8 +17,8 @@ const PAGES = [
 
 function readLocalUiConfig() {
   return {
-    defaultFoldedKeys: localStorage.getItem('defaultFoldedKeys') ?? 'extracted_text,bbox',
-    defaultCategory: String(localStorage.getItem('defaultCategory') ?? '').trim(),
+    defaultFoldedKeys: localStorage.getItem('defaultFoldedKeys') ?? DEFAULT_UI_CONFIG.defaultFoldedKeys,
+    defaultCategory: String(localStorage.getItem('defaultCategory') ?? DEFAULT_UI_CONFIG.defaultCategory).trim(),
   };
 }
 
@@ -40,6 +44,7 @@ export default function ConfigForm({ onClose, categories = [] }) {
   const [page, setPage] = useState(PAGES[0].id);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [resetting, setResetting] = useState(false);
   const [statusMsg, setStatusMsg] = useState('');
   const [statusKind, setStatusKind] = useState('success');
   const [config, setConfig] = useState({
@@ -101,7 +106,7 @@ export default function ConfigForm({ onClose, categories = [] }) {
     document.body.style.overflow = 'hidden';
 
     const handleKeyDown = (event) => {
-      if (event.key === 'Escape' && !saving) {
+      if (event.key === 'Escape' && !saving && !resetting) {
         onClose();
       }
     };
@@ -111,7 +116,7 @@ export default function ConfigForm({ onClose, categories = [] }) {
       document.body.style.overflow = previousOverflow;
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [onClose, saving]);
+  }, [onClose, saving, resetting]);
 
   const setField = (key, value) => {
     setConfig((prev) => ({ ...prev, [key]: value }));
@@ -174,20 +179,49 @@ export default function ConfigForm({ onClose, categories = [] }) {
     }
   };
 
+  const handleResetDefaults = async () => {
+    setResetting(true);
+    setStatusMsg('');
+
+    try {
+      const data = await resetConfig();
+      const nextUiConfig = { ...DEFAULT_UI_CONFIG };
+
+      localStorage.setItem('defaultFoldedKeys', nextUiConfig.defaultFoldedKeys);
+      localStorage.setItem('defaultCategory', nextUiConfig.defaultCategory);
+      localStorage.removeItem('vocabReviewCategory');
+      setUiConfig(nextUiConfig);
+
+      setConfig((prev) => ({
+        ...prev,
+        ...(data.data || {}),
+        api_key: '',
+        hasKey: Boolean(data?.data?.hasKey),
+      }));
+
+      window.dispatchEvent(new CustomEvent('config-updated', {
+        detail: { category: nextUiConfig.defaultCategory },
+      }));
+      window.dispatchEvent(new CustomEvent('default-category-updated', {
+        detail: { category: nextUiConfig.defaultCategory },
+      }));
+
+      setStatusKind('success');
+      setStatusMsg('已同步为默认设置。端口类配置需要重启服务后生效。');
+    } catch (err) {
+      setStatusKind('error');
+      setStatusMsg(`同步默认设置失败: ${err.message}`);
+    } finally {
+      setResetting(false);
+    }
+  };
+
   const labelStyle = { display: 'flex', flexDirection: 'column', fontSize: '13px', color: 'var(--ms-text)', fontWeight: '600', width: '100%' };
   const rowStyle = { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '12px' };
 
   return (
-    <div
-      className="config-modal"
-      onClick={() => {
-        if (!saving) onClose();
-      }}
-    >
-      <div
-        className="config-modal-card"
-        onClick={(event) => event.stopPropagation()}
-      >
+    <div className="config-modal">
+      <div className="config-modal-card">
         <div className="config-modal-header">
           <div>
             <h2 className="config-modal-title">全局设置</h2>
@@ -195,7 +229,7 @@ export default function ConfigForm({ onClose, categories = [] }) {
               所有设置都可写入本地配置文件；端口类配置重启后生效。
             </div>
           </div>
-          <button type="button" className="config-modal-close" onClick={onClose}>✕</button>
+          <button type="button" className="config-modal-close" onClick={onClose} disabled={saving || resetting}>✕</button>
         </div>
 
         <div className="config-modal-tabs">
@@ -220,11 +254,11 @@ export default function ConfigForm({ onClose, categories = [] }) {
                 </div>
                 <label style={labelStyle}>
                   接口地址 (Provider API)
-                  <input type="text" value={config.provider} onChange={(e) => setField('provider', e.target.value)} style={inputStyle(loading)} required disabled={loading || saving} />
+                  <input type="text" value={config.provider} onChange={(e) => setField('provider', e.target.value)} style={inputStyle(loading)} required disabled={loading || saving || resetting} />
                 </label>
                 <label style={labelStyle}>
                   模型名称 (Model)
-                  <input type="text" value={config.model} onChange={(e) => setField('model', e.target.value)} style={inputStyle(loading)} required disabled={loading || saving} />
+                  <input type="text" value={config.model} onChange={(e) => setField('model', e.target.value)} style={inputStyle(loading)} required disabled={loading || saving || resetting} />
                 </label>
                 <label style={labelStyle}>
                   API Key {config.hasKey ? <span style={{ color: 'var(--ms-text-muted)', fontSize: '12px', fontWeight: 500, marginLeft: '6px' }}>(已保存)</span> : null}
@@ -234,7 +268,7 @@ export default function ConfigForm({ onClose, categories = [] }) {
                     onChange={(e) => setField('api_key', e.target.value)}
                     placeholder={config.hasKey ? '留空则保持原密钥' : '输入新的 API Key'}
                     style={inputStyle(loading)}
-                    disabled={loading || saving}
+                    disabled={loading || saving || resetting}
                   />
                 </label>
               </>
@@ -248,16 +282,16 @@ export default function ConfigForm({ onClose, categories = [] }) {
                 <div style={rowStyle}>
                   <label style={labelStyle}>
                     前端端口
-                    <input type="number" value={config.frontend_port} onChange={(e) => setField('frontend_port', e.target.value)} style={inputStyle(loading)} disabled={loading || saving} />
+                    <input type="number" value={config.frontend_port} onChange={(e) => setField('frontend_port', e.target.value)} style={inputStyle(loading)} disabled={loading || saving || resetting} />
                   </label>
                   <label style={labelStyle}>
                     后端端口
-                    <input type="number" value={config.backend_port} onChange={(e) => setField('backend_port', e.target.value)} style={inputStyle(loading)} disabled={loading || saving} />
+                    <input type="number" value={config.backend_port} onChange={(e) => setField('backend_port', e.target.value)} style={inputStyle(loading)} disabled={loading || saving || resetting} />
                   </label>
                 </div>
                 <label style={labelStyle}>
                   日志级别
-                  <select value={config.log_level} onChange={(e) => setField('log_level', e.target.value)} style={inputStyle(loading)} disabled={loading || saving}>
+                  <select value={config.log_level} onChange={(e) => setField('log_level', e.target.value)} style={inputStyle(loading)} disabled={loading || saving || resetting}>
                     <option value="DEBUG">DEBUG</option>
                     <option value="INFO">INFO</option>
                     <option value="WARNING">WARNING</option>
@@ -272,64 +306,64 @@ export default function ConfigForm({ onClose, categories = [] }) {
                 <div style={rowStyle}>
                   <label style={labelStyle}>
                     Review LLM 超时（秒）
-                    <input type="number" step="0.1" value={config.review_llm_timeout_seconds} onChange={(e) => setField('review_llm_timeout_seconds', e.target.value)} style={inputStyle(loading)} disabled={loading || saving} />
+                    <input type="number" step="0.1" value={config.review_llm_timeout_seconds} onChange={(e) => setField('review_llm_timeout_seconds', e.target.value)} style={inputStyle(loading)} disabled={loading || saving || resetting} />
                   </label>
                   <label style={labelStyle}>
                     目录合并超时（秒）
-                    <input type="number" step="0.1" value={config.review_folder_merge_llm_timeout_seconds} onChange={(e) => setField('review_folder_merge_llm_timeout_seconds', e.target.value)} style={inputStyle(loading)} disabled={loading || saving} />
+                    <input type="number" step="0.1" value={config.review_folder_merge_llm_timeout_seconds} onChange={(e) => setField('review_folder_merge_llm_timeout_seconds', e.target.value)} style={inputStyle(loading)} disabled={loading || saving || resetting} />
                   </label>
                 </div>
                 <div style={rowStyle}>
                   <label style={labelStyle}>
                     目录合并输出 Token
-                    <input type="number" value={config.review_folder_merge_llm_max_tokens} onChange={(e) => setField('review_folder_merge_llm_max_tokens', e.target.value)} style={inputStyle(loading)} disabled={loading || saving} />
+                    <input type="number" value={config.review_folder_merge_llm_max_tokens} onChange={(e) => setField('review_folder_merge_llm_max_tokens', e.target.value)} style={inputStyle(loading)} disabled={loading || saving || resetting} />
                   </label>
                   <label style={labelStyle}>
                     目录合并 Token 上限
-                    <input type="number" value={config.review_folder_merge_llm_max_tokens_cap} onChange={(e) => setField('review_folder_merge_llm_max_tokens_cap', e.target.value)} style={inputStyle(loading)} disabled={loading || saving} />
+                    <input type="number" value={config.review_folder_merge_llm_max_tokens_cap} onChange={(e) => setField('review_folder_merge_llm_max_tokens_cap', e.target.value)} style={inputStyle(loading)} disabled={loading || saving || resetting} />
                   </label>
                 </div>
                 <div style={rowStyle}>
                   <label style={labelStyle}>
                     最多建议数
-                    <input type="number" value={config.review_folder_merge_max_suggestions} onChange={(e) => setField('review_folder_merge_max_suggestions', e.target.value)} style={inputStyle(loading)} disabled={loading || saving} />
+                    <input type="number" value={config.review_folder_merge_max_suggestions} onChange={(e) => setField('review_folder_merge_max_suggestions', e.target.value)} style={inputStyle(loading)} disabled={loading || saving || resetting} />
                   </label>
                   <label style={labelStyle}>
                     目录裁剪词数
-                    <input type="number" value={config.review_folder_merge_word_limit} onChange={(e) => setField('review_folder_merge_word_limit', e.target.value)} style={inputStyle(loading)} disabled={loading || saving} />
+                    <input type="number" value={config.review_folder_merge_word_limit} onChange={(e) => setField('review_folder_merge_word_limit', e.target.value)} style={inputStyle(loading)} disabled={loading || saving || resetting} />
                   </label>
                 </div>
                 <label style={labelStyle}>
                   目录合并温度
-                  <input type="number" step="0.1" value={config.review_folder_merge_temperature} onChange={(e) => setField('review_folder_merge_temperature', e.target.value)} style={inputStyle(loading)} disabled={loading || saving} />
+                  <input type="number" step="0.1" value={config.review_folder_merge_temperature} onChange={(e) => setField('review_folder_merge_temperature', e.target.value)} style={inputStyle(loading)} disabled={loading || saving || resetting} />
                 </label>
                 <div style={{ height: '1px', background: 'var(--ms-border)' }} />
                 <label className="config-inline-check">
-                  <input type="checkbox" checked={Boolean(config.review_llm_connectivity_check)} onChange={(e) => setField('review_llm_connectivity_check', e.target.checked)} disabled={loading || saving} />
+                  <input type="checkbox" checked={Boolean(config.review_llm_connectivity_check)} onChange={(e) => setField('review_llm_connectivity_check', e.target.checked)} disabled={loading || saving || resetting} />
                   启用 LLM 连通性探测
                 </label>
                 <label className="config-inline-check">
-                  <input type="checkbox" checked={Boolean(config.review_llm_connectivity_strict)} onChange={(e) => setField('review_llm_connectivity_strict', e.target.checked)} disabled={loading || saving} />
+                  <input type="checkbox" checked={Boolean(config.review_llm_connectivity_strict)} onChange={(e) => setField('review_llm_connectivity_strict', e.target.checked)} disabled={loading || saving || resetting} />
                   连通性失败时严格中断
                 </label>
                 <div style={rowStyle}>
                   <label style={labelStyle}>
                     探测超时（秒）
-                    <input type="number" step="0.1" value={config.review_llm_connectivity_timeout_seconds} onChange={(e) => setField('review_llm_connectivity_timeout_seconds', e.target.value)} style={inputStyle(loading)} disabled={loading || saving} />
+                    <input type="number" step="0.1" value={config.review_llm_connectivity_timeout_seconds} onChange={(e) => setField('review_llm_connectivity_timeout_seconds', e.target.value)} style={inputStyle(loading)} disabled={loading || saving || resetting} />
                   </label>
                   <label style={labelStyle}>
                     探测缓存 TTL（秒）
-                    <input type="number" step="0.1" value={config.review_llm_connectivity_probe_ttl_seconds} onChange={(e) => setField('review_llm_connectivity_probe_ttl_seconds', e.target.value)} style={inputStyle(loading)} disabled={loading || saving} />
+                    <input type="number" step="0.1" value={config.review_llm_connectivity_probe_ttl_seconds} onChange={(e) => setField('review_llm_connectivity_probe_ttl_seconds', e.target.value)} style={inputStyle(loading)} disabled={loading || saving || resetting} />
                   </label>
                 </div>
                 <div style={rowStyle}>
                   <label style={labelStyle}>
                     最大重试次数
-                    <input type="number" value={config.review_llm_request_max_retries} onChange={(e) => setField('review_llm_request_max_retries', e.target.value)} style={inputStyle(loading)} disabled={loading || saving} />
+                    <input type="number" value={config.review_llm_request_max_retries} onChange={(e) => setField('review_llm_request_max_retries', e.target.value)} style={inputStyle(loading)} disabled={loading || saving || resetting} />
                   </label>
                   <label style={labelStyle}>
                     重试退避（秒）
-                    <input type="number" step="0.1" value={config.review_llm_request_retry_backoff_seconds} onChange={(e) => setField('review_llm_request_retry_backoff_seconds', e.target.value)} style={inputStyle(loading)} disabled={loading || saving} />
+                    <input type="number" step="0.1" value={config.review_llm_request_retry_backoff_seconds} onChange={(e) => setField('review_llm_request_retry_backoff_seconds', e.target.value)} style={inputStyle(loading)} disabled={loading || saving || resetting} />
                   </label>
                 </div>
               </>
@@ -345,7 +379,7 @@ export default function ConfigForm({ onClose, categories = [] }) {
                     onChange={(e) => setUiConfig((prev) => ({ ...prev, defaultFoldedKeys: e.target.value }))}
                     placeholder="如: extracted_text,bbox"
                     style={inputStyle(false)}
-                    disabled={saving}
+                    disabled={saving || resetting}
                   />
                 </label>
                 <label style={labelStyle}>
@@ -354,7 +388,7 @@ export default function ConfigForm({ onClose, categories = [] }) {
                     value={uiConfig.defaultCategory}
                     onChange={(e) => setUiConfig((prev) => ({ ...prev, defaultCategory: e.target.value }))}
                     style={inputStyle(false)}
-                    disabled={saving}
+                    disabled={saving || resetting}
                   >
                     <option value="">请选择目录</option>
                     {categories.map((category) => (
@@ -374,10 +408,13 @@ export default function ConfigForm({ onClose, categories = [] }) {
               {statusMsg}
             </div>
             <div className="config-actions">
-              <button type="button" className="master-secondary-button" onClick={onClose}>
+              <button type="button" className="master-secondary-button" onClick={onClose} disabled={saving || resetting}>
                 取消
               </button>
-              <button type="submit" className="master-primary-button" disabled={loading || saving}>
+              <button type="button" className="master-secondary-button" onClick={handleResetDefaults} disabled={loading || saving || resetting}>
+                {resetting ? '同步中...' : '同步默认设置'}
+              </button>
+              <button type="submit" className="master-primary-button" disabled={loading || saving || resetting}>
                 {saving ? '保存中...' : loading ? '读取中...' : '保存设置'}
               </button>
             </div>

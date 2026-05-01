@@ -9,7 +9,7 @@ from fastapi import APIRouter, UploadFile, File, Form, BackgroundTasks, HTTPExce
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
-from core.config import get_public_config_data, save_config_data
+from core.config import get_public_config_data, reset_config_data, save_config_data
 from core.storage import save_temp_file
 from core.tasks import load_tasks, save_tasks, create_task
 from services.llm import process_image, process_word_definition, process_context_analysis
@@ -269,6 +269,19 @@ def update_config(payload: dict):
     public["experimental_coordinates_enabled"] = True
     public["experimentalCoordinatesEnabled"] = True
     return {"status": "success", "message": "配置已保存", "data": public}
+
+
+@router.post("/api/config/reset")
+def reset_config():
+    reset = reset_config_data()
+    public = {
+        key: value
+        for key, value in reset.items()
+        if key not in {"api_key", "config_file"}
+    }
+    public["experimental_coordinates_enabled"] = True
+    public["experimentalCoordinatesEnabled"] = True
+    return {"status": "success", "message": "配置已同步为默认设置", "data": public}
 
 
 def process_task_background(task_id: str):

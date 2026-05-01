@@ -47,6 +47,11 @@ export const saveConfig = async (payload) => {
   return handleResponse(res);
 };
 
+export const resetConfig = async () => {
+  const res = await fetch(`${BACKEND_URL}/api/config/reset`, { method: 'POST' });
+  return handleResponse(res);
+};
+
 export const uploadImage = async (formData) => {
   const res = await fetch(`${BACKEND_URL}/api/upload_image`, { method: 'POST', body: formData });
   return handleResponse(res);

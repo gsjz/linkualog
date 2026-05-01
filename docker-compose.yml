@@ -3,38 +3,14 @@ services:
     build:
       context: ./master-server
       dockerfile: Dockerfile
-      args:
-        APT_MIRROR_BASE: ${MASTER_SERVER_APT_MIRROR_BASE:-https://mirrors.tuna.tsinghua.edu.cn}
-        NPM_REGISTRY: ${MASTER_SERVER_NPM_REGISTRY:-https://registry.npmmirror.com}
-        PIP_INDEX_URL: ${MASTER_SERVER_PIP_INDEX_URL:-https://pypi.tuna.tsinghua.edu.cn/simple}
     container_name: master-server-app
-    env_file:
-      - ./.env
     environment:
       - MASTER_SERVER_LLM_PROVIDER=${MASTER_SERVER_LLM_PROVIDER:-https://api.openai.com/v1/chat/completions}
       - MASTER_SERVER_LLM_MODEL=${MASTER_SERVER_LLM_MODEL:-gpt-5.4}
       - MASTER_SERVER_LLM_API_KEY=${MASTER_SERVER_LLM_API_KEY:-}
-      - MASTER_SERVER_FRONTEND_PORT=${MASTER_SERVER_FRONTEND_PORT:-80}
-      - MASTER_SERVER_BACKEND_PORT=${MASTER_SERVER_BACKEND_PORT:-8080}
-      - MASTER_SERVER_LOG_LEVEL=${MASTER_SERVER_LOG_LEVEL:-INFO}
-      - MASTER_SERVER_REVIEW_LLM_TIMEOUT_SECONDS=${MASTER_SERVER_REVIEW_LLM_TIMEOUT_SECONDS:-75}
-      - MASTER_SERVER_REVIEW_FOLDER_MERGE_LLM_TIMEOUT_SECONDS=${MASTER_SERVER_REVIEW_FOLDER_MERGE_LLM_TIMEOUT_SECONDS:-90}
-      - MASTER_SERVER_REVIEW_FOLDER_MERGE_LLM_MAX_TOKENS=${MASTER_SERVER_REVIEW_FOLDER_MERGE_LLM_MAX_TOKENS:-900}
-      - MASTER_SERVER_REVIEW_FOLDER_MERGE_LLM_MAX_TOKENS_CAP=${MASTER_SERVER_REVIEW_FOLDER_MERGE_LLM_MAX_TOKENS_CAP:-3200}
-      - MASTER_SERVER_REVIEW_FOLDER_MERGE_MAX_SUGGESTIONS=${MASTER_SERVER_REVIEW_FOLDER_MERGE_MAX_SUGGESTIONS:-40}
-      - MASTER_SERVER_REVIEW_FOLDER_MERGE_TEMPERATURE=${MASTER_SERVER_REVIEW_FOLDER_MERGE_TEMPERATURE:-0}
-      - MASTER_SERVER_REVIEW_FOLDER_MERGE_WORD_LIMIT=${MASTER_SERVER_REVIEW_FOLDER_MERGE_WORD_LIMIT:-200}
-      - MASTER_SERVER_REVIEW_LLM_CONNECTIVITY_CHECK=${MASTER_SERVER_REVIEW_LLM_CONNECTIVITY_CHECK:-1}
-      - MASTER_SERVER_REVIEW_LLM_CONNECTIVITY_TIMEOUT_SECONDS=${MASTER_SERVER_REVIEW_LLM_CONNECTIVITY_TIMEOUT_SECONDS:-3}
-      - MASTER_SERVER_REVIEW_LLM_CONNECTIVITY_STRICT=${MASTER_SERVER_REVIEW_LLM_CONNECTIVITY_STRICT:-0}
-      - MASTER_SERVER_REVIEW_LLM_CONNECTIVITY_PROBE_TTL_SECONDS=${MASTER_SERVER_REVIEW_LLM_CONNECTIVITY_PROBE_TTL_SECONDS:-180}
-      - MASTER_SERVER_REVIEW_LLM_REQUEST_MAX_RETRIES=${MASTER_SERVER_REVIEW_LLM_REQUEST_MAX_RETRIES:-2}
-      - MASTER_SERVER_REVIEW_LLM_REQUEST_RETRY_BACKOFF_SECONDS=${MASTER_SERVER_REVIEW_LLM_REQUEST_RETRY_BACKOFF_SECONDS:-1}
-      - MASTER_SERVER_SERVE_BUILT_FRONTEND=${MASTER_SERVER_SERVE_BUILT_FRONTEND:-1}
-      - MASTER_SERVER_DISABLE_FRONTEND=${MASTER_SERVER_DISABLE_FRONTEND:-1}
     ports:
-      - "${MASTER_SERVER_FRONTEND_PORT:-80}:${MASTER_SERVER_BACKEND_PORT:-8080}"
-      - "${MASTER_SERVER_BACKEND_PORT:-8080}:${MASTER_SERVER_BACKEND_PORT:-8080}"
+      - "80:8080"
+      - "8080:8080"
     volumes:
       - ./master-server/local_data:/app/master-server/local_data
       - ./data:/app/data
@@ -44,7 +20,7 @@ services:
           "CMD",
           "python",
           "-c",
-          "import os, urllib.request; urllib.request.urlopen('http://127.0.0.1:%s/api/config' % os.getenv('MASTER_SERVER_BACKEND_PORT', '8080'), timeout=5).read()",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/api/config', timeout=5).read()",
         ]
       interval: 10s
       timeout: 5s
@@ -57,15 +33,14 @@ services:
     build:
       context: ./qq-bot
       dockerfile: Dockerfile
-      args:
-        APT_MIRROR_BASE: ${QQ_BOT_APT_MIRROR_BASE:-https://mirrors.tuna.tsinghua.edu.cn}
-        PIP_INDEX_URL: ${QQ_BOT_PIP_INDEX_URL:-https://pypi.tuna.tsinghua.edu.cn/simple}
     container_name: qq-linkualog-bot
-    env_file:
-      - ./.env
     environment:
-      - QQ_RUN_SECONDS=${QQ_RUN_SECONDS:-0}
-      - QQ_LINKUALOG_BASE_URL=http://master-server:${MASTER_SERVER_BACKEND_PORT:-8080}
+      - QQ_APP_ID=${QQ_APP_ID:-}
+      - QQ_APP_SECRET=${QQ_APP_SECRET:-}
+      - MASTER_SERVER_LLM_PROVIDER=${MASTER_SERVER_LLM_PROVIDER:-https://api.openai.com/v1/chat/completions}
+      - MASTER_SERVER_LLM_MODEL=${MASTER_SERVER_LLM_MODEL:-gpt-5.4}
+      - MASTER_SERVER_LLM_API_KEY=${MASTER_SERVER_LLM_API_KEY:-}
+      - QQ_LINKUALOG_BASE_URL=http://master-server:8080
       - QQ_LINKUALOG_DATA_DIR=/app/data
       - QQ_LOCAL_DATA_DIR=/app/qq-bot/local_data
       - QQ_SESSION_STATE_FILE=/app/qq-bot/local_data/session_state.json

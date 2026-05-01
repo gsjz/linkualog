@@ -244,7 +244,7 @@ def process_image(image_bytes: bytes, filename: str, content_type: str, experime
     payload = {
         "model": model_name,
         "max_tokens": 2048 * 4, 
-        "temperature": 0.1,
+        "temperature": 0.2,
         "top_p": 0.5,
         "messages": [
             {

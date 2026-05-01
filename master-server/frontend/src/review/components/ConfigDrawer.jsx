@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import { fetchConfig, saveConfig } from '../api/client';
+import { fetchConfig, resetConfig, saveConfig } from '../api/client';
 
 export default function ConfigDrawer({ open, onClose }) {
   const [provider, setProvider] = useState('');
@@ -9,7 +9,9 @@ export default function ConfigDrawer({ open, onClose }) {
   const [hasKey, setHasKey] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [resetting, setResetting] = useState(false);
   const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
 
   useEffect(() => {
     if (!open) return undefined;
@@ -19,6 +21,7 @@ export default function ConfigDrawer({ open, onClose }) {
     document.body.style.overflow = 'hidden';
     setLoading(true);
     setError('');
+    setNotice('');
 
     fetchConfig()
       .then((data) => {
@@ -52,14 +55,14 @@ export default function ConfigDrawer({ open, onClose }) {
     if (!open) return undefined;
 
     const handleKeyDown = (event) => {
-      if (event.key === 'Escape' && !saving) {
+      if (event.key === 'Escape' && !saving && !resetting) {
         onClose();
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [open, onClose, saving]);
+  }, [open, onClose, saving, resetting]);
 
   const onSubmit = async (event) => {
     event.preventDefault();
@@ -81,25 +84,51 @@ export default function ConfigDrawer({ open, onClose }) {
     }
   };
 
+  const onResetDefaults = async () => {
+    setResetting(true);
+    setError('');
+    setNotice('');
+
+    try {
+      const data = await resetConfig();
+      const nextConfig = data?.data || {};
+      setProvider(nextConfig.provider || '');
+      setModel(nextConfig.model || '');
+      setHasKey(Boolean(nextConfig.hasKey));
+      setApiKey('');
+
+      localStorage.setItem('defaultFoldedKeys', 'extracted_text,bbox');
+      localStorage.setItem('defaultCategory', '');
+      localStorage.removeItem('vocabReviewCategory');
+      window.dispatchEvent(new CustomEvent('config-updated', { detail: { category: '' } }));
+      window.dispatchEvent(new CustomEvent('default-category-updated', { detail: { category: '' } }));
+      setNotice('已同步为默认设置。');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setResetting(false);
+    }
+  };
+
   if (!open) return null;
 
   return (
-    <div className="overlay" onClick={() => { if (!saving) onClose(); }}>
-      <div className="drawer" onClick={(event) => event.stopPropagation()}>
+    <div className="overlay">
+      <div className="drawer">
         <div className="drawer-header">
           <h3>LLM 配置</h3>
-          <button type="button" className="ghost" onClick={onClose} disabled={saving}>关闭</button>
+          <button type="button" className="ghost" onClick={onClose} disabled={saving || resetting}>关闭</button>
         </div>
 
         <form onSubmit={onSubmit} className="drawer-form">
           <label>
             Provider
-            <input value={provider} onChange={(event) => setProvider(event.target.value)} required disabled={loading || saving} />
+            <input value={provider} onChange={(event) => setProvider(event.target.value)} required disabled={loading || saving || resetting} />
           </label>
 
           <label>
             Model
-            <input value={model} onChange={(event) => setModel(event.target.value)} required disabled={loading || saving} />
+            <input value={model} onChange={(event) => setModel(event.target.value)} required disabled={loading || saving || resetting} />
           </label>
 
           <label>
@@ -109,7 +138,7 @@ export default function ConfigDrawer({ open, onClose }) {
               value={apiKey}
               onChange={(event) => setApiKey(event.target.value)}
               placeholder={hasKey ? '留空则保留已保存密钥' : '输入新的 API Key'}
-              disabled={loading || saving}
+              disabled={loading || saving || resetting}
             />
           </label>
 
@@ -117,11 +146,17 @@ export default function ConfigDrawer({ open, onClose }) {
             {loading ? '正在读取当前配置...' : hasKey ? '已检测到已保存密钥，可只更新 provider/model。' : '当前尚未保存 API Key。'}
           </div>
 
+          {notice ? <div className="success">{notice}</div> : null}
           {error ? <div className="error">{error}</div> : null}
 
-          <button className="primary" type="submit" disabled={loading || saving}>
+          <div className="drawer-actions">
+            <button type="button" className="ghost" onClick={onResetDefaults} disabled={loading || saving || resetting}>
+              {resetting ? '同步中...' : '同步默认设置'}
+            </button>
+            <button className="primary" type="submit" disabled={loading || saving || resetting}>
             {saving ? '保存中...' : loading ? '读取中...' : '保存配置'}
-          </button>
+            </button>
+          </div>
         </form>
       </div>
     </div>

@@ -63,6 +63,10 @@ export const saveConfig = async (payload) => {
   });
 };
 
+export const resetConfig = async () => {
+  return requestJson('/api/config/reset', { method: 'POST' });
+};
+
 export const fetchCategories = async () => {
   return requestJson('/api/vocabulary/categories');
 };
