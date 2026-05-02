@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Linkualog rainbow logarithm logo</title>
+  <desc id="desc">A black and white square logo with rainbow bands following a logarithmic curve.</desc>
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="16" stdDeviation="18" flood-color="#000000" flood-opacity="0.5"/>
+    </filter>
+    <linearGradient id="rainbow-fade" x1="0" y1="372" x2="0" y2="420" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.64" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#000000"/>
+    </linearGradient>
+    <mask id="rainbow-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="512" height="512">
+      <rect width="512" height="512" fill="url(#rainbow-fade)"/>
+    </mask>
+  </defs>
+
+  <rect width="512" height="512" rx="84" fill="#000000"/>
+
+  <g opacity="0.16" stroke="#ffffff" stroke-width="2" stroke-linecap="round">
+    <path d="M112 392h304"/>
+    <path d="M120 400V116"/>
+    <path d="M180 392v-10"/>
+    <path d="M240 392v-10"/>
+    <path d="M300 392v-10"/>
+    <path d="M360 392v-10"/>
+    <path d="M120 332h10"/>
+    <path d="M120 272h10"/>
+    <path d="M120 212h10"/>
+    <path d="M120 152h10"/>
+  </g>
+
+  <g mask="url(#rainbow-mask)" filter="url(#shadow)" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M104 380C113 301 150 239 211 199C266 163 342 142 432 136" stroke="#ff2d55" stroke-width="14"/>
+    <path d="M104 402C113 323 150 261 211 221C266 185 342 164 432 158" stroke="#ff9500" stroke-width="14"/>
+    <path d="M104 424C113 345 150 283 211 243C266 207 342 186 432 180" stroke="#ffcc00" stroke-width="14"/>
+    <path d="M104 446C113 367 150 305 211 265C266 229 342 208 432 202" stroke="#34c759" stroke-width="14"/>
+    <path d="M104 468C113 389 150 327 211 287C266 251 342 230 432 224" stroke="#00c7be" stroke-width="14"/>
+    <path d="M104 490C113 411 150 349 211 309C266 273 342 252 432 246" stroke="#32ade6" stroke-width="14"/>
+    <path d="M104 512C113 433 150 371 211 331C266 295 342 274 432 268" stroke="#5856d6" stroke-width="14"/>
+    <path d="M130 526C130 484 132 444 143 413C157 373 187 350 232 332C289 310 358 298 432 292" stroke="#ffffff" stroke-width="8"/>
+  </g>
+
+  <g fill="none" stroke="#ffffff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M120 116v284h296"/>
+    <path d="M107 129l13-13l13 13"/>
+    <path d="M403 387l13 13l-13 13"/>
+  </g>
+</svg>
