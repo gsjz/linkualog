@@ -68,6 +68,11 @@ export default function ConfigForm({ onClose, categories = [] }) {
     review_llm_connectivity_probe_ttl_seconds: 180,
     review_llm_request_max_retries: 2,
     review_llm_request_retry_backoff_seconds: 1,
+    review_recommend_due_weight: 2.2,
+    review_recommend_created_weight: 0.35,
+    review_recommend_score_weight: 0.75,
+    review_recommend_created_order: 'recent',
+    review_recommend_score_order: 'low',
     running_in_docker: false,
   });
   const [uiConfig, setUiConfig] = useState(readLocalUiConfig);
@@ -147,6 +152,11 @@ export default function ConfigForm({ onClose, categories = [] }) {
       review_llm_connectivity_probe_ttl_seconds: numberValue(config.review_llm_connectivity_probe_ttl_seconds, 180),
       review_llm_request_max_retries: numberValue(config.review_llm_request_max_retries, 2),
       review_llm_request_retry_backoff_seconds: numberValue(config.review_llm_request_retry_backoff_seconds, 1),
+      review_recommend_due_weight: numberValue(config.review_recommend_due_weight, 2.2),
+      review_recommend_created_weight: numberValue(config.review_recommend_created_weight, 0.35),
+      review_recommend_score_weight: numberValue(config.review_recommend_score_weight, 0.75),
+      review_recommend_created_order: config.review_recommend_created_order === 'oldest' ? 'oldest' : 'recent',
+      review_recommend_score_order: config.review_recommend_score_order === 'high' ? 'high' : 'low',
     };
 
     try {

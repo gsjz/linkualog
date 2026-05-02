@@ -4,13 +4,17 @@ import ConfigDrawer from './components/ConfigDrawer';
 import './index.css';
 import {
   applyMergeSuggestion,
+  applySplitSuggestion,
   fetchCategories,
+  fetchConfig,
   fetchFiles,
   fetchRecommendedWord,
   fetchVocabDetail,
   getReviewAdvice,
+  renameVocabDetail,
   runFileRefine,
   runFolderRefine,
+  saveConfig,
   saveVocabDetail,
   submitReviewScore,
 } from './api/client';
@@ -18,22 +22,6 @@ import {
 const TOKEN_REGEX = /\s+|[\w]+|[^\w\s]/gu;
 const TODAY = new Date().toISOString().slice(0, 10);
 const ALL_SCOPE = '__all__';
-
-const AUTO_APPLY_TYPES = new Set([
-  'definition_duplicate',
-  'definition_near_duplicate',
-  'definition_empty',
-  'definition_invalid_type',
-  'example_duplicate',
-  'example_near_duplicate',
-  'example_empty_text',
-  'example_invalid_type',
-  'example_whitespace_cleanup',
-  'example_explanation_whitespace_cleanup',
-  'example_focus_positions_out_of_range',
-  'example_focus_word_mismatch',
-  'example_missing_explanation',
-]);
 
 const scoreLabels = {
   0: '完全忘记',
@@ -49,6 +37,20 @@ const ENTRY_FILTER_OPTIONS = [
   { value: 'all', label: '全部词条' },
   { value: 'unmarked', label: '未标记' },
 ];
+
+const RECOMMENDATION_WEIGHT_OPTIONS = [
+  { key: 'due_weight', label: '到期', description: '逾期、今天到期、新词条' },
+  { key: 'created_weight', label: '创建', description: '按创建时间方向排序' },
+  { key: 'score_weight', label: '评分', description: '按最近一次评分排序' },
+];
+
+const DEFAULT_RECOMMENDATION_PREFERENCES = {
+  due_weight: 2.2,
+  created_weight: 0.35,
+  score_weight: 0.75,
+  created_order: 'recent',
+  score_order: 'low',
+};
 
 function normalizeCategoryValue(value) {
   return String(value || '').trim();
@@ -67,6 +69,15 @@ function normalizeFilename(value) {
   const filename = String(value || '').trim();
   if (!filename) return '';
   return filename.endsWith('.json') ? filename : `${filename}.json`;
+}
+
+function normalizeWordFilename(word) {
+  const normalized = collapseWhitespace(word)
+    .toLowerCase()
+    .replace(/\.json$/i, '')
+    .replace(/[\s_]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return normalized ? `${normalized}.json` : '';
 }
 
 function deepClone(value) {
@@ -88,7 +99,7 @@ function normalizeManualEntry(entryLike) {
 }
 
 function normalizeDefinitionKey(value) {
-  return collapseWhitespace(value).toLowerCase().replace(/[\W_]+/g, '');
+  return collapseWhitespace(value).toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '');
 }
 
 function sanitizeDefinitionList(values) {
@@ -101,6 +112,29 @@ function sanitizeDefinitionList(values) {
       dedupKeys.add(key);
       return true;
     });
+}
+
+function extractDefinitionSuggestionValues(item) {
+  const rawList = Array.isArray(item?.suggested_definitions)
+    ? item.suggested_definitions
+    : Array.isArray(item?.definitions)
+      ? item.definitions
+      : Array.isArray(item?.suggested)
+        ? item.suggested
+        : null;
+  if (rawList) {
+    return sanitizeDefinitionList(rawList);
+  }
+
+  return sanitizeDefinitionList([
+    item?.suggested,
+    item?.suggested_definition,
+    item?.definition,
+    item?.replacement,
+    item?.value,
+    item?.text,
+    item?.new_definition,
+  ]);
 }
 
 function parseDefinitionSuggestionLines(value) {
@@ -214,6 +248,47 @@ function renderPreviewWithFocusWords(text, focusWords) {
 
 function getExampleRawFocus(example) {
   return example?.focusPositions ?? example?.focusPosition ?? example?.fp ?? example?.fps ?? [];
+}
+
+function normalizeExampleSource(example) {
+  const source = example?.source;
+  if (source && typeof source === 'object') {
+    return {
+      text: collapseWhitespace(source.text || ''),
+      url: String(source.url || '').trim(),
+    };
+  }
+  return {
+    text: collapseWhitespace(source || ''),
+    url: '',
+  };
+}
+
+function normalizeExampleYoutube(example) {
+  const youtube = example?.youtube;
+  if (!youtube || typeof youtube !== 'object') {
+    return { url: '', timestamp: '' };
+  }
+  const rawTimestamp = youtube.timestamp;
+  const parsedTimestamp = parseInt(rawTimestamp, 10);
+  return {
+    url: String(youtube.url || '').trim(),
+    timestamp: Number.isInteger(parsedTimestamp) && parsedTimestamp >= 0 ? parsedTimestamp : '',
+  };
+}
+
+function formatYouTubeLabel(timestamp) {
+  const totalSeconds = Math.max(0, parseInt(timestamp, 10) || 0);
+  const mins = Math.floor(totalSeconds / 60);
+  const secs = totalSeconds % 60;
+  return `${mins}:${String(secs).padStart(2, '0')}`;
+}
+
+function buildYouTubeLink(url, timestamp) {
+  const normalizedUrl = String(url || '').trim();
+  if (!normalizedUrl) return '';
+  const finalTimestamp = Math.max(0, parseInt(timestamp, 10) || 0);
+  return `${normalizedUrl}${normalizedUrl.includes('?') ? '&' : '?'}t=${finalTimestamp}s`;
 }
 
 function buildExampleFocusPreviewHtml(example) {
@@ -355,6 +430,64 @@ function formatScoreSummary(score) {
   return `${normalized}/5 · ${scoreLabels[normalized]}`;
 }
 
+function normalizeRecommendationPreferences(value) {
+  const raw = value && typeof value === 'object' ? value : {};
+  const clampWeight = (item, fallback) => {
+    const number = Number(item);
+    if (!Number.isFinite(number)) return fallback;
+    if (number < 0) return 0;
+    if (number > 5) return 5;
+    return Math.round(number * 100) / 100;
+  };
+
+  return {
+    due_weight: clampWeight(raw.due_weight, DEFAULT_RECOMMENDATION_PREFERENCES.due_weight),
+    created_weight: clampWeight(raw.created_weight, DEFAULT_RECOMMENDATION_PREFERENCES.created_weight),
+    score_weight: clampWeight(raw.score_weight, DEFAULT_RECOMMENDATION_PREFERENCES.score_weight),
+    created_order: raw.created_order === 'oldest' ? 'oldest' : 'recent',
+    score_order: raw.score_order === 'high' ? 'high' : 'low',
+  };
+}
+
+function recommendationPreferencesFromConfig(config) {
+  return normalizeRecommendationPreferences({
+    due_weight: config?.review_recommend_due_weight,
+    created_weight: config?.review_recommend_created_weight,
+    score_weight: config?.review_recommend_score_weight,
+    created_order: config?.review_recommend_created_order,
+    score_order: config?.review_recommend_score_order,
+  });
+}
+
+function recommendationPreferencesToConfig(preferences) {
+  const p = normalizeRecommendationPreferences(preferences);
+  return {
+    review_recommend_due_weight: p.due_weight,
+    review_recommend_created_weight: p.created_weight,
+    review_recommend_score_weight: p.score_weight,
+    review_recommend_created_order: p.created_order,
+    review_recommend_score_order: p.score_order,
+  };
+}
+
+function recommendationPreferencesKey(preferences) {
+  const p = normalizeRecommendationPreferences(preferences);
+  return [
+    p.due_weight.toFixed(2),
+    p.created_weight.toFixed(2),
+    p.score_weight.toFixed(2),
+    p.created_order,
+    p.score_order,
+  ].join('|');
+}
+
+function formatRecommendationPreferenceSummary(preferences) {
+  const p = normalizeRecommendationPreferences(preferences);
+  const created = p.created_order === 'oldest' ? '最早加入优先' : '最近加入优先';
+  const score = p.score_order === 'high' ? '高分优先' : '低分/未记录优先';
+  return `${created} · ${score}`;
+}
+
 function buildYoudaoUrl(word) {
   const normalized = String(word || '').trim();
   if (!normalized) return '';
@@ -417,128 +550,27 @@ function sanitizeDraftForSave(draft, fallbackWord) {
         delete example.focusPositions;
       }
 
-      if (example.source && typeof example.source === 'object') {
-        example.source = {
-          text: String(example.source.text || ''),
-          url: String(example.source.url || ''),
+      const source = normalizeExampleSource(example);
+      if (source.text || source.url) {
+        example.source = source;
+      } else {
+        delete example.source;
+      }
+
+      const youtube = normalizeExampleYoutube(example);
+      if (youtube.url) {
+        example.youtube = {
+          url: youtube.url,
+          timestamp: youtube.timestamp === '' ? 0 : youtube.timestamp,
         };
+      } else {
+        delete example.youtube;
       }
 
       return example;
     });
 
   return next;
-}
-
-function applySuggestionToDraft(draft, suggestion) {
-  if (!draft || typeof draft !== 'object' || !suggestion) {
-    return draft;
-  }
-
-  const next = deepClone(draft);
-  next.definitions = Array.isArray(next.definitions) ? next.definitions : [];
-  next.examples = Array.isArray(next.examples) ? next.examples : [];
-
-  const removeAtIndices = (arr, indices) => {
-    const indexSet = new Set(indices.filter((idx) => Number.isInteger(idx) && idx >= 0));
-    return arr.filter((_, idx) => !indexSet.has(idx));
-  };
-
-  const removeDuplicateIndicesKeepFirst = (arr, indices) => {
-    if (!Array.isArray(indices) || indices.length <= 1) return arr;
-    const normalized = [...new Set(indices
-      .map((idx) => parseInt(idx, 10))
-      .filter((idx) => Number.isInteger(idx) && idx >= 0 && idx < arr.length))]
-      .sort((a, b) => a - b);
-    if (normalized.length <= 1) return arr;
-    const [, ...toRemove] = normalized;
-    return removeAtIndices(arr, toRemove);
-  };
-
-  const type = suggestion.type;
-  const index = Number.isInteger(suggestion.index) ? suggestion.index : null;
-
-  if (type === 'definition_duplicate' || type === 'definition_near_duplicate') {
-    next.definitions = removeDuplicateIndicesKeepFirst(next.definitions, suggestion.indices);
-    return next;
-  }
-
-  if (type === 'definition_empty' || type === 'definition_invalid_type') {
-    if (index !== null) {
-      next.definitions = removeAtIndices(next.definitions, [index]);
-    }
-    return next;
-  }
-
-  if (type === 'example_duplicate' || type === 'example_near_duplicate') {
-    next.examples = removeDuplicateIndicesKeepFirst(next.examples, suggestion.indices);
-    return next;
-  }
-
-  if (type === 'example_empty_text' || type === 'example_invalid_type') {
-    if (index !== null) {
-      next.examples = removeAtIndices(next.examples, [index]);
-    }
-    return next;
-  }
-
-  if (index === null || index < 0 || index >= next.examples.length) {
-    return next;
-  }
-
-  const example = next.examples[index] || {};
-
-  if (type === 'example_whitespace_cleanup') {
-    example.text = collapseWhitespace(example.text);
-    next.examples[index] = example;
-    return next;
-  }
-
-  if (type === 'example_explanation_whitespace_cleanup') {
-    example.explanation = collapseWhitespace(example.explanation);
-    next.examples[index] = example;
-    return next;
-  }
-
-  if (type === 'example_missing_explanation') {
-    const suggested = String(suggestion.suggested || suggestion.suggested_explanation || '').trim();
-    if (suggested) {
-      example.explanation = suggested;
-      next.examples[index] = example;
-    }
-    return next;
-  }
-
-  if (type === 'example_focus_positions_out_of_range') {
-    const tokenCount = tokenizeNonSpace(example.text).length;
-    const cleaned = uniqueInts(Array.isArray(example.focusPositions) ? example.focusPositions : [])
-      .filter((item) => item < tokenCount);
-    example.focusPositions = cleaned;
-    next.examples[index] = example;
-    return next;
-  }
-
-  if (type === 'example_focus_word_mismatch') {
-    const mainWord = String(next.word || '').trim();
-    const current = Array.isArray(example.focusWords) ? example.focusWords : [];
-    const merged = [...new Set([...current.map((item) => String(item).trim()).filter(Boolean), mainWord].filter(Boolean))];
-    example.focusWords = merged;
-    next.examples[index] = example;
-    return next;
-  }
-
-  return next;
-}
-
-function canAutoApplySuggestion(item) {
-  if (!AUTO_APPLY_TYPES.has(item?.type)) {
-    return false;
-  }
-  if (item?.type === 'example_missing_explanation') {
-    const suggested = String(item?.suggested || item?.suggested_explanation || '').trim();
-    return Boolean(suggested);
-  }
-  return true;
 }
 
 function normalizeLlmAction(value) {
@@ -552,23 +584,7 @@ function parseIndex(value) {
 }
 
 function getDefinitionSuggestionList(item) {
-  const rawList = Array.isArray(item?.suggested_definitions)
-    ? item.suggested_definitions
-    : Array.isArray(item?.suggested)
-      ? item.suggested
-      : null;
-  if (rawList) {
-    return sanitizeDefinitionList(rawList);
-  }
-
-  const single = String(
-    item?.suggested
-    ?? item?.definition
-    ?? item?.replacement
-    ?? item?.value
-    ?? '',
-  ).trim();
-  return single ? sanitizeDefinitionList([single]) : [];
+  return extractDefinitionSuggestionValues(item);
 }
 
 function getDefinitionSuggestionEditorValue(item) {
@@ -638,6 +654,46 @@ function isActionableExampleSuggestion(item) {
   const suggestedText = String(item.suggested_text || '').trim();
   const suggestedExplanation = String(item.suggested_explanation || '').trim();
   return Boolean(suggestedText || suggestedExplanation);
+}
+
+function isActionableEntrySuggestion(item) {
+  if (!item || typeof item !== 'object') {
+    return false;
+  }
+
+  const action = normalizeLlmAction(item.action);
+  if (action === 'rename') {
+    return Boolean(String(item.suggested_word || '').trim());
+  }
+  if (action === 'split') {
+    return Array.isArray(item.suggested_entries) && item.suggested_entries.length > 0;
+  }
+  return false;
+}
+
+function applyEntryRenameToDraft(baseDraft, suggestedWord) {
+  const next = deepClone(baseDraft);
+  const oldWord = String(next.word || '').trim();
+  const finalWord = collapseWhitespace(suggestedWord);
+  if (!finalWord) return next;
+
+  next.word = finalWord;
+  next.definitions = Array.isArray(next.definitions) ? next.definitions : [];
+  next.examples = Array.isArray(next.examples) ? next.examples.map((example) => {
+    if (!example || typeof example !== 'object') return example;
+    const currentFocus = Array.isArray(example.focusWords) ? example.focusWords : [];
+    const rewrittenFocus = currentFocus.map((focus) => (
+      collapseWhitespace(focus).toLowerCase() === oldWord.toLowerCase() ? finalWord : focus
+    ));
+    if (!rewrittenFocus.some((focus) => collapseWhitespace(focus).toLowerCase() === finalWord.toLowerCase())) {
+      rewrittenFocus.push(finalWord);
+    }
+    return {
+      ...example,
+      focusWords: [...new Set(rewrittenFocus.map((focus) => String(focus || '').trim()).filter(Boolean))],
+    };
+  }) : [];
+  return next;
 }
 
 function applyLlmDefinitionSuggestions(definitions, items) {
@@ -710,10 +766,14 @@ function suggestionItemKey(prefix, item, index) {
 }
 
 function countActionableLlmItems(llmData) {
+  const entry = Array.isArray(llmData?.entry) ? llmData.entry : [];
   const defs = Array.isArray(llmData?.definitions) ? llmData.definitions : [];
   const exs = Array.isArray(llmData?.examples) ? llmData.examples : [];
   let total = 0;
 
+  for (const item of entry) {
+    if (normalizeLlmAction(item?.action) === 'rename' && isActionableEntrySuggestion(item)) total += 1;
+  }
   for (const item of defs) {
     if (isActionableDefinitionSuggestion(item)) total += 1;
   }
@@ -728,7 +788,17 @@ function buildFullyAutoAppliedDraft(baseDraft, cleanData) {
   next.definitions = Array.isArray(next.definitions) ? [...next.definitions] : [];
   next.examples = Array.isArray(next.examples) ? [...next.examples] : [];
 
-  const definitionRemove = new Set();
+  const entrySuggestions = Array.isArray(cleanData?.llm?.entry) ? cleanData.llm.entry : [];
+  const renameSuggestion = entrySuggestions.find((item) => (
+    normalizeLlmAction(item?.action) === 'rename'
+    && isActionableEntrySuggestion(item)
+  ));
+  if (renameSuggestion) {
+    const renamed = applyEntryRenameToDraft(next, renameSuggestion.suggested_word);
+    next.word = renamed.word;
+    next.examples = renamed.examples;
+  }
+
   const exampleRemove = new Set();
   const exampleMutators = new Map();
 
@@ -738,102 +808,6 @@ function buildFullyAutoAppliedDraft(baseDraft, cleanData) {
     list.push(mutator);
     store.set(index, list);
   };
-
-  const heuristicSuggestions = Array.isArray(cleanData?.heuristic?.suggestions)
-    ? cleanData.heuristic.suggestions
-    : [];
-
-  for (const suggestion of heuristicSuggestions) {
-    if (!canAutoApplySuggestion(suggestion)) continue;
-    const type = suggestion?.type;
-    const index = parseIndex(suggestion?.index);
-
-    if (type === 'definition_duplicate' || type === 'definition_near_duplicate') {
-      const normalized = (Array.isArray(suggestion?.indices) ? suggestion.indices : [])
-        .map((item) => parseIndex(item))
-        .filter((item) => item !== null && item < next.definitions.length)
-        .sort((a, b) => a - b);
-      if (normalized.length > 1) {
-        for (const removeIndex of normalized.slice(1)) definitionRemove.add(removeIndex);
-      }
-      continue;
-    }
-
-    if (type === 'definition_empty' || type === 'definition_invalid_type') {
-      if (index !== null && index < next.definitions.length) {
-        definitionRemove.add(index);
-      }
-      continue;
-    }
-
-    if (type === 'example_duplicate' || type === 'example_near_duplicate') {
-      const normalized = (Array.isArray(suggestion?.indices) ? suggestion.indices : [])
-        .map((item) => parseIndex(item))
-        .filter((item) => item !== null && item < next.examples.length)
-        .sort((a, b) => a - b);
-      if (normalized.length > 1) {
-        for (const removeIndex of normalized.slice(1)) exampleRemove.add(removeIndex);
-      }
-      continue;
-    }
-
-    if (type === 'example_empty_text' || type === 'example_invalid_type') {
-      if (index !== null && index < next.examples.length) {
-        exampleRemove.add(index);
-      }
-      continue;
-    }
-
-    if (index === null || index >= next.examples.length) {
-      continue;
-    }
-
-    if (type === 'example_whitespace_cleanup') {
-      addMutator(exampleMutators, index, (example) => ({
-        ...example,
-        text: collapseWhitespace(example.text),
-      }));
-      continue;
-    }
-
-    if (type === 'example_explanation_whitespace_cleanup') {
-      addMutator(exampleMutators, index, (example) => ({
-        ...example,
-        explanation: collapseWhitespace(example.explanation),
-      }));
-      continue;
-    }
-
-    if (type === 'example_focus_positions_out_of_range') {
-      addMutator(exampleMutators, index, (example) => {
-        const tokenCount = tokenizeNonSpace(example.text).length;
-        const cleaned = uniqueInts(Array.isArray(example.focusPositions) ? example.focusPositions : [])
-          .filter((item) => item < tokenCount);
-        return { ...example, focusPositions: cleaned };
-      });
-      continue;
-    }
-
-    if (type === 'example_focus_word_mismatch') {
-      addMutator(exampleMutators, index, (example) => {
-        const mainWord = String(next.word || '').trim();
-        const current = Array.isArray(example.focusWords) ? example.focusWords : [];
-        const merged = [...new Set([...current.map((item) => String(item).trim()).filter(Boolean), mainWord].filter(Boolean))];
-        return { ...example, focusWords: merged };
-      });
-      continue;
-    }
-
-    if (type === 'example_missing_explanation') {
-      const suggested = String(suggestion?.suggested || suggestion?.suggested_explanation || '').trim();
-      if (suggested) {
-        addMutator(exampleMutators, index, (example) => ({
-          ...example,
-          explanation: suggested,
-        }));
-      }
-    }
-  }
 
   const llmDefinitions = Array.isArray(cleanData?.llm?.definitions) ? cleanData.llm.definitions : [];
   const llmExamples = Array.isArray(cleanData?.llm?.examples) ? cleanData.llm.examples : [];
@@ -881,7 +855,7 @@ function buildFullyAutoAppliedDraft(baseDraft, cleanData) {
   }
 
   next.definitions = applyLlmDefinitionSuggestions(
-    next.definitions.map((item, idx) => (definitionRemove.has(idx) ? '' : item)),
+    next.definitions,
     llmDefinitions,
   );
 
@@ -988,6 +962,11 @@ function EditorPanel({
             const focusPreviewHtml = buildExampleFocusPreviewHtml(example);
             const focusSummary = buildExampleFocusSummary(example);
             const hasExplanation = Boolean(String(example.explanation || '').trim());
+            const source = normalizeExampleSource(example);
+            const hasSource = Boolean(source.text || source.url);
+            const youtube = normalizeExampleYoutube(example);
+            const youtubeLink = youtube.url ? buildYouTubeLink(youtube.url, youtube.timestamp) : '';
+            const hasYoutube = Boolean(youtube.url);
 
             return (
               <div className="example-editor-card" key={`example-${index}`}>
@@ -1015,10 +994,32 @@ function EditorPanel({
                   )}
                 </div>
 
+                {hasSource ? (
+                  <div className="example-source-row">
+                    <span className="example-source-label">来源</span>
+                    {source.url ? (
+                      <a href={source.url} target="_blank" rel="noreferrer">{source.text || source.url}</a>
+                    ) : (
+                      <span>{source.text}</span>
+                    )}
+                  </div>
+                ) : null}
+
+                {hasYoutube ? (
+                  <div className="example-source-row">
+                    <span className="example-source-label">YouTube</span>
+                    <a href={youtubeLink} target="_blank" rel="noreferrer">
+                      {formatYouTubeLabel(youtube.timestamp)}
+                    </a>
+                  </div>
+                ) : null}
+
                 <details className="editor-section editor-collapsible-section example-config-section">
                   <summary className="editor-disclosure">
-                    <span>Explanation 与 focus 设置</span>
-                    <span className="editor-disclosure-meta">{hasExplanation ? '已填 explanation' : '未填 explanation'} · {focusSummary}</span>
+                    <span>来源与跳转</span>
+                    <span className="editor-disclosure-meta">
+                      {hasExplanation ? '已填解析' : '未填解析'} · {hasSource ? '有来源' : '无来源'} · {hasYoutube ? `YouTube ${formatYouTubeLabel(youtube.timestamp)}` : '无 YouTube'}
+                    </span>
                   </summary>
 
                   <div className="editor-section-body">
@@ -1032,6 +1033,67 @@ function EditorPanel({
                       />
                     </label>
 
+                    <div className="editor-grid">
+                      <label>
+                        source text
+                        <input
+                          className="field"
+                          value={source.text}
+                          onChange={(event) => onExampleChange(index, 'source.text', event.target.value)}
+                          placeholder="例: CET6 23 12 1 听力"
+                        />
+                      </label>
+
+                      <label>
+                        source url
+                        <input
+                          className="field"
+                          value={source.url}
+                          onChange={(event) => onExampleChange(index, 'source.url', event.target.value)}
+                          placeholder="https://..."
+                        />
+                      </label>
+                    </div>
+
+                    <div className="editor-grid">
+                      <label>
+                        youtube url
+                        <input
+                          className="field"
+                          value={youtube.url}
+                          onChange={(event) => onExampleChange(index, 'youtube.url', event.target.value)}
+                          placeholder="https://www.youtube.com/watch?v=..."
+                        />
+                      </label>
+
+                      <label>
+                        youtube timestamp 秒
+                        <input
+                          className="field"
+                          type="number"
+                          min="0"
+                          value={youtube.timestamp}
+                          onChange={(event) => onExampleChange(index, 'youtube.timestamp', event.target.value)}
+                          placeholder="664"
+                        />
+                      </label>
+                    </div>
+
+                    {youtubeLink ? (
+                      <a className="example-jump-link" href={youtubeLink} target="_blank" rel="noreferrer">
+                        跳转到 YouTube {formatYouTubeLabel(youtube.timestamp)}
+                      </a>
+                    ) : null}
+                  </div>
+                </details>
+
+                <details className="editor-section editor-collapsible-section example-config-section">
+                  <summary className="editor-disclosure">
+                    <span>Focus 编辑</span>
+                    <span className="editor-disclosure-meta">{focusSummary}</span>
+                  </summary>
+
+                  <div className="editor-section-body">
                     <div className="editor-grid">
                       <label>
                         focusWords (逗号分隔)
@@ -1109,9 +1171,14 @@ function EditorPanel({
   );
 }
 
-function MergePanel({
+function OrganizePanel({
+  cleanData,
   mergeData,
+  draft,
   loading,
+  mergeLoading,
+  includeLlm,
+  setIncludeLlm,
   includeLowConfidence,
   setIncludeLowConfidence,
   includeMergeLlm,
@@ -1119,97 +1186,18 @@ function MergePanel({
   deleteSourceAfterMerge,
   setDeleteSourceAfterMerge,
   onRun,
-  onApplyMerge,
-  applyingKey,
-}) {
-  const suggestions = mergeData?.data?.suggestions || [];
-
-  return (
-    <div className="panel">
-      <div className="panel-header">
-        <div className="panel-heading">
-          <h3>词形合并建议</h3>
-          <div className="panel-caption">{suggestions.length ? `当前候选 ${suggestions.length} 条` : '按目录扫描相近词形并处理冗余文件'}</div>
-        </div>
-        <span className={`badge ${suggestions.length ? 'high' : 'medium'}`}>{suggestions.length} 条</span>
-      </div>
-
-      <div className="panel-body list-body">
-        <div className="panel-toolbar">
-          <label className="inline-check">
-            <input
-              type="checkbox"
-              checked={includeLowConfidence}
-              onChange={(event) => setIncludeLowConfidence(event.target.checked)}
-            />
-            包含低置信度
-          </label>
-          <label className="inline-check">
-            <input
-              type="checkbox"
-              checked={includeMergeLlm}
-              onChange={(event) => setIncludeMergeLlm(event.target.checked)}
-            />
-            启用 LLM 辅助
-          </label>
-          <label className="inline-check">
-            <input
-              type="checkbox"
-              checked={deleteSourceAfterMerge}
-              onChange={(event) => setDeleteSourceAfterMerge(event.target.checked)}
-            />
-            合并后删除源文件
-          </label>
-          <button className="primary" onClick={onRun} disabled={loading}>{loading ? '分析中...' : '分析目录'}</button>
-        </div>
-        {!suggestions.length ? (
-          <div className="empty">暂无建议，点击“分析目录”生成。</div>
-        ) : (
-          <ul>
-            {suggestions.map((item, index) => {
-              const actionKey = `${item.source.file}->${item.target.file}`;
-              const applying = applyingKey === actionKey;
-              const createTarget = Boolean(item.create_target_if_missing || item?.target?.exists === false);
-
-              return (
-                <li key={`merge-${index}`}>
-                  <div className="row-main between merge-row">
-                    <div className="row-main merge-main">
-                      <strong>{item.source.word}</strong>
-                      <span className="arrow">→</span>
-                      <strong>{item.target.word}</strong>
-                      <span className={`badge ${item.confidence_level}`}>{item.confidence_level}</span>
-                      {item.source_model ? <span className="badge medium">{item.source_model}</span> : null}
-                      {createTarget ? <span className="badge medium">new</span> : null}
-                    </div>
-                    <button className="ghost" onClick={() => onApplyMerge(item)} disabled={applying}>
-                      {applying ? '处理中...' : createTarget ? '新建并合并' : '执行合并'}
-                    </button>
-                  </div>
-                  <div className="row-sub merge-path">{item.source.file} → {item.target.file}</div>
-                  <div className="row-sub merge-reason">{item.reason} | 置信度 {item.confidence}</div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-        {mergeData?.llm_error ? <div className="error">LLM 建议失败: {mergeData.llm_error}</div> : null}
-      </div>
-    </div>
-  );
-}
-
-function CleanPanel({
-  cleanData,
-  draft,
-  loading,
-  includeLlm,
-  setIncludeLlm,
-  onRun,
-  onApplySuggestion,
+  onRunMerge,
+  onRunAll,
   onApplyLlmSuggestion,
+  onApplyEntryRenameAndSave,
   onApplyAllSuggestions,
   onApplyAllAndSave,
+  onApplyMerge,
+  onApplySplit,
+  applyingKey,
+  splitApplyingKey,
+  renameApplyingKey,
+  hasCategory,
   hasDraft,
   savingDraft,
   analyzedFrom,
@@ -1233,10 +1221,11 @@ function CleanPanel({
     return fallback;
   };
 
-  const heuristic = cleanData?.heuristic;
-  const heuristicSuggestions = Array.isArray(heuristic?.suggestions) ? heuristic.suggestions : [];
-  const heuristicAutoCount = heuristicSuggestions.filter((item) => canAutoApplySuggestion(item)).length;
+  const mergeSuggestions = mergeData?.data?.suggestions || [];
   const currentDefinitions = Array.isArray(draft?.definitions) ? draft.definitions : [];
+  const llmEntry = Array.isArray(cleanData?.llm?.entry)
+    ? cleanData.llm.entry.filter((item) => isActionableEntrySuggestion(item))
+    : [];
   const llmDefinitions = Array.isArray(cleanData?.llm?.definitions)
     ? cleanData.llm.definitions.filter((item) => isActionableDefinitionSuggestion(item))
     : [];
@@ -1246,110 +1235,156 @@ function CleanPanel({
   const llmNotes = Array.isArray(cleanData?.llm?.global_notes)
     ? cleanData.llm.global_notes.map((item) => String(item || '').trim()).filter(Boolean)
     : [];
-  const totalAutoCount = heuristicAutoCount + llmDefinitions.length + llmExamples.length;
+  const autoEntryCount = llmEntry.filter((item) => normalizeLlmAction(item.action) === 'rename').length;
+  const totalAutoCount = autoEntryCount + llmDefinitions.length + llmExamples.length;
+  const fileSuggestionCount = llmEntry.length + llmDefinitions.length + llmExamples.length;
+  const totalSuggestionCount = fileSuggestionCount + mergeSuggestions.length;
   const analysisToken = [
     analyzedFrom,
     cleanData?.file || '',
-    heuristic?.word || '',
-    heuristic?.suggestion_count || 0,
+    cleanData?.heuristic?.word || '',
     llmDefinitions.length,
     llmExamples.length,
+    llmEntry.length,
   ].join('|');
 
   return (
     <div className="panel">
       <div className="panel-header">
         <div className="panel-heading">
-          <h3>文件清洗建议</h3>
+          <h3>整理建议</h3>
           <div className="panel-caption">
-            {heuristic
-              ? `规则 ${heuristicSuggestions.length} 条 · LLM ${llmDefinitions.length + llmExamples.length} 条`
-              : '针对 Definitions / Examples 输出可直接执行的清洗建议'}
+            {totalSuggestionCount
+              ? `文件 ${fileSuggestionCount} 条 · 合并 ${mergeSuggestions.length} 条 · ${totalAutoCount} 条可自动应用`
+              : '统一生成文件清洗、词条拆分和词形合并建议'}
           </div>
         </div>
-        <span className={`badge ${totalAutoCount ? 'high' : 'medium'}`}>{totalAutoCount} 条可应用</span>
+        <span className={`badge ${totalSuggestionCount ? 'high' : 'medium'}`}>{totalSuggestionCount} 条建议</span>
       </div>
 
       <div className="panel-body list-body">
-        <div className="panel-toolbar">
-          <label className="inline-check">
-            <input type="checkbox" checked={includeLlm} onChange={(event) => setIncludeLlm(event.target.checked)} />
-            启用 LLM 辅助
-          </label>
-          <button className="ghost" onClick={onApplyAllSuggestions} disabled={!hasDraft || !heuristic || totalAutoCount === 0}>一键应用全部建议</button>
-          <button className="ghost" onClick={onApplyAllAndSave} disabled={!hasDraft || !heuristic || totalAutoCount === 0 || savingDraft}>{savingDraft ? '保存中...' : '一键应用并保存'}</button>
-          <button className="primary" onClick={onRun} disabled={loading}>{loading ? '分析中...' : '分析文件'}</button>
+        <div className="organize-toolbar">
+          <div className="organize-actions">
+            <button className="primary" onClick={onRunAll} disabled={(loading || mergeLoading) || !hasCategory}>
+              {loading || mergeLoading ? '分析中...' : '分析全部'}
+            </button>
+            <button className="ghost" onClick={onRun} disabled={loading || !hasDraft}>{loading ? '文件中...' : '文件'}</button>
+            <button className="ghost" onClick={onRunMerge} disabled={mergeLoading || !hasCategory}>{mergeLoading ? '目录中...' : '目录'}</button>
+            <button className="ghost" onClick={onApplyAllAndSave} disabled={!hasDraft || !cleanData || totalAutoCount === 0 || savingDraft}>{savingDraft ? '保存中...' : '应用并保存'}</button>
+            <button className="ghost" onClick={onApplyAllSuggestions} disabled={!hasDraft || !cleanData || totalAutoCount === 0}>应用到草稿</button>
+          </div>
+          <details className="organize-options">
+            <summary>选项</summary>
+            <div className="organize-option-grid">
+              <label className="inline-check">
+                <input type="checkbox" checked={includeLlm} onChange={(event) => setIncludeLlm(event.target.checked)} />
+                文件 LLM
+              </label>
+              <label className="inline-check">
+                <input
+                  type="checkbox"
+                  checked={includeMergeLlm}
+                  onChange={(event) => setIncludeMergeLlm(event.target.checked)}
+                />
+                合并 LLM
+              </label>
+              <label className="inline-check">
+                <input
+                  type="checkbox"
+                  checked={includeLowConfidence}
+                  onChange={(event) => setIncludeLowConfidence(event.target.checked)}
+                />
+                低置信度
+              </label>
+              <label className="inline-check">
+                <input
+                  type="checkbox"
+                  checked={deleteSourceAfterMerge}
+                  onChange={(event) => setDeleteSourceAfterMerge(event.target.checked)}
+                />
+                删除源文件
+              </label>
+            </div>
+          </details>
         </div>
-        {!heuristic ? (
-          <div className="empty">选择词条后点击“分析文件”。</div>
+        <div className="section-title">当前文件清洗</div>
+        {!cleanData ? (
+          <div className="empty">选择词条后点击“分析当前文件”或“一键分析”。</div>
         ) : (
           <>
             <div className="analysis-source">
               分析基于: {analyzedFrom === 'draft' ? '当前草稿（含未保存修改）' : 'data 中已保存文件'}
             </div>
-            <div className="section-title">规则建议 ({heuristic.suggestion_count})</div>
-            {!heuristic.suggestions.length ? <p>未发现可清洗项。</p> : null}
-            <ul>
-              {(heuristic.suggestions || []).map((item, index) => {
-                const itemKey = suggestionItemKey(`heuristic:${analysisToken}`, item, index);
-                const supportsSuggestedEdit = (
-                  typeof item.suggested === 'string'
-                  || item.type === 'example_whitespace_cleanup'
-                  || item.type === 'example_explanation_whitespace_cleanup'
-                  || item.type === 'example_missing_explanation'
-                );
-
-                const suggestedFallback = item.type === 'example_missing_explanation'
-                  ? String(item.suggested_explanation || item.suggested || '')
-                  : String(item.suggested || '');
-                const editedSuggested = getEditorValue(itemKey, 'suggested', suggestedFallback);
-                const patched = { ...item };
-
-                if (supportsSuggestedEdit) {
-                  if (item.type === 'example_missing_explanation') {
-                    patched.suggested_explanation = editedSuggested;
-                    patched.suggested = editedSuggested;
-                  } else {
-                    patched.suggested = editedSuggested;
-                  }
-                }
-
-                const auto = canAutoApplySuggestion(patched);
-                return (
-                  <li key={`clean-${index}`}>
-                    <div className="row-main between">
-                      <div className="row-main">
-                        <span className={`badge ${item.severity || 'low'}`}>{item.severity || 'low'}</span>
-                        <strong>{item.type}</strong>
-                      </div>
-                      {auto ? (
-                        <button className="ghost" onClick={() => onApplySuggestion(patched)} disabled={!hasDraft}>应用此条</button>
-                      ) : (
-                        <span className="muted">需手动处理</span>
-                      )}
-                    </div>
-                    <div className="row-sub">{item.suggested_action}</div>
-                    {supportsSuggestedEdit ? (
-                      <div className="suggestion-edit">
-                        <div className="row-sub">可编辑建议内容</div>
-                        <textarea
-                          className="field textarea suggestion-input"
-                          rows={2}
-                          value={editedSuggested}
-                          onChange={(event) => setEditorValue(itemKey, 'suggested', event.target.value)}
-                        />
-                      </div>
-                    ) : null}
-                  </li>
-                );
-              })}
-            </ul>
-
             {cleanData.llm ? (
               <>
                 <div className="section-title">LLM 建议</div>
-                {llmDefinitions.length || llmExamples.length || llmNotes.length ? (
+                {llmEntry.length || llmDefinitions.length || llmExamples.length || llmNotes.length ? (
                   <>
+                    {llmEntry.length ? (
+                      <>
+                        <div className="section-title">Entry</div>
+                        <ul>
+                          {llmEntry.map((item, index) => {
+                            const action = normalizeLlmAction(item.action);
+                            const entries = Array.isArray(item.suggested_entries) ? item.suggested_entries : [];
+                            const splitActionKey = suggestionItemKey(`entry-split:${analysisToken}`, item, index);
+                            const renameActionKey = suggestionItemKey(`entry-rename:${analysisToken}`, item, index);
+                            return (
+                              <li key={`llm-entry-${index}`}>
+                                <div className="row-main between">
+                                  <div className="row-main">
+                                    <strong>{action}</strong>
+                                    <span className="badge medium">{item.confidence ?? 'llm'}</span>
+                                  </div>
+                                  {action === 'rename' ? (
+                                    <div className="suggestion-actions">
+                                      <button
+                                        className="ghost"
+                                        onClick={() => onApplyLlmSuggestion('entry', item)}
+                                        disabled={!hasDraft || Boolean(renameApplyingKey)}
+                                      >
+                                        仅改草稿
+                                      </button>
+                                      <button
+                                        className="primary"
+                                        onClick={() => onApplyEntryRenameAndSave(item, renameActionKey)}
+                                        disabled={!hasDraft || savingDraft || Boolean(renameApplyingKey)}
+                                      >
+                                        {renameApplyingKey === renameActionKey ? '重命名中...' : '应用并重命名'}
+                                      </button>
+                                    </div>
+                                  ) : action === 'split' ? (
+                                    <button
+                                      className="ghost"
+                                      onClick={() => onApplySplit(item, splitActionKey)}
+                                      disabled={!hasDraft || Boolean(splitApplyingKey)}
+                                    >
+                                      {splitApplyingKey === splitActionKey ? '拆分中...' : '自动拆分'}
+                                    </button>
+                                  ) : (
+                                    <span className="muted">需手动处理</span>
+                                  )}
+                                </div>
+                                <div className="row-sub">{item.reason || ''}</div>
+                                {action === 'rename' ? (
+                                  <div className="suggestion-edit">
+                                    <div className="row-sub">建议词条</div>
+                                    <div className="json-box">{item.suggested_word}</div>
+                                  </div>
+                                ) : null}
+                                {action === 'split' ? (
+                                  <div className="suggestion-edit">
+                                    <div className="row-sub">建议拆分为</div>
+                                    <pre className="json-box">{JSON.stringify(entries, null, 2)}</pre>
+                                  </div>
+                                ) : null}
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </>
+                    ) : null}
+
                     {llmDefinitions.length ? (
                       <>
                         <div className="section-title">Definitions</div>
@@ -1502,6 +1537,41 @@ function CleanPanel({
             {cleanData.llm_error ? <div className="error">LLM 建议失败: {cleanData.llm_error}</div> : null}
           </>
         )}
+
+        <div className="organize-divider" />
+        <div className="section-title">词形合并建议 ({mergeSuggestions.length})</div>
+        {!mergeSuggestions.length ? (
+          <div className="empty">点击“扫描目录合并”或“一键分析”生成目录级合并建议。</div>
+        ) : (
+          <ul>
+            {mergeSuggestions.map((item, index) => {
+              const actionKey = `${item.source.file}->${item.target.file}`;
+              const applying = applyingKey === actionKey;
+              const createTarget = Boolean(item.create_target_if_missing || item?.target?.exists === false);
+
+              return (
+                <li key={`merge-${index}`}>
+                  <div className="row-main between merge-row">
+                    <div className="row-main merge-main">
+                      <strong>{item.source.word}</strong>
+                      <span className="arrow">→</span>
+                      <strong>{item.target.word}</strong>
+                      <span className={`badge ${item.confidence_level}`}>{item.confidence_level}</span>
+                      {item.source_model ? <span className="badge medium">{item.source_model}</span> : null}
+                      {createTarget ? <span className="badge medium">new</span> : null}
+                    </div>
+                    <button className="ghost" onClick={() => onApplyMerge(item)} disabled={applying}>
+                      {applying ? '处理中...' : createTarget ? '新建并合并' : '执行合并'}
+                    </button>
+                  </div>
+                  <div className="row-sub merge-path">{item.source.file} → {item.target.file}</div>
+                  <div className="row-sub merge-reason">{item.reason} | 置信度 {item.confidence}</div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+        {mergeData?.llm_error ? <div className="error">LLM 合并建议失败: {mergeData.llm_error}</div> : null}
       </div>
     </div>
   );
@@ -1700,6 +1770,8 @@ function RecommendationModePanel({
   categories,
   scope,
   onScopeChange,
+  preferences,
+  onPreferencesChange,
   recommendation,
   alternatives,
   meta,
@@ -1707,9 +1779,20 @@ function RecommendationModePanel({
   onPush,
   onNext,
   onUse,
+  savingPreferences,
 }) {
   const current = recommendation;
   const status = current?.advice?.status || '';
+  const normalizedPreferences = normalizeRecommendationPreferences(preferences);
+
+  const updateWeight = (key, value) => {
+    const number = Number(value);
+    onPreferencesChange({ [key]: Number.isFinite(number) ? number : DEFAULT_RECOMMENDATION_PREFERENCES[key] });
+  };
+
+  const updateChoice = (key, value) => {
+    onPreferencesChange({ [key]: value });
+  };
 
   return (
     <div className="panel sidebar-panel">
@@ -1731,6 +1814,94 @@ function RecommendationModePanel({
           </select>
         </label>
 
+        <details className="recommend-tuning">
+          <summary className="recommend-tuning-summary">
+            <span>
+              <span className="section-title">算法偏好</span>
+              <span>
+                {formatRecommendationPreferenceSummary(normalizedPreferences)}
+                {savingPreferences ? ' · 保存中' : ''}
+              </span>
+            </span>
+          </summary>
+
+          <div className="recommend-tuning-body">
+            <div className="recommend-segment-group">
+              <div className="recommend-segment-label">创建时间</div>
+              <div className="recommend-segment" role="group" aria-label="创建时间方向">
+                <button
+                  type="button"
+                  className={normalizedPreferences.created_order === 'recent' ? 'active' : ''}
+                  onClick={() => updateChoice('created_order', 'recent')}
+                  disabled={loading}
+                >
+                  最近加入
+                </button>
+                <button
+                  type="button"
+                  className={normalizedPreferences.created_order === 'oldest' ? 'active' : ''}
+                  onClick={() => updateChoice('created_order', 'oldest')}
+                  disabled={loading}
+                >
+                  最早加入
+                </button>
+              </div>
+            </div>
+
+            <div className="recommend-segment-group">
+              <div className="recommend-segment-label">最近评分</div>
+              <div className="recommend-segment" role="group" aria-label="评分方向">
+                <button
+                  type="button"
+                  className={normalizedPreferences.score_order === 'low' ? 'active' : ''}
+                  onClick={() => updateChoice('score_order', 'low')}
+                  disabled={loading}
+                >
+                  低分/未记录
+                </button>
+                <button
+                  type="button"
+                  className={normalizedPreferences.score_order === 'high' ? 'active' : ''}
+                  onClick={() => updateChoice('score_order', 'high')}
+                  disabled={loading}
+                >
+                  高分
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="recommend-weight-list">
+            {RECOMMENDATION_WEIGHT_OPTIONS.map((option) => (
+              <label key={option.key} className="recommend-weight-row">
+                <span className="recommend-weight-head">
+                  <strong>{option.label}</strong>
+                  <output>{normalizedPreferences[option.key].toFixed(2)}</output>
+                </span>
+                <span className="recommend-weight-help">{option.description}</span>
+                <input
+                  type="range"
+                  min="0"
+                  max="5"
+                  step="0.05"
+                  value={normalizedPreferences[option.key]}
+                  onChange={(event) => updateWeight(option.key, event.target.value)}
+                  disabled={loading}
+                />
+              </label>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            className="ghost recommend-reset-button"
+            onClick={() => onPreferencesChange(DEFAULT_RECOMMENDATION_PREFERENCES)}
+            disabled={loading}
+          >
+            重置默认权重
+          </button>
+        </details>
+
         <div className="recommend-actions">
           <button type="button" className="primary" onClick={onPush} disabled={loading}>
             {loading ? '计算中...' : '推送一个词'}
@@ -1743,6 +1914,8 @@ function RecommendationModePanel({
         {meta ? (
           <div className="muted">
             已扫描 {meta.scanned_files} 个文件，候选 {meta.candidate_count} 个。
+            <br />
+            {formatRecommendationPreferenceSummary(meta.preferences || normalizedPreferences)}
           </div>
         ) : null}
 
@@ -1767,6 +1940,12 @@ function RecommendationModePanel({
             <div className="recommend-badges">
               <span className="stat-pill"><strong>{current.priority_score}</strong> priority</span>
               <span className="stat-pill"><strong>{current.advice?.next_review_date || '--'}</strong> 下次复习</span>
+              <span className="stat-pill"><strong>{current.score_breakdown?.last_score ?? '无'}</strong> 最近评分</span>
+            </div>
+            <div className="recommend-breakdown">
+              <span>到期 {current.score_breakdown?.weighted?.due ?? '--'}</span>
+              <span>创建 {current.score_breakdown?.weighted?.created ?? '--'}</span>
+              <span>评分 {current.score_breakdown?.weighted?.score ?? '--'}</span>
             </div>
             <p className="selection-sub">{current.reason}</p>
           </div>
@@ -1812,6 +1991,11 @@ export default function App({ embedded = false, onOpenConfig = null, launchReque
   const [recommendAlternatives, setRecommendAlternatives] = useState([]);
   const [recommendMeta, setRecommendMeta] = useState(null);
   const [recommendExcludeKeys, setRecommendExcludeKeys] = useState([]);
+  const [recommendPreferences, setRecommendPreferences] = useState(() => (
+    normalizeRecommendationPreferences(DEFAULT_RECOMMENDATION_PREFERENCES)
+  ));
+  const [recommendPreferencesReady, setRecommendPreferencesReady] = useState(false);
+  const [savingRecommendPreferences, setSavingRecommendPreferences] = useState(false);
 
   const [detail, setDetail] = useState(null);
   const [draft, setDraft] = useState(null);
@@ -1837,11 +2021,16 @@ export default function App({ embedded = false, onOpenConfig = null, launchReque
   const [savingDraft, setSavingDraft] = useState(false);
   const [savingMarked, setSavingMarked] = useState(false);
   const [mergeApplyingKey, setMergeApplyingKey] = useState('');
+  const [splitApplyingKey, setSplitApplyingKey] = useState('');
+  const [renameApplyingKey, setRenameApplyingKey] = useState('');
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
   const [ttsVoiceLabel, setTtsVoiceLabel] = useState('');
   const pendingSelectionRef = useRef({ category: '', filename: '' });
   const speechRequestRef = useRef(0);
+  const recommendPreferenceHydratedRef = useRef(false);
+  const savedRecommendPreferenceKeyRef = useRef('');
+  const recommendPreferenceSaveTimerRef = useRef(null);
   const cleanPanelRef = useRef(null);
   const reviewPanelRef = useRef(null);
 
@@ -1854,6 +2043,11 @@ export default function App({ embedded = false, onOpenConfig = null, launchReque
     all: entries.length,
     unmarked: entries.filter((item) => !item.marked).length,
   }), [entries]);
+
+  const normalizedRecommendPreferences = useMemo(
+    () => normalizeRecommendationPreferences(recommendPreferences),
+    [recommendPreferences],
+  );
 
   const filteredEntries = useMemo(() => {
     const filteredByMark = entries.filter((item) => {
@@ -1944,8 +2138,74 @@ export default function App({ embedded = false, onOpenConfig = null, launchReque
     const synth = typeof window !== 'undefined' ? window.speechSynthesis : null;
     return () => {
       if (synth) synth.cancel();
+      if (recommendPreferenceSaveTimerRef.current) {
+        window.clearTimeout(recommendPreferenceSaveTimerRef.current);
+      }
     };
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetchConfig()
+      .then((config) => {
+        if (cancelled) return;
+        const nextPreferences = recommendationPreferencesFromConfig(config || {});
+        savedRecommendPreferenceKeyRef.current = recommendationPreferencesKey(nextPreferences);
+        setRecommendPreferences(nextPreferences);
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          showError(`读取推荐偏好失败: ${err.message}`);
+        }
+      })
+      .finally(() => {
+        if (cancelled) return;
+        recommendPreferenceHydratedRef.current = true;
+        setRecommendPreferencesReady(true);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!recommendPreferencesReady || !recommendPreferenceHydratedRef.current) return undefined;
+
+    const currentKey = recommendationPreferencesKey(normalizedRecommendPreferences);
+    if (currentKey === savedRecommendPreferenceKeyRef.current) {
+      return undefined;
+    }
+
+    if (recommendPreferenceSaveTimerRef.current) {
+      window.clearTimeout(recommendPreferenceSaveTimerRef.current);
+    }
+
+    recommendPreferenceSaveTimerRef.current = window.setTimeout(() => {
+      setSavingRecommendPreferences(true);
+      saveConfig(recommendationPreferencesToConfig(normalizedRecommendPreferences))
+        .then((res) => {
+          const nextConfig = res?.data || {};
+          const nextPreferences = recommendationPreferencesFromConfig(nextConfig);
+          savedRecommendPreferenceKeyRef.current = recommendationPreferencesKey(nextPreferences);
+          setRecommendPreferences(nextPreferences);
+          window.dispatchEvent(new Event('config-updated'));
+        })
+        .catch((err) => {
+          showError(`保存推荐偏好失败: ${err.message}`);
+        })
+        .finally(() => {
+          setSavingRecommendPreferences(false);
+        });
+    }, 420);
+
+    return () => {
+      if (recommendPreferenceSaveTimerRef.current) {
+        window.clearTimeout(recommendPreferenceSaveTimerRef.current);
+      }
+    };
+  }, [normalizedRecommendPreferences, recommendPreferencesReady]);
 
   useEffect(() => {
     const synth = typeof window !== 'undefined' ? window.speechSynthesis : null;
@@ -2026,6 +2286,7 @@ export default function App({ embedded = false, onOpenConfig = null, launchReque
         recommendScope === ALL_SCOPE ? '' : recommendScope,
         excludeKeys,
         6,
+        normalizedRecommendPreferences,
       );
       const recommended = applyRecommendationResult(res);
       if (!recommended) {
@@ -2087,11 +2348,11 @@ export default function App({ embedded = false, onOpenConfig = null, launchReque
         let nextFilename = '';
         setEntries(list);
         const pendingSelection = pendingSelectionRef.current;
-        if (pendingSelection.category === category && pendingSelection.filename && filenames.includes(pendingSelection.filename)) {
+        if (pendingSelection.category === apiCategory && pendingSelection.filename && filenames.includes(pendingSelection.filename)) {
           nextFilename = pendingSelection.filename;
         }
-        if (pendingSelection.category === category) {
-          pendingSelectionRef.current = { category, filename: '' };
+        if (pendingSelection.category === apiCategory) {
+          pendingSelectionRef.current = { category: apiCategory, filename: '' };
         }
         if (nextFilename) {
           setFilename(nextFilename);
@@ -2126,6 +2387,7 @@ export default function App({ embedded = false, onOpenConfig = null, launchReque
           recommendScope === ALL_SCOPE ? '' : recommendScope,
           [],
           6,
+          normalizedRecommendPreferences,
         );
         if (cancelled) return;
         const recommended = applyRecommendationResult(res);
@@ -2147,7 +2409,7 @@ export default function App({ embedded = false, onOpenConfig = null, launchReque
     return () => {
       cancelled = true;
     };
-  }, [categories.length, mode, recommendScope]);
+  }, [categories.length, mode, recommendScope, normalizedRecommendPreferences]);
 
   useEffect(() => {
     if (!hasSelection) return undefined;
@@ -2192,6 +2454,17 @@ export default function App({ embedded = false, onOpenConfig = null, launchReque
 
   const handleRecommendScopeChange = (nextScope) => {
     setRecommendScope(nextScope);
+    setRecommendation(null);
+    setRecommendAlternatives([]);
+    setRecommendMeta(null);
+    setRecommendExcludeKeys([]);
+  };
+
+  const handleRecommendPreferencesChange = (patch) => {
+    setRecommendPreferences((prev) => normalizeRecommendationPreferences({
+      ...prev,
+      ...(patch || {}),
+    }));
     setRecommendation(null);
     setRecommendAlternatives([]);
     setRecommendMeta(null);
@@ -2250,8 +2523,14 @@ export default function App({ embedded = false, onOpenConfig = null, launchReque
       }
 
       if (filename && !filenames.includes(filename)) {
-        setFilename('');
-        resetEntryState();
+        const pending = pendingSelectionRef.current;
+        if (pending.category === apiCategory && pending.filename && filenames.includes(pending.filename)) {
+          setFilename(pending.filename);
+          pendingSelectionRef.current = { category: apiCategory, filename: '' };
+        } else {
+          setFilename('');
+          resetEntryState();
+        }
       }
     } catch (err) {
       showError(err.message);
@@ -2366,14 +2645,77 @@ export default function App({ embedded = false, onOpenConfig = null, launchReque
     }
   };
 
-  const handleApplySuggestion = (suggestion) => {
-    if (!draft || !canAutoApplySuggestion(suggestion)) return;
-    updateDraft((base) => applySuggestionToDraft(base, suggestion));
-    showNotice('已应用该建议到草稿');
+  const handleOrganize = async () => {
+    if (!apiCategory) {
+      showError('先选择目录，再生成整理建议');
+      return;
+    }
+
+    const shouldAnalyzeFile = Boolean(hasSelection);
+    setLoadingMerge(true);
+    if (shouldAnalyzeFile) {
+      setLoadingClean(true);
+    }
+
+    try {
+      setError('');
+      const jobs = [
+        runFolderRefine(apiCategory, includeLowConfidence, includeMergeLlm),
+      ];
+
+      if (shouldAnalyzeFile) {
+        const analysisDraft = draft ? sanitizeDraftForSave(draft, filename.replace(/\.json$/i, '')) : null;
+        jobs.unshift(runFileRefine(apiCategory, filename, includeLlm, analysisDraft));
+      }
+
+      const results = await Promise.allSettled(jobs);
+      const errors = [];
+      let folderIndex = 0;
+
+      if (shouldAnalyzeFile) {
+        const fileResult = results[0];
+        folderIndex = 1;
+        if (fileResult.status === 'fulfilled') {
+          setCleanData(fileResult.value);
+        } else {
+          errors.push(fileResult.reason?.message || '文件清洗建议失败');
+        }
+      }
+
+      const folderResult = results[folderIndex];
+      if (folderResult.status === 'fulfilled') {
+        setMergeData(folderResult.value);
+      } else {
+        errors.push(folderResult.reason?.message || '词形合并建议失败');
+      }
+
+      if (errors.length) {
+        showError(errors.join('；'));
+      } else if (shouldAnalyzeFile) {
+        showNotice('已生成当前文件和目录合并整理建议');
+      } else {
+        showNotice('已生成目录合并整理建议');
+      }
+    } finally {
+      setLoadingMerge(false);
+      if (shouldAnalyzeFile) {
+        setLoadingClean(false);
+      }
+    }
   };
 
   const handleApplyLlmSuggestion = (kind, item) => {
     if (!draft || !item) return;
+    if (kind === 'entry') {
+      if (!isActionableEntrySuggestion(item)) return;
+      const action = normalizeLlmAction(item.action);
+      if (action !== 'rename') return;
+      const suggestedWord = collapseWhitespace(item.suggested_word);
+      if (!suggestedWord) return;
+      updateDraft((base) => applyEntryRenameToDraft(base, suggestedWord));
+      showNotice('已应用词条重命名建议到草稿');
+      return;
+    }
     if (kind === 'definition' && !isActionableDefinitionSuggestion(item)) return;
     if (kind === 'example' && !isActionableExampleSuggestion(item)) return;
 
@@ -2388,13 +2730,107 @@ export default function App({ embedded = false, onOpenConfig = null, launchReque
     showNotice('已应用该 LLM 建议到草稿');
   };
 
+  const handleApplyEntryRenameAndSave = async (item, actionKey = '') => {
+    if (!draft || !hasSelection || !isActionableEntrySuggestion(item)) return;
+    if (normalizeLlmAction(item.action) !== 'rename') return;
+
+    const suggestedWord = collapseWhitespace(item.suggested_word);
+    if (!suggestedWord) return;
+
+    const expectedFilename = normalizeWordFilename(suggestedWord);
+    if (expectedFilename && expectedFilename.toLowerCase() === filename.toLowerCase()) {
+      updateDraft((base) => applyEntryRenameToDraft(base, suggestedWord));
+      showNotice('当前文件名已匹配该词条，已应用到草稿');
+      return;
+    }
+
+    setRenameApplyingKey(actionKey || 'rename');
+    setSavingDraft(true);
+    try {
+      setError('');
+      const renamedDraft = applyEntryRenameToDraft(draft, suggestedWord);
+      const payload = sanitizeDraftForSave(renamedDraft, suggestedWord);
+      const res = await renameVocabDetail(apiCategory, filename, suggestedWord, payload);
+      const savedFilename = res.file || res.target_file || expectedFilename || filename;
+      const savedData = res.data || payload;
+
+      hydrateDetailAndDraft(savedData);
+      pendingSelectionRef.current = { category: apiCategory, filename: savedFilename };
+      setDraftDirty(false);
+      setFilename(savedFilename);
+      void refreshFiles();
+
+      const refreshed = await runFileRefine(apiCategory, savedFilename, false, savedData);
+      setCleanData(refreshed);
+      if (res?.merged_to_existing) {
+        showNotice(`已合并到已有词条: ${filename} → ${savedFilename}`);
+      } else {
+        showNotice(`已重命名: ${filename} → ${savedFilename}`);
+      }
+    } catch (err) {
+      showError(err.message);
+    } finally {
+      setSavingDraft(false);
+      setRenameApplyingKey('');
+    }
+  };
+
+  const handleApplySplit = async (item, actionKey = '') => {
+    if (!hasSelection || !draft || !isActionableEntrySuggestion(item)) return;
+    if (normalizeLlmAction(item.action) !== 'split') return;
+
+    setSplitApplyingKey(actionKey || 'split');
+    try {
+      setError('');
+      const payload = sanitizeDraftForSave(draft, filename.replace(/\.json$/i, ''));
+      const res = await applySplitSuggestion(
+        apiCategory,
+        filename,
+        item,
+        deleteSourceAfterMerge,
+        payload,
+      );
+      const entriesCreated = Array.isArray(res?.entries) ? res.entries : [];
+      const updatedCount = Array.isArray(res?.updated_files) ? res.updated_files.length : 0;
+      const createdCount = Array.isArray(res?.created_files) ? res.created_files.length : 0;
+      const firstTarget = entriesCreated[0]?.file || '';
+
+      setCleanData(null);
+      void refreshFiles();
+
+      if (deleteSourceAfterMerge && firstTarget) {
+        pendingSelectionRef.current = { category: apiCategory, filename: firstTarget };
+        setDraftDirty(false);
+        setFilename(firstTarget);
+      } else if (firstTarget) {
+        showNotice(`已拆分：新建 ${createdCount} 个，更新 ${updatedCount} 个`);
+      }
+
+      if (deleteSourceAfterMerge && !firstTarget) {
+        setFilename('');
+        resetEntryState();
+      }
+
+      if (firstTarget && !deleteSourceAfterMerge) {
+        const refreshed = await runFileRefine(apiCategory, filename, false, payload);
+        setCleanData(refreshed);
+      }
+
+      if (deleteSourceAfterMerge && firstTarget) {
+        showNotice(`已拆分：新建 ${createdCount} 个，更新 ${updatedCount} 个，并切换到 ${firstTarget}`);
+      }
+    } catch (err) {
+      showError(err.message);
+    } finally {
+      setSplitApplyingKey('');
+    }
+  };
+
   const handleApplyAllSuggestions = () => {
-    const suggestions = cleanData?.heuristic?.suggestions || [];
     if (!draft) return;
 
-    const autoHeuristicCount = suggestions.filter((item) => canAutoApplySuggestion(item)).length;
     const autoLlmCount = countActionableLlmItems(cleanData?.llm || null);
-    const totalAutoCount = autoHeuristicCount + autoLlmCount;
+    const totalAutoCount = autoLlmCount;
     if (!totalAutoCount) {
       showNotice('当前没有可自动应用的建议');
       return;
@@ -2407,10 +2843,8 @@ export default function App({ embedded = false, onOpenConfig = null, launchReque
   const handleApplyAllAndSave = async () => {
     if (!draft || !hasSelection) return;
 
-    const suggestions = cleanData?.heuristic?.suggestions || [];
-    const autoHeuristicCount = suggestions.filter((item) => canAutoApplySuggestion(item)).length;
     const autoLlmCount = countActionableLlmItems(cleanData?.llm || null);
-    const totalAutoCount = autoHeuristicCount + autoLlmCount;
+    const totalAutoCount = autoLlmCount;
     if (!totalAutoCount) {
       showNotice('当前没有可自动应用的建议');
       return;
@@ -2421,10 +2855,21 @@ export default function App({ embedded = false, onOpenConfig = null, launchReque
       setError('');
       const nextDraft = buildFullyAutoAppliedDraft(draft, cleanData);
       const payload = sanitizeDraftForSave(nextDraft, filename.replace(/\.json$/i, ''));
-      const res = await saveVocabDetail(apiCategory, filename, payload);
+      const nextWord = collapseWhitespace(payload.word || '');
+      const currentWord = collapseWhitespace(detail?.word || filename.replace(/\.json$/i, ''));
+      const res = nextWord && nextWord.toLowerCase() !== currentWord.toLowerCase()
+        ? await renameVocabDetail(apiCategory, filename, nextWord, payload)
+        : await saveVocabDetail(apiCategory, filename, payload);
+      const savedFilename = res.file || res.target_file || filename;
       hydrateDetailAndDraft(res.data || payload);
+      setDraftDirty(false);
+      if (savedFilename !== filename) {
+        pendingSelectionRef.current = { category: apiCategory, filename: savedFilename };
+        setFilename(savedFilename);
+      }
+      void refreshFiles();
 
-      const refreshed = await runFileRefine(apiCategory, filename, false, res.data || payload);
+      const refreshed = await runFileRefine(apiCategory, savedFilename, false, res.data || payload);
       setCleanData(refreshed);
       showNotice(`已一键应用 ${totalAutoCount} 条建议并保存到 data`);
     } catch (err) {
@@ -2441,11 +2886,22 @@ export default function App({ embedded = false, onOpenConfig = null, launchReque
     try {
       setError('');
       const payload = sanitizeDraftForSave(draft, filename.replace(/\.json$/i, ''));
-      const res = await saveVocabDetail(apiCategory, filename, payload);
+      const nextWord = collapseWhitespace(payload.word || '');
+      const currentWord = collapseWhitespace(detail?.word || filename.replace(/\.json$/i, ''));
+      const res = nextWord && nextWord.toLowerCase() !== currentWord.toLowerCase()
+        ? await renameVocabDetail(apiCategory, filename, nextWord, payload)
+        : await saveVocabDetail(apiCategory, filename, payload);
+      const savedFilename = res.file || res.target_file || filename;
       hydrateDetailAndDraft(res.data || payload);
+      setDraftDirty(false);
+      if (savedFilename !== filename) {
+        pendingSelectionRef.current = { category: apiCategory, filename: savedFilename };
+        setFilename(savedFilename);
+      }
+      void refreshFiles();
 
       if (cleanData) {
-        const refreshed = await runFileRefine(apiCategory, filename, false, res.data || payload);
+        const refreshed = await runFileRefine(apiCategory, savedFilename, false, res.data || payload);
         setCleanData(refreshed);
       }
       showNotice('已保存到 data');
@@ -2642,6 +3098,8 @@ export default function App({ embedded = false, onOpenConfig = null, launchReque
               categories={categories}
               scope={recommendScope}
               onScopeChange={handleRecommendScopeChange}
+              preferences={normalizedRecommendPreferences}
+              onPreferencesChange={handleRecommendPreferencesChange}
               recommendation={recommendation}
               alternatives={recommendAlternatives}
               meta={recommendMeta}
@@ -2649,6 +3107,7 @@ export default function App({ embedded = false, onOpenConfig = null, launchReque
               onPush={handleRecommendRefresh}
               onNext={handleRecommendNext}
               onUse={handleUseRecommendation}
+              savingPreferences={savingRecommendPreferences}
             />
           )}
         </aside>
@@ -2765,6 +3224,31 @@ export default function App({ embedded = false, onOpenConfig = null, launchReque
                       } else {
                         delete example.focusPositions;
                       }
+                    } else if (field === 'source.text' || field === 'source.url') {
+                      const currentSource = normalizeExampleSource(example);
+                      const sourceField = field === 'source.text' ? 'text' : 'url';
+                      const nextSource = {
+                        ...currentSource,
+                        [sourceField]: sourceField === 'text' ? collapseWhitespace(value) : String(value || '').trim(),
+                      };
+                      if (nextSource.text || nextSource.url) {
+                        example.source = nextSource;
+                      } else {
+                        delete example.source;
+                      }
+                    } else if (field === 'youtube.url' || field === 'youtube.timestamp') {
+                      const currentYoutube = normalizeExampleYoutube(example);
+                      const nextYoutube = {
+                        ...currentYoutube,
+                        [field === 'youtube.url' ? 'url' : 'timestamp']: field === 'youtube.url'
+                          ? String(value || '').trim()
+                          : Math.max(0, parseInt(value, 10) || 0),
+                      };
+                      if (nextYoutube.url) {
+                        example.youtube = nextYoutube;
+                      } else {
+                        delete example.youtube;
+                      }
                     } else {
                       example[field] = value;
                       if (field === 'text' && Array.isArray(example.focusPositions)) {
@@ -2788,6 +3272,8 @@ export default function App({ embedded = false, onOpenConfig = null, launchReque
                     examples.push({
                       text: '',
                       explanation: '',
+                      source: { text: '', url: '' },
+                      youtube: { url: '', timestamp: 0 },
                       focusWords: [String(base.word || '').trim()].filter(Boolean),
                     });
                     return { ...base, examples };
@@ -2864,36 +3350,38 @@ export default function App({ embedded = false, onOpenConfig = null, launchReque
               </div>
 
               <div ref={cleanPanelRef}>
-                <CleanPanel
+                <OrganizePanel
                   cleanData={cleanData}
+                  mergeData={mergeData}
                   draft={draft}
                   loading={loadingClean}
+                  mergeLoading={loadingMerge}
                   includeLlm={includeLlm}
                   setIncludeLlm={setIncludeLlm}
+                  includeLowConfidence={includeLowConfidence}
+                  setIncludeLowConfidence={setIncludeLowConfidence}
+                  includeMergeLlm={includeMergeLlm}
+                  setIncludeMergeLlm={setIncludeMergeLlm}
+                  deleteSourceAfterMerge={deleteSourceAfterMerge}
+                  setDeleteSourceAfterMerge={setDeleteSourceAfterMerge}
                   onRun={handleClean}
-                  onApplySuggestion={handleApplySuggestion}
+                  onRunMerge={handleMerge}
+                  onRunAll={handleOrganize}
                   onApplyLlmSuggestion={handleApplyLlmSuggestion}
+                  onApplyEntryRenameAndSave={handleApplyEntryRenameAndSave}
                   onApplyAllSuggestions={handleApplyAllSuggestions}
                   onApplyAllAndSave={handleApplyAllAndSave}
+                  onApplyMerge={handleApplyMerge}
+                  onApplySplit={handleApplySplit}
+                  applyingKey={mergeApplyingKey}
+                  splitApplyingKey={splitApplyingKey}
+                  renameApplyingKey={renameApplyingKey}
+                  hasCategory={Boolean(apiCategory)}
                   hasDraft={Boolean(draft)}
                   savingDraft={savingDraft}
                   analyzedFrom={cleanData?.analyzed_from || 'file'}
                 />
               </div>
-
-              <MergePanel
-                mergeData={mergeData}
-                loading={loadingMerge}
-                includeLowConfidence={includeLowConfidence}
-                setIncludeLowConfidence={setIncludeLowConfidence}
-                includeMergeLlm={includeMergeLlm}
-                setIncludeMergeLlm={setIncludeMergeLlm}
-                deleteSourceAfterMerge={deleteSourceAfterMerge}
-                setDeleteSourceAfterMerge={setDeleteSourceAfterMerge}
-                onRun={handleMerge}
-                onApplyMerge={handleApplyMerge}
-                applyingKey={mergeApplyingKey}
-              />
             </section>
           </div>
         </section>

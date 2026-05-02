@@ -115,6 +115,27 @@ export const applyMergeSuggestion = async (
   });
 };
 
+export const applySplitSuggestion = async (
+  category,
+  sourceFilename,
+  suggestion,
+  deleteSource = true,
+  data = null,
+) => {
+  const finalCategory = requireCategory(category);
+  return requestJson('/api/refine/split/apply', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      category: finalCategory,
+      source_filename: sourceFilename,
+      suggestion,
+      delete_source: deleteSource,
+      data,
+    }),
+  });
+};
+
 export const runFileRefine = async (category, filename, includeLlm = true, data = null) => {
   const finalCategory = requireCategory(category);
   return requestJson('/api/refine/file', {
@@ -137,6 +158,20 @@ export const saveVocabDetail = async (category, filename, data) => {
     body: JSON.stringify({
       category: finalCategory,
       filename,
+      data,
+    }),
+  });
+};
+
+export const renameVocabDetail = async (category, filename, word, data = null) => {
+  const finalCategory = requireCategory(category);
+  return requestJson('/api/vocabulary/rename', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      category: finalCategory,
+      filename,
+      word,
       data,
     }),
   });
@@ -170,7 +205,7 @@ export const submitReviewScore = async (category, filename, score, reviewDate) =
   });
 };
 
-export const fetchRecommendedWord = async (category = '', excludeKeys = [], limit = 5) => {
+export const fetchRecommendedWord = async (category = '', excludeKeys = [], limit = 5, preferences = {}) => {
   return requestJson('/api/review/recommend', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -178,6 +213,7 @@ export const fetchRecommendedWord = async (category = '', excludeKeys = [], limi
       category: category || null,
       exclude_keys: excludeKeys,
       limit,
+      ...(preferences || {}),
     }),
   });
 };
