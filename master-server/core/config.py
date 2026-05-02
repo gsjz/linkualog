@@ -66,6 +66,18 @@ def _read_non_negative_float(value, default: float) -> float:
     return default
 
 
+def _read_weight(value, default: float) -> float:
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError):
+        return default
+    if parsed < 0:
+        return 0.0
+    if parsed > 5:
+        return 5.0
+    return round(parsed, 3)
+
+
 def _default_frontend_port() -> int:
     return 80 if is_running_in_docker() else 8000
 
@@ -172,6 +184,33 @@ def _specs() -> dict[str, dict]:
             "env": ["MASTER_SERVER_REVIEW_LLM_REQUEST_RETRY_BACKOFF_SECONDS"],
             "default": 1.0,
         },
+        "review_recommend_due_weight": {
+            "kind": "weight",
+            "env": ["MASTER_SERVER_REVIEW_RECOMMEND_DUE_WEIGHT"],
+            "default": 2.2,
+        },
+        "review_recommend_created_weight": {
+            "kind": "weight",
+            "env": ["MASTER_SERVER_REVIEW_RECOMMEND_CREATED_WEIGHT"],
+            "default": 0.35,
+        },
+        "review_recommend_score_weight": {
+            "kind": "weight",
+            "env": ["MASTER_SERVER_REVIEW_RECOMMEND_SCORE_WEIGHT"],
+            "default": 0.75,
+        },
+        "review_recommend_created_order": {
+            "kind": "choice",
+            "env": ["MASTER_SERVER_REVIEW_RECOMMEND_CREATED_ORDER"],
+            "default": "recent",
+            "choices": ["recent", "oldest"],
+        },
+        "review_recommend_score_order": {
+            "kind": "choice",
+            "env": ["MASTER_SERVER_REVIEW_RECOMMEND_SCORE_ORDER"],
+            "default": "low",
+            "choices": ["low", "high"],
+        },
     }
 
 
@@ -193,6 +232,11 @@ def _normalize_value(key: str, value):
         return _read_positive_int(value, int(default))
     if kind == "float":
         return _read_non_negative_float(value, float(default))
+    if kind == "weight":
+        return _read_weight(value, float(default))
+    if kind == "choice":
+        raw = str(value or "").strip().lower()
+        return raw if raw in set(spec.get("choices", [])) else str(default)
     return value
 
 

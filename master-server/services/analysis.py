@@ -5,9 +5,12 @@ from dataclasses import dataclass
 from difflib import SequenceMatcher
 from pathlib import Path
 
+from services.lemma_dictionary import get_lemma_words
+
 TOKEN_PATTERN = re.compile(r"\s+|[\w]+|[^\w\s]", flags=re.UNICODE)
 LETTER_WORD_PATTERN = re.compile(r"^[a-z]+$")
 NON_ALPHA_PATTERN = re.compile(r"[^a-z]+")
+CREATE_TARGET_CONFIDENCE_THRESHOLD = 0.80
 
 
 @dataclass
@@ -179,6 +182,14 @@ def _ordered_merge_target_candidates(word: str) -> list[str]:
     return final
 
 
+def _dictionary_merge_target_candidates(word: str, known_lemmas: set[str] | frozenset[str]) -> list[str]:
+    return [
+        candidate
+        for candidate in _ordered_merge_target_candidates(word)
+        if candidate in known_lemmas
+    ]
+
+
 def _is_strong_inflection_reason(reason: str) -> bool:
     return reason in {
         "现在分词/动名词回退到动词原形",
@@ -189,17 +200,107 @@ def _is_strong_inflection_reason(reason: str) -> bool:
 
 
 def _rule_reason(source: str, target: str) -> str:
-    if source.endswith("ing") and (target == source[:-3] or target == source[:-3] + "e"):
-        return "现在分词/动名词回退到动词原形"
-    if source.endswith("ed") and (target == source[:-2] or target == source[:-2] + "e"):
-        return "过去式/过去分词回退到动词原形"
     if source.endswith("ied") and target == source[:-3] + "y":
         return "-ied 词形回退到 -y 原形"
+    if source.endswith("ing"):
+        stem = source[:-3]
+        if target in {stem, stem + "e"}:
+            return "现在分词/动名词回退到动词原形"
+        if _looks_like_double_consonant(stem) and target == stem[:-1]:
+            return "现在分词/动名词回退到动词原形"
+    if source.endswith("ed"):
+        stem = source[:-2]
+        if target in {stem, stem + "e"}:
+            return "过去式/过去分词回退到动词原形"
+        if len(source) >= 3 and source[-3] == "e" and target == source[:-1]:
+            return "过去式/过去分词回退到动词原形"
+        if _looks_like_double_consonant(stem) and target == stem[:-1]:
+            return "过去式/过去分词回退到动词原形"
     if source.endswith("ies") and target == source[:-3] + "y":
         return "复数 -ies 回退到单数 -y"
     if source.endswith("s") and target == source[:-1]:
         return "第三人称/复数回退到原形"
     return "通用词形回退"
+
+
+def _candidate_shape_bonus(source_token: str, target_token: str) -> float:
+    if source_token.endswith("ied") and target_token == source_token[:-3] + "y":
+        return 0.04
+    if source_token.endswith("ies") and target_token == source_token[:-3] + "y":
+        return 0.04
+    if source_token.endswith("ing"):
+        stem = source_token[:-3]
+        if _looks_like_double_consonant(stem) and target_token == stem[:-1]:
+            return 0.04
+        if _should_ing_add_e(stem) and target_token == stem + "e":
+            return 0.03
+    if source_token.endswith("ed"):
+        stem = source_token[:-2]
+        if _looks_like_double_consonant(stem) and target_token == stem[:-1]:
+            return 0.04
+        if target_token == stem + "e":
+            return 0.03
+        if len(source_token) >= 3 and source_token[-3] == "e" and target_token == source_token[:-1]:
+            return 0.03
+    return 0.0
+
+
+def _candidate_rule_score(source: VocabEntry, target_token: str, target: VocabEntry | None = None) -> float:
+    source_defs = len(source.definitions)
+    source_reviews = len(source.reviews)
+    source_token = source.token or ""
+    reason = _rule_reason(source_token, target_token)
+    target_exists = target is not None
+
+    if target is not None:
+        similarity = _max_example_similarity(source.examples, target.examples)
+        target_defs = len(target.definitions)
+        target_reviews = len(target.reviews)
+
+        if similarity < 0.45 and source_defs > 0 and target_defs > 0:
+            return 0.0
+
+        confidence = 0.58
+        if similarity >= 0.85:
+            confidence += 0.25
+        elif similarity >= 0.7:
+            confidence += 0.15
+        elif similarity >= 0.5:
+            confidence += 0.08
+
+        if source_defs == 0 or target_defs == 0:
+            confidence += 0.06
+        if source_reviews == 0 or target_reviews == 0:
+            confidence += 0.03
+    else:
+        if not _is_strong_inflection_reason(reason):
+            return 0.0
+
+        confidence = 0.72
+        if reason in {"-ied 词形回退到 -y 原形", "复数 -ies 回退到单数 -y"}:
+            confidence += 0.13
+        elif reason == "过去式/过去分词回退到动词原形":
+            if len(source_token) >= 3 and source_token[-3] == "e":
+                confidence += 0.08
+            elif source_token.endswith("ed") and _looks_like_double_consonant(source_token[:-2]):
+                confidence += 0.06
+        elif reason == "现在分词/动名词回退到动词原形":
+            stem = source_token[:-3] if source_token.endswith("ing") else ""
+            if stem and _looks_like_double_consonant(stem):
+                confidence += 0.08
+            if stem and _should_ing_add_e(stem) and target_token == stem + "e":
+                confidence += 0.06
+
+        if source_defs == 0:
+            confidence += 0.03
+        if source_reviews == 0:
+            confidence += 0.02
+
+    if reason != "通用词形回退":
+        confidence += 0.08 if target_exists else 0.0
+    confidence += _candidate_shape_bonus(source_token, target_token)
+
+    return min(0.98 if target_exists else 0.97, confidence)
 
 
 def _max_example_similarity(examples_a: list[dict], examples_b: list[dict]) -> float:
@@ -317,6 +418,7 @@ def analyze_folder_merge_suggestions(entries: list[tuple[str, dict]], include_lo
         for entry in vocab_entries
         if entry.token
     }
+    known_lemmas = get_lemma_words()
 
     suggestions = []
 
@@ -324,52 +426,36 @@ def analyze_folder_merge_suggestions(entries: list[tuple[str, dict]], include_lo
         if not source.token:
             continue
 
-        candidates = _ordered_merge_target_candidates(source.token)
+        candidates = _dictionary_merge_target_candidates(source.token, known_lemmas)
         if not candidates:
             continue
 
-        selected_token = None
+        selected_token = ""
         selected_target = None
+        selected_confidence = 0.0
         for target_token in candidates:
             target = token_to_entry.get(target_token)
             if target is None or target.file_name == source.file_name:
                 continue
-            selected_token = target_token
-            selected_target = target
-            break
+            confidence = _candidate_rule_score(source, target_token, target)
+            if confidence > selected_confidence:
+                selected_token = target_token
+                selected_target = target
+                selected_confidence = confidence
 
         source_defs = len(source.definitions)
         source_reviews = len(source.reviews)
         source_examples = len(source.examples)
 
-        if selected_target is not None and selected_token is not None:
+        if selected_target is not None and selected_token:
             target = selected_target
             target_defs = len(target.definitions)
             target_examples = len(target.examples)
             target_reviews = len(target.reviews)
             similarity = _max_example_similarity(source.examples, target.examples)
 
-            if similarity < 0.45 and source_defs > 0 and target_defs > 0:
-                continue
-
-            confidence = 0.58
-            if similarity >= 0.85:
-                confidence += 0.25
-            elif similarity >= 0.7:
-                confidence += 0.15
-            elif similarity >= 0.5:
-                confidence += 0.08
-
-            if source_defs == 0 or target_defs == 0:
-                confidence += 0.06
-            if source_reviews == 0 or target_reviews == 0:
-                confidence += 0.03
-
             reason = _rule_reason(source.token, selected_token)
-            if reason != "通用词形回退":
-                confidence += 0.08
-
-            confidence = min(0.98, confidence)
+            confidence = selected_confidence
             confidence_level = _confidence_level(confidence)
             if confidence_level == "low" and not include_low_confidence:
                 continue
@@ -408,32 +494,24 @@ def analyze_folder_merge_suggestions(entries: list[tuple[str, dict]], include_lo
             )
             continue
 
-        proposed_token = candidates[0]
-        reason = _rule_reason(source.token, proposed_token)
-        if not _is_strong_inflection_reason(reason):
+        create_target_candidates = [
+            (candidate, _candidate_rule_score(source, candidate, None))
+            for candidate in candidates
+            if candidate not in token_to_entry
+        ]
+        create_target_candidates = [
+            item
+            for item in create_target_candidates
+            if item[1] >= CREATE_TARGET_CONFIDENCE_THRESHOLD
+        ]
+        if not create_target_candidates:
             continue
 
-        confidence = 0.72
-        if reason in {"-ied 词形回退到 -y 原形", "复数 -ies 回退到单数 -y"}:
-            confidence += 0.13
-        elif reason == "过去式/过去分词回退到动词原形":
-            if len(source.token) >= 3 and source.token[-3] == "e":
-                confidence += 0.08
-            elif source.token.endswith("ed") and _looks_like_double_consonant(source.token[:-2]):
-                confidence += 0.06
-        elif reason == "现在分词/动名词回退到动词原形":
-            stem = source.token[:-3] if source.token.endswith("ing") else ""
-            if stem and _looks_like_double_consonant(stem):
-                confidence += 0.08
-            if stem and _should_ing_add_e(stem) and proposed_token == stem + "e":
-                confidence += 0.06
-
-        if source_defs == 0:
-            confidence += 0.03
-        if source_reviews == 0:
-            confidence += 0.02
-
-        confidence = min(0.97, confidence)
+        proposed_token, confidence = max(
+            create_target_candidates,
+            key=lambda item: (item[1], -len(item[0]), item[0]),
+        )
+        reason = _rule_reason(source.token, proposed_token)
         confidence_level = _confidence_level(confidence)
         if confidence_level == "low" and not include_low_confidence:
             continue
@@ -493,6 +571,15 @@ def analyze_file_cleaning_suggestions(file_name: str, payload: dict) -> dict:
     suggestions: list[dict] = []
 
     normalized_def_map: dict[str, list[int]] = {}
+    if not definitions:
+        suggestions.append(
+            {
+                "type": "definition_missing",
+                "severity": "high",
+                "suggested_action": "Definitions 为空，建议补充至少一条中文释义。",
+            }
+        )
+
     for idx, definition in enumerate(definitions):
         if not isinstance(definition, str):
             suggestions.append(
@@ -604,7 +691,17 @@ def analyze_file_cleaning_suggestions(file_name: str, payload: dict) -> dict:
 
         explanation = str(example.get("explanation", ""))
         cleaned_explanation = _collapse_ws(explanation)
-        if cleaned_explanation and explanation != cleaned_explanation:
+        if normalized_text and not cleaned_explanation:
+            suggestions.append(
+                {
+                    "type": "example_missing_explanation",
+                    "severity": "high",
+                    "index": idx,
+                    "example_text": cleaned_text,
+                    "suggested_action": "example explanation 为空，建议由 LLM 补充中文讲解。",
+                }
+            )
+        elif cleaned_explanation and explanation != cleaned_explanation:
             suggestions.append(
                 {
                     "type": "example_explanation_whitespace_cleanup",
