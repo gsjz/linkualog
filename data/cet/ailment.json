@@ -1,0 +1,31 @@
+{
+  "word": "ailment",
+  "createdAt": "2026-03-30",
+  "reviews": [],
+  "definitions": [
+    "疾病；小病，身体不适"
+  ],
+  "examples": [
+    {
+      "text": "Some researchers assert dogs will one day help doctors diagnose diseases, as some dogs have already demonstrated the ability to detect an assortment of ailments, including diabetes and certain types of cancer.",
+      "explanation": "一些研究人员声称，狗有一天将帮助医生诊断疾病，因为有些狗已经显示出检测多种疾病的能力，包括糖尿病和某些类型的癌症。",
+      "focusWords": [
+        "ailment"
+      ],
+      "source": {
+        "text": "CET6 23 12 1 听力",
+        "url": ""
+      },
+      "focusPositions": [
+        25
+      ]
+    }
+  ],
+  "splitFrom": [
+    {
+      "file": "assortment-of-ailments.json",
+      "word": "assortment of ailments",
+      "reason": "这是核心名词，例句中的 ailments 是其复数形式，适合作为独立词条学习。"
+    }
+  ]
+}

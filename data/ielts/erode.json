@@ -1,5 +1,5 @@
 {
-  "word": "erod",
+  "word": "erode",
   "createdAt": "2026-04-11",
   "reviews": [
     {
@@ -11,18 +11,23 @@
       "score": 4
     }
   ],
-  "definitions": [],
+  "definitions": [
+    "侵蚀；逐渐削弱、损害"
+  ],
   "examples": [
     {
       "text": "The fertile land of the Nile delta is being eroded along Egypt's Mediterranean coast at an astounding rate",
-      "explanation": "",
+      "explanation": "这里的 eroded 表示“被侵蚀、被冲蚀”。整句意思是：尼罗河三角洲的肥沃土地正以惊人的速度在埃及的地中海沿岸被侵蚀。该词既可用于土地、海岸等被自然力量侵蚀，也可引申指权力、信任、优势等“逐渐被削弱”。",
       "focusWords": [
         "eroded"
       ],
       "source": {
         "text": "剑桥 5 3 阅读2",
         "url": ""
-      }
+      },
+      "focusPositions": [
+        9
+      ]
     }
   ],
   "mergedFrom": [

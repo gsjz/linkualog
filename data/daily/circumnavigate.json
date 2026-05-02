@@ -1,0 +1,35 @@
+{
+  "word": "circumnavigate",
+  "createdAt": "2026-05-02",
+  "reviews": [
+    {
+      "date": "2026-04-19",
+      "score": 0
+    },
+    {
+      "date": "2026-04-20",
+      "score": 5
+    }
+  ],
+  "definitions": [],
+  "examples": [
+    {
+      "text": "Jean Béliveau jumped at the opportunity. For the past three years, Béliveau had\nbeen walking from country to country, with the goal of circumnavigating\nthe globe on foot. This required sleeping in tents, strangers’ homes, and the\noccasional jail cell along the way.",
+      "explanation": "",
+      "focusWords": [
+        "circumnavigating"
+      ],
+      "source": {
+        "text": "Do you really need to take 10,000 steps a day? - Shannon Odell",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=eEWa7cpiyD8",
+        "timestamp": 17
+      }
+    }
+  ],
+  "mergedFrom": [
+    "circumnavigating"
+  ]
+}

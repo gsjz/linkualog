@@ -1,0 +1,33 @@
+{
+  "word": "counterpart",
+  "createdAt": "2026-05-02",
+  "reviews": [
+    {
+      "date": "2026-05-02",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "对应的人（或事物）；对应物；相当的人（或版本）"
+  ],
+  "examples": [
+    {
+      "text": "The result? Cantonese versions were consistently more tone sensitive than the Mandarin counterparts, with 77% of the lyrics matching the melody, while the Mandarin versions only matched 38%. That being said, the songs used for these tests are all over",
+      "explanation": "这里的 counterparts 指“对应的版本 / 对应物”，具体是前文 Cantonese versions 所对应的 Mandarin versions。整句意思是：粤语版本对音调始终更敏感，而与之对应的普通话版本则没有那么匹配。",
+      "focusWords": [
+        "counterparts"
+      ],
+      "source": {
+        "text": "Chinese Music - It's Not Dead, It's Misunderstood...",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=1qiv68LKZjo",
+        "timestamp": 648
+      }
+    }
+  ],
+  "mergedFrom": [
+    "counterparts"
+  ]
+}

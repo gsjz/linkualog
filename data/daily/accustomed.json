@@ -1,12 +1,19 @@
 {
   "word": "accustomed",
   "createdAt": "2026-04-29",
-  "reviews": [],
-  "definitions": [],
+  "reviews": [
+    {
+      "date": "2026-05-02",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "习惯于；对……已习以为常（常用于 be accustomed to）"
+  ],
   "examples": [
     {
-      "text": "Some are even pushing 20 years old. Since then, we've become much more accustomed to songwriters\ntaking liberty by going off tone. But the one big takeaway\nremains undisputed Chinese style dialects,\na perfect for ballads.",
-      "explanation": "",
+      "text": "Since then, we've become much more accustomed to songwriters taking liberty by going off tone.",
+      "explanation": "从那以后，我们已经更习惯于词曲作者在音调上自由发挥、甚至跑调。这里 accustomed to 表示“习惯于……；对……已习以为常”。",
       "focusWords": [
         "accustomed"
       ],

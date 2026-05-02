@@ -1,8 +1,15 @@
 {
-  "word": "Ditching",
-  "createdAt": "2026-04-27",
-  "reviews": [],
-  "definitions": [],
+  "word": "ditch",
+  "createdAt": "2026-05-02",
+  "reviews": [
+    {
+      "date": "2026-05-02",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "放弃；抛弃；丢开（尤指不再使用或不再理会某事物）"
+  ],
   "examples": [
     {
       "text": "Ditching the web at large, however, is a far more subtle and complicated prospect.",
@@ -15,5 +22,8 @@
         "url": ""
       }
     }
+  ],
+  "mergedFrom": [
+    "Ditching"
   ]
 }

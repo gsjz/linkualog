@@ -2,11 +2,13 @@
   "word": "Ambassador",
   "createdAt": "2026-04-29",
   "reviews": [],
-  "definitions": [],
+  "definitions": [
+    "大使；（分布式系统中的）大使模式、代理服务组件（指位于服务旁边，用于简化服务间通信的中间层）"
+  ],
   "examples": [
     {
-      "text": "For instance, Kubernetes \nuses Envoy as an Ambassador to simplify communication between services. The Ambassador pattern can help reduce latency, enhance security, and improve the overall \narchitecture of your distributed systems. Next is Circuit Breaker",
-      "explanation": "",
+      "text": "For instance, Kubernetes uses Envoy as an Ambassador to simplify communication between services. The Ambassador pattern can help reduce latency, enhance security, and improve the overall architecture of your distributed systems.",
+      "explanation": "这里的 Ambassador 不是指现实中的“外交大使”，而是分布式系统里的“Ambassador pattern（大使模式）”。句子意思是：例如，Kubernetes 使用 Envoy 作为一种代理层，来简化服务之间的通信。这种模式通常部署在服务旁边，帮助处理通信、增强安全性并降低延迟。",
       "focusWords": [
         "Ambassador"
       ],
