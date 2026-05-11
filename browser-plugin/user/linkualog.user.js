@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Linkual Log
 // @namespace    npm/vite-plugin-monkey
-// @version      0.0.7
+// @version      0.0.8
 // @author       Sergio Gao
 // @icon         https://vitejs.dev/logo.svg
 // @downloadURL  https://raw.githubusercontent.com/gsjz/linkualog/main/browser-plugin/user/linkualog.user.js
@@ -17,7 +17,7 @@
 // @grant        unsafeWindow
 // ==/UserScript==
 
-(e=>{if(typeof GM_addStyle=="function"){GM_addStyle(e);return}const o=document.createElement("style");o.textContent=e,document.head.append(o)})(" .modal{position:fixed;top:0;left:0;width:100%;height:100%;background:#00000080;display:flex;justify-content:center;align-items:center;z-index:10000;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}.modal-box{background:#fff;border-radius:12px;width:380px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 10px 30px #0003;animation:slideIn .2s ease-out}@keyframes slideIn{0%{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}.modal-header{padding:16px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #eee}.modal-header h3{margin:0;font-size:16px;color:#333}.close-btn{font-size:24px;line-height:1;color:#999;cursor:pointer;transition:color .2s}.close-btn:hover{color:#333}.tabs{display:flex;background:#fafafa;border-bottom:1px solid #eee}.tab{flex:1;text-align:center;padding:12px 0;font-size:14px;color:#666;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;-webkit-user-select:none;user-select:none}.tab:hover{color:#333;background:#00000005}.tab.active{color:var(--linkual-theme, #6a1b9a);font-weight:700;border-bottom:2px solid var(--linkual-theme, #6a1b9a);background:#fff}.tab-content{padding:20px;overflow-y:auto;flex:1}.fade-in{animation:fadeIn .3s ease}@keyframes fadeIn{0%{opacity:0}to{opacity:1}}.setting-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}.setting-row label{font-size:13px;font-weight:700;flex:1;color:#444}.setting-row input[type=color]{width:50px;height:32px;padding:0;cursor:pointer;border:1px solid #ddd;border-radius:4px}.setting-col{margin-bottom:16px}.setting-col label{font-size:13px;font-weight:700;display:block;margin-bottom:6px;color:#444}.setting-col input,.setting-col textarea{width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box;font-family:inherit;font-size:13px;transition:border-color .2s}.setting-col input:focus,.setting-col textarea:focus{outline:none;border-color:var(--linkual-theme, #6a1b9a)}.setting-col textarea{resize:vertical;min-height:80px;line-height:1.5}.url-prefix-row{display:flex;align-items:stretch}.url-prefix-row input{border-radius:0;min-width:0}.url-fixed-prefix,.url-fixed-suffix{display:inline-flex;align-items:center;padding:0 10px;border:1px solid #ddd;background:#f7f7f7;color:#666;font-size:12px;white-space:nowrap}.url-fixed-prefix{border-right:0;border-radius:6px 0 0 6px}.url-fixed-suffix{border-left:0;border-radius:0 6px 6px 0}.url-prefix-row:focus-within .url-fixed-prefix{border-color:var(--linkual-theme, #6a1b9a);border-right:0}.url-prefix-row:focus-within .url-fixed-suffix{border-color:var(--linkual-theme, #6a1b9a);border-left:0}.setting-help{margin-top:6px;color:#888;font-size:12px;line-height:1.4}.modal-footer{padding:16px 20px;display:flex;gap:12px;border-top:1px solid #eee;background:#fafafa}.btn{flex:1;padding:10px;border:none;border-radius:6px;cursor:pointer;font-weight:700;font-size:14px;transition:opacity .2s}.btn:hover{opacity:.9}.reset-btn{background:#e0e0e0;color:#555}.save-btn{box-shadow:0 2px 6px #0000001a}:root{--linkual-theme: #6a1b9a;--linkual-done: #e8f5e9;--linkual-error: #ffebee}.linkual-wrap{position:fixed;z-index:2147483647;background:#fff;display:flex;flex-direction:column;font-family:sans-serif;color:#333}.linkual-wrap.layout-right{top:0;right:0;height:100vh;box-shadow:-5px 0 15px #0000001a}.linkual-wrap.layout-bottom{bottom:0;left:0;width:100vw!important;box-shadow:0 -5px 15px #0000001a}.resizer{position:absolute;background:transparent;z-index:999;transition:background .2s}.linkual-wrap.layout-right .resizer{left:0;top:0;bottom:0;width:5px;cursor:ew-resize}.linkual-wrap.layout-bottom .resizer{top:0;left:0;right:0;height:5px;cursor:ns-resize}.resizer:hover,.resizer:active{background:var(--linkual-theme)}.header{background:var(--linkual-theme);color:#fff;padding:16px;font-weight:700;display:flex;justify-content:space-between;align-items:center}.settings-icon{cursor:pointer;-webkit-user-select:none;user-select:none}.list{flex:1;overflow-y:auto;padding:12px;scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch}.list::-webkit-scrollbar{display:none}.empty-tip{padding:50px 20px;text-align:center;color:#999;font-style:italic}.load-more-tip{padding:16px 12px 22px;text-align:center;color:#999;font-size:12px}.item{padding:12px;margin-bottom:10px;border-radius:8px;border:1px solid #f0f0f0;transition:.2s}.item.active{border-left:5px solid var(--linkual-theme);background:#6a1b9a0d}.ctrl-bar{display:flex;gap:8px;margin-bottom:8px;align-items:center;padding:4px;border-radius:4px;background:transparent;transition:background .2s}.ctrl-bar.done{background-color:var(--linkual-done, #e8f5e9)}.ctrl-bar.error{background-color:var(--linkual-error, #ffebee);border:1px solid rgba(255,0,0,.1)}.tag-btn{font-size:11px;padding:3px 8px;border-radius:12px;display:inline-flex;align-items:center;cursor:pointer;transition:.2s;-webkit-user-select:none;user-select:none}.tag-play{background:#eee;color:#666}.tag-play:hover{background:var(--linkual-theme);color:#fff}.tag-pin{background:#e3f2fd;color:#1976d2}.tag-pin:hover{background:#1976d2;color:#fff}.btn-parse{flex:1;text-align:right;font-size:11px;color:#aaa;cursor:pointer;-webkit-user-select:none;user-select:none;padding:4px;transition:.2s}.btn-parse:hover{color:#333}.btn-chevron{font-size:12px;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:4px;cursor:pointer;transition:.2s;-webkit-user-select:none;user-select:none;color:#666}.btn-chevron:hover{background:#0000001a}.text-content{font-size:14px;line-height:1.5;padding:2px 0;color:#333}.ai-box{border-top:1px dashed #ccc;margin-top:8px;padding-top:8px;font-size:13px;white-space:pre-wrap;line-height:1.6;cursor:text}.lan-sync-module{border-top:1px solid #eee;padding:12px 16px;background:#fafafa;display:flex;flex-direction:column;gap:10px;margin-top:auto}.sync-input{width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;font-size:12px;box-sizing:border-box;outline:none;transition:border-color .2s}.sync-input:focus{border-color:var(--linkual-theme)}.sync-btn{width:100%;padding:10px;border:none;border-radius:6px;font-size:13px;font-weight:700;color:#fff;background-color:var(--linkual-theme);cursor:pointer;transition:all .2s}.sync-btn:hover{opacity:.9}.sync-btn:disabled{opacity:.6;cursor:not-allowed}.sync-btn.success{background-color:#4caf50}.sync-btn.error{background-color:#f44336} ");
+(e=>{if(typeof GM_addStyle=="function"){GM_addStyle(e);return}const o=document.createElement("style");o.textContent=e,document.head.append(o)})(" .modal{position:fixed;top:0;left:0;width:100%;height:100%;background:#00000080;display:flex;justify-content:center;align-items:center;z-index:10000;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}.modal-box{background:#fff;border-radius:12px;width:380px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 10px 30px #0003;animation:slideIn .2s ease-out}@keyframes slideIn{0%{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}.modal-header{padding:16px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #eee}.modal-header h3{margin:0;font-size:16px;color:#333}.close-btn{font-size:24px;line-height:1;color:#999;cursor:pointer;transition:color .2s}.close-btn:hover{color:#333}.tabs{display:flex;background:#fafafa;border-bottom:1px solid #eee}.tab{flex:1;text-align:center;padding:12px 0;font-size:14px;color:#666;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;-webkit-user-select:none;user-select:none}.tab:hover{color:#333;background:#00000005}.tab.active{color:var(--linkual-theme, #6a1b9a);font-weight:700;border-bottom:2px solid var(--linkual-theme, #6a1b9a);background:#fff}.tab-content{padding:20px;overflow-y:auto;flex:1}.fade-in{animation:fadeIn .3s ease}@keyframes fadeIn{0%{opacity:0}to{opacity:1}}.setting-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}.setting-row label{font-size:13px;font-weight:700;flex:1;color:#444}.setting-row input[type=color]{width:50px;height:32px;padding:0;cursor:pointer;border:1px solid #ddd;border-radius:4px}.setting-col{margin-bottom:16px}.setting-col label{font-size:13px;font-weight:700;display:block;margin-bottom:6px;color:#444}.setting-col input,.setting-col textarea{width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box;font-family:inherit;font-size:13px;transition:border-color .2s}.setting-col input:focus,.setting-col textarea:focus{outline:none;border-color:var(--linkual-theme, #6a1b9a)}.setting-col textarea{resize:vertical;min-height:80px;line-height:1.5}.url-prefix-row{display:flex;align-items:stretch}.url-prefix-row input{border-radius:0;min-width:0}.url-fixed-prefix,.url-fixed-suffix{display:inline-flex;align-items:center;padding:0 10px;border:1px solid #ddd;background:#f7f7f7;color:#666;font-size:12px;white-space:nowrap}.url-fixed-prefix{border-right:0;border-radius:6px 0 0 6px}.url-fixed-suffix{border-left:0;border-radius:0 6px 6px 0}.url-prefix-row:focus-within .url-fixed-prefix{border-color:var(--linkual-theme, #6a1b9a);border-right:0}.url-prefix-row:focus-within .url-fixed-suffix{border-color:var(--linkual-theme, #6a1b9a);border-left:0}.setting-help{margin-top:6px;color:#888;font-size:12px;line-height:1.4}.modal-footer{padding:16px 20px;display:flex;gap:12px;border-top:1px solid #eee;background:#fafafa}.btn{flex:1;padding:10px;border:none;border-radius:6px;cursor:pointer;font-weight:700;font-size:14px;transition:opacity .2s}.btn:hover{opacity:.9}.reset-btn{background:#e0e0e0;color:#555}.save-btn{box-shadow:0 2px 6px #0000001a}:root{--linkual-theme: #6a1b9a;--linkual-done: #e8f5e9;--linkual-error: #ffebee}.linkual-wrap{position:fixed;z-index:2147483647;background:#fff;display:flex;flex-direction:column;font-family:sans-serif;color:#333}.linkual-wrap.layout-right{top:0;right:0;height:100vh;box-shadow:-5px 0 15px #0000001a}.linkual-wrap.layout-bottom{bottom:0;left:0;width:100vw!important;box-shadow:0 -5px 15px #0000001a}.resizer{position:absolute;background:transparent;z-index:999;transition:background .2s}.linkual-wrap.layout-right .resizer{left:0;top:0;bottom:0;width:5px;cursor:ew-resize}.linkual-wrap.layout-bottom .resizer{top:0;left:0;right:0;height:5px;cursor:ns-resize}.resizer:hover,.resizer:active{background:var(--linkual-theme)}.header{background:var(--linkual-theme);color:#fff;padding:16px;font-weight:700;display:flex;justify-content:space-between;align-items:center}.settings-icon{cursor:pointer;-webkit-user-select:none;user-select:none}.list{flex:1;overflow-y:auto;padding:12px;scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch}.list::-webkit-scrollbar{display:none}.empty-tip{padding:50px 20px;text-align:center;color:#999;font-style:italic}.load-more-tip{padding:16px 12px 22px;text-align:center;color:#999;font-size:12px}.item{padding:12px;margin-bottom:10px;border-radius:8px;border:1px solid #f0f0f0;transition:.2s}.item.active{border-left:5px solid var(--linkual-theme);background:#6a1b9a0d}.ctrl-bar{display:flex;gap:8px;margin-bottom:8px;align-items:center;padding:4px;border-radius:4px;background:transparent;transition:background .2s}.ctrl-bar.done{background-color:var(--linkual-done, #e8f5e9)}.ctrl-bar.error{background-color:var(--linkual-error, #ffebee);border:1px solid rgba(255,0,0,.1)}.tag-btn{font-size:11px;padding:3px 8px;border-radius:12px;display:inline-flex;align-items:center;cursor:pointer;transition:.2s;-webkit-user-select:none;user-select:none}.tag-play{background:#eee;color:#666}.tag-play:hover{background:var(--linkual-theme);color:#fff}.tag-pin{background:#e3f2fd;color:#1976d2}.tag-pin:hover{background:#1976d2;color:#fff}.btn-parse{flex:1;text-align:right;font-size:11px;color:#aaa;cursor:pointer;-webkit-user-select:none;user-select:none;padding:4px;transition:.2s}.btn-parse:hover{color:#333}.btn-chevron{font-size:12px;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:4px;cursor:pointer;transition:.2s;-webkit-user-select:none;user-select:none;color:#666}.btn-chevron:hover{background:#0000001a}.text-content{font-size:14px;line-height:1.5;padding:2px 0;color:#333;cursor:text;-webkit-user-select:text;user-select:text;overflow-wrap:anywhere;-webkit-touch-callout:default}.linkual-selection-add{z-index:999999;min-height:38px;max-width:min(320px,calc(100vw - 24px));padding:8px 12px;background:var(--linkual-theme, #6a1b9a);color:#fff;border:none;border-radius:6px;box-shadow:0 4px 12px #0003;cursor:pointer;font-size:13px;font-weight:700;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;-webkit-tap-highlight-color:transparent;touch-action:manipulation}.linkual-selection-add-text{overflow:hidden;text-overflow:ellipsis}.ai-box{border-top:1px dashed #ccc;margin-top:8px;padding-top:8px;font-size:13px;white-space:pre-wrap;line-height:1.6;cursor:text}.lan-sync-module{border-top:1px solid #eee;padding:12px 16px;background:#fafafa;display:flex;flex-direction:column;gap:10px;margin-top:auto}.sync-input{width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;font-size:12px;box-sizing:border-box;outline:none;transition:border-color .2s}.sync-input:focus{border-color:var(--linkual-theme)}.sync-btn{width:100%;padding:10px;border:none;border-radius:6px;font-size:13px;font-weight:700;color:#fff;background-color:var(--linkual-theme);cursor:pointer;transition:all .2s}.sync-btn:hover{opacity:.9}.sync-btn:disabled{opacity:.6;cursor:not-allowed}.sync-btn.success{background-color:#4caf50}.sync-btn.error{background-color:#f44336} ");
 
 (function () {
   'use strict';
@@ -12736,6 +12736,39 @@
       });
     }
   };
+  const MAX_SELECTION_LENGTH = 50;
+  const SELECTION_BOX_MARGIN = 12;
+  const normalizeSelectedText = (value) => value.replace(/\s+/g, " ").trim();
+  const isNodeInside = (node, container) => {
+    if (!node || !container) return false;
+    const target = node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+    return !!target && container.contains(target);
+  };
+  const getVisibleRangeRect = (range) => {
+    const rects = Array.from(range.getClientRects()).filter((rect2) => rect2.width > 0 && rect2.height > 0);
+    if (rects.length > 0) return rects[0];
+    const rect = range.getBoundingClientRect();
+    return rect.width > 0 && rect.height > 0 ? rect : null;
+  };
+  const getSelectionBoxPosition = (rect, text) => {
+    var _a, _b, _c, _d;
+    const viewportWidth = ((_a = window.visualViewport) == null ? void 0 : _a.width) ?? window.innerWidth;
+    const viewportHeight = ((_b = window.visualViewport) == null ? void 0 : _b.height) ?? window.innerHeight;
+    const viewportLeft = ((_c = window.visualViewport) == null ? void 0 : _c.offsetLeft) ?? 0;
+    const viewportTop = ((_d = window.visualViewport) == null ? void 0 : _d.offsetTop) ?? 0;
+    const estimatedButtonWidth = Math.min(320, viewportWidth - SELECTION_BOX_MARGIN * 2, 34 + text.length * 8);
+    const horizontalInset = estimatedButtonWidth / 2 + SELECTION_BOX_MARGIN;
+    const left = Math.min(
+      viewportLeft + viewportWidth - horizontalInset,
+      Math.max(viewportLeft + horizontalInset, rect.left + rect.width / 2)
+    );
+    let top = rect.top - 48;
+    if (top < viewportTop + SELECTION_BOX_MARGIN) {
+      top = rect.bottom + 10;
+    }
+    top = Math.min(viewportTop + viewportHeight - 52, Math.max(viewportTop + SELECTION_BOX_MARGIN, top));
+    return { top, left };
+  };
   const SubtitleItem = ({ data, index: index2, allSubs, isActive, adapter }) => {
     const [isExpanded, setIsExpanded] = reactExports.useState(false);
     const [isGenerating, setIsGenerating] = reactExports.useState(false);
@@ -12743,7 +12776,10 @@
     const [isError, setIsError] = reactExports.useState(false);
     const [selectionBox, setSelectionBox] = reactExports.useState(null);
     const itemRef = reactExports.useRef(null);
+    const textRef = reactExports.useRef(null);
     const abortRef = reactExports.useRef(null);
+    const selectionTimerRef = reactExports.useRef(null);
+    const ignoreNextClickRef = reactExports.useRef(false);
     reactExports.useEffect(() => {
       return () => {
         if (abortRef.current) {
@@ -12767,26 +12803,82 @@
       adapter.seekTo(data.start);
       adapter.pause();
     };
-    const handleMouseUp = (e) => {
-      e.stopPropagation();
+    const refreshSelectionBox = reactExports.useCallback(() => {
       const selection = window.getSelection();
-      const text = selection == null ? void 0 : selection.toString().trim();
-      if (text && text.length > 0 && text.length < 50) {
-        const range = selection.getRangeAt(0);
-        const rect = range.getBoundingClientRect();
+      const text = normalizeSelectedText((selection == null ? void 0 : selection.toString()) ?? "");
+      if (!selection || selection.rangeCount === 0 || !text || text.length > MAX_SELECTION_LENGTH) {
+        setSelectionBox(null);
+        return;
+      }
+      if (!isNodeInside(selection.anchorNode, textRef.current) || !isNodeInside(selection.focusNode, textRef.current)) {
+        setSelectionBox(null);
+        return;
+      }
+      const range = selection.getRangeAt(0);
+      const rect = getVisibleRangeRect(range);
+      if (rect) {
+        const position = getSelectionBoxPosition(rect, text);
         setSelectionBox({
           text,
-          top: rect.top - 35,
-          left: rect.left + rect.width / 2
+          top: position.top,
+          left: position.left
         });
       } else {
         setSelectionBox(null);
       }
+    }, []);
+    const scheduleSelectionRefresh = reactExports.useCallback((delay = 0) => {
+      if (selectionTimerRef.current !== null) {
+        window.clearTimeout(selectionTimerRef.current);
+      }
+      selectionTimerRef.current = window.setTimeout(() => {
+        selectionTimerRef.current = null;
+        refreshSelectionBox();
+      }, delay);
+    }, [refreshSelectionBox]);
+    const handleSelectionPointerUp = (e) => {
+      e.stopPropagation();
+      scheduleSelectionRefresh(e.pointerType === "touch" ? 180 : 0);
+    };
+    const handleSelectionMouseUp = (e) => {
+      e.stopPropagation();
+      scheduleSelectionRefresh(0);
+    };
+    const handleSelectionTouchEnd = (e) => {
+      e.stopPropagation();
+      scheduleSelectionRefresh(180);
     };
     reactExports.useEffect(() => {
-      const closeBox = () => setSelectionBox(null);
-      window.addEventListener("mousedown", closeBox);
-      return () => window.removeEventListener("mousedown", closeBox);
+      const handleSelectionChange = () => scheduleSelectionRefresh(120);
+      document.addEventListener("selectionchange", handleSelectionChange);
+      return () => {
+        document.removeEventListener("selectionchange", handleSelectionChange);
+        if (selectionTimerRef.current !== null) {
+          window.clearTimeout(selectionTimerRef.current);
+        }
+      };
+    }, [scheduleSelectionRefresh]);
+    reactExports.useEffect(() => {
+      const closeBox = (event) => {
+        const target = event.target;
+        if (target instanceof Element && target.closest(".linkual-selection-add")) return;
+        setSelectionBox(null);
+      };
+      const closeOnEscape = (event) => {
+        if (event.key === "Escape") setSelectionBox(null);
+      };
+      window.addEventListener("pointerdown", closeBox, true);
+      window.addEventListener("touchstart", closeBox, true);
+      window.addEventListener("mousedown", closeBox, true);
+      window.addEventListener("scroll", closeBox, true);
+      window.addEventListener("keydown", closeOnEscape);
+      return () => {
+        window.removeEventListener("pointerdown", closeBox, true);
+        window.removeEventListener("touchstart", closeBox, true);
+        window.removeEventListener("mousedown", closeBox, true);
+        window.removeEventListener("scroll", closeBox, true);
+        window.removeEventListener("keydown", closeOnEscape);
+      };
     }, []);
     const handleAddVocab = (e, word) => {
       var _a, _b;
@@ -12820,6 +12912,38 @@
       }));
       setSelectionBox(null);
       (_b = window.getSelection()) == null ? void 0 : _b.removeAllRanges();
+    };
+    const handleSelectionButtonPointerUp = (e) => {
+      e.stopPropagation();
+      if (e.pointerType !== "touch" || !selectionBox) return;
+      ignoreNextClickRef.current = true;
+      window.setTimeout(() => {
+        ignoreNextClickRef.current = false;
+      }, 400);
+      handleAddVocab(e, selectionBox.text);
+    };
+    const handleSelectionButtonTouchEnd = (e) => {
+      e.stopPropagation();
+      if (ignoreNextClickRef.current || !selectionBox) return;
+      ignoreNextClickRef.current = true;
+      window.setTimeout(() => {
+        ignoreNextClickRef.current = false;
+      }, 400);
+      handleAddVocab(e, selectionBox.text);
+    };
+    const handleSelectionButtonClick = (e) => {
+      if (!selectionBox) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
+      if (ignoreNextClickRef.current) {
+        e.preventDefault();
+        e.stopPropagation();
+        ignoreNextClickRef.current = false;
+        return;
+      }
+      handleAddVocab(e, selectionBox.text);
     };
     const handleParse = (e, forceExpand = false) => {
       e.stopPropagation();
@@ -12891,34 +13015,27 @@ ${contextBlock}`,
       selectionBox && /* @__PURE__ */ jsxRuntimeExports.jsxs(
         "button",
         {
-          onMouseDown: (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-          },
-          onClick: (e) => handleAddVocab(e, selectionBox.text),
+          type: "button",
+          className: "linkual-selection-add",
+          onPointerDown: (e) => e.stopPropagation(),
+          onPointerUp: handleSelectionButtonPointerUp,
+          onTouchStart: (e) => e.stopPropagation(),
+          onTouchEnd: handleSelectionButtonTouchEnd,
+          onMouseDown: (e) => e.stopPropagation(),
+          onClick: handleSelectionButtonClick,
           style: {
             position: "fixed",
             top: selectionBox.top,
             left: selectionBox.left,
-            transform: "translateX(-50%)",
-            zIndex: 999999,
-            padding: "6px 12px",
-            background: "var(--linkual-theme, #6a1b9a)",
-            color: "#fff",
-            border: "none",
-            borderRadius: "6px",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
-            cursor: "pointer",
-            fontSize: "13px",
-            fontWeight: "bold",
-            display: "flex",
-            alignItems: "center",
-            gap: "4px"
+            transform: "translateX(-50%)"
           },
           children: [
-            '+ "',
-            selectionBox.text,
-            '"'
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "+" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "linkual-selection-add-text", children: [
+              '"',
+              selectionBox.text,
+              '"'
+            ] })
           ]
         }
       ),
@@ -12933,7 +13050,17 @@ ${contextBlock}`,
         /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "btn-parse", onClick: handleParse, children: isGenerating ? "解析中" : aiContent ? "重新解析" : "解析" }),
         /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "btn-chevron", onClick: handleToggle, children: isExpanded ? "▼" : "◀" })
       ] }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "text-content", onMouseUp: handleMouseUp, children: data.text }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx(
+        "div",
+        {
+          className: "text-content",
+          ref: textRef,
+          onPointerUp: handleSelectionPointerUp,
+          onMouseUp: handleSelectionMouseUp,
+          onTouchEnd: handleSelectionTouchEnd,
+          children: data.text
+        }
+      ),
       isExpanded && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "ai-box", style: { color: isError ? "#c62828" : "#444" }, children: aiContent })
     ] });
   };

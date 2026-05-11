@@ -199,6 +199,37 @@
   line-height: 1.5; 
   padding: 2px 0; 
   color: #333; 
+  cursor: text;
+  -webkit-user-select: text;
+  user-select: text;
+  overflow-wrap: anywhere;
+  -webkit-touch-callout: default;
+}
+
+.linkual-selection-add {
+  z-index: 999999;
+  min-height: 38px;
+  max-width: min(320px, calc(100vw - 24px));
+  padding: 8px 12px;
+  background: var(--linkual-theme, #6a1b9a);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: bold;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.linkual-selection-add-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .ai-box { 

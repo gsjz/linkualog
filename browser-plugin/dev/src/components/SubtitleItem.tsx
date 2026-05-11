@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { fetchLlmStream } from '../services/llmApi';
 import { IVideoAdapter } from '../adapters/BaseAdapter';
 import { Subtitle } from '../types';
@@ -12,6 +12,47 @@ interface SubtitleItemProps {
   adapter: IVideoAdapter;
 }
 
+const MAX_SELECTION_LENGTH = 50;
+const SELECTION_BOX_MARGIN = 12;
+
+const normalizeSelectedText = (value: string) => value.replace(/\s+/g, ' ').trim();
+
+const isNodeInside = (node: Node | null, container: HTMLElement | null) => {
+  if (!node || !container) return false;
+  const target = node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+  return !!target && container.contains(target);
+};
+
+const getVisibleRangeRect = (range: Range) => {
+  const rects = Array.from(range.getClientRects()).filter((rect) => rect.width > 0 && rect.height > 0);
+  if (rects.length > 0) return rects[0];
+
+  const rect = range.getBoundingClientRect();
+  return rect.width > 0 && rect.height > 0 ? rect : null;
+};
+
+const getSelectionBoxPosition = (rect: DOMRect, text: string) => {
+  const viewportWidth = window.visualViewport?.width ?? window.innerWidth;
+  const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
+  const viewportLeft = window.visualViewport?.offsetLeft ?? 0;
+  const viewportTop = window.visualViewport?.offsetTop ?? 0;
+  const estimatedButtonWidth = Math.min(320, viewportWidth - SELECTION_BOX_MARGIN * 2, 34 + text.length * 8);
+  const horizontalInset = estimatedButtonWidth / 2 + SELECTION_BOX_MARGIN;
+
+  const left = Math.min(
+    viewportLeft + viewportWidth - horizontalInset,
+    Math.max(viewportLeft + horizontalInset, rect.left + rect.width / 2)
+  );
+
+  let top = rect.top - 48;
+  if (top < viewportTop + SELECTION_BOX_MARGIN) {
+    top = rect.bottom + 10;
+  }
+  top = Math.min(viewportTop + viewportHeight - 52, Math.max(viewportTop + SELECTION_BOX_MARGIN, top));
+
+  return { top, left };
+};
+
 const SubtitleItem: React.FC<SubtitleItemProps> = ({ data, index, allSubs, isActive, adapter }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -21,7 +62,10 @@ const SubtitleItem: React.FC<SubtitleItemProps> = ({ data, index, allSubs, isAct
   const [selectionBox, setSelectionBox] = useState<{ text: string, top: number, left: number } | null>(null);
 
   const itemRef = useRef<HTMLDivElement>(null);
+  const textRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<(() => void) | null>(null);
+  const selectionTimerRef = useRef<number | null>(null);
+  const ignoreNextClickRef = useRef(false);
 
   useEffect(() => {
     return () => {
@@ -50,31 +94,99 @@ const SubtitleItem: React.FC<SubtitleItemProps> = ({ data, index, allSubs, isAct
     adapter.pause(); 
   };
 
-  const handleMouseUp = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const refreshSelectionBox = useCallback(() => {
     const selection = window.getSelection();
-    const text = selection?.toString().trim();
+    const text = normalizeSelectedText(selection?.toString() ?? '');
 
-    if (text && text.length > 0 && text.length < 50) {
-      const range = selection!.getRangeAt(0);
-      const rect = range.getBoundingClientRect();
+    if (!selection || selection.rangeCount === 0 || !text || text.length > MAX_SELECTION_LENGTH) {
+      setSelectionBox(null);
+      return;
+    }
+
+    if (!isNodeInside(selection.anchorNode, textRef.current) || !isNodeInside(selection.focusNode, textRef.current)) {
+      setSelectionBox(null);
+      return;
+    }
+
+    const range = selection.getRangeAt(0);
+    const rect = getVisibleRangeRect(range);
+    if (rect) {
+      const position = getSelectionBoxPosition(rect, text);
       setSelectionBox({
         text,
-        top: rect.top - 35, 
-        left: rect.left + rect.width / 2
+        top: position.top,
+        left: position.left
       });
     } else {
       setSelectionBox(null);
     }
+  }, []);
+
+  const scheduleSelectionRefresh = useCallback((delay = 0) => {
+    if (selectionTimerRef.current !== null) {
+      window.clearTimeout(selectionTimerRef.current);
+    }
+
+    selectionTimerRef.current = window.setTimeout(() => {
+      selectionTimerRef.current = null;
+      refreshSelectionBox();
+    }, delay);
+  }, [refreshSelectionBox]);
+
+  const handleSelectionPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    scheduleSelectionRefresh(e.pointerType === 'touch' ? 180 : 0);
+  };
+
+  const handleSelectionMouseUp = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    scheduleSelectionRefresh(0);
+  };
+
+  const handleSelectionTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    scheduleSelectionRefresh(180);
   };
 
   useEffect(() => {
-    const closeBox = () => setSelectionBox(null);
-    window.addEventListener('mousedown', closeBox);
-    return () => window.removeEventListener('mousedown', closeBox);
+    const handleSelectionChange = () => scheduleSelectionRefresh(120);
+    document.addEventListener('selectionchange', handleSelectionChange);
+
+    return () => {
+      document.removeEventListener('selectionchange', handleSelectionChange);
+      if (selectionTimerRef.current !== null) {
+        window.clearTimeout(selectionTimerRef.current);
+      }
+    };
+  }, [scheduleSelectionRefresh]);
+
+  useEffect(() => {
+    const closeBox = (event: Event) => {
+      const target = event.target;
+      if (target instanceof Element && target.closest('.linkual-selection-add')) return;
+      setSelectionBox(null);
+    };
+
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setSelectionBox(null);
+    };
+
+    window.addEventListener('pointerdown', closeBox, true);
+    window.addEventListener('touchstart', closeBox, true);
+    window.addEventListener('mousedown', closeBox, true);
+    window.addEventListener('scroll', closeBox, true);
+    window.addEventListener('keydown', closeOnEscape);
+
+    return () => {
+      window.removeEventListener('pointerdown', closeBox, true);
+      window.removeEventListener('touchstart', closeBox, true);
+      window.removeEventListener('mousedown', closeBox, true);
+      window.removeEventListener('scroll', closeBox, true);
+      window.removeEventListener('keydown', closeOnEscape);
+    };
   }, []);
 
-  const handleAddVocab = (e: React.MouseEvent, word: string) => {
+  const handleAddVocab = (e: React.MouseEvent | React.PointerEvent | React.TouchEvent, word: string) => {
     e.preventDefault();
     e.stopPropagation();
     
@@ -109,6 +221,45 @@ const SubtitleItem: React.FC<SubtitleItemProps> = ({ data, index, allSubs, isAct
     
     setSelectionBox(null);
     window.getSelection()?.removeAllRanges();
+  };
+
+  const handleSelectionButtonPointerUp = (e: React.PointerEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    if (e.pointerType !== 'touch' || !selectionBox) return;
+
+    ignoreNextClickRef.current = true;
+    window.setTimeout(() => {
+      ignoreNextClickRef.current = false;
+    }, 400);
+    handleAddVocab(e, selectionBox.text);
+  };
+
+  const handleSelectionButtonTouchEnd = (e: React.TouchEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    if (ignoreNextClickRef.current || !selectionBox) return;
+
+    ignoreNextClickRef.current = true;
+    window.setTimeout(() => {
+      ignoreNextClickRef.current = false;
+    }, 400);
+    handleAddVocab(e, selectionBox.text);
+  };
+
+  const handleSelectionButtonClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (!selectionBox) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+
+    if (ignoreNextClickRef.current) {
+      e.preventDefault();
+      e.stopPropagation();
+      ignoreNextClickRef.current = false;
+      return;
+    }
+
+    handleAddVocab(e, selectionBox.text);
   };
 
   const handleParse = (e: React.MouseEvent, forceExpand = false) => {
@@ -185,29 +336,23 @@ const SubtitleItem: React.FC<SubtitleItemProps> = ({ data, index, allSubs, isAct
       
       {selectionBox && (
         <button
-          onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }} 
-          onClick={(e) => handleAddVocab(e, selectionBox.text)}
+          type="button"
+          className="linkual-selection-add"
+          onPointerDown={(e) => e.stopPropagation()}
+          onPointerUp={handleSelectionButtonPointerUp}
+          onTouchStart={(e) => e.stopPropagation()}
+          onTouchEnd={handleSelectionButtonTouchEnd}
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={handleSelectionButtonClick}
           style={{
             position: 'fixed',
             top: selectionBox.top,
             left: selectionBox.left,
-            transform: 'translateX(-50%)',
-            zIndex: 999999,
-            padding: '6px 12px',
-            background: 'var(--linkual-theme, #6a1b9a)',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '6px',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-            cursor: 'pointer',
-            fontSize: '13px',
-            fontWeight: 'bold',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px'
+            transform: 'translateX(-50%)'
           }}
         >
-          + "{selectionBox.text}"
+          <span>+</span>
+          <span className="linkual-selection-add-text">"{selectionBox.text}"</span>
         </button>
       )}
 
@@ -223,7 +368,15 @@ const SubtitleItem: React.FC<SubtitleItemProps> = ({ data, index, allSubs, isAct
         <span className="btn-chevron" onClick={handleToggle}>{isExpanded ? '▼' : '◀'}</span>
       </div>
       
-      <div className="text-content" onMouseUp={handleMouseUp}>{data.text}</div>
+      <div
+        className="text-content"
+        ref={textRef}
+        onPointerUp={handleSelectionPointerUp}
+        onMouseUp={handleSelectionMouseUp}
+        onTouchEnd={handleSelectionTouchEnd}
+      >
+        {data.text}
+      </div>
       
       {isExpanded && (
         <div className="ai-box" style={{ color: isError ? '#c62828' : '#444' }}>
