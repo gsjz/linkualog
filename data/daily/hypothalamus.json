@@ -1,0 +1,30 @@
+{
+  "word": "hypothalamus",
+  "createdAt": "2026-05-02",
+  "reviews": [
+    {
+      "date": "2026-05-03",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "下丘脑（位于大脑中，负责调节体温、口渴、饥饿、激素释放等重要生理功能）"
+  ],
+  "examples": [
+    {
+      "text": "both of which can have devastating effects on overall health. At first detection of low water levels, sensory receptors in the brain's hypothalamus signal the release of antidiuretic hormone. When it reached the kidneys, it creates aquaporins,",
+      "explanation": "这里的 hypothalamus 指“下丘脑”，是大脑中负责维持体内平衡的重要区域。句子意思是：当身体检测到缺水时，大脑中的下丘脑会发出信号，促使身体释放抗利尿激素。",
+      "focusWords": [
+        "hypothalamus"
+      ],
+      "source": {
+        "text": "What would happen if you didn’t drink water? - Mia Nacamulli",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=9iMGFqMmUFs",
+        "timestamp": 105
+      }
+    }
+  ]
+}

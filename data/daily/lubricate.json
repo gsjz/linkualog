@@ -1,0 +1,30 @@
+{
+  "word": "lubricate",
+  "createdAt": "2026-05-02",
+  "reviews": [
+    {
+      "date": "2026-05-03",
+      "score": 4
+    }
+  ],
+  "definitions": [
+    "使润滑；给……加润滑剂；减少摩擦"
+  ],
+  "examples": [
+    {
+      "text": "So what role does water play in our bodies, and how much do we actually need to drink to stay healthy? The H20 in our bodies works to cushion and lubricate joints, regulate temperature, and to nourish the brain and spinal cord.",
+      "explanation": "这里的 lubricate 表示“使……润滑、减少摩擦”。句子意思是：我们体内的水可以缓冲并润滑关节、调节体温，并为大脑和脊髓提供营养。",
+      "focusWords": [
+        "lubricate"
+      ],
+      "source": {
+        "text": "What would happen if you didn’t drink water? - Mia Nacamulli",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=9iMGFqMmUFs",
+        "timestamp": 44
+      }
+    }
+  ]
+}

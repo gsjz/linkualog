@@ -1,21 +1,34 @@
 {
-  "word": "from benign",
+  "word": "benign",
   "createdAt": "2026-03-26",
   "reviews": [
     {
       "date": "2026-04-20",
       "score": 0
+    },
+    {
+      "date": "2026-05-03",
+      "score": 1
+    },
+    {
+      "date": "2026-05-05",
+      "score": 1
+    },
+    {
+      "date": "2026-05-07",
+      "score": 2
     }
   ],
   "definitions": [
-    "adj. 良性的（在此语境下的释义）"
+    "adj. 无害的；不会造成严重后果的",
+    "adj. 温和的；和善的（常见义）"
   ],
   "examples": [
     {
-      "text": "On top of that, talking about menstrual\ncramps can feel awkward or even taboo, leading many people to feel that they\nhave to simply put up with the pain. But regularly suffering from\nsevere cramping is far from benign. Some experts believe\nthat repeated exposure to pain can cause the nervous system\nto become more sensitive,",
-      "explanation": "adj. 良性的（在此语境下的释义）",
+      "text": "On top of that, talking about menstrual cramps can feel awkward or even taboo, leading many people to feel that they have to simply put up with the pain. But regularly suffering from severe cramping is far from benign. Some experts believe that repeated exposure to pain can cause the nervous system to become more sensitive,",
+      "explanation": "这里的 far from benign 表示“绝不是无害的”或“后果并不轻微”。作者强调：长期严重痛经不是可以轻描淡写的小问题，反而可能对身体造成持续影响。",
       "focusWords": [
-        "from benign"
+        "benign"
       ],
       "source": {
         "text": "3 things that can cause painful periods - Chen X. Chen",
@@ -33,7 +46,7 @@
       "platform": "qq",
       "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
       "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
-      "word": "from benign",
+      "word": "benign",
       "example_text": "On top of that, talking about menstrual cramps can feel awkward or even taboo, leading many people to feel that they have to simply put up with the pain. But regularly suffering from severe cramping is far from benign. Some experts believe that repeated exposure to pain can cause the nervous system to become more sensitive,",
       "expected_definitions": [
         "adj. 良性的（在此语境下的释义）"

@@ -1,12 +1,19 @@
 {
   "word": "cascading",
   "createdAt": "2026-04-29",
-  "reviews": [],
-  "definitions": [],
+  "reviews": [
+    {
+      "date": "2026-05-03",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "级联的；连锁蔓延的（如故障、失败等一个接一个扩散）"
+  ],
   "examples": [
     {
-      "text": "The first thing you'd do is shut off the \nmain valve to prevent further damage. The Circuit Breaker pattern works similarly, preventing cascading failures \nin distributed systems. When a service becomes unavailable, the Circuit \nBreaker stops requests, allowing it to recover. Netflix's Hystrix library uses this pattern.",
-      "explanation": "",
+      "text": "The first thing you'd do is shut off the main valve to prevent further damage. The Circuit Breaker pattern works similarly, preventing cascading failures in distributed systems. When a service becomes unavailable, the Circuit Breaker stops requests, allowing it to recover. Netflix's Hystrix library uses this pattern.",
+      "explanation": "这里的 cascading failures 指“级联故障 / 连锁失败”，即一个服务出问题后，影响继续向其他服务扩散，像连锁反应一样。cascading 在这里表示“连锁蔓延的、逐级扩散的”。",
       "focusWords": [
         "cascading"
       ],

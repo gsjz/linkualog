@@ -1,0 +1,30 @@
+{
+  "word": "bowel",
+  "createdAt": "2026-05-02",
+  "reviews": [
+    {
+      "date": "2026-05-03",
+      "score": 4
+    }
+  ],
+  "definitions": [
+    "肠；肠道（尤指大小肠，与 bowel movement 搭配时常指排便相关）"
+  ],
+  "examples": [
+    {
+      "text": "Well, each day we lose two to three liters through our sweat, urine, and bowel movements, and even just from breathing. While these functions are essential to our survival,",
+      "explanation": "这里的 bowel 出现在 bowel movements 中，意思是“排便、肠道排泄”。整句在说：我们每天会通过出汗、排尿、排便，甚至呼吸流失两到三升水分。学习时可顺带记搭配 bowel movement = 排便。",
+      "focusWords": [
+        "bowel"
+      ],
+      "source": {
+        "text": "What would happen if you didn’t drink water? - Mia Nacamulli",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=9iMGFqMmUFs",
+        "timestamp": 85
+      }
+    }
+  ]
+}

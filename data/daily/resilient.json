@@ -1,12 +1,23 @@
 {
   "word": "resilient",
   "createdAt": "2026-04-29",
-  "reviews": [],
-  "definitions": [],
+  "reviews": [
+    {
+      "date": "2026-05-03",
+      "score": 3
+    },
+    {
+      "date": "2026-05-09",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "有韧性的；有恢复力的；能迅速从困难、故障或压力中恢复的（如 a resilient system 表示“恢复能力强的系统”）"
+  ],
   "examples": [
     {
-      "text": "When a service becomes unavailable, the Circuit \nBreaker stops requests, allowing it to recover. Netflix's Hystrix library uses this pattern. It ensures a more resilient system. This pattern can be particularly \nuseful when dealing with microservices or cloud-based applications, where \nfailures are more likely to occur.",
-      "explanation": "",
+      "text": "When a service becomes unavailable, the Circuit Breaker stops requests, allowing it to recover. Netflix's Hystrix library uses this pattern. It ensures a more resilient system. This pattern can be particularly useful when dealing with microservices or cloud-based applications, where failures are more likely to occur.",
+      "explanation": "这里的 resilient 表示“有恢复力的、抗故障的”。a more resilient system 指“一个在出现故障后更能稳住并恢复的系统”。整段在说明：当某个服务不可用时，熔断器会先阻止继续请求，让服务有时间恢复，这样整个系统会更具韧性。",
       "focusWords": [
         "resilient"
       ],

@@ -1,12 +1,19 @@
 {
   "word": "deviation",
   "createdAt": "2026-04-29",
-  "reviews": [],
-  "definitions": [],
+  "reviews": [
+    {
+      "date": "2026-05-03",
+      "score": 4
+    }
+  ],
+  "definitions": [
+    "偏差；偏离；背离常规或预期的变化"
+  ],
   "examples": [
     {
-      "text": "But there's a catch, for one- Unlike the first example, these aren't identical words,\nso a slight deviation won't hurt. Also context matters. This is actually",
-      "explanation": "",
+      "text": "But there's a catch, for one- Unlike the first example, these aren't identical words, so a slight deviation won't hurt. Also context matters.",
+      "explanation": "这里的 deviation 指“偏差、差异、偏离原样”。句子意思是：这些词并不是完全相同，所以即使有一点点偏差也没关系，还要结合上下文判断。",
       "focusWords": [
         "deviation"
       ],

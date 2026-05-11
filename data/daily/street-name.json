@@ -1,7 +1,12 @@
 {
   "word": "street name",
   "createdAt": "2026-04-26",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-05-03",
+      "score": 3
+    }
+  ],
   "definitions": [],
   "examples": [
     {

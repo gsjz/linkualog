@@ -1,12 +1,19 @@
 {
   "word": "repurposable",
   "createdAt": "2026-04-29",
-  "reviews": [],
-  "definitions": [],
+  "reviews": [
+    {
+      "date": "2026-05-03",
+      "score": 4
+    }
+  ],
+  "definitions": [
+    "可重新用途的；可改作他用的；可重新调整用于新目的的"
+  ],
   "examples": [
     {
       "text": "How did graphical processing units, or GPUs, which were originally built as hardware for video gaming, become the most popular and ubiquitous infrastructure used in generative AI today? And why are traditional CPU-based data centers not repurposable for AI in all cases? And does everyone need expensive hardware to build and run AI systems? The breakthrough behind the rise of generative AI is often credited to software innovations,",
-      "explanation": "",
+      "explanation": "这里的 repurposable 形容传统的 CPU 数据中心“是否能被改作其他用途”。句子意思是：传统的基于 CPU 的数据中心，并不总是能够重新调整后直接用于 AI 任务。该词核心义为“可重新利用的、可改作他用的”。",
       "focusWords": [
         "repurposable"
       ],

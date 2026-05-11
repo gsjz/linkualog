@@ -1,0 +1,30 @@
+{
+  "word": "spinal",
+  "createdAt": "2026-05-02",
+  "reviews": [
+    {
+      "date": "2026-05-03",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "脊髓的；脊柱的，脊椎的"
+  ],
+  "examples": [
+    {
+      "text": "The H20 in our bodies works to cushion and lubricate joints, regulate temperature, and to nourish the brain and spinal cord. Water isn't only in our blood. An adult's brain and heart are almost three quarters water.",
+      "explanation": "这里的 spinal 出现在 spinal cord 中，意思是“脊髓的”。spinal cord 指“脊髓”。整句是在说：人体中的水有助于缓冲和润滑关节、调节体温，并为大脑和脊髓提供营养。",
+      "focusWords": [
+        "spinal"
+      ],
+      "source": {
+        "text": "What would happen if you didn’t drink water? - Mia Nacamulli",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=9iMGFqMmUFs",
+        "timestamp": 49
+      }
+    }
+  ]
+}

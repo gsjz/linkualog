@@ -1,0 +1,30 @@
+{
+  "word": "devastating",
+  "createdAt": "2026-05-02",
+  "reviews": [
+    {
+      "date": "2026-05-03",
+      "score": 4
+    }
+  ],
+  "definitions": [
+    "毁灭性的；破坏极大的；造成严重后果的"
+  ],
+  "examples": [
+    {
+      "text": "Maintaining a balanced water level is essential to avoid dehydration or over-hydration, both of which can have devastating effects on overall health.",
+      "explanation": "这里的 devastating effects 指“对整体健康造成毁灭性/极其严重的影响”。句子强调：脱水和水分过多这两种情况都会严重损害健康。",
+      "focusWords": [
+        "devastating"
+      ],
+      "source": {
+        "text": "What would happen if you didn’t drink water? - Mia Nacamulli",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=9iMGFqMmUFs",
+        "timestamp": 99
+      }
+    }
+  ]
+}

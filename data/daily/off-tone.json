@@ -1,14 +1,19 @@
 {
-  "word": "going off tone",
+  "word": "off-tone",
   "createdAt": "2026-04-29",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-05-03",
+      "score": 3
+    }
+  ],
   "definitions": [],
   "examples": [
     {
       "text": "Some are even pushing 20 years old. Since then, we've become much more accustomed to songwriters\ntaking liberty by going off tone. But the one big takeaway\nremains undisputed Chinese style dialects,\na perfect for ballads.",
       "explanation": "",
       "focusWords": [
-        "going off tone"
+        "off-tone"
       ],
       "source": {
         "text": "Chinese Music - It's Not Dead, It's Misunderstood...",

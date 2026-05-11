@@ -1,12 +1,27 @@
 {
   "word": "undisputed",
   "createdAt": "2026-04-29",
-  "reviews": [],
-  "definitions": [],
+  "reviews": [
+    {
+      "date": "2026-05-03",
+      "score": 2
+    },
+    {
+      "date": "2026-05-05",
+      "score": 2
+    },
+    {
+      "date": "2026-05-07",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "无可争议的；公认的；明确无疑的"
+  ],
   "examples": [
     {
-      "text": "Since then, we've become much more accustomed to songwriters\ntaking liberty by going off tone. But the one big takeaway\nremains undisputed Chinese style dialects,\na perfect for ballads. All this sounds great,\nbut what if a gift from the tones",
-      "explanation": "",
+      "text": "But the one big takeaway remains undisputed: Chinese-style dialects are perfect for ballads.",
+      "explanation": "这里的 undisputed 表示“无可争议的、大家都认可的”。整句意思是：一个最重要的结论仍然是明确无疑的——中式方言风格很适合民谣。",
       "focusWords": [
         "undisputed"
       ],

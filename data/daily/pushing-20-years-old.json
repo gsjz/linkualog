@@ -1,7 +1,16 @@
 {
   "word": "pushing 20 years old",
   "createdAt": "2026-04-29",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-05-03",
+      "score": 3
+    },
+    {
+      "date": "2026-05-09",
+      "score": 3
+    }
+  ],
   "definitions": [],
   "examples": [
     {

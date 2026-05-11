@@ -1,12 +1,19 @@
 {
   "word": "ubiquitous",
   "createdAt": "2026-04-29",
-  "reviews": [],
-  "definitions": [],
+  "reviews": [
+    {
+      "date": "2026-05-03",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "无处不在的；非常普遍的"
+  ],
   "examples": [
     {
       "text": "How did graphical processing units, or GPUs, which were originally built as hardware for video gaming, become the most popular and ubiquitous infrastructure used in generative AI today? And why are traditional CPU-based data centers not repurposable for AI in all cases? And does everyone need expensive hardware to build and run AI systems?",
-      "explanation": "",
+      "explanation": "这里的 ubiquitous 用来形容 GPUs 在生成式 AI 领域“几乎到处都在用、非常普遍”。句子是在问：GPU 原本是为电子游戏开发的硬件，为什么如今却成了生成式 AI 中最常见、几乎无处不在的基础设施？",
       "focusWords": [
         "ubiquitous"
       ],

@@ -1,12 +1,19 @@
 {
   "word": "scalable",
   "createdAt": "2026-04-29",
-  "reviews": [],
-  "definitions": [],
+  "reviews": [
+    {
+      "date": "2026-05-03",
+      "score": 4
+    }
+  ],
+  "definitions": [
+    "可扩展的；可伸缩的（指系统、业务或方案能随着规模增长而保持性能并方便扩容）"
+  ],
   "examples": [
     {
-      "text": "In today's video,  we'll  explore the top 7 distributed system \npatterns with real-world examples. They can help us design more \nefficient and scalable systems. So, let's dive in! First is Ambassador.",
-      "explanation": "",
+      "text": "In today's video, we'll explore the top 7 distributed system patterns with real-world examples. They can help us design more efficient and scalable systems. So, let's dive in! First is Ambassador.",
+      "explanation": "这里的 scalable systems 指“可扩展的系统”，意思是系统在用户量、数据量或请求量增长时，仍能较稳定地运行，并且比较容易通过增加资源来提升处理能力。",
       "focusWords": [
         "scalable"
       ],

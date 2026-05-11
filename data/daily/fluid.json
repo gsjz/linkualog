@@ -1,0 +1,34 @@
+{
+  "word": "fluid",
+  "createdAt": "2026-05-02",
+  "reviews": [
+    {
+      "date": "2026-05-03",
+      "score": 3
+    },
+    {
+      "date": "2026-05-09",
+      "score": 4
+    }
+  ],
+  "definitions": [
+    "液体；（尤指人体中的）体液"
+  ],
+  "examples": [
+    {
+      "text": "and even just from breathing. While these functions are essential to our survival, we need to compensate for the fluid loss. Maintaining a balanced water level is essential to avoid dehydration or over-hydration,",
+      "explanation": "这里的 fluid loss 指“体液流失”。整句话的意思是：即使只是通过呼吸，身体也会失去水分。虽然这些生理过程对生存必不可少，但我们需要补充流失的体液；保持体内水分平衡对于避免脱水或水分过多都很重要。",
+      "focusWords": [
+        "fluid"
+      ],
+      "source": {
+        "text": "What would happen if you didn’t drink water? - Mia Nacamulli",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=9iMGFqMmUFs",
+        "timestamp": 90
+      }
+    }
+  ]
+}

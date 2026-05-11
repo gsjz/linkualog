@@ -9,9 +9,23 @@
     {
       "date": "2026-04-20",
       "score": 0
+    },
+    {
+      "date": "2026-05-03",
+      "score": 2
+    },
+    {
+      "date": "2026-05-05",
+      "score": 2
+    },
+    {
+      "date": "2026-05-07",
+      "score": 4
     }
   ],
-  "definitions": [],
+  "definitions": [
+    "木材；木料（尤指建筑或加工用木材）"
+  ],
   "examples": [
     {
       "text": "The city now faced timber shortages and the impacts of severe erosion and frequent flooding that threatened food supplies.",

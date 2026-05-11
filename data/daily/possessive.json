@@ -5,6 +5,10 @@
     {
       "date": "2026-04-20",
       "score": 3
+    },
+    {
+      "date": "2026-05-09",
+      "score": 4
     }
   ],
   "definitions": [],
@@ -25,7 +29,7 @@
       }
     }
   ],
-  "marked": false,
+  "marked": true,
   "reviewSessions": [
     {
       "timestamp": "2026-04-20T13:46:48",

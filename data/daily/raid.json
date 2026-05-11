@@ -5,13 +5,19 @@
     {
       "date": "2026-04-20",
       "score": 0
+    },
+    {
+      "date": "2026-05-03",
+      "score": 2
     }
   ],
-  "definitions": [],
+  "definitions": [
+    "raid：袭击；突袭；（警方、军队等的）突击搜查"
+  ],
   "examples": [
     {
       "text": "\"What a wonderful time to be alive! Hey, the Yellow River flooded again and destroyed all your crops. aaand also we're being raided by nomadic tribesmen, aaaand also this period of Chinese history may be entirely mythical, meaning you may not even exist. Well, that would certainly explain the laser eyes.",
-      "explanation": "",
+      "explanation": "这里的 being raided by nomadic tribesmen 表示“正在遭到游牧部落的袭击”。raid 在这里作动词，意思是“突袭、袭击”；raided 是其过去分词，用在被动结构里。",
       "focusWords": [
         "raided"
       ],

@@ -1,0 +1,37 @@
+{
+  "word": "enact",
+  "createdAt": "2026-05-05",
+  "reviews": [
+    {
+      "date": "2026-05-05",
+      "score": 2
+    },
+    {
+      "date": "2026-05-07",
+      "score": 4
+    }
+  ],
+  "definitions": [
+    "颁布；实施，执行（尤指法律、改革、政策等）"
+  ],
+  "examples": [
+    {
+      "text": "which lasted from 1603 through 1867. During this time, Ieyasu and the shoguns who succeeded him enacted a series of sweeping reforms that reshaped the country’s economy, landscape, and culture. Concerned over the growing influence of outside powers,",
+      "explanation": "这里的 enacted 表示“颁布/实施”。句子意思是：在这段时期里，家康及其继任将军实施了一系列影响深远的改革，重塑了日本的经济、面貌和文化。",
+      "focusWords": [
+        "enacted"
+      ],
+      "source": {
+        "text": "How Japan saved its biggest city from collapse - Roman Krznaric",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=t0h8Dmni8g8",
+        "timestamp": 83
+      }
+    }
+  ],
+  "mergedFrom": [
+    "enacted"
+  ]
+}

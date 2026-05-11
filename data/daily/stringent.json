@@ -1,12 +1,19 @@
 {
   "word": "stringent",
   "createdAt": "2026-04-29",
-  "reviews": [],
-  "definitions": [],
+  "reviews": [
+    {
+      "date": "2026-05-03",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "严格的；严厉的；要求高的（如标准、规定、条件等）"
+  ],
   "examples": [
     {
-      "text": "If this sounds like a songwriter's\nnightmare to you, keep in mind that this level of tone melody correspondence is far more stringent\nin Cantonese than in Mandarin. This is a 2023 study done\nby professor for Spoken Language Processing\nin the University of Munich.",
-      "explanation": "",
+      "text": "If this sounds like a songwriter's nightmare to you, keep in mind that this level of tone melody correspondence is far more stringent in Cantonese than in Mandarin. This is a 2023 study done by professor for Spoken Language Processing in the University of Munich.",
+      "explanation": "这里的 stringent 表示“更严格、更苛刻”。句子意思是：如果这听起来像作曲者的噩梦，请记住，粤语里这种“声调与旋律对应”的要求比普通话严格得多。重点可记为：strict 常指人或规则严格，stringent 更常用于标准、条件、要求非常严。",
       "focusWords": [
         "stringent"
       ],

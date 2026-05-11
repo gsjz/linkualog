@@ -1,0 +1,30 @@
+{
+  "word": "warlord",
+  "createdAt": "2026-05-05",
+  "reviews": [
+    {
+      "date": "2026-05-06",
+      "score": 2
+    }
+  ],
+  "definitions": [
+    "军阀；割据一方的军事首领"
+  ],
+  "examples": [
+    {
+      "text": "In 1467, Japan entered a series of continuous bloody civil wars that would last over a century. But in 1600, Tokugawa Ieyasu defeated his warlord rivals and unified Japan under his rule. This marked the beginning of the Tokugawa shogunate’s reign,",
+      "explanation": "这里的 warlord 指“军阀、割据势力的首领”。warlord rivals 表示“其他敌对的军阀”。整句意思是：德川家康击败了其他军阀对手，并在自己的统治下统一了日本。",
+      "focusWords": [
+        "warlord"
+      ],
+      "source": {
+        "text": "How Japan saved its biggest city from collapse - Roman Krznaric",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=t0h8Dmni8g8",
+        "timestamp": 61
+      }
+    }
+  ]
+}

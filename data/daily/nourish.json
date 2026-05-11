@@ -1,0 +1,30 @@
+{
+  "word": "nourish",
+  "createdAt": "2026-05-02",
+  "reviews": [
+    {
+      "date": "2026-05-03",
+      "score": 4
+    }
+  ],
+  "definitions": [
+    "滋养；为……提供营养，促进生长或健康"
+  ],
+  "examples": [
+    {
+      "text": "The H2O in our bodies works to cushion and lubricate joints, regulate temperature, and to nourish the brain and spinal cord. Water isn't only in our blood. An adult's brain and heart are almost three quarters water.",
+      "explanation": "这里的 nourish 表示“滋养、提供营养”。句子意思是：人体中的水有助于缓冲和润滑关节、调节体温，并为大脑和脊髓提供营养。该词在这里强调水对身体组织的维持和支持作用。",
+      "focusWords": [
+        "nourish"
+      ],
+      "source": {
+        "text": "What would happen if you didn’t drink water? - Mia Nacamulli",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=9iMGFqMmUFs",
+        "timestamp": 49
+      }
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "word": "deforestation",
+  "createdAt": "2026-05-05",
+  "reviews": [
+    {
+      "date": "2026-05-05",
+      "score": 2
+    },
+    {
+      "date": "2026-05-07",
+      "score": 3
+    },
+    {
+      "date": "2026-05-09",
+      "score": 4
+    }
+  ],
+  "definitions": [
+    "滥伐森林；森林砍伐；毁林（the clearing or destruction of forests）"
+  ],
+  "examples": [
+    {
+      "text": "with a population approaching 1 million. However, it was on the verge of ecological collapse. Years of intense logging had led to massive deforestation. The city now faced timber shortages and the impacts of severe erosion and frequent flooding that threatened food supplies.",
+      "explanation": "这里的 deforestation 指“大规模森林砍伐、毁林”。句子说明：长期高强度伐木导致严重毁林，进而带来木材短缺、严重水土流失和频繁洪水等后果。",
+      "focusWords": [
+        "deforestation"
+      ],
+      "source": {
+        "text": "How Japan saved its biggest city from collapse - Roman Krznaric",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=t0h8Dmni8g8",
+        "timestamp": 23
+      }
+    }
+  ]
+}

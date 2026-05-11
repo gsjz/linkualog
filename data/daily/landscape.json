@@ -1,0 +1,30 @@
+{
+  "word": "landscape",
+  "createdAt": "2026-05-05",
+  "reviews": [
+    {
+      "date": "2026-05-05",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "n. 景观；地貌；（某一领域的）整体局面、格局"
+  ],
+  "examples": [
+    {
+      "text": "During this time, Ieyasu and the shoguns who succeeded him enacted a series of sweeping reforms that reshaped the country’s economy, landscape, and culture. Concerned over the growing influence of outside powers, the shoguns imposed severe limitations on foreign relations.",
+      "explanation": "这里的 landscape 指“地貌、景观”或更广义上的“国家面貌”。句子意思是：在这段时期，家康及其继任的将军推行了一系列大刀阔斧的改革，重塑了日本的经济、国土面貌和文化。该词在此是与 economy、culture 并列的名词，不是固定搭配的一部分。",
+      "focusWords": [
+        "landscape"
+      ],
+      "source": {
+        "text": "How Japan saved its biggest city from collapse - Roman Krznaric",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=t0h8Dmni8g8",
+        "timestamp": 86
+      }
+    }
+  ]
+}

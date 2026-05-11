@@ -1,0 +1,33 @@
+{
+  "word": "receptor",
+  "createdAt": "2026-05-05",
+  "reviews": [
+    {
+      "date": "2026-05-03",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "受体；感受器（指能接收刺激或信号的细胞、结构或分子）"
+  ],
+  "examples": [
+    {
+      "text": "both of which can have devastating effects on overall health. At first detection of low water levels, sensory receptors in the brain's hypothalamus signal the release of antidiuretic hormone. When it reached the kidneys, it creates aquaporins,",
+      "explanation": "这里的 receptors 指“感受器；受体”。句子意思是：当体内检测到低水位时，大脑下丘脑中的感觉受体会发出信号，促使释放抗利尿激素。该例中 sensory receptors 是一个真实搭配，说明 receptors 是负责接收刺激并触发反应的结构。",
+      "focusWords": [
+        "receptors"
+      ],
+      "source": {
+        "text": "What would happen if you didn’t drink water? - Mia Nacamulli",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=9iMGFqMmUFs",
+        "timestamp": 105
+      }
+    }
+  ],
+  "mergedFrom": [
+    "receptors"
+  ]
+}

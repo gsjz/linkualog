@@ -1,12 +1,23 @@
 {
   "word": "latency",
   "createdAt": "2026-04-29",
-  "reviews": [],
-  "definitions": [],
+  "reviews": [
+    {
+      "date": "2026-05-03",
+      "score": 4
+    },
+    {
+      "date": "2026-05-09",
+      "score": 4
+    }
+  ],
+  "definitions": [
+    "延迟；响应时间（尤指系统、网络或服务从发出请求到产生响应所需的时间）"
+  ],
   "examples": [
     {
-      "text": "For instance, Kubernetes \nuses Envoy as an Ambassador to simplify communication between services. The Ambassador pattern can help reduce latency, enhance security, and improve the overall \narchitecture of your distributed systems. Next is Circuit Breaker",
-      "explanation": "",
+      "text": "For instance, Kubernetes uses Envoy as an Ambassador to simplify communication between services. The Ambassador pattern can help reduce latency, enhance security, and improve the overall architecture of your distributed systems.",
+      "explanation": "这里的 latency 指“延迟、响应时间”。句子意思是：Ambassador 模式可以降低服务之间通信的延迟，同时提升安全性并改进分布式系统的整体架构。",
       "focusWords": [
         "latency"
       ],

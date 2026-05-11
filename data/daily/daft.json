@@ -5,6 +5,10 @@
     {
       "date": "2026-04-20",
       "score": 0
+    },
+    {
+      "date": "2026-05-03",
+      "score": 2
     }
   ],
   "definitions": [
@@ -12,8 +16,8 @@
   ],
   "examples": [
     {
-      "text": "have not awoken to their potential. We are \ntrapped in the present and the mindset of a scarce world. But aside from the physical \nlimits of the universe there is nothing stopping us from creating a literal paradise \nfor ourselves. This seems so daft, but it is true. If we dare to tell ourselves a different \nstory about who we are and who we could be. Humans throughout history felt like \nthey would witness the apocalypse and",
-      "explanation": "adj. 愚蠢的，荒谬的",
+      "text": "This seems so daft, but it is true.",
+      "explanation": "这里的 daft 表示“看起来很荒谬、很傻”，即这件事乍听之下不太可信。",
       "focusWords": [
         "daft"
       ],

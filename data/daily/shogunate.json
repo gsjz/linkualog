@@ -1,0 +1,34 @@
+{
+  "word": "shogunate",
+  "createdAt": "2026-05-05",
+  "reviews": [
+    {
+      "date": "2026-05-05",
+      "score": 2
+    },
+    {
+      "date": "2026-05-07",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "幕府（日本历史上的将军政权；由 shogun 将军统治的政府）"
+  ],
+  "examples": [
+    {
+      "text": "But in 1600, Tokugawa Ieyasu defeated his warlord rivals and unified Japan under his rule. This marked the beginning of the Tokugawa shogunate’s reign, which lasted from 1603 through 1867. During this time, Ieyasu and the shoguns who succeeded him",
+      "explanation": "这里的 shogunate 指“幕府、将军政权”。Tokugawa shogunate 就是“德川幕府”，意思是由德川家康及其继任将军统治的日本政权。例句用它说明这一政权从 1603 年延续到 1867 年。",
+      "focusWords": [
+        "shogunate"
+      ],
+      "source": {
+        "text": "How Japan saved its biggest city from collapse - Roman Krznaric",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=t0h8Dmni8g8",
+        "timestamp": 70
+      }
+    }
+  ]
+}

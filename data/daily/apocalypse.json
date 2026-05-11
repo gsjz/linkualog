@@ -5,6 +5,10 @@
     {
       "date": "2026-04-20",
       "score": 0
+    },
+    {
+      "date": "2026-05-03",
+      "score": 3
     }
   ],
   "definitions": [
@@ -16,21 +20,6 @@
     {
       "text": "Humans throughout history felt like they would witness the apocalypse, but you are probably not living in the end times.",
       "explanation": "此处 apocalypse 指‘世界末日’或‘大灾难’，句中用于对比历史恐惧与当下现实。",
-      "focusWords": [
-        "apocalypse"
-      ],
-      "source": {
-        "text": "Tired of Doomscrolling?",
-        "url": ""
-      },
-      "youtube": {
-        "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
-        "timestamp": 392
-      }
-    },
-    {
-      "text": "stopping us from creating a literal paradise \nfor ourselves. This seems so daft, but it is true. If we dare to tell ourselves a different \nstory about who we are and who we could be. Humans throughout history felt like \nthey would witness the apocalypse and this feels especially true today, but you are \nprobably not living in the end times. There is a solid chance that humanity will persist \nfor thousands, maybe millions of years.",
-      "explanation": "",
       "focusWords": [
         "apocalypse"
       ],

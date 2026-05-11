@@ -1,0 +1,30 @@
+{
+  "word": "round-robin",
+  "createdAt": "2026-05-02",
+  "reviews": [
+    {
+      "date": "2026-05-03",
+      "score": 4
+    }
+  ],
+  "definitions": [
+    "轮流的；循环进行的；按顺序依次分配的（round-robin）"
+  ],
+  "examples": [
+    {
+      "text": "check and then check again in a round robin fashion, and you know what, that takes time",
+      "explanation": "这里的 in a round robin fashion 表示“按轮流/依次循环的方式”。整句意思是：这样一轮一轮地检查、再检查，会很花时间。",
+      "focusWords": [
+        "round-robin"
+      ],
+      "source": {
+        "text": "Ep 089: How to Set Up an Interrupt",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=0mgNFJnJLc4&list=PLxfrSxK7P38X7XfG4X8Y9cdOURvC7ObMF&index=89",
+        "timestamp": 88
+      }
+    }
+  ]
+}

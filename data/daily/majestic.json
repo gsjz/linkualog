@@ -5,15 +5,19 @@
     {
       "date": "2026-04-20",
       "score": 0
+    },
+    {
+      "date": "2026-05-03",
+      "score": 3
     }
   ],
   "definitions": [
-    "庄严的 (在此语境下指平凡中蕴含的崇高感)"
+    "宏伟的；壮丽的；崇高的（此处指平凡之中也带有一种崇高感）"
   ],
   "examples": [
     {
-      "text": "Until a few million years ago an animal \nlooked at the night sky. It looked at its hands. It saw its reflection in a puddle. And it \nrealised it existed. That it was alive. Here and now. You probably had such a moment as a small \nchild, mundane and majestic at the same time. This is where the human story begins, about \nsix million years ago, with the hominins. Still just another animal among many others. \nThey split into many families and lineages",
-      "explanation": "庄严的 (在此语境下指平凡中蕴含的崇高感)",
+      "text": "Until a few million years ago an animal looked at the night sky. It looked at its hands. It saw its reflection in a puddle. And it realised it existed. That it was alive. Here and now. You probably had such a moment as a small child, mundane and majestic at the same time. This is where the human story begins, about six million years ago, with the hominins. Still just another animal among many others. They split into many families and lineages",
+      "explanation": "这里的 majestic 不是单指“庄严”，而是指一种“宏伟、崇高”的感觉：即使那个瞬间很平凡（mundane），却同时带有令人震撼的意义感。",
       "focusWords": [
         "majestic"
       ],

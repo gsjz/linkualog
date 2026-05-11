@@ -1,14 +1,19 @@
 {
   "word": "ballad",
   "createdAt": "2026-04-29",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-05-03",
+      "score": 4
+    }
+  ],
   "definitions": [
-    "ballads：民谣；叙事歌；抒情歌曲（在这里更接近“抒情歌曲”）"
+    "ballad：民谣；叙事歌；（流行音乐中常指）抒情歌曲、抒情歌"
   ],
   "examples": [
     {
-      "text": "Still nothing? Let me give you a hint. They are all ballads! Now I know what you must be saying. Ballads are a very common choice for\nmovie theme songs, even in the West.",
-      "explanation": "",
+      "text": "Still nothing? Let me give you a hint. They are all ballads! Now I know what you must be saying. Ballads are a very common choice for movie theme songs, even in the West.",
+      "explanation": "这里的 ballads 指“抒情歌曲、抒情歌”。说话人在给提示：这些歌全都是抒情风格的；后一句进一步说明，抒情歌在电影主题曲中很常见，西方也是如此。",
       "focusWords": [
         "ballads"
       ],

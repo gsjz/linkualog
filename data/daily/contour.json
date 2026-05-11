@@ -1,12 +1,19 @@
 {
   "word": "contour",
   "createdAt": "2026-04-29",
-  "reviews": [],
-  "definitions": [],
+  "reviews": [
+    {
+      "date": "2026-05-03",
+      "score": 4
+    }
+  ],
+  "definitions": [
+    "轮廓；外形；（语音中音高变化的）曲线、调型"
+  ],
   "examples": [
     {
-      "text": "can achieve a low intonation\nat the end of a syllable. Not only that, the fourth tones\npitch doesn't stay constant. It's what we refer to\nas a contour tone, where the voice has to pitch up and down\nwithin a single syllable. And because, unlike Cantonese,\nwhere there are multiple tones",
-      "explanation": "",
+      "text": "can achieve a low intonation at the end of a syllable. Not only that, the fourth tone's pitch doesn't stay constant. It's what we refer to as a contour tone, where the voice has to pitch up and down within a single syllable. And because, unlike Cantonese, where there are multiple tones",
+      "explanation": "这里的 contour 出现在 contour tone 中，指“音高轮廓/调型”。也就是一个音节内部，声音不是保持不变，而是会上下变化。",
       "focusWords": [
         "contour"
       ],
