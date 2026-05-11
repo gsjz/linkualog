@@ -1,21 +1,26 @@
 {
-  "word": "be particularly bitter",
+  "word": "bitter",
   "createdAt": "2026-03-25",
   "reviews": [
     {
       "date": "2026-04-22",
       "score": 1
+    },
+    {
+      "date": "2026-05-03",
+      "score": 4
     }
   ],
   "definitions": [
-    "（后果）尤为严酷的"
+    "（后果）尤为严酷的",
+    "adj. 令人痛苦的；难以承受的；严酷的（如后果、经历等）"
   ],
   "examples": [
     {
       "text": "For Africans its consequences will be particularly bitter, whereas other regions were able to grow rich by burning coal and oil, Africa will pay much of the human price without having enjoyed the benefits.",
       "explanation": "对非洲而言，其后果将尤为严酷；而其他一些地区通过燃烧煤炭和石油实现了富裕，非洲却需承担巨大的人类代价，却无法享受相应利益。",
       "focusWords": [
-        "be particularly bitter"
+        "bitter"
       ],
       "source": {
         "text": "cet6 23 12 1 匹配",
@@ -29,7 +34,7 @@
       "platform": "qq",
       "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
       "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
-      "word": "be particularly bitter",
+      "word": "bitter",
       "example_text": "For Africans its consequences will be particularly bitter, whereas other regions were able to grow rich by burning coal and oil, Africa will pay much of the human price without having enjoyed the benefits.",
       "expected_definitions": [
         "（后果）尤为严酷的"

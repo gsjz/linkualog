@@ -1,16 +1,25 @@
 {
-  "word": "researched a doctorate on American Literature",
+  "word": "research",
   "createdAt": "2026-03-30",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-05-07",
+      "score": 3
+    },
+    {
+      "date": "2026-05-09",
+      "score": 5
+    }
+  ],
   "definitions": [
-    "v. 攻读博士学位"
+    "v. 研究；调查；从事学术研究"
   ],
   "examples": [
     {
       "text": "After graduating in 1974, she researched a doctorate on American Literature.",
-      "explanation": "1974年毕业后，她攻读美国文学博士学位。",
+      "explanation": "1974年毕业后，她从事美国文学博士阶段的研究。",
       "focusWords": [
-        "researched a doctorate on American Literature"
+        "research"
       ],
       "source": {
         "text": "CET6 23 12 1 听力",

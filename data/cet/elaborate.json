@@ -1,5 +1,5 @@
 {
-  "word": "elaborate signs",
+  "word": "elaborate",
   "createdAt": "2026-03-30",
   "reviews": [
     {
@@ -9,6 +9,14 @@
     {
       "date": "2026-04-20",
       "score": 0
+    },
+    {
+      "date": "2026-05-03",
+      "score": 2
+    },
+    {
+      "date": "2026-05-09",
+      "score": 2
     }
   ],
   "definitions": [
@@ -19,7 +27,7 @@
       "text": "communicate with elaborate signs, symbols, and sounds, and travel between habitats on wings and wheels of our own design.",
       "explanation": "通过复杂的符号、标志和声音进行交流，并借助我们自己设计的翅膀和轮子在不同栖息地间移动。",
       "focusWords": [
-        "elaborate signs"
+        "elaborate"
       ],
       "source": {
         "text": "CET6 23 12 1 听力",
@@ -33,7 +41,7 @@
       "platform": "qq",
       "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
       "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
-      "word": "elaborate signs",
+      "word": "elaborate",
       "example_text": "communicate with elaborate signs, symbols, and sounds, and travel between habitats on wings and wheels of our own design.",
       "expected_definitions": [
         "复杂的符号"

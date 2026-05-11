@@ -1,16 +1,21 @@
 {
-  "word": "deceitful characters",
+  "word": "deceitful",
   "createdAt": "2026-03-30",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-05-07",
+      "score": 1
+    }
+  ],
   "definitions": [
-    "虚伪的角色"
+    "欺骗的；不诚实的；靠欺瞒行事的"
   ],
   "examples": [
     {
       "text": "[11] A comedy of manners tends to reward its clever and deceitful characters, rather than punish their bad deeds.",
       "explanation": "风俗喜剧往往奖励其聪明且虚伪的角色，而非惩罚他们的恶行。",
       "focusWords": [
-        "deceitful characters"
+        "deceitful"
       ],
       "source": {
         "text": "CET6 23 12 1 听力",

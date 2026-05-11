@@ -1,12 +1,19 @@
 {
   "word": "broadband",
   "createdAt": "2026-04-27",
-  "reviews": [],
-  "definitions": [],
+  "reviews": [
+    {
+      "date": "2026-05-03",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "宽带（高速互联网接入）"
+  ],
   "examples": [
     {
       "text": "The UK’s digital divide has worsened over the past two years, leaving poorer families without broadband connections in their homes.",
-      "explanation": "",
+      "explanation": "这里的 broadband connections 指“宽带网络连接”。整句意思是：英国的数字鸿沟在过去两年加剧了，导致较贫困的家庭家中没有宽带网络。该词在此是名词，表示高速互联网接入服务。",
       "focusWords": [
         "broadband"
       ],

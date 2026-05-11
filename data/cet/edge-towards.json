@@ -1,12 +1,19 @@
 {
   "word": "edge towards",
   "createdAt": "2026-04-27",
-  "reviews": [],
-  "definitions": [],
+  "reviews": [
+    {
+      "date": "2026-05-03",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "逐步朝……移动；渐渐趋向……，慢慢接近……（常用于抽象发展或变化）"
+  ],
   "examples": [
     {
       "text": "Internet access will continue to grow in importance as we edge further towards web 3.0, and greater resources and initiatives are needed to provide the underprivileged with the connectivity they desperately need to learn, work and live.",
-      "explanation": "",
+      "explanation": "这里的 edge further towards web 3.0 表示“进一步朝 Web 3.0 的方向发展/靠近”。整句意思是：随着我们不断迈向 Web 3.0，互联网接入的重要性会继续上升，因此需要更多资源和举措，让弱势群体获得他们在学习、工作和生活中迫切需要的网络连接。",
       "focusWords": [
         "edge towards"
       ],

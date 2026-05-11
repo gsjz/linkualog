@@ -1,12 +1,19 @@
 {
   "word": "detox",
   "createdAt": "2026-04-27",
-  "reviews": [],
-  "definitions": [],
+  "reviews": [
+    {
+      "date": "2026-05-03",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "detox：排毒；戒除有害习惯、让身心暂时远离某种依赖（如 digital detox 指“数字排毒、暂别电子设备”）"
+  ],
   "examples": [
     {
       "text": "It goes without saying that this is fundamentally different from how the rest of us without beauty deals and films to publicise use the likes of Instagram, TikTok and Twitter, but even the concept of a digital detox (戒瘾) requires having a device and connectivity to choose to disconnect from.",
-      "explanation": "",
+      "explanation": "这里的 detox 出现在 digital detox 中，指“数字排毒”，也就是有意识地暂时不用手机、社交媒体或网络设备，让自己从数字依赖中抽离。整句是在说：连“选择断开连接”这件事，本身也得先有设备和网络可供你放下。",
       "focusWords": [
         "detox"
       ],

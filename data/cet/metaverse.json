@@ -1,12 +1,19 @@
 {
   "word": "metaverse",
   "createdAt": "2026-04-27",
-  "reviews": [],
-  "definitions": [],
+  "reviews": [
+    {
+      "date": "2026-05-03",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "元宇宙：一种由虚拟现实、增强现实和互联网服务构成的沉浸式数字世界；也可指多个互联的虚拟空间体系。"
+  ],
   "examples": [
     {
       "text": "Digital exclusion is a major threat to wider societal equality in the UK, so witnessing companies like Facebook championing the metaverse (元宇宙) as the next great frontier when school children are struggling to complete their homework feels particularly irritating.",
-      "explanation": "",
+      "explanation": "这里的 metaverse 指“元宇宙”，即被科技公司宣传为下一代互联网形态的沉浸式虚拟世界。句子整体是在批评：当许多学生连作业都难以完成时，企业却高调鼓吹“元宇宙”这一未来愿景，这让人尤其反感。",
       "focusWords": [
         "metaverse"
       ],

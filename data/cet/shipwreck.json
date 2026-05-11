@@ -1,16 +1,22 @@
 {
-  "word": "colonial shipwrecks",
+  "word": "shipwreck",
   "createdAt": "2026-03-31",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-05-06",
+      "score": 3
+    }
+  ],
   "definitions": [
-    "殖民时期的沉船"
+    "沉船；失事船只",
+    "船只失事；海难（较少作该义时可留作补充理解）"
   ],
   "examples": [
     {
       "text": "Cape Canaveral contains one of the greatest concentrations of colonial shipwrecks in the world",
       "explanation": "卡纳维拉尔角拥有世界上最为集中的殖民时期沉船群之一。",
       "focusWords": [
-        "colonial shipwrecks"
+        "shipwreck"
       ],
       "source": {
         "text": "CET6 2023 12 2 匹配",

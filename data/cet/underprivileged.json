@@ -1,12 +1,23 @@
 {
   "word": "underprivileged",
   "createdAt": "2026-04-27",
-  "reviews": [],
-  "definitions": [],
+  "reviews": [
+    {
+      "date": "2026-05-03",
+      "score": 3
+    },
+    {
+      "date": "2026-05-09",
+      "score": 4
+    }
+  ],
+  "definitions": [
+    "贫困的；处于社会弱势的；资源不足的（尤指缺少金钱、教育或机会）"
+  ],
   "examples": [
     {
       "text": "Internet access will continue to grow in importance as we edge further towards web 3.0, and greater resources and initiatives are needed to provide the underprivileged with the connectivity they desperately need to learn, work and live.",
-      "explanation": "",
+      "explanation": "这里的 the underprivileged 指“贫困者、弱势群体、资源不足的人”。句子意思是：随着我们进一步迈向网络 3.0，互联网接入的重要性会持续上升，因此需要更多资源和措施，为这些弱势群体提供他们在学习、工作和生活中急需的网络连接。",
       "focusWords": [
         "underprivileged"
       ],

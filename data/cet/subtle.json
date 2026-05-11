@@ -1,0 +1,29 @@
+{
+  "word": "subtle",
+  "createdAt": "2026-05-02",
+  "reviews": [
+    {
+      "date": "2026-05-03",
+      "score": 4
+    }
+  ],
+  "definitions": [
+    "微妙的；不易察觉的；复杂难处理的（强调差别细、小而不明显，或问题并不简单）"
+  ],
+  "examples": [
+    {
+      "text": "Ditching the web at large, however, is a far more subtle and complicated prospect.",
+      "explanation": "这里的 subtle 表示“微妙的、并不明显的”，说明“彻底远离整个互联网”这件事看似简单，其实是一个更复杂、没那么容易看清和处理的问题。句中 a far more subtle and complicated prospect 可理解为“一个复杂得多、也更微妙得多的前景/问题”。",
+      "focusWords": [
+        "subtle"
+      ],
+      "source": {
+        "text": "CET 23 12 2 阅读1",
+        "url": ""
+      },
+      "focusPositions": [
+        12
+      ]
+    }
+  ]
+}

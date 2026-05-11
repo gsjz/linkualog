@@ -1,12 +1,27 @@
 {
   "word": "detrimental",
   "createdAt": "2026-04-27",
-  "reviews": [],
-  "definitions": [],
+  "reviews": [
+    {
+      "date": "2026-05-03",
+      "score": 2
+    },
+    {
+      "date": "2026-05-05",
+      "score": 2
+    },
+    {
+      "date": "2026-05-07",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "有害的，不利的（常用于 detrimental effect on ... 表示“对……有不良影响”）"
+  ],
   "examples": [
     {
       "text": "It’s crucial that people who feel that social media is having a detrimental effect on their mental health are allowed to switch off and for those living in digital exclusion to be able to switch on in the first place.",
-      "explanation": "",
+      "explanation": "这里的 detrimental 表示“有害的；不利的”，出现在搭配 a detrimental effect on ... 中，意思是“对……产生不良影响”。整句是在说：如果社交媒体对心理健康有负面影响，人们应当可以选择断开；而数字资源匮乏的人则应当有机会接入。",
       "focusWords": [
         "detrimental"
       ],

@@ -1,7 +1,12 @@
 {
   "word": "excavation",
   "createdAt": "2026-03-31",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-05-06",
+      "score": 3
+    }
+  ],
   "definitions": [
     "n. 发掘 (指对文物/遗迹的系统性挖掘)",
     "n. 发掘（考古活动）"

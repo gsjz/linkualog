@@ -1,7 +1,12 @@
 {
   "word": "suspicion",
   "createdAt": "2026-03-30",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-05-07",
+      "score": 3
+    }
+  ],
   "definitions": [
     "n. 怀疑; 疑虑"
   ],

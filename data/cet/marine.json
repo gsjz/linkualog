@@ -1,7 +1,12 @@
 {
   "word": "marine",
   "createdAt": "2026-03-31",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-05-06",
+      "score": 5
+    }
+  ],
   "definitions": [
     "adj. 海洋的"
   ],

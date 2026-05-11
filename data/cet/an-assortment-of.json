@@ -1,7 +1,12 @@
 {
   "word": "an assortment of",
   "createdAt": "2026-03-30",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-05-07",
+      "score": 4
+    }
+  ],
   "definitions": [
     "各种各样的；一系列（后接复数名词或不可数名词）"
   ],

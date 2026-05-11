@@ -1,7 +1,12 @@
 {
   "word": "concede",
   "createdAt": "2026-03-30",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-05-07",
+      "score": 3
+    }
+  ],
   "definitions": [
     "vt. 承认（在此语境下的释义）"
   ],

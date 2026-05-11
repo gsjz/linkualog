@@ -1,12 +1,23 @@
 {
   "word": "desperately",
   "createdAt": "2026-04-27",
-  "reviews": [],
-  "definitions": [],
+  "reviews": [
+    {
+      "date": "2026-05-03",
+      "score": 2
+    },
+    {
+      "date": "2026-05-05",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "极其；非常；拼命地；迫切地（常用于 desperately need，表示“非常需要”）"
+  ],
   "examples": [
     {
       "text": "Internet access will continue to grow in importance as we edge further towards web 3.0, and greater resources and initiatives are needed to provide the underprivileged with the connectivity they desperately need to learn, work and live.",
-      "explanation": "",
+      "explanation": "这里的 desperately 用来强调 need，表示“极其、非常迫切地”。they desperately need to learn, work and live 可理解为“他们迫切需要这种连接来学习、工作和生活”。",
       "focusWords": [
         "desperately"
       ],

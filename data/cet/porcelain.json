@@ -1,7 +1,12 @@
 {
   "word": "porcelain",
   "createdAt": "2026-03-31",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-05-07",
+      "score": 1
+    }
+  ],
   "definitions": [
     "n. 瓷器"
   ],

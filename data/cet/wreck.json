@@ -5,6 +5,10 @@
     {
       "date": "2026-04-22",
       "score": 2
+    },
+    {
+      "date": "2026-05-07",
+      "score": 4
     }
   ],
   "definitions": [
@@ -26,10 +30,10 @@
       ]
     },
     {
-      "text": "Nearly three million vessels lie wrecked on the Earth's ocean floor",
-      "explanation": "近三百万艘船只残骸沉没在地球的海底。",
+      "text": "found the wreck of La Trinité, a 16th-century French vessel that had been at the center",
+      "explanation": "发现了“La Trinité”号的残骸；这里 wreck 指沉船或失事船只的残骸。",
       "focusWords": [
-        "wrecked"
+        "wreck"
       ],
       "source": {
         "text": "CET6 2023 12 2 匹配",
@@ -38,7 +42,8 @@
     }
   ],
   "mergedFrom": [
-    "wrecked"
+    "wrecked",
+    "wreck of La Trinité"
   ],
   "reviewSessions": [
     {

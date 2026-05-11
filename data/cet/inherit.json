@@ -1,16 +1,22 @@
 {
-  "word": "ideas we've inherited",
+  "word": "inherit",
   "createdAt": "2026-03-30",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-05-07",
+      "score": 2
+    }
+  ],
   "definitions": [
-    "传承下来的思想"
+    "继承；承袭（财产、传统、思想等）",
+    "受上一代或过去影响而沿用（观念、特征等）"
   ],
   "examples": [
     {
       "text": "We take the ideas we've inherited and put them together into some new shape.",
       "explanation": "我们将传承下来的思想整合重组为新的形态。",
       "focusWords": [
-        "ideas we've inherited"
+        "inherit"
       ],
       "source": {
         "text": "CET6 23 12 1 听力",

@@ -1,7 +1,16 @@
 {
   "word": "submerged wreck",
   "createdAt": "2026-03-31",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-05-07",
+      "score": 3
+    },
+    {
+      "date": "2026-05-09",
+      "score": 4
+    }
+  ],
   "definitions": [
     "水下沉船"
   ],

@@ -1,7 +1,12 @@
 {
   "word": "spectrum",
   "createdAt": "2026-03-30",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-05-07",
+      "score": 1
+    }
+  ],
   "definitions": [
     "n. 范围（指人类活动的各个领域）"
   ],

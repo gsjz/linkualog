@@ -1,12 +1,19 @@
 {
   "word": "breed",
   "createdAt": "2026-04-27",
-  "reviews": [],
-  "definitions": [],
+  "reviews": [
+    {
+      "date": "2026-05-03",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "引发；滋生；助长（尤指某种情绪、问题或结果）"
+  ],
   "examples": [
     {
       "text": "Consequently, it’s worth bearing in mind that while deleting all social media accounts will undoubtedly make some feel infinitely better, many other people benefit from the strong sense of community that sharing platforms can breed.",
-      "explanation": "",
+      "explanation": "这里的 breed 不是“繁殖（动物）”，而是“滋生、引发、助长”的意思。句中 the strong sense of community that sharing platforms can breed 表示“分享平台能够培养/滋生出的强烈社群感”。",
       "focusWords": [
         "breed"
       ],

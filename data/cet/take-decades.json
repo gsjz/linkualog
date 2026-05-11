@@ -1,7 +1,12 @@
 {
   "word": "take decades",
   "createdAt": "2026-03-31",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-05-07",
+      "score": 3
+    }
+  ],
   "definitions": [
     "需要数十年时间"
   ],

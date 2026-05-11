@@ -1,12 +1,19 @@
 {
   "word": "illusory",
   "createdAt": "2026-04-27",
-  "reviews": [],
-  "definitions": [],
+  "reviews": [
+    {
+      "date": "2026-05-03",
+      "score": 4
+    }
+  ],
+  "definitions": [
+    "虚幻的；不真实的；只是表面上的（illusory）"
+  ],
   "examples": [
     {
-      "text": "48. Why does the author say “witnessing companies...feels particularly irritating” (Lines 2-4, Para. 6)?\nA) The UK digital divide would further worsen due to the metaverse.\nB) The concept of the metaverse is believed to be still quite illusory.",
-      "explanation": "",
+      "text": "48. Why does the author say “witnessing companies...feels particularly irritating” (Lines 2-4, Para. 6)? A) The UK digital divide would further worsen due to the metaverse. B) The concept of the metaverse is believed to be still quite illusory.",
+      "explanation": "这里的 illusory 用来形容 the concept of the metaverse，意思是“虚幻的、不够真实可信的”。整句表示：人们认为“元宇宙”这个概念目前仍然比较空泛，像一种尚未真正落地的想象。",
       "focusWords": [
         "illusory"
       ],
