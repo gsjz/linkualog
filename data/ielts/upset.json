@@ -1,12 +1,19 @@
 {
   "word": "upset",
   "createdAt": "2026-04-01",
-  "reviews": [],
-  "definitions": [],
+  "reviews": [
+    {
+      "date": "2026-05-06",
+      "score": 2
+    }
+  ],
+  "definitions": [
+    "vt. 扰乱；打乱；破坏（平衡、秩序、生态等）"
+  ],
   "examples": [
     {
       "text": "Another problem is that agricultural wastes include fertilizers which stimulate increases in plant growth in the lagoons and upset the ecology of the area,",
-      "explanation": "",
+      "explanation": "这里的 upset 是动词，意思是“扰乱、破坏”。upset the ecology of the area 表示“破坏该地区的生态平衡”。整句在说：农业废弃物中的化肥会刺激泻湖中植物增长，从而扰乱当地生态。",
       "focusWords": [
         "upset"
       ],

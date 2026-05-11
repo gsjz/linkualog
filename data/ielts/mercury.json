@@ -1,12 +1,23 @@
 {
   "word": "mercury",
   "createdAt": "2026-04-01",
-  "reviews": [],
-  "definitions": [],
+  "reviews": [
+    {
+      "date": "2026-05-06",
+      "score": 1
+    },
+    {
+      "date": "2026-05-07",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "汞；水银（一种有毒的化学元素，metal）"
+  ],
   "examples": [
     {
       "text": "In Manzalah Lagoon, for example, the increase in mercury, lead, copper and zinc coincided with",
-      "explanation": "",
+      "explanation": "这里的 mercury 指“汞；水银”。句子在说：以曼扎拉湖为例，汞、铅、铜和锌含量的上升同时发生，说明 mercury 在这里是被监测的污染物/重金属之一。",
       "focusWords": [
         "mercury"
       ],

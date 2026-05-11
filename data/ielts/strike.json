@@ -1,12 +1,23 @@
 {
   "word": "strike",
   "createdAt": "2026-04-01",
-  "reviews": [],
-  "definitions": [],
+  "reviews": [
+    {
+      "date": "2026-05-06",
+      "score": 2
+    },
+    {
+      "date": "2026-05-09",
+      "score": 4
+    }
+  ],
+  "definitions": [
+    "（想法、意识）突然出现在脑中；一下子让某人意识到、明白"
+  ],
   "examples": [
     {
       "text": "'I'm ashamed to say that the significance of this didn't strike me until after I had read 50 or 60 studies,' says Stanley in Marine Geology.",
-      "explanation": "",
+      "explanation": "这里的 strike 不是“打击”，而是“突然使某人想到/意识到”。didn't strike me until... 表示“直到……我才意识到……”。整句可理解为：斯坦利说，直到他读了五六十篇研究之后，才意识到这件事的重要性。",
       "focusWords": [
         "strike"
       ],

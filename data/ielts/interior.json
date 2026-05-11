@@ -1,12 +1,19 @@
 {
   "word": "interior",
   "createdAt": "2026-04-01",
-  "reviews": [],
-  "definitions": [],
+  "reviews": [
+    {
+      "date": "2026-05-06",
+      "score": 2
+    }
+  ],
+  "definitions": [
+    "内陆；腹地；内部（尤指远离海岸或边界的地区）"
+  ],
   "examples": [
     {
       "text": "carrying huge quantities of sediment north from Africa's interior to be deposited on the Nile delta.",
-      "explanation": "",
+      "explanation": "这里的 interior 指“某个地区的内陆、腹地”。Africa's interior 就是“非洲内陆地区”。整句可理解为：大量沉积物从非洲内陆被带到北方，最终沉积在尼罗河三角洲。",
       "focusWords": [
         "interior"
       ],

@@ -1,14 +1,19 @@
 {
   "word": "oppose",
   "createdAt": "2026-04-11",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-05-03",
+      "score": 4
+    }
+  ],
   "definitions": [
-    "adj. 反对的 (在此语境下的释义)"
+    "v. 反对；抵制；与……对抗"
   ],
   "examples": [
     {
       "text": "Though these groups are run overwhelmingly by selfless folk, they nevertheless share many of the characteristics of other lobby groups. That would matter less if people applied the same degree of scepticism to environmental lobbying as they do to lobby groups in other fields. A trade organisation arguing for, say, weaker pollution controls is instantly seen as self-interested. Yet a green organisation opposing such a weakening is",
-      "explanation": "虽然这些团体主要由无私的人运营，但它们仍与其他游说团体有许多共同特征。如果人们对环境游说的怀疑程度与其他领域的游说团体相同，那问题就不那么严重了。例如，主张削弱污染控制的贸易组织会立即被视为自私自利。然而，一个反对这种削弱的环保组织却",
+      "explanation": "虽然这些团体大多由无私的人运营，但它们仍然具有其他游说团体的许多特征。如果人们对环境游说也像对其他领域的游说团体那样保持同等程度的怀疑，这件事就没那么要紧了。比如，一个主张削弱污染管制的贸易组织会立刻被看作出于自身利益；然而，一个反对这种削弱的环保组织却往往不会被同样看待。",
       "focusWords": [
         "opposing"
       ],

@@ -1,12 +1,23 @@
 {
   "word": "aquaculture",
   "createdAt": "2026-04-01",
-  "reviews": [],
-  "definitions": [],
+  "reviews": [
+    {
+      "date": "2026-05-03",
+      "score": 1
+    },
+    {
+      "date": "2026-05-05",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "水产养殖；水生动植物养殖（aquaculture）"
+  ],
   "examples": [
     {
       "text": "The farms on the delta plains and fishing and aquaculture in the lagoons account for much of Egypt's food supply.",
-      "explanation": "",
+      "explanation": "这里的 aquaculture 指“水产养殖”。整句意思是：三角洲平原上的农场，以及潟湖中的捕鱼和水产养殖，构成了埃及大部分的食物供应。该词常用于农业、渔业或环境类语境。",
       "focusWords": [
         "aquaculture"
       ],

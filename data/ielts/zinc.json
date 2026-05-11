@@ -1,12 +1,19 @@
 {
   "word": "zinc",
   "createdAt": "2026-04-01",
-  "reviews": [],
-  "definitions": [],
+  "reviews": [
+    {
+      "date": "2026-05-06",
+      "score": 4
+    }
+  ],
+  "definitions": [
+    "锌（化学元素，符号 Zn）"
+  ],
   "examples": [
     {
       "text": "the increase in mercury, lead, copper and zinc coincided with",
-      "explanation": "",
+      "explanation": "这里的 zinc 指“锌”，与 mercury（汞）、lead（铅）、copper（铜）并列，都是金属元素名称。该句是在说这些金属含量的增加与某事同时发生（coincided with）。",
       "focusWords": [
         "zinc"
       ],

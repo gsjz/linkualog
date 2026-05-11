@@ -1,12 +1,19 @@
 {
   "word": "nutrient-rich",
   "createdAt": "2026-04-01",
-  "reviews": [],
-  "definitions": [],
+  "reviews": [
+    {
+      "date": "2026-05-06",
+      "score": 2
+    }
+  ],
+  "definitions": [
+    "富含养分的；营养丰富的（describing soil, food, etc.）"
+  ],
   "examples": [
     {
       "text": "Annual flooding brought in new, nutrient-rich soil to the delta region, replacing what had been washed away by the sea, and dispensing with the need for fertilizers",
-      "explanation": "",
+      "explanation": "这里的 nutrient-rich 用来形容 soil，意思是“富含养分的、肥沃的”。整句可理解为：每年的洪水都会给三角洲地区带来新的肥沃土壤，补回被海水冲走的部分，因此不再需要使用化肥。",
       "focusWords": [
         "nutrient-rich"
       ],

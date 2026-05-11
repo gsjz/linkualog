@@ -1,12 +1,23 @@
 {
   "word": "municipal",
   "createdAt": "2026-04-01",
-  "reviews": [],
-  "definitions": [],
+  "reviews": [
+    {
+      "date": "2026-05-06",
+      "score": 1
+    },
+    {
+      "date": "2026-05-07",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "市政的；城市（或城镇）管理的（如 municipal waste 表示“市政垃圾”）"
+  ],
   "examples": [
     {
       "text": "fields and lagoons it is laden with municipal, industrial and agricultural waste from the Cairo region, which is home to more than 40 million people.",
-      "explanation": "",
+      "explanation": "这里的 municipal 表示“市政的、市政府管理的”。municipal, industrial and agricultural waste 指“市政、工业和农业废弃物”。",
       "focusWords": [
         "municipal"
       ],

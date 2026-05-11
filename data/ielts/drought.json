@@ -1,7 +1,12 @@
 {
   "word": "drought",
   "createdAt": "2026-04-01",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-05-03",
+      "score": 3
+    }
+  ],
   "definitions": [
     "n. 干旱"
   ],

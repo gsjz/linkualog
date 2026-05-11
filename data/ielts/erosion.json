@@ -1,12 +1,19 @@
 {
   "word": "erosion",
   "createdAt": "2026-04-01",
-  "reviews": [],
-  "definitions": [],
+  "reviews": [
+    {
+      "date": "2026-05-06",
+      "score": 4
+    }
+  ],
+  "definitions": [
+    "侵蚀；腐蚀；（土地、土壤等被水、风等）侵蚀"
+  ],
   "examples": [
     {
       "text": "partly because of the problems of erosion and pollution of the Nile delta,",
-      "explanation": "",
+      "explanation": "这里的 erosion 指“侵蚀”，常用于土地、海岸、河岸、土壤等被水流、风力等慢慢冲刷或磨损。句中 erosion and pollution of the Nile delta 表示“尼罗河三角洲的侵蚀和污染问题”。",
       "focusWords": [
         "erosion"
       ],
