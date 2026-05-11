@@ -194,6 +194,53 @@ class QQConnectorContractTests(unittest.IsolatedAsyncioTestCase):
             "这里表示人类驯服并掌控了火。",
         )
 
+    def test_save_vocabulary_preserves_focus_positions_after_cjk_note(self):
+        source_path = self.vocab_dir / "cet" / "keep-sth-at-bay.json"
+        source_path.parent.mkdir(parents=True, exist_ok=True)
+        source_path.write_text(
+            """{
+  "word": "keep-sth-at-bay",
+  "createdAt": "2026-04-27",
+  "reviews": [],
+  "definitions": ["使……无法靠近；遏制住"],
+  "examples": []
+}
+""",
+            encoding="utf-8",
+        )
+
+        example_text = (
+            "Ms Gomez’s multi-millionaire status has allowed her to take the “social” out of "
+            "social media, so she can continue to leverage her enormous fame while keeping "
+            "the trolls (恶意挑衅的帖子) at bay."
+        )
+
+        result = review_routes.save_vocab(
+            review_routes.VocabSaveRequest(
+                category="cet",
+                filename="keep-sth-at-bay.json",
+                data={
+                    "word": "keep-sth-at-bay",
+                    "createdAt": "2026-04-27",
+                    "reviews": [],
+                    "definitions": ["使……无法靠近；遏制住"],
+                    "examples": [
+                        {
+                            "text": example_text,
+                            "explanation": "这里表示把干扰挡在外面。",
+                            "focusWords": ["keep sth at bay"],
+                            "focusPositions": [38, 39],
+                        }
+                    ],
+                },
+            )
+        )
+
+        self.assertEqual(result["status"], "success")
+        self.assertEqual(result["data"]["examples"][0]["focusPositions"], [38, 39])
+        saved = review_vocabulary.load_vocab_file(str(source_path))
+        self.assertEqual(saved["examples"][0]["focusPositions"], [38, 39])
+
     def test_rename_vocabulary_merges_when_target_exists(self):
         category_dir = self.vocab_dir / "daily"
         category_dir.mkdir(parents=True, exist_ok=True)

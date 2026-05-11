@@ -2,6 +2,7 @@ import { useDeferredValue, useEffect, useEffectEvent, useMemo, useRef, useState 
 
 import ConfigDrawer from './components/ConfigDrawer';
 import './index.css';
+import { FOCUS_TOKEN_REGEX as TOKEN_REGEX, tokenizeNonSpace } from './focusTokens';
 import {
   applyMergeSuggestion,
   applySplitSuggestion,
@@ -19,7 +20,6 @@ import {
   submitReviewScore,
 } from './api/client';
 
-const TOKEN_REGEX = /\s+|[\w]+|[^\w\s]/gu;
 const TODAY = new Date().toISOString().slice(0, 10);
 const ALL_SCOPE = '__all__';
 
@@ -143,10 +143,6 @@ function parseDefinitionSuggestionLines(value) {
       .split('\n')
       .map((line) => line.replace(/^\s*[-*•]\s*/, '').trim()),
   );
-}
-
-function tokenizeNonSpace(text) {
-  return (String(text || '').match(TOKEN_REGEX) || []).filter((chunk) => !/^\s+$/.test(chunk));
 }
 
 function normalizeFocusTokenKey(token) {
@@ -2938,7 +2934,7 @@ export default function App({ embedded = false, onOpenConfig = null, launchReque
             }
           : item
       )));
-      showNotice(Boolean(nextData.marked) ? '已标记当前词条' : '已取消标记');
+      showNotice(nextData.marked ? '已标记当前词条' : '已取消标记');
     } catch (err) {
       showError(err.message);
     } finally {
