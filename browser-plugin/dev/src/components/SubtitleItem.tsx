@@ -14,8 +14,13 @@ interface SubtitleItemProps {
 
 const MAX_SELECTION_LENGTH = 50;
 const SELECTION_BOX_MARGIN = 12;
+const TOUCH_SELECTION_RECENCY_MS = 3000;
 
 const normalizeSelectedText = (value: string) => value.replace(/\s+/g, ' ').trim();
+
+type SelectionInputType = 'mouse' | 'touch' | 'pen';
+type SelectionBoxPlacement = 'floating' | 'dock';
+type SelectionBox = { text: string, top: number, left: number, placement: SelectionBoxPlacement };
 
 const isNodeInside = (node: Node | null, container: HTMLElement | null) => {
   if (!node || !container) return false;
@@ -53,19 +58,25 @@ const getSelectionBoxPosition = (rect: DOMRect, text: string) => {
   return { top, left };
 };
 
+const hasCoarsePointer = () => (
+  typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches
+);
+
 const SubtitleItem: React.FC<SubtitleItemProps> = ({ data, index, allSubs, isActive, adapter }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [aiContent, setAiContent] = useState('');
   const [isError, setIsError] = useState(false);
   
-  const [selectionBox, setSelectionBox] = useState<{ text: string, top: number, left: number } | null>(null);
+  const [selectionBox, setSelectionBox] = useState<SelectionBox | null>(null);
 
   const itemRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<(() => void) | null>(null);
   const selectionTimerRef = useRef<number | null>(null);
   const ignoreNextClickRef = useRef(false);
+  const lastSelectionInputRef = useRef<SelectionInputType>('mouse');
+  const lastTouchSelectionAtRef = useRef(0);
 
   useEffect(() => {
     return () => {
@@ -94,6 +105,19 @@ const SubtitleItem: React.FC<SubtitleItemProps> = ({ data, index, allSubs, isAct
     adapter.pause(); 
   };
 
+  const rememberSelectionInput = useCallback((inputType: SelectionInputType) => {
+    lastSelectionInputRef.current = inputType;
+    if (inputType === 'touch') {
+      lastTouchSelectionAtRef.current = Date.now();
+    }
+  }, []);
+
+  const shouldDockSelectionBox = useCallback(() => (
+    lastSelectionInputRef.current === 'touch'
+    || Date.now() - lastTouchSelectionAtRef.current < TOUCH_SELECTION_RECENCY_MS
+    || hasCoarsePointer()
+  ), []);
+
   const refreshSelectionBox = useCallback(() => {
     const selection = window.getSelection();
     const text = normalizeSelectedText(selection?.toString() ?? '');
@@ -112,15 +136,17 @@ const SubtitleItem: React.FC<SubtitleItemProps> = ({ data, index, allSubs, isAct
     const rect = getVisibleRangeRect(range);
     if (rect) {
       const position = getSelectionBoxPosition(rect, text);
+      const placement = shouldDockSelectionBox() ? 'dock' : 'floating';
       setSelectionBox({
         text,
         top: position.top,
-        left: position.left
+        left: position.left,
+        placement
       });
     } else {
       setSelectionBox(null);
     }
-  }, []);
+  }, [shouldDockSelectionBox]);
 
   const scheduleSelectionRefresh = useCallback((delay = 0) => {
     if (selectionTimerRef.current !== null) {
@@ -133,18 +159,33 @@ const SubtitleItem: React.FC<SubtitleItemProps> = ({ data, index, allSubs, isAct
     }, delay);
   }, [refreshSelectionBox]);
 
+  const handleSelectionPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    rememberSelectionInput(e.pointerType === 'touch' ? 'touch' : e.pointerType === 'pen' ? 'pen' : 'mouse');
+  };
+
   const handleSelectionPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
     e.stopPropagation();
+    rememberSelectionInput(e.pointerType === 'touch' ? 'touch' : e.pointerType === 'pen' ? 'pen' : 'mouse');
     scheduleSelectionRefresh(e.pointerType === 'touch' ? 180 : 0);
+  };
+
+  const handleSelectionMouseDown = () => {
+    rememberSelectionInput('mouse');
   };
 
   const handleSelectionMouseUp = (e: React.MouseEvent<HTMLDivElement>) => {
     e.stopPropagation();
+    rememberSelectionInput('mouse');
     scheduleSelectionRefresh(0);
+  };
+
+  const handleSelectionTouchStart = () => {
+    rememberSelectionInput('touch');
   };
 
   const handleSelectionTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
     e.stopPropagation();
+    rememberSelectionInput('touch');
     scheduleSelectionRefresh(180);
   };
 
@@ -337,19 +378,17 @@ const SubtitleItem: React.FC<SubtitleItemProps> = ({ data, index, allSubs, isAct
       {selectionBox && (
         <button
           type="button"
-          className="linkual-selection-add"
+          className={`linkual-selection-add linkual-selection-add-${selectionBox.placement}`}
           onPointerDown={(e) => e.stopPropagation()}
           onPointerUp={handleSelectionButtonPointerUp}
           onTouchStart={(e) => e.stopPropagation()}
           onTouchEnd={handleSelectionButtonTouchEnd}
           onMouseDown={(e) => e.stopPropagation()}
           onClick={handleSelectionButtonClick}
-          style={{
-            position: 'fixed',
+          style={selectionBox.placement === 'floating' ? {
             top: selectionBox.top,
-            left: selectionBox.left,
-            transform: 'translateX(-50%)'
-          }}
+            left: selectionBox.left
+          } : undefined}
         >
           <span>+</span>
           <span className="linkual-selection-add-text">"{selectionBox.text}"</span>
@@ -371,8 +410,11 @@ const SubtitleItem: React.FC<SubtitleItemProps> = ({ data, index, allSubs, isAct
       <div
         className="text-content"
         ref={textRef}
+        onPointerDown={handleSelectionPointerDown}
         onPointerUp={handleSelectionPointerUp}
+        onMouseDown={handleSelectionMouseDown}
         onMouseUp={handleSelectionMouseUp}
+        onTouchStart={handleSelectionTouchStart}
         onTouchEnd={handleSelectionTouchEnd}
       >
         {data.text}
