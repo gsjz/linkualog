@@ -126,10 +126,20 @@ export class YouTubeShortsAdapter implements IVideoAdapter {
   }
 
   resizeHost(width: number, height: number, layout: string) {
+    let styleEl = document.getElementById('linkual-style-patch-shorts');
+
+    if (width === 0 && height === 0) {
+      document.documentElement.style.removeProperty('--linkual-sidebar-width');
+      document.documentElement.style.removeProperty('--linkual-sidebar-height');
+      if (styleEl) styleEl.textContent = '';
+      if (this.resizeTimeout !== null) clearTimeout(this.resizeTimeout);
+      this.resizeTimeout = window.setTimeout(() => window.dispatchEvent(new Event('resize')), 150);
+      return;
+    }
+
     document.documentElement.style.setProperty('--linkual-sidebar-width', layout === 'right' ? `${width}px` : '0px');
     document.documentElement.style.setProperty('--linkual-sidebar-height', layout === 'bottom' ? `${height}px` : '0px');
     
-    let styleEl = document.getElementById('linkual-style-patch-shorts');
     if (!styleEl) { styleEl = document.createElement('style'); styleEl.id = 'linkual-style-patch-shorts'; document.head.appendChild(styleEl); }
     
     if (layout === 'right') {

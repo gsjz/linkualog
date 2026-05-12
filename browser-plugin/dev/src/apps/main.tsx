@@ -9,6 +9,21 @@ if (window.self !== window.top) {
 
 let rootInstance: Root | null = null;
 
+function isolateRoot(app: HTMLElement) {
+  app.dataset.linkualRoot = 'true';
+  app.style.position = 'fixed';
+  app.style.left = '0';
+  app.style.top = '0';
+  app.style.width = '0';
+  app.style.height = '0';
+  app.style.margin = '0';
+  app.style.padding = '0';
+  app.style.border = '0';
+  app.style.overflow = 'visible';
+  app.style.zIndex = '2147483647';
+  app.style.pointerEvents = 'none';
+}
+
 function mountApp() {
   let app = document.getElementById('linkual-root');
   if (!app) {
@@ -16,6 +31,7 @@ function mountApp() {
     app.id = 'linkual-root';
     document.body.append(app);
   }
+  isolateRoot(app);
   
   const adapter = getAdapter();
   

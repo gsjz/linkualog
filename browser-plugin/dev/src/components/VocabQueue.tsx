@@ -381,7 +381,7 @@ const VocabQueue: React.FC = () => {
   const bulkSendDisabled = isBulkSending || sendableCount === 0;
 
   return (
-    <div style={{ position: 'fixed', left: `${position.left}px`, bottom: `${position.bottom}px`, zIndex: 2147483647, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', fontFamily: 'sans-serif' }}>
+    <div style={{ position: 'fixed', left: `${position.left}px`, bottom: `${position.bottom}px`, zIndex: 2147483647, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', fontFamily: 'sans-serif', pointerEvents: 'auto' }}>
       {isOpen && (
         <div style={{ width: '400px', height: '580px', background: '#fff', borderRadius: '8px', boxShadow: '0 10px 30px rgba(0,0,0,0.2)', border: '1px solid #e4e4e7', display: 'flex', flexDirection: 'column', marginBottom: '12px', overflow: 'hidden' }}>
           

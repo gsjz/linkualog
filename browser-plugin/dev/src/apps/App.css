@@ -1,10 +1,10 @@
-:root {
+#linkual-root {
   --linkual-theme: #6a1b9a;
   --linkual-done: #e8f5e9;
   --linkual-error: #ffebee;
 }
 
-.linkual-wrap {
+#linkual-root .linkual-wrap {
   position: fixed;
   z-index: 2147483647;
   background: #fff;
@@ -12,30 +12,31 @@
   flex-direction: column;
   font-family: sans-serif;
   color: #333;
+  pointer-events: auto;
 }
 
-.linkual-wrap.layout-right {
+#linkual-root .linkual-wrap.layout-right {
   top: 0;
   right: 0;
   height: 100vh;
   box-shadow: -5px 0 15px rgba(0,0,0,0.1);
 }
 
-.linkual-wrap.layout-bottom {
+#linkual-root .linkual-wrap.layout-bottom {
   bottom: 0;
   left: 0;
   width: 100vw !important;
   box-shadow: 0 -5px 15px rgba(0,0,0,0.1);
 }
 
-.resizer {
+#linkual-root .resizer {
   position: absolute;
   background: transparent;
   z-index: 999;
   transition: background 0.2s;
 }
 
-.linkual-wrap.layout-right .resizer {
+#linkual-root .linkual-wrap.layout-right .resizer {
   left: 0;
   top: 0;
   bottom: 0;
@@ -43,7 +44,7 @@
   cursor: ew-resize;
 }
 
-.linkual-wrap.layout-bottom .resizer {
+#linkual-root .linkual-wrap.layout-bottom .resizer {
   top: 0;
   left: 0;
   right: 0;
@@ -51,11 +52,12 @@
   cursor: ns-resize;
 }
 
-.resizer:hover, .resizer:active {
+#linkual-root .resizer:hover,
+#linkual-root .resizer:active {
   background: var(--linkual-theme);
 }
 
-.header {
+#linkual-root .header {
   background: var(--linkual-theme);
   color: #fff;
   padding: 16px;
@@ -65,12 +67,12 @@
   align-items: center;
 }
 
-.settings-icon { 
+#linkual-root .settings-icon { 
   cursor: pointer; 
   user-select: none; 
 }
 
-.linkual-mobile-fullscreen {
+#linkual-root .linkual-mobile-fullscreen {
   position: fixed;
   right: 20px;
   bottom: calc(20px + env(safe-area-inset-bottom, 0px));
@@ -91,13 +93,14 @@
   user-select: none;
   touch-action: none;
   -webkit-tap-highlight-color: transparent;
+  pointer-events: auto;
 }
 
-.linkual-mobile-fullscreen.is-dragging {
+#linkual-root .linkual-mobile-fullscreen.is-dragging {
   cursor: grabbing;
 }
 
-.list { 
+#linkual-root .list { 
   flex: 1; 
   overflow-y: auto; 
   padding: 12px; 
@@ -106,25 +109,25 @@
   -webkit-overflow-scrolling: touch;
 }
 
-.list::-webkit-scrollbar {
+#linkual-root .list::-webkit-scrollbar {
   display: none;
 }
 
-.empty-tip { 
+#linkual-root .empty-tip { 
   padding: 50px 20px; 
   text-align: center; 
   color: #999; 
   font-style: italic; 
 }
 
-.load-more-tip {
+#linkual-root .load-more-tip {
   padding: 16px 12px 22px;
   text-align: center;
   color: #999;
   font-size: 12px;
 }
 
-.item { 
+#linkual-root .item { 
   padding: 12px; 
   margin-bottom: 10px; 
   border-radius: 8px; 
@@ -132,12 +135,12 @@
   transition: 0.2s; 
 }
 
-.item.active { 
+#linkual-root .item.active { 
   border-left: 5px solid var(--linkual-theme); 
   background: rgba(106, 27, 154, 0.05); 
 }
 
-.ctrl-bar { 
+#linkual-root .ctrl-bar { 
   display: flex; 
   gap: 8px; 
   margin-bottom: 8px; 
@@ -148,16 +151,16 @@
   transition: background 0.2s; 
 }
 
-.ctrl-bar.done { 
+#linkual-root .ctrl-bar.done { 
   background-color: var(--linkual-done, #e8f5e9); 
 }
 
-.ctrl-bar.error { 
+#linkual-root .ctrl-bar.error { 
   background-color: var(--linkual-error, #ffebee); 
   border: 1px solid rgba(255,0,0,0.1); 
 }
 
-.tag-btn { 
+#linkual-root .tag-btn { 
   font-size: 11px; 
   padding: 3px 8px; 
   border-radius: 12px; 
@@ -168,27 +171,27 @@
   user-select: none; 
 }
 
-.tag-play { 
+#linkual-root .tag-play { 
   background: #eee; 
   color: #666; 
 }
 
-.tag-play:hover { 
+#linkual-root .tag-play:hover { 
   background: var(--linkual-theme); 
   color: white; 
 }
 
-.tag-pin { 
+#linkual-root .tag-pin { 
   background: #e3f2fd; 
   color: #1976d2; 
 }
 
-.tag-pin:hover { 
+#linkual-root .tag-pin:hover { 
   background: #1976d2; 
   color: white; 
 }
 
-.btn-parse { 
+#linkual-root .btn-parse { 
   flex: 0 0 auto;
   margin-left: auto;
   display: inline-flex;
@@ -206,13 +209,13 @@
   transition: 0.2s; 
 }
 
-.btn-parse:hover { 
+#linkual-root .btn-parse:hover { 
   color: #333; 
   background: rgba(0,0,0,0.05);
   border-color: rgba(0,0,0,0.08);
 }
 
-.btn-chevron { 
+#linkual-root .btn-chevron { 
   font-size: 12px; 
   display: inline-flex; 
   align-items: center; 
@@ -226,11 +229,11 @@
   color: #666; 
 }
 
-.btn-chevron:hover { 
+#linkual-root .btn-chevron:hover { 
   background: rgba(0,0,0,0.1); 
 }
 
-.text-content { 
+#linkual-root .text-content { 
   font-size: 14px; 
   line-height: 1.5; 
   padding: 2px 0; 
@@ -242,7 +245,7 @@
   -webkit-touch-callout: default;
 }
 
-.linkual-selection-add {
+#linkual-root .linkual-selection-add {
   position: fixed;
   z-index: 999999;
   min-height: 38px;
@@ -262,13 +265,14 @@
   white-space: nowrap;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
+  pointer-events: auto;
 }
 
-.linkual-selection-add-floating {
+#linkual-root .linkual-selection-add-floating {
   transform: translateX(-50%);
 }
 
-.linkual-selection-add-dock {
+#linkual-root .linkual-selection-add-dock {
   left: 12px;
   right: 12px;
   bottom: calc(12px + env(safe-area-inset-bottom, 0px));
@@ -279,12 +283,12 @@
   font-size: 14px;
 }
 
-.linkual-selection-add-text {
+#linkual-root .linkual-selection-add-text {
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.ai-box { 
+#linkual-root .ai-box { 
   border-top: 1px dashed #ccc; 
   margin-top: 8px; 
   padding-top: 8px; 
@@ -294,7 +298,7 @@
   cursor: text; 
 }
 
-.lan-sync-module {
+#linkual-root .lan-sync-module {
   border-top: 1px solid #eee;
   padding: 12px 16px;
   background: #fafafa;
@@ -304,7 +308,7 @@
   margin-top: auto; 
 }
 
-.sync-input {
+#linkual-root .sync-input {
   width: 100%;
   padding: 8px;
   border: 1px solid #ccc;
@@ -315,11 +319,11 @@
   transition: border-color 0.2s;
 }
 
-.sync-input:focus {
+#linkual-root .sync-input:focus {
   border-color: var(--linkual-theme);
 }
 
-.sync-btn {
+#linkual-root .sync-btn {
   width: 100%;
   padding: 10px;
   border: none;
@@ -332,19 +336,19 @@
   transition: all 0.2s;
 }
 
-.sync-btn:hover {
+#linkual-root .sync-btn:hover {
   opacity: 0.9;
 }
 
-.sync-btn:disabled {
+#linkual-root .sync-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-.sync-btn.success {
+#linkual-root .sync-btn.success {
   background-color: #4caf50;
 }
 
-.sync-btn.error {
+#linkual-root .sync-btn.error {
   background-color: #f44336;
 }

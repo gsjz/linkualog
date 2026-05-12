@@ -142,6 +142,7 @@ const App: React.FC<AppProps> = ({ adapter }) => {
     display: inVideo ? 'flex' : 'none',
     width: layout === 'right' ? sidebarWidth : '100%',
     height: layout === 'bottom' ? sidebarHeight : '100vh',
+    pointerEvents: inVideo ? 'auto' : 'none',
     '--linkual-theme': themeColor,
     '--linkual-done': doneColor,
     '--linkual-error': errorColor
