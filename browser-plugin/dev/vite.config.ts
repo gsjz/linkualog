@@ -9,15 +9,14 @@ export default defineConfig({
       entry: 'src/apps/main.tsx',
       userscript: {
         name: 'Linkual Log',
-        version: '0.0.10',
+        version: '0.0.11',
         updateURL: 'https://raw.githubusercontent.com/gsjz/linkualog/main/browser-plugin/user/linkualog.user.js',
         downloadURL: 'https://raw.githubusercontent.com/gsjz/linkualog/main/browser-plugin/user/linkualog.user.js',
         author: 'Sergio Gao',
         icon: 'https://vitejs.dev/logo.svg',
         namespace: 'npm/vite-plugin-monkey',
         match: [
-          '*://*.youtube.com/*',
-          '*://youtube.com/*',
+          '*://*/*',
         ], 
         grant: [
           'GM_xmlhttpRequest', 

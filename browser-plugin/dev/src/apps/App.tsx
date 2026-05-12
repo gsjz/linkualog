@@ -3,6 +3,7 @@ import { useVideoSync } from '../hooks/useVideoSync';
 import SubtitleItem from '../components/SubtitleItem';
 import Settings from '../components/Settings';
 import VocabQueue from '../components/VocabQueue';
+import MobileFullscreenButton from '../components/MobileFullscreenButton';
 import { Subtitle } from '../types';
 import { IVideoAdapter } from '../adapters/BaseAdapter';
 import { ConfigService } from '../services/configService';
@@ -185,6 +186,7 @@ const App: React.FC<AppProps> = ({ adapter }) => {
         </div>
         {isSettingsOpen && <Settings adapter={adapter} onClose={() => setIsSettingsOpen(false)} />}
       </div>
+      <MobileFullscreenButton />
       {inVideo && <VocabQueue />}
     </>
   );

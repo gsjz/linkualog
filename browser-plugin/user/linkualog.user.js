@@ -1,13 +1,12 @@
 // ==UserScript==
 // @name         Linkual Log
 // @namespace    npm/vite-plugin-monkey
-// @version      0.0.10
+// @version      0.0.11
 // @author       Sergio Gao
 // @icon         https://vitejs.dev/logo.svg
 // @downloadURL  https://raw.githubusercontent.com/gsjz/linkualog/main/browser-plugin/user/linkualog.user.js
 // @updateURL    https://raw.githubusercontent.com/gsjz/linkualog/main/browser-plugin/user/linkualog.user.js
-// @match        *://*.youtube.com/*
-// @match        *://youtube.com/*
+// @match        *://*/*
 // @connect      *
 // @grant        GM_addStyle
 // @grant        GM_deleteValue
@@ -17,7 +16,7 @@
 // @grant        unsafeWindow
 // ==/UserScript==
 
-(e=>{if(typeof GM_addStyle=="function"){GM_addStyle(e);return}const o=document.createElement("style");o.textContent=e,document.head.append(o)})(" .modal{position:fixed;top:0;left:0;width:100%;height:100%;background:#00000080;display:flex;justify-content:center;align-items:center;z-index:10000;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}.modal-box{background:#fff;border-radius:12px;width:380px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 10px 30px #0003;animation:slideIn .2s ease-out}@keyframes slideIn{0%{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}.modal-header{padding:16px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #eee}.modal-header h3{margin:0;font-size:16px;color:#333}.close-btn{font-size:24px;line-height:1;color:#999;cursor:pointer;transition:color .2s}.close-btn:hover{color:#333}.tabs{display:flex;background:#fafafa;border-bottom:1px solid #eee}.tab{flex:1;text-align:center;padding:12px 0;font-size:14px;color:#666;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;-webkit-user-select:none;user-select:none}.tab:hover{color:#333;background:#00000005}.tab.active{color:var(--linkual-theme, #6a1b9a);font-weight:700;border-bottom:2px solid var(--linkual-theme, #6a1b9a);background:#fff}.tab-content{padding:20px;overflow-y:auto;flex:1}.fade-in{animation:fadeIn .3s ease}@keyframes fadeIn{0%{opacity:0}to{opacity:1}}.setting-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}.setting-row label{font-size:13px;font-weight:700;flex:1;color:#444}.setting-row input[type=color]{width:50px;height:32px;padding:0;cursor:pointer;border:1px solid #ddd;border-radius:4px}.setting-col{margin-bottom:16px}.setting-col label{font-size:13px;font-weight:700;display:block;margin-bottom:6px;color:#444}.setting-col input,.setting-col textarea{width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box;font-family:inherit;font-size:13px;transition:border-color .2s}.setting-col input:focus,.setting-col textarea:focus{outline:none;border-color:var(--linkual-theme, #6a1b9a)}.setting-col textarea{resize:vertical;min-height:80px;line-height:1.5}.url-prefix-row{display:flex;align-items:stretch}.url-prefix-row input{border-radius:0;min-width:0}.url-fixed-prefix,.url-fixed-suffix{display:inline-flex;align-items:center;padding:0 10px;border:1px solid #ddd;background:#f7f7f7;color:#666;font-size:12px;white-space:nowrap}.url-fixed-prefix{border-right:0;border-radius:6px 0 0 6px}.url-fixed-suffix{border-left:0;border-radius:0 6px 6px 0}.url-prefix-row:focus-within .url-fixed-prefix{border-color:var(--linkual-theme, #6a1b9a);border-right:0}.url-prefix-row:focus-within .url-fixed-suffix{border-color:var(--linkual-theme, #6a1b9a);border-left:0}.setting-help{margin-top:6px;color:#888;font-size:12px;line-height:1.4}.modal-footer{padding:16px 20px;display:flex;gap:12px;border-top:1px solid #eee;background:#fafafa}.btn{flex:1;padding:10px;border:none;border-radius:6px;cursor:pointer;font-weight:700;font-size:14px;transition:opacity .2s}.btn:hover{opacity:.9}.reset-btn{background:#e0e0e0;color:#555}.save-btn{box-shadow:0 2px 6px #0000001a}:root{--linkual-theme: #6a1b9a;--linkual-done: #e8f5e9;--linkual-error: #ffebee}.linkual-wrap{position:fixed;z-index:2147483647;background:#fff;display:flex;flex-direction:column;font-family:sans-serif;color:#333}.linkual-wrap.layout-right{top:0;right:0;height:100vh;box-shadow:-5px 0 15px #0000001a}.linkual-wrap.layout-bottom{bottom:0;left:0;width:100vw!important;box-shadow:0 -5px 15px #0000001a}.resizer{position:absolute;background:transparent;z-index:999;transition:background .2s}.linkual-wrap.layout-right .resizer{left:0;top:0;bottom:0;width:5px;cursor:ew-resize}.linkual-wrap.layout-bottom .resizer{top:0;left:0;right:0;height:5px;cursor:ns-resize}.resizer:hover,.resizer:active{background:var(--linkual-theme)}.header{background:var(--linkual-theme);color:#fff;padding:16px;font-weight:700;display:flex;justify-content:space-between;align-items:center}.settings-icon{cursor:pointer;-webkit-user-select:none;user-select:none}.list{flex:1;overflow-y:auto;padding:12px;scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch}.list::-webkit-scrollbar{display:none}.empty-tip{padding:50px 20px;text-align:center;color:#999;font-style:italic}.load-more-tip{padding:16px 12px 22px;text-align:center;color:#999;font-size:12px}.item{padding:12px;margin-bottom:10px;border-radius:8px;border:1px solid #f0f0f0;transition:.2s}.item.active{border-left:5px solid var(--linkual-theme);background:#6a1b9a0d}.ctrl-bar{display:flex;gap:8px;margin-bottom:8px;align-items:center;padding:4px;border-radius:4px;background:transparent;transition:background .2s}.ctrl-bar.done{background-color:var(--linkual-done, #e8f5e9)}.ctrl-bar.error{background-color:var(--linkual-error, #ffebee);border:1px solid rgba(255,0,0,.1)}.tag-btn{font-size:11px;padding:3px 8px;border-radius:12px;display:inline-flex;align-items:center;cursor:pointer;transition:.2s;-webkit-user-select:none;user-select:none}.tag-play{background:#eee;color:#666}.tag-play:hover{background:var(--linkual-theme);color:#fff}.tag-pin{background:#e3f2fd;color:#1976d2}.tag-pin:hover{background:#1976d2;color:#fff}.btn-parse{flex:0 0 auto;margin-left:auto;display:inline-flex;align-items:center;justify-content:center;font-size:11px;color:#aaa;background:transparent;border:1px solid transparent;border-radius:4px;cursor:pointer;-webkit-user-select:none;user-select:none;padding:4px 7px;line-height:1.2;transition:.2s}.btn-parse:hover{color:#333;background:#0000000d;border-color:#00000014}.btn-chevron{font-size:12px;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:4px;cursor:pointer;transition:.2s;-webkit-user-select:none;user-select:none;color:#666}.btn-chevron:hover{background:#0000001a}.text-content{font-size:14px;line-height:1.5;padding:2px 0;color:#333;cursor:text;-webkit-user-select:text;user-select:text;overflow-wrap:anywhere;-webkit-touch-callout:default}.linkual-selection-add{position:fixed;z-index:999999;min-height:38px;max-width:min(320px,calc(100vw - 24px));padding:8px 12px;background:var(--linkual-theme, #6a1b9a);color:#fff;border:none;border-radius:6px;box-shadow:0 4px 12px #0003;cursor:pointer;font-size:13px;font-weight:700;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;-webkit-tap-highlight-color:transparent;touch-action:manipulation}.linkual-selection-add-floating{transform:translate(-50%)}.linkual-selection-add-dock{left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));width:calc(100vw - 24px);max-width:none;min-height:46px;justify-content:center;font-size:14px}.linkual-selection-add-text{overflow:hidden;text-overflow:ellipsis}.ai-box{border-top:1px dashed #ccc;margin-top:8px;padding-top:8px;font-size:13px;white-space:pre-wrap;line-height:1.6;cursor:text}.lan-sync-module{border-top:1px solid #eee;padding:12px 16px;background:#fafafa;display:flex;flex-direction:column;gap:10px;margin-top:auto}.sync-input{width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;font-size:12px;box-sizing:border-box;outline:none;transition:border-color .2s}.sync-input:focus{border-color:var(--linkual-theme)}.sync-btn{width:100%;padding:10px;border:none;border-radius:6px;font-size:13px;font-weight:700;color:#fff;background-color:var(--linkual-theme);cursor:pointer;transition:all .2s}.sync-btn:hover{opacity:.9}.sync-btn:disabled{opacity:.6;cursor:not-allowed}.sync-btn.success{background-color:#4caf50}.sync-btn.error{background-color:#f44336} ");
+(e=>{if(typeof GM_addStyle=="function"){GM_addStyle(e);return}const o=document.createElement("style");o.textContent=e,document.head.append(o)})(" .modal{position:fixed;top:0;left:0;width:100%;height:100%;background:#00000080;display:flex;justify-content:center;align-items:center;z-index:10000;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}.modal-box{background:#fff;border-radius:12px;width:380px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 10px 30px #0003;animation:slideIn .2s ease-out}@keyframes slideIn{0%{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}.modal-header{padding:16px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #eee}.modal-header h3{margin:0;font-size:16px;color:#333}.close-btn{font-size:24px;line-height:1;color:#999;cursor:pointer;transition:color .2s}.close-btn:hover{color:#333}.tabs{display:flex;background:#fafafa;border-bottom:1px solid #eee}.tab{flex:1;text-align:center;padding:12px 0;font-size:14px;color:#666;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;-webkit-user-select:none;user-select:none}.tab:hover{color:#333;background:#00000005}.tab.active{color:var(--linkual-theme, #6a1b9a);font-weight:700;border-bottom:2px solid var(--linkual-theme, #6a1b9a);background:#fff}.tab-content{padding:20px;overflow-y:auto;flex:1}.fade-in{animation:fadeIn .3s ease}@keyframes fadeIn{0%{opacity:0}to{opacity:1}}.setting-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}.setting-row label{font-size:13px;font-weight:700;flex:1;color:#444}.setting-row input[type=color]{width:50px;height:32px;padding:0;cursor:pointer;border:1px solid #ddd;border-radius:4px}.setting-col{margin-bottom:16px}.setting-col label{font-size:13px;font-weight:700;display:block;margin-bottom:6px;color:#444}.setting-col input,.setting-col textarea{width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box;font-family:inherit;font-size:13px;transition:border-color .2s}.setting-col input:focus,.setting-col textarea:focus{outline:none;border-color:var(--linkual-theme, #6a1b9a)}.setting-col textarea{resize:vertical;min-height:80px;line-height:1.5}.url-prefix-row{display:flex;align-items:stretch}.url-prefix-row input{border-radius:0;min-width:0}.url-fixed-prefix,.url-fixed-suffix{display:inline-flex;align-items:center;padding:0 10px;border:1px solid #ddd;background:#f7f7f7;color:#666;font-size:12px;white-space:nowrap}.url-fixed-prefix{border-right:0;border-radius:6px 0 0 6px}.url-fixed-suffix{border-left:0;border-radius:0 6px 6px 0}.url-prefix-row:focus-within .url-fixed-prefix{border-color:var(--linkual-theme, #6a1b9a);border-right:0}.url-prefix-row:focus-within .url-fixed-suffix{border-color:var(--linkual-theme, #6a1b9a);border-left:0}.setting-help{margin-top:6px;color:#888;font-size:12px;line-height:1.4}.modal-footer{padding:16px 20px;display:flex;gap:12px;border-top:1px solid #eee;background:#fafafa}.btn{flex:1;padding:10px;border:none;border-radius:6px;cursor:pointer;font-weight:700;font-size:14px;transition:opacity .2s}.btn:hover{opacity:.9}.reset-btn{background:#e0e0e0;color:#555}.save-btn{box-shadow:0 2px 6px #0000001a}:root{--linkual-theme: #6a1b9a;--linkual-done: #e8f5e9;--linkual-error: #ffebee}.linkual-wrap{position:fixed;z-index:2147483647;background:#fff;display:flex;flex-direction:column;font-family:sans-serif;color:#333}.linkual-wrap.layout-right{top:0;right:0;height:100vh;box-shadow:-5px 0 15px #0000001a}.linkual-wrap.layout-bottom{bottom:0;left:0;width:100vw!important;box-shadow:0 -5px 15px #0000001a}.resizer{position:absolute;background:transparent;z-index:999;transition:background .2s}.linkual-wrap.layout-right .resizer{left:0;top:0;bottom:0;width:5px;cursor:ew-resize}.linkual-wrap.layout-bottom .resizer{top:0;left:0;right:0;height:5px;cursor:ns-resize}.resizer:hover,.resizer:active{background:var(--linkual-theme)}.header{background:var(--linkual-theme);color:#fff;padding:16px;font-weight:700;display:flex;justify-content:space-between;align-items:center}.settings-icon{cursor:pointer;-webkit-user-select:none;user-select:none}.linkual-mobile-fullscreen{position:fixed;right:20px;bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:2147483647;min-width:78px;min-height:40px;padding:10px 15px;background:#0078d4;color:#fff;border:0;border-radius:5px;box-shadow:0 2px 8px #00000040;cursor:grab;font-size:14px;font-weight:700;line-height:1.2;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;-webkit-user-select:none;user-select:none;touch-action:none;-webkit-tap-highlight-color:transparent}.linkual-mobile-fullscreen.is-dragging{cursor:grabbing}.list{flex:1;overflow-y:auto;padding:12px;scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch}.list::-webkit-scrollbar{display:none}.empty-tip{padding:50px 20px;text-align:center;color:#999;font-style:italic}.load-more-tip{padding:16px 12px 22px;text-align:center;color:#999;font-size:12px}.item{padding:12px;margin-bottom:10px;border-radius:8px;border:1px solid #f0f0f0;transition:.2s}.item.active{border-left:5px solid var(--linkual-theme);background:#6a1b9a0d}.ctrl-bar{display:flex;gap:8px;margin-bottom:8px;align-items:center;padding:4px;border-radius:4px;background:transparent;transition:background .2s}.ctrl-bar.done{background-color:var(--linkual-done, #e8f5e9)}.ctrl-bar.error{background-color:var(--linkual-error, #ffebee);border:1px solid rgba(255,0,0,.1)}.tag-btn{font-size:11px;padding:3px 8px;border-radius:12px;display:inline-flex;align-items:center;cursor:pointer;transition:.2s;-webkit-user-select:none;user-select:none}.tag-play{background:#eee;color:#666}.tag-play:hover{background:var(--linkual-theme);color:#fff}.tag-pin{background:#e3f2fd;color:#1976d2}.tag-pin:hover{background:#1976d2;color:#fff}.btn-parse{flex:0 0 auto;margin-left:auto;display:inline-flex;align-items:center;justify-content:center;font-size:11px;color:#aaa;background:transparent;border:1px solid transparent;border-radius:4px;cursor:pointer;-webkit-user-select:none;user-select:none;padding:4px 7px;line-height:1.2;transition:.2s}.btn-parse:hover{color:#333;background:#0000000d;border-color:#00000014}.btn-chevron{font-size:12px;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:4px;cursor:pointer;transition:.2s;-webkit-user-select:none;user-select:none;color:#666}.btn-chevron:hover{background:#0000001a}.text-content{font-size:14px;line-height:1.5;padding:2px 0;color:#333;cursor:text;-webkit-user-select:text;user-select:text;overflow-wrap:anywhere;-webkit-touch-callout:default}.linkual-selection-add{position:fixed;z-index:999999;min-height:38px;max-width:min(320px,calc(100vw - 24px));padding:8px 12px;background:var(--linkual-theme, #6a1b9a);color:#fff;border:none;border-radius:6px;box-shadow:0 4px 12px #0003;cursor:pointer;font-size:13px;font-weight:700;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;-webkit-tap-highlight-color:transparent;touch-action:manipulation}.linkual-selection-add-floating{transform:translate(-50%)}.linkual-selection-add-dock{left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));width:calc(100vw - 24px);max-width:none;min-height:46px;justify-content:center;font-size:14px}.linkual-selection-add-text{overflow:hidden;text-overflow:ellipsis}.ai-box{border-top:1px dashed #ccc;margin-top:8px;padding-top:8px;font-size:13px;white-space:pre-wrap;line-height:1.6;cursor:text}.lan-sync-module{border-top:1px solid #eee;padding:12px 16px;background:#fafafa;display:flex;flex-direction:column;gap:10px;margin-top:auto}.sync-input{width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;font-size:12px;box-sizing:border-box;outline:none;transition:border-color .2s}.sync-input:focus{border-color:var(--linkual-theme)}.sync-btn{width:100%;padding:10px;border:none;border-radius:6px;font-size:13px;font-weight:700;color:#fff;background-color:var(--linkual-theme);cursor:pointer;transition:all .2s}.sync-btn:hover{opacity:.9}.sync-btn:disabled{opacity:.6;cursor:not-allowed}.sync-btn.success{background-color:#4caf50}.sync-btn.error{background-color:#f44336} ");
 
 (function () {
   'use strict';
@@ -13728,6 +13727,144 @@ JSON 格式：
       )
     ] });
   };
+  const DRAG_THRESHOLD = 5;
+  function getFullscreenElement() {
+    const doc = document;
+    return document.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement || doc.msFullscreenElement || null;
+  }
+  function isFullscreen() {
+    return getFullscreenElement() !== null;
+  }
+  function requestFullscreen() {
+    const target = document.documentElement;
+    if (target.requestFullscreen) return target.requestFullscreen();
+    if (target.webkitRequestFullscreen) return target.webkitRequestFullscreen();
+    if (target.mozRequestFullScreen) return target.mozRequestFullScreen();
+    if (target.msRequestFullscreen) return target.msRequestFullscreen();
+  }
+  function exitFullscreen() {
+    const doc = document;
+    if (document.exitFullscreen) return document.exitFullscreen();
+    if (doc.webkitExitFullscreen) return doc.webkitExitFullscreen();
+    if (doc.mozCancelFullScreen) return doc.mozCancelFullScreen();
+    if (doc.msExitFullscreen) return doc.msExitFullscreen();
+  }
+  function clampPosition(left, top, element) {
+    const maxLeft = Math.max(0, window.innerWidth - element.offsetWidth);
+    const maxTop = Math.max(0, window.innerHeight - element.offsetHeight);
+    return {
+      left: Math.min(Math.max(0, left), maxLeft),
+      top: Math.min(Math.max(0, top), maxTop)
+    };
+  }
+  const MobileFullscreenButton = () => {
+    const [fullscreen, setFullscreen] = reactExports.useState(isFullscreen);
+    const [position, setPosition] = reactExports.useState(null);
+    const [dragging, setDragging] = reactExports.useState(false);
+    const buttonRef = reactExports.useRef(null);
+    const dragRef = reactExports.useRef({
+      pointerId: -1,
+      offsetX: 0,
+      offsetY: 0,
+      startX: 0,
+      startY: 0,
+      moved: false
+    });
+    reactExports.useEffect(() => {
+      const syncFullscreenState = () => setFullscreen(isFullscreen());
+      document.addEventListener("fullscreenchange", syncFullscreenState);
+      document.addEventListener("webkitfullscreenchange", syncFullscreenState);
+      document.addEventListener("mozfullscreenchange", syncFullscreenState);
+      document.addEventListener("MSFullscreenChange", syncFullscreenState);
+      return () => {
+        document.removeEventListener("fullscreenchange", syncFullscreenState);
+        document.removeEventListener("webkitfullscreenchange", syncFullscreenState);
+        document.removeEventListener("mozfullscreenchange", syncFullscreenState);
+        document.removeEventListener("MSFullscreenChange", syncFullscreenState);
+      };
+    }, []);
+    reactExports.useEffect(() => {
+      if (!position) return;
+      const keepButtonInView = () => {
+        const button = buttonRef.current;
+        if (!button) return;
+        setPosition((current) => current ? clampPosition(current.left, current.top, button) : current);
+      };
+      window.addEventListener("resize", keepButtonInView);
+      window.addEventListener("orientationchange", keepButtonInView);
+      return () => {
+        window.removeEventListener("resize", keepButtonInView);
+        window.removeEventListener("orientationchange", keepButtonInView);
+      };
+    }, [position]);
+    const handlePointerDown = (event) => {
+      const button = event.currentTarget;
+      const rect = button.getBoundingClientRect();
+      dragRef.current = {
+        pointerId: event.pointerId,
+        offsetX: event.clientX - rect.left,
+        offsetY: event.clientY - rect.top,
+        startX: event.clientX,
+        startY: event.clientY,
+        moved: false
+      };
+      button.setPointerCapture(event.pointerId);
+      setPosition({ left: rect.left, top: rect.top });
+      setDragging(true);
+    };
+    const handlePointerMove = (event) => {
+      const button = buttonRef.current;
+      const drag = dragRef.current;
+      if (!dragging || !button || event.pointerId !== drag.pointerId) return;
+      const dx = Math.abs(event.clientX - drag.startX);
+      const dy = Math.abs(event.clientY - drag.startY);
+      if (dx > DRAG_THRESHOLD || dy > DRAG_THRESHOLD) {
+        drag.moved = true;
+      }
+      setPosition(clampPosition(event.clientX - drag.offsetX, event.clientY - drag.offsetY, button));
+    };
+    const handlePointerUp = (event) => {
+      const button = event.currentTarget;
+      const drag = dragRef.current;
+      if (event.pointerId === drag.pointerId && button.hasPointerCapture(event.pointerId)) {
+        button.releasePointerCapture(event.pointerId);
+      }
+      setDragging(false);
+    };
+    const handleClick = (event) => {
+      if (dragRef.current.moved) {
+        event.preventDefault();
+        event.stopPropagation();
+        dragRef.current.moved = false;
+        return;
+      }
+      const result = fullscreen ? exitFullscreen() : requestFullscreen();
+      if (result instanceof Promise) {
+        result.catch((error) => console.warn("[Linkual] 全屏切换失败", error));
+      }
+    };
+    const style2 = position ? {
+      left: position.left,
+      top: position.top,
+      right: "auto",
+      bottom: "auto"
+    } : {};
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(
+      "button",
+      {
+        ref: buttonRef,
+        type: "button",
+        className: `linkual-mobile-fullscreen ${dragging ? "is-dragging" : ""}`,
+        style: style2,
+        onPointerDown: handlePointerDown,
+        onPointerMove: handlePointerMove,
+        onPointerUp: handlePointerUp,
+        onPointerCancel: handlePointerUp,
+        onClick: handleClick,
+        children: fullscreen ? "退出全屏" : "进入全屏"
+      }
+    );
+  };
   const INITIAL_RENDER_LIMIT = 80;
   const RENDER_BATCH_SIZE = 80;
   const ACTIVE_RENDER_BUFFER = 20;
@@ -13876,6 +14013,7 @@ JSON 格式：
         ] }) }),
         isSettingsOpen && /* @__PURE__ */ jsxRuntimeExports.jsx(Settings, { adapter, onClose: () => setIsSettingsOpen(false) })
       ] }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx(MobileFullscreenButton, {}),
       inVideo && /* @__PURE__ */ jsxRuntimeExports.jsx(VocabQueue, {})
     ] });
   };
@@ -14368,17 +14506,53 @@ JSON 格式：
       clearInterval(this.timer);
     }
   }
-  const adapters = [
-    new YouTubeShortsAdapter(),
-    new YouTubeAdapter(),
-    new LocalAdapter()
-  ];
+  class EmptyAdapter {
+    constructor() {
+      __publicField(this, "platformName", "Universal");
+    }
+    match() {
+      return true;
+    }
+    isVideoPage() {
+      return false;
+    }
+    onSubtitleDetected(callback) {
+      callback([]);
+    }
+    getCurrentTime() {
+      return 0;
+    }
+    seekTo() {
+    }
+    play() {
+    }
+    pause() {
+    }
+  }
+  const adapterCache = /* @__PURE__ */ new Map();
+  function getCachedAdapter(key, createAdapter) {
+    const cached = adapterCache.get(key);
+    if (cached) return cached;
+    const adapter = createAdapter();
+    adapterCache.set(key, adapter);
+    return adapter;
+  }
+  function isYouTubeUrl(url) {
+    return url.includes("youtube.com");
+  }
   function getAdapter() {
     const url = window.location.href;
-    for (const adapter of adapters) {
-      if (adapter.match(url)) return adapter;
+    if (isYouTubeUrl(url)) {
+      const shortsAdapter = getCachedAdapter("youtubeShorts", () => new YouTubeShortsAdapter());
+      const youtubeAdapter = getCachedAdapter("youtube", () => new YouTubeAdapter());
+      if (shortsAdapter.match(url)) return shortsAdapter;
+      if (youtubeAdapter.match(url)) return youtubeAdapter;
     }
-    return adapters[2];
+    const localAdapter = getCachedAdapter("local", () => new LocalAdapter());
+    if (localAdapter.match(url)) {
+      return localAdapter;
+    }
+    return getCachedAdapter("empty", () => new EmptyAdapter());
   }
   if (window.self !== window.top) {
     throw new Error("[Linkual] 阻止在 iframe 中重复执行");
