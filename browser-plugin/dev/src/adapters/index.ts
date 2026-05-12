@@ -1,10 +1,9 @@
 import { YouTubeShortsAdapter } from './YouTubeShortsAdapter';
 import { YouTubeAdapter } from './YouTubeAdapter';
-import { LocalAdapter } from './LocalAdapter';
 import { EmptyAdapter } from './EmptyAdapter';
 import { IVideoAdapter } from './BaseAdapter';
 
-type AdapterKey = 'youtubeShorts' | 'youtube' | 'local' | 'empty';
+type AdapterKey = 'youtubeShorts' | 'youtube' | 'empty';
 
 const adapterCache = new Map<AdapterKey, IVideoAdapter>();
 
@@ -30,11 +29,6 @@ export function getAdapter(): IVideoAdapter {
 
     if (shortsAdapter.match(url)) return shortsAdapter;
     if (youtubeAdapter.match(url)) return youtubeAdapter;
-  }
-
-  const localAdapter = getCachedAdapter('local', () => new LocalAdapter());
-  if (localAdapter.match(url)) {
-    return localAdapter;
   }
 
   return getCachedAdapter('empty', () => new EmptyAdapter());
