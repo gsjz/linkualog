@@ -48,6 +48,7 @@ const Settings: React.FC<SettingsProps> = ({ adapter, onClose }) => {
     ctxSize: ConfigService.get('api_ctxSize') as string,
     lanUrl: ConfigService.get('lan_sync_url') as string,
     lanAction: ConfigService.get('lan_action') as string,
+    mobileFullscreenMode: ConfigService.get('mobile_fullscreen_mode') as string,
     
     layout: getAdpCfg('layout_position') as string,
     sidebarWidth: getAdpCfg('sidebar_width') as string,
@@ -75,6 +76,7 @@ const Settings: React.FC<SettingsProps> = ({ adapter, onClose }) => {
     ConfigService.set('api_ctxSize', cfg.ctxSize);
     ConfigService.set('lan_sync_url', cfg.lanUrl.trim());
     ConfigService.set('lan_action', cfg.lanAction);
+    ConfigService.set('mobile_fullscreen_mode', cfg.mobileFullscreenMode);
     
     ConfigService.set(`layout_position_${adapter.platformName}` as any, cfg.layout);
     ConfigService.set(`sidebar_width_${adapter.platformName}` as any, cfg.sidebarWidth);
@@ -159,6 +161,15 @@ const Settings: React.FC<SettingsProps> = ({ adapter, onClose }) => {
               <div className="setting-row">
                 <label>解析失败背景色</label>
                 <input type="color" name="errorColor" value={cfg.errorColor} onChange={handleChange} />
+              </div>
+
+              <div className="setting-col">
+                <label>移动端全屏按钮</label>
+                <select name="mobileFullscreenMode" value={cfg.mobileFullscreenMode} onChange={handleChange} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd' }}>
+                  <option value="off">关闭</option>
+                  <option value="video">只在视频页开启</option>
+                  <option value="always">任意页面开启</option>
+                </select>
               </div>
               
               <div className="setting-col" style={{ marginTop: '15px' }}>

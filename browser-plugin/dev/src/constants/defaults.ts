@@ -11,6 +11,7 @@ export const DEFAULTS = {
   sidebar_width: '500',
   sidebar_height: '350', 
   layout_position: 'right', 
+  mobile_fullscreen_mode: 'video',
   lan_sync_url: 'http://localhost:8080/api/vocabulary/add',
   lan_action: 'daily'
 };

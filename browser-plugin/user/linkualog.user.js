@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Linkual Log
 // @namespace    npm/vite-plugin-monkey
-// @version      0.0.13
+// @version      0.0.14
 // @author       Sergio Gao
 // @icon         https://vitejs.dev/logo.svg
 // @downloadURL  https://raw.githubusercontent.com/gsjz/linkualog/main/browser-plugin/user/linkualog.user.js
@@ -12691,6 +12691,7 @@
     sidebar_width: "500",
     sidebar_height: "350",
     layout_position: "right",
+    mobile_fullscreen_mode: "video",
     lan_sync_url: "http://localhost:8080/api/vocabulary/add",
     lan_action: "daily"
   };
@@ -13118,6 +13119,7 @@ ${contextBlock}`,
       ctxSize: ConfigService.get("api_ctxSize"),
       lanUrl: ConfigService.get("lan_sync_url"),
       lanAction: ConfigService.get("lan_action"),
+      mobileFullscreenMode: ConfigService.get("mobile_fullscreen_mode"),
       layout: getAdpCfg("layout_position"),
       sidebarWidth: getAdpCfg("sidebar_width"),
       sidebarHeight: getAdpCfg("sidebar_height")
@@ -13141,6 +13143,7 @@ ${contextBlock}`,
       ConfigService.set("api_ctxSize", cfg.ctxSize);
       ConfigService.set("lan_sync_url", cfg.lanUrl.trim());
       ConfigService.set("lan_action", cfg.lanAction);
+      ConfigService.set("mobile_fullscreen_mode", cfg.mobileFullscreenMode);
       ConfigService.set(`layout_position_${adapter.platformName}`, cfg.layout);
       ConfigService.set(`sidebar_width_${adapter.platformName}`, cfg.sidebarWidth);
       ConfigService.set(`sidebar_height_${adapter.platformName}`, cfg.sidebarHeight);
@@ -13210,6 +13213,14 @@ ${contextBlock}`,
           /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-row", children: [
             /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "解析失败背景色" }),
             /* @__PURE__ */ jsxRuntimeExports.jsx("input", { type: "color", name: "errorColor", value: cfg.errorColor, onChange: handleChange })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-col", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "移动端全屏按钮" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("select", { name: "mobileFullscreenMode", value: cfg.mobileFullscreenMode, onChange: handleChange, style: { width: "100%", padding: "10px", borderRadius: "6px", border: "1px solid #ddd" }, children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("option", { value: "off", children: "关闭" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("option", { value: "video", children: "只在视频页开启" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("option", { value: "always", children: "任意页面开启" })
+            ] })
           ] }),
           /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "setting-col", style: { marginTop: "15px" }, children: /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { style: { fontSize: "12px", color: "#1976d2", padding: "4px 8px", background: "#e3f2fd", borderRadius: "4px" }, children: [
             "当前网页 (",
@@ -13881,6 +13892,7 @@ JSON 格式：
     const [themeColor, setThemeColor] = reactExports.useState(ConfigService.get("theme_color"));
     const [doneColor, setDoneColor] = reactExports.useState(ConfigService.get("done_color"));
     const [errorColor, setErrorColor] = reactExports.useState(ConfigService.get("error_color"));
+    const [mobileFullscreenMode, setMobileFullscreenMode] = reactExports.useState(ConfigService.get("mobile_fullscreen_mode"));
     const [isSettingsOpen, setIsSettingsOpen] = reactExports.useState(false);
     const [renderLimit, setRenderLimit] = reactExports.useState(INITIAL_RENDER_LIMIT);
     const listRef = reactExports.useRef(null);
@@ -13908,6 +13920,7 @@ JSON 格式：
         setThemeColor(ConfigService.get("theme_color"));
         setDoneColor(ConfigService.get("done_color"));
         setErrorColor(ConfigService.get("error_color"));
+        setMobileFullscreenMode(ConfigService.get("mobile_fullscreen_mode"));
         setLayout(getAdpCfg("layout_position"));
         setSidebarWidth(parseInt(getAdpCfg("sidebar_width"), 10));
         setSidebarHeight(parseInt(getAdpCfg("sidebar_height"), 10));
@@ -13991,6 +14004,7 @@ JSON 格式：
     };
     const visibleSubs = subs.slice(0, renderLimit);
     const hasMoreSubs = visibleSubs.length < subs.length;
+    const showMobileFullscreenButton = mobileFullscreenMode === "always" || mobileFullscreenMode === "video" && inVideo;
     return /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: `linkual-wrap layout-${layout}`, style: wrapStyle, children: [
         /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "resizer", onMouseDown: startResize, title: layout === "right" ? "左右拖拽调整宽度" : "上下拖拽调整高度" }),
@@ -14014,7 +14028,7 @@ JSON 格式：
         ] }) }),
         isSettingsOpen && /* @__PURE__ */ jsxRuntimeExports.jsx(Settings, { adapter, onClose: () => setIsSettingsOpen(false) })
       ] }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx(MobileFullscreenButton, {}),
+      showMobileFullscreenButton && /* @__PURE__ */ jsxRuntimeExports.jsx(MobileFullscreenButton, {}),
       inVideo && /* @__PURE__ */ jsxRuntimeExports.jsx(VocabQueue, {})
     ] });
   };

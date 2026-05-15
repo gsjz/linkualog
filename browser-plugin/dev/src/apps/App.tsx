@@ -35,6 +35,7 @@ const App: React.FC<AppProps> = ({ adapter }) => {
   const [themeColor, setThemeColor] = useState(ConfigService.get('theme_color') as string);
   const [doneColor, setDoneColor] = useState(ConfigService.get('done_color') as string);
   const [errorColor, setErrorColor] = useState(ConfigService.get('error_color') as string);
+  const [mobileFullscreenMode, setMobileFullscreenMode] = useState(ConfigService.get('mobile_fullscreen_mode') as string);
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [renderLimit, setRenderLimit] = useState(INITIAL_RENDER_LIMIT);
@@ -68,6 +69,7 @@ const App: React.FC<AppProps> = ({ adapter }) => {
       setThemeColor(ConfigService.get('theme_color') as string);
       setDoneColor(ConfigService.get('done_color') as string);
       setErrorColor(ConfigService.get('error_color') as string);
+      setMobileFullscreenMode(ConfigService.get('mobile_fullscreen_mode') as string);
       
       setLayout(getAdpCfg('layout_position') as string);
       setSidebarWidth(parseInt(getAdpCfg('sidebar_width') as string, 10));
@@ -160,6 +162,7 @@ const App: React.FC<AppProps> = ({ adapter }) => {
 
   const visibleSubs = subs.slice(0, renderLimit);
   const hasMoreSubs = visibleSubs.length < subs.length;
+  const showMobileFullscreenButton = mobileFullscreenMode === 'always' || (mobileFullscreenMode === 'video' && inVideo);
 
   return (
     <>
@@ -187,7 +190,7 @@ const App: React.FC<AppProps> = ({ adapter }) => {
         </div>
         {isSettingsOpen && <Settings adapter={adapter} onClose={() => setIsSettingsOpen(false)} />}
       </div>
-      <MobileFullscreenButton />
+      {showMobileFullscreenButton && <MobileFullscreenButton />}
       {inVideo && <VocabQueue />}
     </>
   );
