@@ -1,0 +1,34 @@
+{
+  "word": "reclaim",
+  "createdAt": "2026-05-17",
+  "reviews": [
+    {
+      "date": "2026-05-20",
+      "score": 2
+    }
+  ],
+  "definitions": [
+    "重新夺回；收回；恢复占有/控制"
+  ],
+  "examples": [
+    {
+      "text": "Manuel Bonilla, boarded \na borrowed yacht in New Orleans. With a group of heavily armed accomplices, he set sail for Honduras in hopes\nof reclaiming power by whatever means necessary. Bonilla had a powerful backer,",
+      "explanation": "这里的 reclaiming power 指“重新夺回权力/控制权”。",
+      "focusWords": [
+        "reclaiming",
+        "reclaim"
+      ],
+      "source": {
+        "text": "The dark history of bananas - John Soluri",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=esvycD1O3cM",
+        "timestamp": 19
+      }
+    }
+  ],
+  "mergedFrom": [
+    "reclaiming"
+  ]
+}

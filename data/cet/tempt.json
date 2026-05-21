@@ -12,7 +12,8 @@
     }
   ],
   "definitions": [
-    "adj. 被诱惑的；难以抗拒的"
+    "v. 引诱；诱惑",
+    "v. 使很想做，驱使（tempt sb to do sth）"
   ],
   "examples": [
     {
@@ -55,5 +56,5 @@
       ]
     }
   ],
-  "marked": true
+  "marked": false
 }

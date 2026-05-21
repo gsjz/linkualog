@@ -5,6 +5,14 @@
     {
       "date": "2026-05-07",
       "score": 1
+    },
+    {
+      "date": "2026-05-13",
+      "score": 1
+    },
+    {
+      "date": "2026-05-16",
+      "score": 2
     }
   ],
   "definitions": [
@@ -13,7 +21,7 @@
   "examples": [
     {
       "text": "They were vessels built for war and commerce, crossing the globe carrying everything from coins to cannons, boxes of silver and gold, chests of jewels and porcelain, and pearls from the Caribbean.",
-      "explanation": "",
+      "explanation": "这里的 porcelain 指“瓷器”。句子说这些船运载着各种货物横渡全球，其中包括银币、大炮、金银、珠宝箱、瓷器以及来自加勒比海的珍珠。该词在句中是不可数名词，表示瓷制器物这一类货物。",
       "focusWords": [
         "porcelain"
       ],

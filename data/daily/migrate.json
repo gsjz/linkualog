@@ -1,0 +1,33 @@
+{
+  "word": "migrate",
+  "createdAt": "2026-05-17",
+  "reviews": [
+    {
+      "date": "2026-05-20",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "迁移；移居；迁徙"
+  ],
+  "examples": [
+    {
+      "text": "Lured by relatively high-paying jobs, people migrated to banana zones.",
+      "explanation": "指人们受到较高薪工作的吸引而迁往香蕉种植区，强调因工作机会而迁移。",
+      "focusWords": [
+        "migrated"
+      ],
+      "source": {
+        "text": "The dark history of bananas - John Soluri",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=esvycD1O3cM",
+        "timestamp": 161
+      }
+    }
+  ],
+  "mergedFrom": [
+    "migrated"
+  ]
+}

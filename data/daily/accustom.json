@@ -1,6 +1,6 @@
 {
-  "word": "accustomed",
-  "createdAt": "2026-04-29",
+  "word": "accustom",
+  "createdAt": "2026-05-17",
   "reviews": [
     {
       "date": "2026-05-02",
@@ -30,5 +30,8 @@
         "timestamp": 664
       }
     }
+  ],
+  "mergedFrom": [
+    "accustomed"
   ]
 }

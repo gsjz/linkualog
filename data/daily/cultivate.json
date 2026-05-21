@@ -1,0 +1,33 @@
+{
+  "word": "cultivate",
+  "createdAt": "2026-05-17",
+  "reviews": [
+    {
+      "date": "2026-05-18",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "耕作；种植；栽培（如土地、作物、植物）"
+  ],
+  "examples": [
+    {
+      "text": "First cultivated in Southeast Asia thousands of years ago, bananas reached the Americas in the early 1500s, where enslaved Africans cultivated them in plots alongside sugar plantations. There were many different bananas, most of which looked nothing like the bananas in supermarket aisles today.",
+      "explanation": "这里的 cultivated 表示“种植、栽培”。句子意思是：香蕉最早在数千年前于东南亚被栽培，16世纪初传到美洲后，被奴役的非洲人在甘蔗种植园旁的小块土地上种植香蕉。该句展示了 cultivate 用于农作物种植的典型用法。",
+      "focusWords": [
+        "cultivated"
+      ],
+      "source": {
+        "text": "The dark history of bananas - John Soluri",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=esvycD1O3cM",
+        "timestamp": 62
+      }
+    }
+  ],
+  "mergedFrom": [
+    "cultivated"
+  ]
+}

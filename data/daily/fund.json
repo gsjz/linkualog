@@ -1,0 +1,33 @@
+{
+  "word": "fund",
+  "createdAt": "2026-05-17",
+  "reviews": [
+    {
+      "date": "2026-05-20",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "资助；为……提供资金"
+  ],
+  "examples": [
+    {
+      "text": "In order to secure access to land, banana moguls lobbied and bribed government officials in Central America, and even funded coups to ensure they had allies in power. In Honduras, Manuel Bonilla repaid the banana man who had financed his return to power with land concessions.",
+      "explanation": "这里的 funded 表示“资助、出钱支持”，具体指为政变提供资金；financed his return to power 也是同类用法，表示“为他重掌权力提供资金支持”。整句说明这些香蕉巨头为了拿到土地，不仅游说和贿赂官员，甚至出钱支持政变。",
+      "focusWords": [
+        "funded"
+      ],
+      "source": {
+        "text": "The dark history of bananas - John Soluri",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=esvycD1O3cM",
+        "timestamp": 126
+      }
+    }
+  ],
+  "mergedFrom": [
+    "funded"
+  ]
+}

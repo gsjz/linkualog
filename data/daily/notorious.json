@@ -1,0 +1,30 @@
+{
+  "word": "notorious",
+  "createdAt": "2026-05-17",
+  "reviews": [
+    {
+      "date": "2026-05-20",
+      "score": 2
+    }
+  ],
+  "definitions": [
+    "臭名昭著的；声名狼藉的"
+  ],
+  "examples": [
+    {
+      "text": "by whatever means necessary. Bonilla had a powerful backer, the future leader of a notorious organization known throughout Latin America as El Pulpo, or \"the Octopus,\" for its long reach.",
+      "explanation": "句中 notorious 表示“臭名昭著的；声名狼藉的”，修饰 organization，强调这个组织在拉丁美洲范围内名声很差。",
+      "focusWords": [
+        "notorious"
+      ],
+      "source": {
+        "text": "The dark history of bananas - John Soluri",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=esvycD1O3cM",
+        "timestamp": 29
+      }
+    }
+  ]
+}

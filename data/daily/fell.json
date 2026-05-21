@@ -1,0 +1,38 @@
+{
+  "word": "fell",
+  "createdAt": "2026-05-18",
+  "reviews": [
+    {
+      "date": "2026-05-20",
+      "score": 1
+    },
+    {
+      "date": "2026-05-21",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "砍倒，伐倒（尤指树木、大片森林）"
+  ],
+  "examples": [
+    {
+      "text": "The companies then felled extensive tracts of rainforests in order to establish new plantations.",
+      "explanation": "这里的 felled 表示“砍倒、伐掉”，通常用于树木或森林。整句意思是：这些公司随后砍伐了大片雨林，以建立新的种植园。",
+      "focusWords": [
+        "felled",
+        "fell"
+      ],
+      "source": {
+        "text": "The dark history of bananas - John Soluri",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=esvycD1O3cM",
+        "timestamp": 224
+      }
+    }
+  ],
+  "mergedFrom": [
+    "felled"
+  ]
+}

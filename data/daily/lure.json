@@ -1,0 +1,33 @@
+{
+  "word": "lure",
+  "createdAt": "2026-05-17",
+  "reviews": [
+    {
+      "date": "2026-05-20",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "引诱；诱使；吸引（常指用某种好处把人吸引过来）"
+  ],
+  "examples": [
+    {
+      "text": "and Panama to build plantations, along with railroads, ports, and towns to house workers. Lured by relatively high-paying jobs, people migrated to banana zones. From Guatemala to Colombia, United Fruit’s plantations grew exclusively Gros Michel bananas.",
+      "explanation": "这里的 Lured by relatively high-paying jobs 表示“被相对高薪的工作所吸引/诱使”。其中 lured 是 lure 的过去分词，说明人们因为高薪这个诱因而迁移到香蕉种植区。",
+      "focusWords": [
+        "Lured"
+      ],
+      "source": {
+        "text": "The dark history of bananas - John Soluri",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=esvycD1O3cM",
+        "timestamp": 161
+      }
+    }
+  ],
+  "mergedFrom": [
+    "Lured"
+  ]
+}

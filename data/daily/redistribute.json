@@ -1,0 +1,30 @@
+{
+  "word": "redistribute",
+  "createdAt": "2026-05-17",
+  "reviews": [
+    {
+      "date": "2026-05-20",
+      "score": 2
+    }
+  ],
+  "definitions": [
+    "重新分配；再分发（尤指把钱、资源、土地等从一部分人/地方转给另一部分人/地方）"
+  ],
+  "examples": [
+    {
+      "text": "yielded to democratically elected governments that called for land reform. In Guatemala, President Jacobo Arbenz tried to buy back land from United Fruit and redistribute it to landless farmers. The Arbenz government offered to pay a price based on tax records—where United Fruit had underreported the value of the land.",
+      "explanation": "这里的 redistribute it to landless farmers 指“把土地重新分配给无地农民”。redistribute 强调把已有的资源从原来的占有者手中转移、重新分给另一群人。",
+      "focusWords": [
+        "redistribute"
+      ],
+      "source": {
+        "text": "The dark history of bananas - John Soluri",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=esvycD1O3cM",
+        "timestamp": 248
+      }
+    }
+  ]
+}

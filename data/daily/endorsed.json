@@ -1,0 +1,30 @@
+{
+  "word": "endorsed",
+  "createdAt": "2026-05-17",
+  "reviews": [
+    {
+      "date": "2026-05-18",
+      "score": 2
+    }
+  ],
+  "definitions": [
+    "（在文中）得到认可；被支持；被背书（如：endorsed by medical doctors 表示“得到医生认可/背书”）"
+  ],
+  "examples": [
+    {
+      "text": "By the end of the 1800s, bananas were a hit in the US. They were affordable, available year-round, and endorsed by medical doctors. As bananas became big business, U.S. fruit companies wanted to grow their own bananas.",
+      "explanation": "这里的 endorsed by medical doctors 表示“得到医生的认可/背书”。整句意思是：到19世纪末，香蕉在美国很受欢迎，因为价格便宜、全年都能买到，而且还有医生为其背书。这里重点学习 endorsed 表示“被认可、被支持”。",
+      "focusWords": [
+        "endorsed"
+      ],
+      "source": {
+        "text": "The dark history of bananas - John Soluri",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=esvycD1O3cM",
+        "timestamp": 110
+      }
+    }
+  ]
+}

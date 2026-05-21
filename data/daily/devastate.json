@@ -1,6 +1,6 @@
 {
-  "word": "devastating",
-  "createdAt": "2026-05-02",
+  "word": "devastate",
+  "createdAt": "2026-05-17",
   "reviews": [
     {
       "date": "2026-05-03",
@@ -26,5 +26,8 @@
         "timestamp": 99
       }
     }
+  ],
+  "mergedFrom": [
+    "devastating"
   ]
 }

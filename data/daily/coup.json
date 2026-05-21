@@ -1,0 +1,33 @@
+{
+  "word": "coup",
+  "createdAt": "2026-05-17",
+  "reviews": [
+    {
+      "date": "2026-05-18",
+      "score": 2
+    }
+  ],
+  "definitions": [
+    "政变；（通常指）武装夺取政权"
+  ],
+  "examples": [
+    {
+      "text": "In order to secure access to land, banana moguls lobbied and bribed government officials in Central America, and even funded coups to ensure they had allies in power. In Honduras, Manuel Bonilla repaid the banana man who had financed his return to power with land concessions.",
+      "explanation": "这里的 coup 指“政变”。句子说的是：为了获得土地使用权，香蕉大亨在中美洲游说并贿赂政府官员，甚至资助政变，以确保掌权者是自己的盟友。后一句用洪都拉斯的例子说明：得到资助后重新上台的人，后来用土地特许作为回报。",
+      "focusWords": [
+        "coups"
+      ],
+      "source": {
+        "text": "The dark history of bananas - John Soluri",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=esvycD1O3cM",
+        "timestamp": 126
+      }
+    }
+  ],
+  "mergedFrom": [
+    "coups"
+  ]
+}

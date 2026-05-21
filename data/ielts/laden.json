@@ -17,7 +17,7 @@
   "examples": [
     {
       "text": "But by the time the sediment has come to rest in the fields and lagoons it is laden with municipal, industrial and agricultural waste from the Cairo region, which is home to more than 40 million people.",
-      "explanation": "",
+      "explanation": "这里的 laden with 表示“充满 / 载满（某种东西）”。句中说这些沉积物在田地和潟湖中停留下来时，已经“夹带着”来自开罗地区的城市、工业和农业废弃物。",
       "focusWords": [
         "laden"
       ],
@@ -27,5 +27,5 @@
       }
     }
   ],
-  "marked": true
+  "marked": false
 }

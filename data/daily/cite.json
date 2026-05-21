@@ -1,0 +1,30 @@
+{
+  "word": "cite",
+  "createdAt": "2026-05-17",
+  "reviews": [
+    {
+      "date": "2026-05-18",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "以…为理由；以…为依据"
+  ],
+  "examples": [
+    {
+      "text": "The company launched propaganda campaigns against Arbenz and called on its deep connections in the US Government for help. Citing fears of communism, the CIA orchestrated the overthrow of the democratically elected Arbenz in 1954. That same year in Honduras, thousands of United Fruit workers went on strike.",
+      "explanation": "这里的 Citing fears of communism 表示“以对共产主义的恐惧为理由”或“打着反共的旗号”。Citing 放在句首，相当于 saying that this was the reason，用来引出官方给出的理由。",
+      "focusWords": [
+        "cite"
+      ],
+      "source": {
+        "text": "The dark history of bananas - John Soluri",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=esvycD1O3cM",
+        "timestamp": 271
+      }
+    }
+  ]
+}

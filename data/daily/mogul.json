@@ -1,0 +1,33 @@
+{
+  "word": "mogul",
+  "createdAt": "2026-05-17",
+  "reviews": [
+    {
+      "date": "2026-05-20",
+      "score": 2
+    }
+  ],
+  "definitions": [
+    "大亨；巨头（尤指某行业中非常有权势或富有的人）"
+  ],
+  "examples": [
+    {
+      "text": "U.S. fruit companies wanted to grow their own bananas. In order to secure access to land, banana moguls lobbied and bribed government officials in Central America, and even funded coups to ensure they had allies in power. In Honduras, Manuel Bonilla repaid the banana man",
+      "explanation": "这里的 banana moguls 指“香蕉行业的大亨/巨头”，也就是控制香蕉生意、拥有很大财富和政治影响力的人。整句在说明这些行业巨头为了获取土地和利益，会游说、贿赂官员，甚至资助政变。",
+      "focusWords": [
+        "moguls"
+      ],
+      "source": {
+        "text": "The dark history of bananas - John Soluri",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=esvycD1O3cM",
+        "timestamp": 121
+      }
+    }
+  ],
+  "mergedFrom": [
+    "moguls"
+  ]
+}

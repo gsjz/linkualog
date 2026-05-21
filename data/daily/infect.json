@@ -1,0 +1,33 @@
+{
+  "word": "infect",
+  "createdAt": "2026-05-17",
+  "reviews": [
+    {
+      "date": "2026-05-20",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "使感染；传染；污染（疾病、细菌等侵入并扩散）"
+  ],
+  "examples": [
+    {
+      "text": "spreading quickly via the same system that had enabled big profits and cheap bananas. In a race against “Panama Disease,” banana companies abandoned infected plantations in Costa Rica, Honduras, and Guatemala, leaving thousands of farmers and workers jobless.",
+      "explanation": "这里的 infected 是 infect 的过去分词，意思是“被感染的、受病害侵袭的”。infect 表示“使感染、传染”。句子说的是：香蕉公司为了对抗“巴拿马病”，放弃了哥斯达黎加、洪都拉斯和危地马拉那些受感染的种植园，结果让成千上万的农民和工人失业。",
+      "focusWords": [
+        "infected"
+      ],
+      "source": {
+        "text": "The dark history of bananas - John Soluri",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=esvycD1O3cM",
+        "timestamp": 213
+      }
+    }
+  ],
+  "mergedFrom": [
+    "infected"
+  ]
+}

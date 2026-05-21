@@ -1,0 +1,33 @@
+{
+  "word": "hazard",
+  "createdAt": "2026-05-17",
+  "reviews": [
+    {
+      "date": "2026-05-20",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "危害；危险；风险"
+  ],
+  "examples": [
+    {
+      "text": "But the modern banana industry isn’t without problems. Cavendish bananas require frequent applications of pesticides that create hazards for farmworkers and ecosystems.",
+      "explanation": "这里的 hazards 指“危害、风险”，强调农药的频繁使用会给农场工人和生态系统带来不利影响。",
+      "focusWords": [
+        "hazards"
+      ],
+      "source": {
+        "text": "The dark history of bananas - John Soluri",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=esvycD1O3cM",
+        "timestamp": 325
+      }
+    }
+  ],
+  "mergedFrom": [
+    "hazards"
+  ]
+}

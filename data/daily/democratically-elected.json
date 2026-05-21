@@ -1,0 +1,30 @@
+{
+  "word": "democratically elected",
+  "createdAt": "2026-05-17",
+  "reviews": [
+    {
+      "date": "2026-05-18",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "经民主选举产生的；由选民通过选举选出的"
+  ],
+  "examples": [
+    {
+      "text": "After World War II, the dictatorships with which United Fruit had partnered in Guatemala and Honduras yielded to democratically elected governments that called for land reform. In Guatemala, President Jacobo Arbenz tried to buy back land from United Fruit and redistribute it to landless farmers.",
+      "explanation": "这里的 democratically elected governments 指“经民主选举产生的政府”。整句意思是：二战后，危地马拉和洪都拉斯原先与联合果品公司合作的独裁政权，被主张土地改革的民选政府所取代。该表达常用于描述政府、领导人或官员是通过民主选举上台的。",
+      "focusWords": [
+        "democratically elected"
+      ],
+      "source": {
+        "text": "The dark history of bananas - John Soluri",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=esvycD1O3cM",
+        "timestamp": 237
+      }
+    }
+  ]
+}

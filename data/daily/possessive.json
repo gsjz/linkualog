@@ -9,9 +9,15 @@
     {
       "date": "2026-05-09",
       "score": 4
+    },
+    {
+      "date": "2026-05-17",
+      "score": 4
     }
   ],
-  "definitions": [],
+  "definitions": [
+    "adj. 占有欲强的；对自己拥有的东西过分在意、不愿别人分享的"
+  ],
   "examples": [
     {
       "text": "We are still territorial and possessive; we fear losing what we have, and we fear change.",
@@ -29,7 +35,7 @@
       }
     }
   ],
-  "marked": true,
+  "marked": false,
   "reviewSessions": [
     {
       "timestamp": "2026-04-20T13:46:48",

@@ -1,0 +1,31 @@
+{
+  "word": "ripe",
+  "createdAt": "2026-05-17",
+  "reviews": [
+    {
+      "date": "2026-05-20",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "易受…影响的；很可能发生…的（如 ripe for disease epidemics 表示“容易爆发疾病的”）",
+    "成熟的（尤指水果、庄稼等到了可食用或可收获的时候）"
+  ],
+  "examples": [
+    {
+      "text": "United Fruit’s plantations grew exclusively Gros Michel bananas. These densely packed farms had little biological diversity, making them ripe for disease epidemics. The infrastructure connecting these vulnerable farms could quickly spread disease:",
+      "explanation": "这里 ripe for disease epidemics 不是“成熟了”，而是表示“很容易引发/遭受疾病流行”。整句意思是：这些种植园生物多样性很低，因此特别容易爆发疾病。",
+      "focusWords": [
+        "ripe"
+      ],
+      "source": {
+        "text": "The dark history of bananas - John Soluri",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=esvycD1O3cM",
+        "timestamp": 177
+      }
+    }
+  ]
+}

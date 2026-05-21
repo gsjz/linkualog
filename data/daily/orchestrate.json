@@ -1,0 +1,33 @@
+{
+  "word": "orchestrate",
+  "createdAt": "2026-05-17",
+  "reviews": [
+    {
+      "date": "2026-05-20",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "精心策划；暗中操纵（尤指复杂事件、行动或结果）"
+  ],
+  "examples": [
+    {
+      "text": "The company launched propaganda campaigns against Arbenz and called on its deep connections in the US Government for help. Citing fears of communism, the CIA orchestrated the overthrow of the democratically elected Arbenz in 1954. That same year in Honduras, thousands of United Fruit workers went on strike",
+      "explanation": "这里的 orchestrated 表示“精心策划、暗中操纵”。句子说的是：中央情报局以“担心共产主义”为由，策划了对民选总统阿本斯的推翻。这个词强调事件不是自然发生的，而是有人在背后有组织地推动。",
+      "focusWords": [
+        "orchestrated"
+      ],
+      "source": {
+        "text": "The dark history of bananas - John Soluri",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=esvycD1O3cM",
+        "timestamp": 271
+      }
+    }
+  ],
+  "mergedFrom": [
+    "orchestrated"
+  ]
+}

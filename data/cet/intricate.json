@@ -3,12 +3,30 @@
   "createdAt": "2026-03-31",
   "reviews": [
     {
+      "date": "2026-04-17",
+      "score": 2
+    },
+    {
+      "date": "2026-04-20",
+      "score": 4
+    },
+    {
       "date": "2026-05-06",
       "score": 2
+    },
+    {
+      "date": "2026-05-09",
+      "score": 4
+    },
+    {
+      "date": "2026-05-20",
+      "score": 4
     }
   ],
   "definitions": [
-    "错综复杂的"
+    "错综复杂的",
+    "复杂精细的；错综复杂的",
+    "（设计、结构等）精巧复杂的"
   ],
   "examples": [
     {
@@ -21,6 +39,20 @@
         "text": "CET6 2023 12 2 匹配",
         "url": ""
       }
+    },
+    {
+      "text": "We build intricate habitats, devise complex recipes for our food, wear clothes that reflect constant changes in fashion,",
+      "explanation": "我们建造复杂的栖息环境，为我们的食物设计复杂的食谱，穿着反映时尚不断变化的服装。",
+      "focusWords": [
+        "intricate"
+      ],
+      "source": {
+        "text": "CET6 23 12 1 听力",
+        "url": ""
+      }
     }
+  ],
+  "mergedFrom": [
+    "intricate habitats"
   ]
 }

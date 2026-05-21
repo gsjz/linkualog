@@ -1,0 +1,34 @@
+{
+  "word": "billiard-ball",
+  "createdAt": "2026-05-11",
+  "reviews": [
+    {
+      "date": "2026-05-13",
+      "score": 1
+    },
+    {
+      "date": "2026-05-16",
+      "score": 2
+    }
+  ],
+  "definitions": [
+    "台球球；桌球用球"
+  ],
+  "examples": [
+    {
+      "text": "All of this plastic originated from one small object— that isn’t even made of plastic. For centuries, billiard balls were made of ivory from elephant tusks. But when excessive hunting caused elephant populations to decline in the 19th century,",
+      "explanation": "这里的 billiard balls 指“台球球、桌球用球”。句子说的是：几百年来，台球最初曾用大象牙制作；到了19世纪，过度捕猎导致大象数量下降，于是人们开始寻找替代材料。",
+      "focusWords": [
+        "billiard ball"
+      ],
+      "source": {
+        "text": "A brief history of plastic",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=9GMbRG9CZJw",
+        "timestamp": 17
+      }
+    }
+  ]
+}

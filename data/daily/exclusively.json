@@ -1,0 +1,30 @@
+{
+  "word": "exclusively",
+  "createdAt": "2026-05-17",
+  "reviews": [
+    {
+      "date": "2026-05-18",
+      "score": 2
+    }
+  ],
+  "definitions": [
+    "专门地；唯一地；仅仅，只"
+  ],
+  "examples": [
+    {
+      "text": "Lured by relatively high-paying jobs, people migrated to banana zones. From Guatemala to Colombia, United Fruit’s plantations grew exclusively Gros Michel bananas. These densely packed farms had little biological diversity, making them ripe for disease epidemics.",
+      "explanation": "这里 exclusively 表示“专门地／只”，说明这些种植园只种植大麦克香蕉这一种，没有种其他品种。正因为种植过于单一，生物多样性很低，所以更容易爆发疾病。",
+      "focusWords": [
+        "exclusively"
+      ],
+      "source": {
+        "text": "The dark history of bananas - John Soluri",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=esvycD1O3cM",
+        "timestamp": 168
+      }
+    }
+  ]
+}

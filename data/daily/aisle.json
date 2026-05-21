@@ -1,0 +1,37 @@
+{
+  "word": "aisle",
+  "createdAt": "2026-05-17",
+  "reviews": [
+    {
+      "date": "2026-05-17",
+      "score": 1
+    },
+    {
+      "date": "2026-05-18",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "（商店、飞机、教堂等座位或货架之间的）过道，通道"
+  ],
+  "examples": [
+    {
+      "text": "where enslaved Africans cultivated them in plots alongside sugar plantations. There were many different bananas, most of which looked nothing like the bananas in supermarket aisles today. In the 1800s, captains from New Orleans and New England ventured to the Caribbean in search of coconuts and other goods.",
+      "explanation": "这里的 aisles 指“超市里的过道、货架之间的通道”。supermarket aisles today 表示“如今超市过道里看到的（香蕉）”。整句是在说：当时有很多不同种类的香蕉，其中大多数看起来和今天超市里见到的香蕉一点也不像。",
+      "focusWords": [
+        "aisles"
+      ],
+      "source": {
+        "text": "The dark history of bananas - John Soluri",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=esvycD1O3cM",
+        "timestamp": 70
+      }
+    }
+  ],
+  "mergedFrom": [
+    "aisles"
+  ]
+}

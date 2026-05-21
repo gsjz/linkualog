@@ -1,0 +1,37 @@
+{
+  "word": "escalate",
+  "createdAt": "2026-05-17",
+  "reviews": [
+    {
+      "date": "2026-05-18",
+      "score": 3
+    },
+    {
+      "date": "2026-05-20",
+      "score": 4
+    }
+  ],
+  "definitions": [
+    "（使）逐步升级；不断加剧；逐渐增加"
+  ],
+  "examples": [
+    {
+      "text": "That same year in Honduras, thousands of United Fruit workers went on strike until the company agreed to recognize a new labor union. With the political and economic costs of running from Panama Disease escalating, United Fruit finally switched from Gros Michel to Panama disease-resistant Cavendish bananas in the early 1960s.",
+      "explanation": "这里的 escalating 是 escalate 的现在分词，表示“不断上升、日益加剧”。句中指因巴拿马病带来的政治和经济成本越来越高，联合果品公司最终改种更抗病的卡文迪许香蕉。",
+      "focusWords": [
+        "escalating"
+      ],
+      "source": {
+        "text": "The dark history of bananas - John Soluri",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=esvycD1O3cM",
+        "timestamp": 290
+      }
+    }
+  ],
+  "mergedFrom": [
+    "escalating"
+  ]
+}

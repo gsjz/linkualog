@@ -1,0 +1,30 @@
+{
+  "word": "on strike",
+  "createdAt": "2026-05-17",
+  "reviews": [
+    {
+      "date": "2026-05-20",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "罢工中；举行罢工（指工人停止工作以争取权益）"
+  ],
+  "examples": [
+    {
+      "text": "Citing fears of communism, the CIA orchestrated the overthrow of the democratically elected Arbenz in 1954. That same year in Honduras, thousands of United Fruit workers went on strike until the company agreed to recognize a new labor union. With the political and economic costs of running from Panama Disease escalating,",
+      "explanation": "这里的 went on strike 表示“开始罢工”。句子说的是：1954年在洪都拉斯，数千名联合水果公司的工人举行罢工，直到公司同意承认一个新的工会。on strike 常用于 be/go on strike，表示因劳资诉求而停止工作。",
+      "focusWords": [
+        "on strike"
+      ],
+      "source": {
+        "text": "The dark history of bananas - John Soluri",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=esvycD1O3cM",
+        "timestamp": 280
+      }
+    }
+  ]
+}

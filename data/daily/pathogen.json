@@ -1,0 +1,33 @@
+{
+  "word": "pathogen",
+  "createdAt": "2026-05-17",
+  "reviews": [
+    {
+      "date": "2026-05-20",
+      "score": 1
+    }
+  ],
+  "definitions": [
+    "病原体；病原菌（引起疾病的微生物）"
+  ],
+  "examples": [
+    {
+      "text": "Cavendish bananas require frequent applications of pesticides that create hazards for farmworkers and ecosystems. And though they’re resistant to the particular pathogen that affected Gros Michel bananas, Cavendish farms also lack biological diversity,",
+      "explanation": "这里的 pathogen 指“病原体”，即引起疾病的微生物。",
+      "focusWords": [
+        "pathogen"
+      ],
+      "source": {
+        "text": "The dark history of bananas - John Soluri",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=esvycD1O3cM",
+        "timestamp": 329
+      }
+    }
+  ],
+  "mergedFrom": [
+    "pathogens"
+  ]
+}

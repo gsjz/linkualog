@@ -1,0 +1,37 @@
+{
+  "word": "ally",
+  "createdAt": "2026-05-17",
+  "reviews": [
+    {
+      "date": "2026-05-17",
+      "score": 1
+    },
+    {
+      "date": "2026-05-18",
+      "score": 2
+    }
+  ],
+  "definitions": [
+    "盟友；同盟者；支持者（尤指政治或利益上的）"
+  ],
+  "examples": [
+    {
+      "text": "In order to secure access to land, banana moguls lobbied and bribed government officials in Central America, and even funded coups to ensure they had allies in power. In Honduras, Manuel Bonilla repaid the banana man who had financed his return to power with land concessions.",
+      "explanation": "这里的 allies in power 指‘在掌权位置上的盟友/自己人’。整句意思是：为了拿到土地，大香蕉商人游说、贿赂中美洲官员，甚至资助政变，以确保有支持自己的人掌权。例句中 ally 不是泛指朋友，而是有政治和利益关系的‘盟友、支持者’。",
+      "focusWords": [
+        "allies"
+      ],
+      "source": {
+        "text": "The dark history of bananas - John Soluri",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=esvycD1O3cM",
+        "timestamp": 126
+      }
+    }
+  ],
+  "mergedFrom": [
+    "allies"
+  ]
+}
