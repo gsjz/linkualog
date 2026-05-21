@@ -1970,7 +1970,12 @@ function RecommendationModePanel({
   );
 }
 
-export default function App({ embedded = false, onOpenConfig = null, launchRequest = null }) {
+export default function App({
+  embedded = false,
+  onOpenConfig = null,
+  launchRequest = null,
+  onSelectionChange = null,
+}) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [mode, setMode] = useState('manual');
   const [selectionSource, setSelectionSource] = useState('manual');
@@ -2430,6 +2435,15 @@ export default function App({ embedded = false, onOpenConfig = null, launchReque
       cancelled = true;
     };
   }, [apiCategory, category, filename, hasSelection]);
+
+  useEffect(() => {
+    if (!hasSelection || typeof onSelectionChange !== 'function') return;
+    onSelectionChange({
+      category: apiCategory,
+      word: filename,
+      filename,
+    });
+  }, [apiCategory, filename, hasSelection, onSelectionChange]);
 
   useEffect(() => {
     if (!launchRequest?.filename) return undefined;

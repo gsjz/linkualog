@@ -70,6 +70,23 @@
   gap: 4px;
 }
 
+.master-brand-button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  appearance: none;
+}
+
+.master-brand-button:focus-visible {
+  outline: 2px solid var(--ms-accent);
+  outline-offset: 6px;
+  border-radius: 4px;
+}
+
 .master-brand {
   margin: 0;
   font-size: 18px;
@@ -936,6 +953,112 @@
   background: var(--ms-bg) !important;
 }
 
+.master-shell.is-desktop-minimal {
+  background: #f7f7f7 !important;
+}
+
+.master-shell.is-desktop-minimal .master-header {
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  min-height: 64px !important;
+  padding: 12px 22px !important;
+  background: rgba(255, 255, 255, 0.96) !important;
+}
+
+.master-shell.is-desktop-minimal .master-brand-wrap {
+  align-items: center !important;
+  flex-wrap: nowrap !important;
+  gap: 18px !important;
+}
+
+.master-shell.is-desktop-minimal .master-brand-block {
+  gap: 4px !important;
+}
+
+.master-shell.is-desktop-minimal .master-tabs {
+  gap: 6px !important;
+}
+
+.master-shell.is-desktop-minimal .master-tab {
+  min-height: 34px !important;
+  padding: 0 12px !important;
+  border: 1px solid var(--ms-border) !important;
+  border-radius: 999px !important;
+  background: #fff !important;
+  color: var(--ms-text-muted) !important;
+  font-size: 12px !important;
+}
+
+.master-shell.is-desktop-minimal .master-tab.active {
+  border-color: var(--ms-text) !important;
+  background: var(--ms-text) !important;
+  color: #fff !important;
+}
+
+.master-shell.is-desktop-minimal .master-actions {
+  align-items: center !important;
+}
+
+.master-shell.is-desktop-minimal .master-layout-toggle {
+  min-width: 92px;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 999px !important;
+  font-size: 12px;
+}
+
+.master-shell.is-desktop-minimal .app-main,
+.master-shell.is-desktop-minimal .task-container-wrapper {
+  background: #f7f7f7 !important;
+}
+
+.master-shell.is-desktop-minimal .vocab-workspace {
+  width: 100%;
+  margin: 0 auto;
+  padding: 14px 20px 18px;
+  gap: 10px;
+}
+
+.master-shell.is-desktop-minimal .vocab-workspace.is-study-mode {
+  max-width: 1120px;
+}
+
+.master-shell.is-desktop-minimal .vocab-workspace.is-edit-mode {
+  max-width: 1280px;
+}
+
+.master-shell.is-desktop-minimal .vocab-workspace-toolbar {
+  max-width: 1040px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.master-shell.is-desktop-minimal .vocab-workspace-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.master-shell.is-desktop-minimal .vocab-workspace-title {
+  font-size: 14px;
+}
+
+.master-shell.is-desktop-minimal .vocab-workspace-caption {
+  font-size: 11px;
+}
+
+.master-shell.is-desktop-minimal .vocab-workspace-panels {
+  overflow: visible;
+}
+
+.master-shell.is-desktop-minimal .vocab-workspace.is-edit-mode .vocab-workspace-panels {
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
 .config-modal {
   background: rgba(17, 17, 17, 0.12) !important;
   backdrop-filter: none !important;
@@ -1549,7 +1672,7 @@
 
   .master-tabs {
     display: grid !important;
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     width: 100% !important;
     gap: 8px !important;
     padding: 4px !important;
@@ -1869,11 +1992,98 @@
   display: block !important;
 }
 
+.vocab-review.vocab-review-mobile-simple {
+  display: flex !important;
+  flex-direction: column !important;
+  min-width: 0;
+  min-height: 0;
+}
+
+.vocab-review.vocab-review-mobile-simple .vocab-review-mobile-toolbar {
+  flex: 0 0 auto;
+}
+
+.vocab-review.vocab-review-mobile-simple .vocab-review-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+}
+
+.vocab-review.vocab-review-mobile-simple .vocab-review-score-card {
+  display: none !important;
+}
+
+.vocab-review.vocab-review-mobile-simple .vocab-review-bottom-bar {
+  flex: 0 0 auto;
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--ms-border);
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 -10px 22px rgba(17, 17, 17, 0.06);
+}
+
+.vocab-review.vocab-review-mobile-simple .vocab-review-bottom-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.vocab-review.vocab-review-mobile-simple .vocab-review-bottom-title {
+  font-size: 13px;
+  font-weight: 760;
+  color: var(--ms-text);
+}
+
+.vocab-review.vocab-review-mobile-simple .vocab-review-bottom-status {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ms-text-muted);
+  font-size: 12px;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vocab-review.vocab-review-mobile-simple .vocab-review-bottom-score-grid {
+  width: 100%;
+}
+
+.vocab-review.vocab-review-mobile-simple .vocab-review-bottom-actions {
+  display: grid;
+  grid-template-columns: minmax(72px, 0.38fr) minmax(0, 1fr);
+  gap: 8px;
+}
+
+.vocab-review.vocab-review-mobile-simple .vocab-review-bottom-actions.is-single {
+  grid-template-columns: 1fr;
+}
+
+.vocab-review.vocab-review-mobile-simple .vocab-review-bottom-actions > button {
+  min-width: 0;
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 6px !important;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.vocab-review.vocab-review-mobile-simple .vocab-review-mark-button {
+  border: 1px solid var(--ms-border) !important;
+  background: #fff !important;
+  color: var(--ms-text) !important;
+}
+
 .vocab-review.vocab-review-mobile-simple.is-compact-desktop .vocab-review-mobile-toolbar,
 .vocab-review.vocab-review-mobile-simple.is-compact-desktop .vocab-review-shell,
 .vocab-review.vocab-review-mobile-simple.is-compact-desktop .vocab-review-empty-state {
   width: 100%;
-  max-width: 1120px;
+  max-width: 1040px;
   margin: 0 auto;
 }
 
@@ -1881,6 +2091,161 @@
 .vocab-review.vocab-review-mobile-simple.is-compact-desktop .vocab-review-example-card,
 .vocab-review.vocab-review-mobile-simple.is-compact-desktop .vocab-review-empty-card {
   box-shadow: none !important;
+}
+
+.vocab-review.vocab-review-mobile-simple.is-compact-desktop .vocab-review-content {
+  scrollbar-gutter: stable;
+}
+
+.vocab-review.vocab-review-mobile-simple.is-compact-desktop .vocab-review-mobile-toolbar {
+  box-shadow: 0 10px 22px rgba(17, 17, 17, 0.04);
+}
+
+.vocab-review.vocab-review-mobile-simple.is-compact-desktop .vocab-review-content {
+  padding-bottom: 0 !important;
+}
+
+.vocab-review.vocab-review-mobile-simple.is-compact-desktop .vocab-review-bottom-bar {
+  position: fixed;
+  left: 50%;
+  bottom: 18px;
+  width: min(1040px, calc(100vw - 56px));
+  transform: translateX(-50%);
+  border: 1px solid var(--ms-border);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 14px 28px rgba(17, 17, 17, 0.1);
+}
+
+.vocab-review.vocab-review-mobile-simple.is-compact-desktop .vocab-review-shell {
+  gap: 14px !important;
+  min-height: 0;
+}
+
+.vocab-review.vocab-review-mobile-simple.is-compact-desktop .vocab-review-hero {
+  display: grid !important;
+  justify-items: center !important;
+  min-height: clamp(260px, 34vh, 380px);
+  align-content: center;
+  padding: 34px 28px 28px !important;
+  border: 1px solid var(--ms-border) !important;
+  border-radius: 8px !important;
+  background: #fff;
+  text-align: center;
+  overflow: visible;
+}
+
+.vocab-review.vocab-review-mobile-simple.is-compact-desktop .vocab-review-hero-body {
+  width: 100%;
+  min-width: 0;
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+}
+
+.vocab-review.vocab-review-mobile-simple.is-compact-desktop .vocab-review-word-line {
+  width: 100%;
+  min-width: 0;
+  justify-content: center !important;
+}
+
+.vocab-review.vocab-review-mobile-simple.is-compact-desktop .vocab-review-hero-title {
+  display: block !important;
+  min-width: 0;
+  max-width: 100%;
+  font-size: clamp(52px, 5.4vw, 96px) !important;
+  line-height: 0.98 !important;
+  letter-spacing: 0 !important;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.vocab-review.vocab-review-mobile-simple.is-compact-desktop .vocab-review-audio-button {
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--ms-border) !important;
+  border-radius: 999px !important;
+  background: var(--ms-surface-muted) !important;
+}
+
+.vocab-review.vocab-review-mobile-simple.is-compact-desktop .vocab-review-hero-meta {
+  justify-content: center !important;
+}
+
+.vocab-review.vocab-review-mobile-simple.is-compact-desktop .vocab-review-score-head {
+  align-items: center !important;
+}
+
+.vocab-review.vocab-review-mobile-simple.is-compact-desktop .score-grid {
+  grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+  gap: 6px !important;
+}
+
+.vocab-review.vocab-review-mobile-simple.is-compact-desktop .score-btn {
+  min-width: 0;
+  min-height: 62px;
+  padding: 8px 4px !important;
+  border-radius: 6px !important;
+}
+
+.vocab-review.vocab-review-mobile-simple.is-compact-desktop .score-btn strong {
+  font-size: 18px !important;
+}
+
+.vocab-review.vocab-review-mobile-simple.is-compact-desktop .score-btn span {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.vocab-review.vocab-review-mobile-simple.is-compact-desktop .vocab-review-meta-card,
+.vocab-review.vocab-review-mobile-simple.is-compact-desktop .vocab-review-study-card {
+  display: none !important;
+}
+
+.vocab-review.vocab-review-mobile-simple.is-compact-desktop .vocab-review-definition-card,
+.vocab-review.vocab-review-mobile-simple.is-compact-desktop .vocab-review-examples-section {
+  margin-top: 2px;
+}
+
+.vocab-review.vocab-review-mobile-simple.is-compact-desktop .vocab-review-mobile-category-row {
+  grid-template-columns: minmax(180px, 240px) minmax(0, 1fr);
+  align-items: center;
+}
+
+.vocab-review.vocab-review-mobile-simple.is-compact-desktop .vocab-review-mobile-control-row {
+  grid-template-columns: minmax(360px, 1fr) auto;
+  align-items: center;
+}
+
+.vocab-review.vocab-review-mobile-simple.is-compact-desktop .vocab-review-filter-pills {
+  grid-template-columns: repeat(3, minmax(110px, 1fr)) !important;
+}
+
+.vocab-review.vocab-review-mobile-simple.is-compact-desktop .vocab-review-pool-row {
+  min-width: 150px;
+}
+
+.vocab-review.vocab-review-mobile-simple.is-compact-desktop .vocab-review-bottom-bar {
+  grid-template-columns: minmax(150px, 0.36fr) minmax(420px, 1fr) minmax(240px, 0.5fr);
+  align-items: center;
+}
+
+.vocab-review.vocab-review-mobile-simple.is-compact-desktop .vocab-review-bottom-meta {
+  display: grid;
+  gap: 2px;
+}
+
+.vocab-review.vocab-review-mobile-simple.is-compact-desktop .vocab-review-bottom-status {
+  text-align: left;
+}
+
+.vocab-review.vocab-review-mobile-simple.is-compact-desktop .vocab-review-bottom-actions {
+  grid-template-columns: minmax(84px, 0.36fr) minmax(140px, 1fr);
 }
 
 .vocab-review .vocab-review-empty-state {
@@ -2017,7 +2382,7 @@
 
   .master-tabs {
     display: grid !important;
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     gap: 6px !important;
     padding: 0 !important;
     border: none !important;
@@ -2155,6 +2520,102 @@
   .vocab-review .vocab-review-empty-card {
     padding: 20px !important;
   }
+
+  .vocab-review.vocab-review-mobile-simple {
+    gap: 6px !important;
+  }
+
+  .vocab-review.vocab-review-mobile-simple.is-compact-desktop {
+    padding: 8px !important;
+  }
+
+  .vocab-review.vocab-review-mobile-simple .vocab-review-mobile-toolbar {
+    padding: 10px !important;
+    border-radius: 6px !important;
+  }
+
+  .vocab-review.vocab-review-mobile-simple .vocab-review-content {
+    padding: 10px !important;
+  }
+
+  .vocab-review.vocab-review-mobile-simple.is-compact-desktop .vocab-review-content {
+    padding: 10px 10px 0 !important;
+  }
+
+  .vocab-review.vocab-review-mobile-simple .vocab-review-bottom-bar {
+    padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .vocab-review.vocab-review-mobile-simple .vocab-review-shell {
+    gap: 12px !important;
+  }
+
+  .vocab-review.vocab-review-mobile-simple.is-compact-desktop .vocab-review-shell {
+    gap: 8px !important;
+  }
+
+  .vocab-review.vocab-review-mobile-simple .vocab-review-card,
+  .vocab-review.vocab-review-mobile-simple .vocab-review-example-card {
+    padding: 14px !important;
+    border-radius: 6px !important;
+  }
+
+  .vocab-review.vocab-review-mobile-simple .vocab-review-hero {
+    gap: 10px !important;
+  }
+
+  .vocab-review.vocab-review-mobile-simple.is-compact-desktop .vocab-review-hero {
+    min-height: 220px;
+    padding: 22px 16px 18px !important;
+  }
+
+  .vocab-review.vocab-review-mobile-simple .vocab-review-hero-title {
+    font-size: 30px !important;
+    line-height: 1.02 !important;
+  }
+
+  .vocab-review.vocab-review-mobile-simple.is-compact-desktop .vocab-review-hero-title {
+    font-size: clamp(38px, 13vw, 58px) !important;
+  }
+
+  .vocab-review.vocab-review-mobile-simple .score-grid {
+    gap: 6px !important;
+  }
+
+  .vocab-review.vocab-review-mobile-simple.is-compact-desktop .score-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+  }
+
+  .vocab-review.vocab-review-mobile-simple .score-btn {
+    min-width: 0 !important;
+    min-height: 54px !important;
+    padding: 7px 4px !important;
+  }
+
+  .vocab-review.vocab-review-mobile-simple .score-btn strong {
+    font-size: 17px !important;
+  }
+
+  .vocab-review.vocab-review-mobile-simple .score-btn span {
+    font-size: 10px !important;
+  }
+
+  .vocab-review.vocab-review-mobile-simple .vocab-review-chip {
+    padding: 5px 8px !important;
+  }
+
+  .vocab-review.vocab-review-mobile-simple .vocab-review-example-main {
+    gap: 8px !important;
+  }
+
+  .vocab-review.vocab-review-mobile-simple .vocab-review-example-text {
+    font-size: 15px !important;
+    line-height: 1.65 !important;
+  }
+
+  .vocab-review.vocab-review-mobile-simple .vocab-review-disclosure-summary {
+    font-size: 14px !important;
+  }
 }
 
 .vocab-review .vocab-review-disclosure-summary {
@@ -2191,6 +2652,46 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--ms-text-faint);
+}
+
+@media (min-width: 641px) {
+  .master-shell.is-desktop-minimal .vocab-review.vocab-review-mobile-simple.is-compact-desktop {
+    padding: 0 !important;
+  }
+
+  .master-shell.is-desktop-minimal .vocab-review.vocab-review-mobile-simple.is-compact-desktop .vocab-review-content {
+    padding: 0 0 118px !important;
+  }
+
+  .master-shell.is-desktop-minimal .vocab-review.vocab-review-mobile-simple.is-compact-desktop .vocab-review-hero {
+    min-height: clamp(260px, 34vh, 380px);
+    padding: 34px 28px 28px !important;
+  }
+
+  .master-shell.is-desktop-minimal .vocab-review.vocab-review-mobile-simple.is-compact-desktop .vocab-review-hero-title {
+    font-size: clamp(52px, 5.4vw, 96px) !important;
+  }
+}
+
+@media (max-width: 980px) and (min-width: 641px) {
+  .master-shell.is-desktop-minimal .vocab-workspace {
+    max-width: none;
+    padding: 12px 14px 16px;
+  }
+
+  .vocab-review.vocab-review-mobile-simple.is-compact-desktop .vocab-review-mobile-category-row,
+  .vocab-review.vocab-review-mobile-simple.is-compact-desktop .vocab-review-mobile-control-row,
+  .vocab-review.vocab-review-mobile-simple.is-compact-desktop .vocab-review-bottom-bar {
+    grid-template-columns: 1fr;
+  }
+
+  .vocab-review.vocab-review-mobile-simple.is-compact-desktop .vocab-review-bottom-bar {
+    width: min(720px, calc(100vw - 32px));
+  }
+
+  .vocab-review.vocab-review-mobile-simple.is-compact-desktop .vocab-review-bottom-actions {
+    grid-template-columns: minmax(84px, 0.36fr) minmax(0, 1fr);
+  }
 }
 
 @media (max-width: 640px) {
@@ -2239,5 +2740,204 @@
     background: #fff !important;
     font-size: 12px !important;
     white-space: nowrap !important;
+  }
+}
+
+.vocab-workspace {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px 16px;
+  overflow: hidden;
+}
+
+.vocab-workspace-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--ms-border);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.94);
+}
+
+.vocab-workspace-heading {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.vocab-workspace-title {
+  font-size: 15px;
+  font-weight: 720;
+  line-height: 1.2;
+}
+
+.vocab-workspace-caption {
+  font-size: 12px;
+  color: var(--ms-text-muted);
+}
+
+.vocab-mode-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--ms-border) !important;
+  border-radius: 999px !important;
+  background: var(--ms-surface-muted) !important;
+  color: var(--ms-text) !important;
+  cursor: pointer;
+}
+
+.vocab-mode-switch-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  text-align: left;
+}
+
+.vocab-mode-switch-label {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.vocab-mode-switch-state {
+  font-size: 11px;
+  color: var(--ms-text-muted);
+}
+
+.vocab-mode-switch-track {
+  position: relative;
+  flex: 0 0 auto;
+  width: 44px;
+  height: 24px;
+  border-radius: 999px;
+  background: rgba(17, 17, 17, 0.1);
+  transition: background-color 180ms ease;
+}
+
+.vocab-mode-switch-track.is-on {
+  background: var(--ms-text);
+}
+
+.vocab-mode-switch-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 180ms ease;
+}
+
+.vocab-mode-switch-track.is-on .vocab-mode-switch-thumb {
+  transform: translateX(20px);
+}
+
+.vocab-workspace-panels {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.vocab-workspace.is-edit-mode .vocab-workspace-panels {
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.vocab-workspace-panel {
+  display: none;
+  height: 100%;
+  min-height: 0;
+}
+
+.vocab-workspace-panel.is-active {
+  display: flex;
+  flex-direction: column;
+}
+
+.vocab-workspace-panel .vocab-review,
+.vocab-workspace-panel .review-scope {
+  height: 100%;
+  min-height: 0;
+}
+
+.vocab-workspace.is-edit-mode .vocab-workspace-panel.is-active {
+  height: auto;
+  min-height: 100%;
+}
+
+.vocab-workspace.is-edit-mode .vocab-workspace-panel .review-scope {
+  height: auto;
+  min-height: 100%;
+}
+
+@media (max-width: 900px) {
+  .vocab-workspace {
+    padding: 12px 12px 14px;
+    gap: 8px;
+  }
+
+  .vocab-workspace-toolbar {
+    padding: 10px 12px;
+  }
+
+  .vocab-mode-switch {
+    padding: 7px 8px;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 640px) {
+  .vocab-workspace {
+    padding: 8px 8px 10px;
+    gap: 8px;
+  }
+
+  .vocab-workspace-toolbar {
+    padding: 10px;
+    gap: 8px;
+  }
+
+  .vocab-workspace-title {
+    font-size: 14px;
+  }
+
+  .vocab-workspace-caption {
+    font-size: 11px;
+  }
+
+  .vocab-mode-switch {
+    padding: 6px 8px;
+    gap: 8px;
+  }
+
+  .vocab-mode-switch-label {
+    font-size: 11px;
+  }
+
+  .vocab-mode-switch-state {
+    font-size: 10px;
+  }
+
+  .vocab-mode-switch-track {
+    width: 40px;
+    height: 22px;
+  }
+
+  .vocab-mode-switch-thumb {
+    width: 18px;
+    height: 18px;
+  }
+
+  .vocab-mode-switch-track.is-on .vocab-mode-switch-thumb {
+    transform: translateX(18px);
   }
 }

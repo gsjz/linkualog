@@ -26,6 +26,14 @@ const SCORE_LABELS = {
   4: '比较牢固',
   5: '非常熟练',
 };
+const SCORE_SHORT_LABELS = {
+  0: '忘了',
+  1: '吃力',
+  2: '想起',
+  3: '记住',
+  4: '牢固',
+  5: '熟练',
+};
 const ENTRY_FILTER_OPTIONS = [
   { value: 'marked', label: '标记词条' },
   { value: 'all', label: '全部词条' },
@@ -309,6 +317,7 @@ const getReviewToneStyle = (score) => {
 
 export default function VocabularyReview({
   onOpenReviewEntry = null,
+  onSelectionChange = null,
   launchRequest = null,
   mobileSimple = false,
   compactDesktop = false,
@@ -457,6 +466,13 @@ export default function VocabularyReview({
     setSelectedEntryId(resolvedEntry.id);
     setDetailData(null);
     setDetailCategory(requestCategory);
+    if (typeof onSelectionChange === 'function') {
+      onSelectionChange({
+        category: requestCategory,
+        word: resolvedEntry.key || resolvedEntry.file || resolvedEntry.word,
+        fileKey: resolvedEntry.file || resolvedEntry.key || resolvedEntry.word,
+      });
+    }
     try {
       const res = await getVocabularyDetail(resolvedEntry.key || resolvedEntry.file || resolvedEntry.word, requestCategory);
       if (detailRequestRef.current !== requestId) return;
@@ -468,7 +484,7 @@ export default function VocabularyReview({
       console.error('加载详情失败', error);
       alert('加载详情失败');
     }
-  }, [entries, resolveEntryCandidate, resolveEntryCategory, selectedCategory]);
+  }, [entries, onSelectionChange, resolveEntryCandidate, resolveEntryCategory, selectedCategory]);
 
   useEffect(() => {
     selectedCategoryRef.current = selectedCategory;
@@ -482,6 +498,7 @@ export default function VocabularyReview({
         applySelectedCategory(ALL_CATEGORIES_VALUE, { resetQuery: true });
       }
       setEntryFilter('all');
+      setWordQuery('');
       previousMobileSimpleRef.current = mobileSimple;
       return;
     }
@@ -489,6 +506,7 @@ export default function VocabularyReview({
     if (enteringMobileSimple) {
       applySelectedCategory(ALL_CATEGORIES_VALUE, { resetQuery: true });
       setEntryFilter('all');
+      setWordQuery('');
       previousMobileSimpleRef.current = mobileSimple;
       return;
     }
@@ -549,13 +567,21 @@ export default function VocabularyReview({
   }, [loadEntries, resetCurrentEntry, selectedCategory]);
 
   useEffect(() => {
-    if (!launchRequest?.word) return;
+    if (!launchRequest?.word && !launchRequest?.filename && !launchRequest?.fileKey) return;
 
     const targetCategory = String(launchRequest.category || '').trim();
-    const targetWord = normalizeVocabularyLaunchWord(launchRequest.word);
-    const targetFileKey = normalizeVocabularyLaunchWord(launchRequest.fileKey || launchRequest.word);
+    const targetWord = normalizeVocabularyLaunchWord(launchRequest.word || launchRequest.filename || launchRequest.fileKey);
+    const targetFileKey = normalizeVocabularyLaunchWord(launchRequest.fileKey || launchRequest.filename || launchRequest.word);
     const browsingAllCategories = isAllCategoriesValue(selectedCategory);
-    if (!targetWord) return;
+    if (!targetWord && !targetFileKey) return;
+
+    const currentEntry = entries.find((item) => item.id === selectedEntryId) || null;
+    const currentEntryCategory = detailCategory || resolveEntryCategory(currentEntry, selectedCategory);
+    const currentEntryKey = normalizeVocabularyLaunchWord(currentEntry?.file || currentEntry?.key || currentEntry?.word);
+    const sameEntry = currentEntryKey
+      && (buildVocabularyWordKey(currentEntryKey) === buildVocabularyWordKey(targetFileKey || targetWord))
+      && (!targetCategory || targetCategory === currentEntryCategory);
+    if (sameEntry) return;
 
     pendingLaunchRef.current = {
       category: targetCategory,
@@ -563,7 +589,7 @@ export default function VocabularyReview({
       fileKey: targetFileKey,
     };
 
-    if (!browsingAllCategories && targetCategory !== selectedCategory) {
+    if (targetCategory && !browsingAllCategories && targetCategory !== selectedCategory) {
       queueMicrotask(() => {
         applySelectedCategory(targetCategory);
       });
@@ -581,7 +607,7 @@ export default function VocabularyReview({
         entries,
       );
     });
-  }, [applySelectedCategory, entries, handleSelectEntry, launchRequest, resolveEntryCandidate, selectedCategory]);
+  }, [applySelectedCategory, detailCategory, entries, handleSelectEntry, launchRequest, resolveEntryCandidate, resolveEntryCategory, selectedCategory, selectedEntryId]);
 
   useEffect(() => {
     const pendingLaunch = pendingLaunchRef.current;
@@ -603,25 +629,6 @@ export default function VocabularyReview({
       );
     });
   }, [entries, entriesCategory, handleSelectEntry, resolveEntryCandidate, selectedCategory]);
-
-  const handleSubmitReviewScore = useCallback(async (score) => {
-    const currentEntry = entries.find((item) => item.id === selectedEntryId)
-      || resolveEntryCandidate(detailData?.word, selectedCategory, entries);
-    const currentEntryCategory = detailCategory || resolveEntryCategory(currentEntry, selectedCategory);
-    if (!detailData || !currentEntry?.file || !currentEntryCategory) return;
-
-    setSavingReviewScore(true);
-    try {
-      await submitReviewScore(currentEntryCategory, currentEntry.file, score, getTodayLocalDateString());
-      const res = await getVocabularyDetail(currentEntry.key || currentEntry.file || currentEntry.word, currentEntryCategory);
-      if (res?.data) setDetailData(res.data);
-    } catch (error) {
-      console.error('记录熟练度失败', error);
-      alert('记录熟练度失败');
-    } finally {
-      setSavingReviewScore(false);
-    }
-  }, [detailCategory, detailData, entries, resolveEntryCandidate, resolveEntryCategory, selectedCategory, selectedEntryId]);
 
   const playAudio = (text, type = 2) => {
     if (!('speechSynthesis' in window)) {
@@ -666,6 +673,30 @@ export default function VocabularyReview({
     void handleSelectEntry(picked, selectedCategory, entries);
   }, [entries, handleSelectEntry, selectedCategory, selectedEntryId, visibleEntries]);
 
+  const handleSubmitReviewScore = useCallback(async (score) => {
+    const currentEntry = entries.find((item) => item.id === selectedEntryId)
+      || resolveEntryCandidate(detailData?.word, selectedCategory, entries);
+    const currentEntryCategory = detailCategory || resolveEntryCategory(currentEntry, selectedCategory);
+    if (!detailData || !currentEntry?.file || !currentEntryCategory) return;
+
+    setSavingReviewScore(true);
+    let shouldAdvance = false;
+    try {
+      await submitReviewScore(currentEntryCategory, currentEntry.file, score, getTodayLocalDateString());
+      const res = await getVocabularyDetail(currentEntry.key || currentEntry.file || currentEntry.word, currentEntryCategory);
+      if (res?.data) setDetailData(res.data);
+      shouldAdvance = mobileSimple;
+    } catch (error) {
+      console.error('记录熟练度失败', error);
+      alert('记录熟练度失败');
+    } finally {
+      setSavingReviewScore(false);
+      if (shouldAdvance && visibleEntries.length > 1) {
+        queueMicrotask(() => handleDrawRandomEntry(visibleEntries));
+      }
+    }
+  }, [detailCategory, detailData, entries, handleDrawRandomEntry, mobileSimple, resolveEntryCandidate, resolveEntryCategory, selectedCategory, selectedEntryId, visibleEntries]);
+
   useEffect(() => {
     if (!mobileSimple) return;
     if (!selectedCategory) return;
@@ -695,7 +726,7 @@ export default function VocabularyReview({
     try {
       const payload = {
         ...detailData,
-        marked: !Boolean(detailData?.marked),
+        marked: !detailData?.marked,
       };
       const res = await saveVocabularyDetail(currentEntryCategory, currentEntry.file, payload);
       const nextData = res?.data || payload;
@@ -723,7 +754,7 @@ export default function VocabularyReview({
     if (!detailData?.word || !currentEntryCategory || typeof onOpenReviewEntry !== 'function') return;
     onOpenReviewEntry({
       category: currentEntryCategory,
-      word: detailData.word,
+      word: currentEntry?.file || currentEntry?.key || detailData.word,
       focus: 'clean',
     });
   };
@@ -758,43 +789,116 @@ export default function VocabularyReview({
     flexDirection: 'column',
     height: '100%',
     width: '100%',
-    background: compactDesktop ? 'linear-gradient(180deg, rgba(250, 250, 250, 0.96), rgba(244, 244, 244, 0.92))' : 'transparent',
-    overflowY: compactDesktop ? 'auto' : 'hidden',
-    padding: compactDesktop ? '24px' : '0',
-    gap: compactDesktop ? '18px' : '0',
+    background: compactDesktop ? 'var(--ms-bg)' : 'transparent',
+    overflow: 'hidden',
+    padding: compactDesktop ? '0' : '0',
+    gap: compactDesktop ? '10px' : '0',
   };
   const mobileSimpleToolbarStyle = {
     width: '100%',
-    maxWidth: compactDesktop ? '1120px' : 'none',
+    maxWidth: compactDesktop ? '1040px' : 'none',
     margin: compactDesktop ? '0 auto' : '0',
-    padding: compactDesktop ? '18px 20px' : '16px',
+    padding: compactDesktop ? '10px' : '12px',
     border: compactDesktop ? '1px solid var(--ms-border)' : 'none',
     borderBottom: compactDesktop ? 'none' : '1px solid var(--ms-border)',
-    borderRadius: compactDesktop ? '12px' : '0',
+    borderRadius: compactDesktop ? '8px' : '0',
     background: 'rgba(255, 255, 255, 0.94)',
     display: 'grid',
-    gap: '12px',
+    gap: '10px',
   };
   const mobileSimpleToolbarGridStyle = {
     display: 'grid',
-    gap: '12px 16px',
-    gridTemplateColumns: compactDesktop ? 'repeat(auto-fit, minmax(280px, 1fr))' : '1fr',
-    alignItems: 'start',
+    gap: '10px',
+    gridTemplateColumns: compactDesktop ? 'minmax(220px, 0.75fr) minmax(360px, 1fr)' : '1fr',
+    alignItems: compactDesktop ? 'center' : 'start',
   };
   const mobileSimpleContentStyle = {
-    flex: compactDesktop ? '0 0 auto' : 1,
+    flex: 1,
     width: '100%',
-    maxWidth: compactDesktop ? '1120px' : 'none',
+    maxWidth: compactDesktop ? '1040px' : 'none',
     margin: compactDesktop ? '0 auto' : '0',
-    padding: compactDesktop ? '0 0 24px' : '20px 16px 28px',
-    overflowY: compactDesktop ? 'visible' : 'auto',
+    padding: compactDesktop ? '0 0 118px' : '12px 12px 16px',
+    overflowY: 'auto',
+    overflowX: 'hidden',
   };
+
+  const mobileScoreControls = mobileSimple ? (
+    <div className="vocab-review-bottom-bar" style={{
+      width: '100%',
+      maxWidth: compactDesktop ? '1040px' : 'none',
+      margin: compactDesktop ? '0 auto' : '0',
+    }}>
+      <div className="vocab-review-bottom-meta">
+        <div className="vocab-review-bottom-title">{detailData ? '本次打分' : '开始刷题'}</div>
+        <div className="vocab-review-bottom-status">
+          {detailData
+            ? (
+              savingReviewScore
+                ? '正在保存...'
+                : latestReview
+                  ? `最近 ${normalizeReviewScore(latestReview.score)}/5`
+                  : '记录今天熟练度'
+            )
+            : `当前词池 ${visibleEntries.length} / ${entries.length}`}
+        </div>
+      </div>
+
+      {detailData ? (
+        <div className="score-grid vocab-review-bottom-score-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(6, minmax(0, 1fr))', gap: '6px' }}>
+          {[0, 1, 2, 3, 4, 5].map((score) => (
+            <button
+              key={score}
+              type="button"
+              className="score-btn"
+              onClick={() => void handleSubmitReviewScore(score)}
+              disabled={savingReviewScore}
+              style={{
+                padding: '8px 4px',
+                borderRadius: '6px',
+                border: '1px solid var(--ms-border)',
+                background: '#fff',
+                color: 'var(--ms-text)',
+                fontSize: '11px',
+                fontWeight: 650,
+                lineHeight: 1.35,
+                cursor: savingReviewScore ? 'not-allowed' : 'pointer',
+              }}
+            >
+              <strong style={{ display: 'block', fontSize: '16px' }}>{score}</strong>
+              <span>{SCORE_SHORT_LABELS[score]}</span>
+            </button>
+          ))}
+        </div>
+      ) : null}
+
+      <div className={`vocab-review-bottom-actions${detailData ? '' : ' is-single'}`}>
+        {detailData ? (
+          <button
+            type="button"
+            className="vocab-review-mark-button"
+            onClick={() => void handleToggleMarked()}
+            disabled={savingMarked}
+          >
+            {savingMarked ? '保存中' : (detailData?.marked ? '已标记' : '标记')}
+          </button>
+        ) : null}
+        <button
+          type="button"
+          className="master-primary-button vocab-review-draw-button"
+          onClick={() => handleDrawRandomEntry()}
+          disabled={!visibleEntries.length}
+        >
+          {detailData ? '下一个词' : '随机抽词'}
+        </button>
+      </div>
+    </div>
+  ) : null;
 
   const detailNode = detailData ? (
     <div className="vocab-review-shell">
       <div className="vocab-review-hero" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+        <div className="vocab-review-hero-body">
+          <div className="vocab-review-word-line" style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
             <h1 className="vocab-review-hero-title" style={{ fontSize: 'clamp(28px, 5vw, 38px)', margin: 0, color: 'var(--ms-text)', lineHeight: 1.06, wordBreak: 'break-word' }}>{detailData.word}</h1>
             <button
               className="vocab-review-audio-button"
@@ -805,7 +909,7 @@ export default function VocabularyReview({
               🔊
             </button>
           </div>
-          <div style={{ marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <div className="vocab-review-hero-meta" style={{ marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             <span className="vocab-review-chip" style={chipStyle()}>目录: {detailCategoryLabel}</span>
             <span className="vocab-review-chip" style={chipStyle()}>释义 {definitions.length}</span>
             <span className="vocab-review-chip" style={chipStyle()}>例句 {examples.length}</span>
@@ -854,24 +958,27 @@ export default function VocabularyReview({
       </div>
 
       {mobileSimple ? (
-        <div className="vocab-review-card" style={{ ...metaCardStyle, display: 'grid', gap: '14px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+        <div className="vocab-review-card vocab-review-score-card" style={{ ...metaCardStyle, display: 'grid', gap: '14px' }}>
+          <div className="vocab-review-score-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
             <div>
               <h3 style={{ ...sectionTitleStyle, borderBottom: 'none', paddingBottom: 0, fontSize: '16px', marginBottom: '6px' }}>本次打分</h3>
               <div style={{ fontSize: '13px', color: 'var(--ms-text-muted)' }}>默认按今天日期记录熟练度</div>
             </div>
-            {latestReview ? (
-              <span className="vocab-review-chip vocab-review-chip-tone" style={{ ...chipStyle(), ...latestReviewTone }}>
-                最近 {normalizeReviewScore(latestReview.score)}/5
-              </span>
-            ) : null}
+            <div className="vocab-review-score-head-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+              {latestReview ? (
+                <span className="vocab-review-chip vocab-review-chip-tone" style={{ ...chipStyle(), ...latestReviewTone }}>
+                  最近 {normalizeReviewScore(latestReview.score)}/5
+                </span>
+              ) : null}
+            </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '8px' }}>
+          <div className="score-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '8px' }}>
             {[0, 1, 2, 3, 4, 5].map((score) => (
               <button
                 key={score}
                 type="button"
+                className="score-btn"
                 onClick={() => void handleSubmitReviewScore(score)}
                 disabled={savingReviewScore}
                 style={{
@@ -887,7 +994,7 @@ export default function VocabularyReview({
                 }}
               >
                 <strong style={{ display: 'block', fontSize: '16px' }}>{score}</strong>
-                <span>{SCORE_LABELS[score]}</span>
+                <span>{mobileSimple ? SCORE_SHORT_LABELS[score] : SCORE_LABELS[score]}</span>
               </button>
             ))}
           </div>
@@ -898,7 +1005,7 @@ export default function VocabularyReview({
         </div>
       ) : null}
 
-      <div className="vocab-review-card" style={{ ...metaCardStyle, display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      <div className="vocab-review-card vocab-review-meta-card" style={{ ...metaCardStyle, display: 'flex', flexDirection: 'column', gap: '14px' }}>
         <h3 style={{ ...sectionTitleStyle, borderBottom: 'none', paddingBottom: 0, fontSize: '16px' }}>词条属性</h3>
 
         <div className="vocab-review-info-grid">
@@ -932,7 +1039,7 @@ export default function VocabularyReview({
         ) : null}
       </div>
 
-      <div className="vocab-review-card" style={metaCardStyle}>
+      <div className="vocab-review-card vocab-review-study-card" style={metaCardStyle}>
         <h3 style={{ ...sectionTitleStyle, borderBottom: 'none', paddingBottom: 0, fontSize: '16px', marginBottom: '14px' }}>学习数据</h3>
         <div style={{ display: 'grid', gap: '10px' }}>
           <div className="vocab-review-data-row" style={{ fontSize: '14px', color: 'var(--ms-text-muted)' }}>
@@ -970,7 +1077,7 @@ export default function VocabularyReview({
         </div>
       </div>
 
-      <div className="vocab-review-sections vocab-review-card" style={{ ...metaCardStyle, gap: '12px' }}>
+      <div className="vocab-review-sections vocab-review-card vocab-review-definition-card" style={{ ...metaCardStyle, gap: '12px' }}>
         {mobileSimple ? (
           <details>
             <summary className="vocab-review-disclosure-summary">
@@ -1005,7 +1112,7 @@ export default function VocabularyReview({
         )}
       </div>
 
-      <div className="vocab-review-sections" style={{ gap: '16px' }}>
+      <div className="vocab-review-sections vocab-review-examples-section" style={{ gap: '16px' }}>
         <h3 style={sectionTitleStyle}>例句</h3>
         {examples.length ? examples.map((example, index) => {
           const rawFocus = example.focusPositions ?? example.focusPosition ?? example.fp ?? example.fps ?? [];
@@ -1153,7 +1260,7 @@ export default function VocabularyReview({
     </div>
   );
 
-  if (compactDesktop) {
+  if (compactDesktop && !mobileSimple) {
     return (
       <div
         className="vocab-review vocab-review-compact-desktop"
@@ -1389,37 +1496,39 @@ export default function VocabularyReview({
       >
         <div className={`vocab-review-mobile-toolbar${compactDesktop ? ' is-compact-desktop' : ''}`} style={mobileSimpleToolbarStyle}>
           <div style={mobileSimpleToolbarGridStyle}>
-            <div style={{ display: 'grid', gap: '12px' }}>
+            <div className="vocab-review-mobile-category-row" style={{ display: 'grid', gap: '10px' }}>
               <select
                 className="vocab-review-select"
                 value={selectedCategory}
                 onChange={(e) => applySelectedCategory(e.target.value)}
-                style={{ width: '100%', padding: '10px 12px', border: '1px solid var(--ms-border)', borderRadius: '8px', fontSize: '14px', outline: 'none', background: '#fff', color: 'var(--ms-text)' }}
+                style={{ width: '100%', padding: '9px 10px', border: '1px solid var(--ms-border)', borderRadius: '6px', fontSize: '13px', outline: 'none', background: '#fff', color: 'var(--ms-text)' }}
               >
                 {compactCategoryOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
               </select>
 
               {compactDesktop ? (
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <div className="vocab-review-pool-chip-row" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   <span className="vocab-review-chip" style={chipStyle()}>范围: {selectedCategoryLabel}</span>
                   <span className="vocab-review-chip" style={chipStyle()}>词池 {visibleEntries.length} / {entries.length}</span>
                 </div>
               ) : null}
             </div>
 
-            <div style={{ display: 'grid', gap: '12px' }}>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <div className="vocab-review-mobile-control-row" style={{ display: 'grid', gap: '10px' }}>
+              <div className="vocab-review-filter-pills" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '6px' }}>
                 {ENTRY_FILTER_OPTIONS.map((option) => (
                   <button
                     key={option.value}
                     type="button"
+                    className={`vocab-review-filter-pill${entryFilter === option.value ? ' is-active' : ''}`}
                     onClick={() => setEntryFilter(option.value)}
                     style={{
-                      padding: '7px 12px',
-                      borderRadius: '999px',
+                      minHeight: '34px',
+                      padding: '6px 8px',
+                      borderRadius: '6px',
                       border: '1px solid var(--ms-border)',
-                      background: entryFilter === option.value ? 'var(--ms-surface-muted)' : '#fff',
-                      color: 'var(--ms-text)',
+                      background: entryFilter === option.value ? 'var(--ms-text)' : '#fff',
+                      color: entryFilter === option.value ? '#fff' : 'var(--ms-text)',
                       fontSize: '12px',
                       fontWeight: 600,
                       cursor: 'pointer',
@@ -1430,58 +1539,9 @@ export default function VocabularyReview({
                 ))}
               </div>
 
-              <div
-                style={{
-                  display: 'grid',
-                  gap: '8px',
-                  alignItems: 'center',
-                  gridTemplateColumns: compactDesktop ? 'minmax(0, 1fr) auto' : '1fr',
-                }}
-              >
-                <div style={{ fontSize: '13px', color: 'var(--ms-text-muted)', minWidth: 0, whiteSpace: compactDesktop ? 'normal' : 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              <div className="vocab-review-pool-row" style={{ display: 'grid', gap: '8px', alignItems: 'center', gridTemplateColumns: 'minmax(0, 1fr)' }}>
+                <div className="vocab-review-pool-status" style={{ fontSize: '12px', color: 'var(--ms-text-muted)', minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   当前词池: <strong style={{ color: 'var(--ms-text)' }}>{visibleEntries.length}</strong> / {entries.length}
-                  {compactDesktop ? ' · 默认聚合全部目录' : ''}
-                </div>
-                <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'nowrap', justifyContent: compactDesktop ? 'flex-end' : 'space-between' }}>
-                  {detailData ? (
-                    <button
-                      type="button"
-                      onClick={() => void handleToggleMarked()}
-                      disabled={savingMarked}
-                      style={{
-                        height: '34px',
-                        padding: '0 10px',
-                        borderRadius: '8px',
-                        border: '1px solid var(--ms-border)',
-                        background: detailData?.marked ? 'var(--ms-surface-muted)' : '#fff',
-                        color: 'var(--ms-text)',
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        whiteSpace: 'nowrap',
-                        cursor: savingMarked ? 'not-allowed' : 'pointer',
-                      }}
-                    >
-                      {savingMarked ? '保存中' : (detailData?.marked ? '已标记' : '标记词条')}
-                    </button>
-                  ) : null}
-                  <button
-                    type="button"
-                    onClick={() => handleDrawRandomEntry()}
-                    disabled={!visibleEntries.length}
-                    className="master-primary-button"
-                    style={{
-                      height: '34px',
-                      padding: '0 12px',
-                      color: '#fff',
-                      borderRadius: '8px',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      whiteSpace: 'nowrap',
-                      cursor: visibleEntries.length ? 'pointer' : 'not-allowed',
-                    }}
-                  >
-                    {detailData ? '换一个单词' : '随机抽词'}
-                  </button>
                 </div>
               </div>
             </div>
@@ -1491,6 +1551,7 @@ export default function VocabularyReview({
         <div className="vocab-review-content" style={mobileSimpleContentStyle}>
           {detailNode}
         </div>
+        {mobileScoreControls}
       </div>
     );
   }
