@@ -8,6 +8,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 
 def _load_dotenv(path: Path) -> None:
@@ -125,9 +126,29 @@ HTML_NO_CACHE_HEADERS = {
 
 
 class FrontendStaticFiles(StaticFiles):
+    def __init__(self, *args, spa_fallback_file: Path | None = None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.spa_fallback_file = spa_fallback_file
+
+    def _should_spa_fallback(self, path: str) -> bool:
+        normalized_path = str(path or "").strip().lstrip("/")
+        if not normalized_path:
+            return False
+        if normalized_path.startswith(("api/", "assets/")):
+            return False
+        return not Path(normalized_path).suffix
+
     async def get_response(self, path: str, scope):
-        response = await super().get_response(path, scope)
+        try:
+            response = await super().get_response(path, scope)
+        except StarletteHTTPException as exc:
+            if exc.status_code == 404 and self.spa_fallback_file and self._should_spa_fallback(path):
+                return _html_file_response(self.spa_fallback_file)
+            raise
+
         normalized_path = str(path or "").strip().lower()
+        if response.status_code == 404 and self.spa_fallback_file and self._should_spa_fallback(path):
+            return _html_file_response(self.spa_fallback_file)
         if response.status_code == 200 and normalized_path.endswith(".html"):
             response.headers.update(HTML_NO_CACHE_HEADERS)
         return response
@@ -155,7 +176,7 @@ def _mount_frontend_static(target_app: FastAPI) -> bool:
     def serve_review_index():
         return _html_file_response(review_file if review_file.exists() else index_file)
 
-    target_app.mount("/", FrontendStaticFiles(directory=dist_dir, html=True), name="frontend")
+    target_app.mount("/", FrontendStaticFiles(directory=dist_dir, html=True, spa_fallback_file=index_file), name="frontend")
     return True
 
 class EndpointFilter(logging.Filter):
