@@ -60,6 +60,48 @@ docker compose restart master-server
 docker compose up -d --build master-server
 ```
 
+### 域名反代部署
+
+如果你打算让 `master-server` 只监听本机端口，再由 Nginx 反代域名访问，使用单独入口：
+
+```bash
+cd /path/to/linkualog
+cp .env.domain.example .env
+# 编辑 .env，至少填入 MASTER_SERVER_LLM_API_KEY
+
+./deploy-domain.sh master-server
+```
+
+如果还要同时部署 QQ bot：
+
+```bash
+./deploy-domain.sh
+```
+
+这套部署默认暴露：
+
+- `127.0.0.1:18080` -> 前端和 API
+- `127.0.0.1:18081` -> 同一个 FastAPI 服务端口
+
+然后由 Nginx 反代到：
+
+```nginx
+proxy_pass http://127.0.0.1:18080;
+```
+
+Nginx 示例见：
+
+```text
+deploy/nginx/linkualog.example.conf
+```
+
+### 重要约束
+
+- 不要混用 `docker-compose.yml` 和 `docker-compose.domain.yml`。
+- 直出公网端口部署用 `./deploy.sh`。
+- 域名反代部署用 `./deploy-domain.sh`。
+- `qq-bot` 依赖和 `master-server` 在同一个 Compose 网络里，单独拉起 bot 时也必须走同一套脚本/compose 文件。
+
 ## 怎么使用
 
 1. 打开主前端，在“全局配置”里确认模型和默认生词本目录。
@@ -78,6 +120,12 @@ http://<你的主机>:8080/api/vocabulary/add
 
 ```bash
 ./deploy.sh
+```
+
+如果当前使用的是域名反代部署，改用：
+
+```bash
+./deploy-domain.sh
 ```
 
 ## 数据在哪里

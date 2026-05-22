@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 cd "${SCRIPT_DIR}"
 
-COMPOSE_FILE="docker-compose.yml"
+COMPOSE_FILE="docker-compose.domain.yml"
 PROJECT_NAME="linkualog"
 EXPECTED_CONFIG_FILE="${SCRIPT_DIR}/${COMPOSE_FILE}"
 
@@ -31,7 +31,7 @@ ensure_matching_deployment_mode() {
   fi
 
   echo "container ${container_name} is managed by ${actual_config_file}" >&2
-  echo "refusing to mix deployment modes; use ./deploy-domain.sh for reverse-proxy deployment" >&2
+  echo "refusing to mix deployment modes; use ./deploy.sh for direct public-port deployment" >&2
   exit 1
 }
 
@@ -39,22 +39,15 @@ ensure_matching_deployment_mode "master-server-app"
 ensure_matching_deployment_mode "qq-linkualog-bot"
 
 if [[ ! -f .env ]]; then
-  cp .env.example .env
-  echo "created .env from template; fill QQ_APP_ID and QQ_APP_SECRET first" >&2
+  cp .env.domain.example .env
+  echo "created .env from domain template; fill MASTER_SERVER_LLM_API_KEY first" >&2
 fi
 
-qq_app_id="$(sed -n 's/^QQ_APP_ID=//p' .env | head -n 1)"
-qq_app_secret="$(sed -n 's/^QQ_APP_SECRET=//p' .env | head -n 1)"
-
-if [[ -z "${qq_app_id}" ]]; then
-  echo "QQ_APP_ID is missing in .env" >&2
+llm_api_key="$(sed -n 's/^MASTER_SERVER_LLM_API_KEY=//p' .env | head -n 1)"
+if [[ -z "${llm_api_key}" || "${llm_api_key}" == "replace_me" ]]; then
+  echo "MASTER_SERVER_LLM_API_KEY is missing in .env" >&2
   exit 1
 fi
 
-if [[ -z "${qq_app_secret}" || "${qq_app_secret}" == "replace_me" ]]; then
-  echo "QQ_APP_SECRET is missing in .env" >&2
-  exit 1
-fi
-
-"${DOCKER[@]}" compose -p "${PROJECT_NAME}" -f "${COMPOSE_FILE}" --profile qq-bot up -d --build
+"${DOCKER[@]}" compose -p "${PROJECT_NAME}" -f "${COMPOSE_FILE}" --profile qq-bot up -d --build "$@"
 "${DOCKER[@]}" compose -p "${PROJECT_NAME}" -f "${COMPOSE_FILE}" --profile qq-bot ps

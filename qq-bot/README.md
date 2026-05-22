@@ -37,6 +37,8 @@ cp .env.example .env
 - `QQ_LOCAL_DATA_DIR`
 - `QQ_LINKUALOG_ENV_FILE`
 
+QQ bot 复用 `MASTER_SERVER_LLM_PROVIDER` 时，现在也支持直接填写 Base URL，例如 `https://api.openai.com/v1`，运行时会自动补全 `/chat/completions`。
+
 ## 本地运行
 
 先启动 `master-server`：
@@ -57,23 +59,39 @@ uv run main.py
 
 ## Docker 运行
 
-推荐使用仓库根目录的 `deploy.sh`：
+直出公网端口部署时，使用仓库根目录的 `deploy.sh`：
 
 ```bash
 cd /path/to/linkualog
 ./deploy.sh
 ```
 
-它会通过 `docker compose --profile qq-bot up -d --build` 启动：
+它会通过 `docker-compose.yml` 启动：
 
 - `master-server`
 - `qq-bot`
 
+如果你当前使用的是 Nginx 反代域名部署，改用：
+
+```bash
+cd /path/to/linkualog
+./deploy-domain.sh
+```
+
+它会通过 `docker-compose.domain.yml` 启动同一套 `master-server + qq-bot`，避免把 bot 拉到错误的 Compose 网络里。
+
 查看状态和日志：
 
 ```bash
-docker compose --profile qq-bot ps
-docker compose --profile qq-bot logs -f qq-bot
+docker compose -f docker-compose.yml --profile qq-bot ps
+docker compose -f docker-compose.yml --profile qq-bot logs -f qq-bot
+```
+
+域名反代部署对应：
+
+```bash
+docker compose -f docker-compose.domain.yml --profile qq-bot ps
+docker compose -f docker-compose.domain.yml --profile qq-bot logs -f qq-bot
 ```
 
 如果当前用户没有 Docker 权限，可以按环境改用 `sudo docker compose ...`。

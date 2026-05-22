@@ -10,8 +10,7 @@
 cd /path/to/linkualog
 cp .env.domain.example .env
 # 填写 MASTER_SERVER_LLM_API_KEY
-
-docker compose -f docker-compose.domain.yml up -d --build master-server
+./deploy-domain.sh master-server
 ```
 
 `docker-compose.domain.yml` 默认暴露：
@@ -37,6 +36,7 @@ proxy_pass http://127.0.0.1:18080;
 
 ## 注意
 
+- 反代域名部署统一使用 `./deploy-domain.sh`，不要和 `./deploy.sh` 混用。
 - 私有域名配置不要提交到仓库。
 - 本目录下的 `*.private.conf` 已被 `.gitignore` 忽略，可用于保存服务器本地配置。
-- 如果还要同时部署 QQ bot，使用 Compose 的 `--profile qq-bot`。
+- 如果还要同时部署 QQ bot，直接运行 `./deploy-domain.sh`。
