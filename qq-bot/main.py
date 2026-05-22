@@ -19,6 +19,7 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse, urlunparse
 from uuid import uuid4
 
 APP_DIR = Path(__file__).resolve().parent
@@ -210,6 +211,25 @@ def env_path(name: str, default: Path) -> Path:
     if not raw:
         return default
     return Path(raw).expanduser()
+
+
+def resolve_chat_completions_url(provider: str) -> str:
+    raw = str(provider or "").strip()
+    if not raw:
+        raise RuntimeError("missing llm provider")
+
+    parsed = urlparse(raw)
+    if not parsed.scheme or not parsed.netloc:
+        raise RuntimeError(f"invalid llm provider: {raw!r}")
+
+    path = parsed.path.rstrip("/")
+    if path.lower().endswith("/chat/completions"):
+        normalized_path = path
+    elif path:
+        normalized_path = f"{path}/chat/completions"
+    else:
+        normalized_path = "/chat/completions"
+    return urlunparse(parsed._replace(path=normalized_path, fragment=""))
 
 
 def collapse_ws(text: str) -> str:
@@ -852,6 +872,7 @@ class LinkuaLogClient:
 class LLMClient:
     def __init__(self, *, provider: str, model: str, api_key: str, enabled: bool) -> None:
         self.provider = provider.strip()
+        self.request_url = resolve_chat_completions_url(self.provider) if self.provider else ""
         self.model = model.strip()
         self.api_key = api_key.strip()
         self.enabled = bool(enabled and self.provider and self.model and self.api_key)
@@ -914,7 +935,7 @@ class LLMClient:
             try:
                 result = http_json(
                     "POST",
-                    self.provider,
+                    self.request_url,
                     headers={"Authorization": f"Bearer {self.api_key}"},
                     data=request_payload,
                     timeout=timeout,

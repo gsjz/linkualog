@@ -126,6 +126,10 @@ export default function ConfigDrawer({ open, onClose }) {
             <input value={provider} onChange={(event) => setProvider(event.target.value)} required disabled={loading || saving || resetting} />
           </label>
 
+          <div className="muted">
+            支持填写 Base URL，保存时会自动兼容 `/chat/completions`。
+          </div>
+
           <label>
             Model
             <input value={model} onChange={(event) => setModel(event.target.value)} required disabled={loading || saving || resetting} />

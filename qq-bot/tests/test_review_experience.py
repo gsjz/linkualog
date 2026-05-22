@@ -316,7 +316,7 @@ class QQBotReviewExperienceTests(unittest.TestCase):
             combined = "\n".join(str(item.get("content") or "") for item in messages if isinstance(item, dict))
             if len(calls) == 1:
                 raise RuntimeError(
-                    "HTTP 400 for https://relay.nf.video/v1/chat/completions: "
+                    "HTTP 400 for https://provider.example/v1/chat/completions: "
                     "{\"error\":{\"message\":\"Response input messages must contain the word 'json' in some form to use 'text.format' of type 'json_object'.\"}}"
                 )
             self.assertIn("json", combined)
@@ -324,13 +324,31 @@ class QQBotReviewExperienceTests(unittest.TestCase):
 
         QQBOT.http_json = fake_http_json
         try:
-            client = QQBOT.LLMClient(provider="https://relay.nf.video/v1/chat/completions", model="x", api_key="k", enabled=True)
+            client = QQBOT.LLMClient(provider="https://provider.example/v1/chat/completions", model="x", api_key="k", enabled=True)
             result = client.chat_json(system_prompt="请只返回结构化结果。", user_prompt='{"word":"abandon"}')
         finally:
             QQBOT.http_json = original_http_json
 
         self.assertEqual(result["score"], 5)
         self.assertEqual(len(calls), 2)
+
+    def test_llm_client_appends_chat_completions_when_provider_is_base_url(self) -> None:
+        calls = []
+        original_http_json = QQBOT.http_json
+
+        def fake_http_json(method, url, headers=None, data=None, timeout=0):
+            calls.append({"method": method, "url": url, "data": data})
+            return {"choices": [{"message": {"content": "{\"score\": 5}"}}]}
+
+        QQBOT.http_json = fake_http_json
+        try:
+            client = QQBOT.LLMClient(provider="https://provider.example/v1", model="x", api_key="k", enabled=True)
+            result = client.chat_json(system_prompt="请返回 json。", user_prompt='{"word":"abandon"}')
+        finally:
+            QQBOT.http_json = original_http_json
+
+        self.assertEqual(result["score"], 5)
+        self.assertEqual(calls[0]["url"], "https://provider.example/v1/chat/completions")
 
     def test_review_mode_persists_and_mode2_can_score_fill_blank(self) -> None:
         payload = {

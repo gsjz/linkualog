@@ -6,6 +6,7 @@ from tempfile import TemporaryDirectory
 
 from api import routes
 from core import config
+from core.llm_provider import resolve_chat_completions_url
 
 
 class ConfigResetTests(unittest.TestCase):
@@ -63,6 +64,17 @@ class ConfigResetTests(unittest.TestCase):
         self.assertTrue(result["data"]["hasKey"])
         self.assertNotIn("api_key", result["data"])
         self.assertNotIn("config_file", result["data"])
+
+    def test_provider_base_url_is_preserved_in_config_but_resolves_to_chat_completions(self):
+        os.environ["MASTER_SERVER_LLM_PROVIDER"] = "https://env.example/v1"
+
+        result = routes.reset_config()
+
+        self.assertEqual(result["data"]["provider"], "https://env.example/v1")
+        self.assertEqual(
+            resolve_chat_completions_url(result["data"]["provider"]),
+            "https://env.example/v1/chat/completions",
+        )
 
 
 if __name__ == "__main__":

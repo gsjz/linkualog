@@ -9,6 +9,7 @@ from requests.adapters import HTTPAdapter
 from urllib.parse import urlparse
 
 from core.config import get_config_data
+from core.llm_provider import resolve_chat_completions_url
 from services.lemma_dictionary import get_lemma_words
 
 logger = logging.getLogger("master_server.review.llm")
@@ -436,6 +437,7 @@ def _call_llm_json(
     api_key = config.get("api_key")
     provider = config.get("provider")
     model = config.get("model")
+    request_url = resolve_chat_completions_url(provider)
 
     if not api_key:
         raise ValueError("未配置 master-server 的 API Key")
@@ -461,9 +463,10 @@ def _call_llm_json(
     final_timeout = timeout_seconds if timeout_seconds is not None else float(settings["default_timeout_seconds"])
     connect_timeout = min(max(3.0, final_timeout / 3), 10.0)
     logger.info(
-        "[LLM][%s] Request start provider=%s model=%s prompt_len=%s max_tokens=%s temperature=%.2f connect_timeout=%.1fs read_timeout=%.1fs max_retries=%s",
+        "[LLM][%s] Request start provider=%s request_url=%s model=%s prompt_len=%s max_tokens=%s temperature=%.2f connect_timeout=%.1fs read_timeout=%.1fs max_retries=%s",
         request_tag,
         provider,
+        request_url,
         model,
         len(prompt),
         max_tokens,
@@ -480,7 +483,7 @@ def _call_llm_json(
         request_start = time.perf_counter()
         try:
             response = _HTTP.post(
-                provider,
+                request_url,
                 headers=headers,
                 json=payload,
                 timeout=(connect_timeout, final_timeout),

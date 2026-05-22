@@ -87,7 +87,7 @@ def _specs() -> dict[str, dict]:
         "provider": {
             "kind": "str",
             "env": ["MASTER_SERVER_LLM_PROVIDER", "MASTER_LLM_PROVIDER", "LLM_PROVIDER"],
-            "default": "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
+            "default": "https://dashscope.aliyuncs.com/compatible-mode/v1",
         },
         "model": {
             "kind": "str",

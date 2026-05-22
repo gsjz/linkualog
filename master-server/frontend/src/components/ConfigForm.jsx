@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 
 import { fetchConfig, resetConfig, saveConfig } from '../api/client';
 
-const DEFAULT_PROVIDER = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions';
+const DEFAULT_PROVIDER = 'https://dashscope.aliyuncs.com/compatible-mode/v1';
 const DEFAULT_MODEL = 'qwen3.5-flash';
 const DEFAULT_UI_CONFIG = {
   defaultFoldedKeys: 'extracted_text,bbox',
@@ -266,6 +266,9 @@ export default function ConfigForm({ onClose, categories = [] }) {
                   接口地址 (Provider API)
                   <input type="text" value={config.provider} onChange={(e) => setField('provider', e.target.value)} style={inputStyle(loading)} required disabled={loading || saving || resetting} />
                 </label>
+                <div className="config-info-box">
+                  支持直接填写 Base URL，例如 `https://dashscope.aliyuncs.com/compatible-mode/v1`；系统会自动补全 `/chat/completions`。
+                </div>
                 <label style={labelStyle}>
                   模型名称 (Model)
                   <input type="text" value={config.model} onChange={(e) => setField('model', e.target.value)} style={inputStyle(loading)} required disabled={loading || saving || resetting} />

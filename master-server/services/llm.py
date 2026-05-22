@@ -4,6 +4,7 @@ import json
 import time
 import requests
 from core.config import get_config_data
+from core.llm_provider import resolve_chat_completions_url
 
 try:
     from PIL import Image, ImageOps
@@ -176,8 +177,10 @@ def test_llm_connection(api_url: str, api_key: str, model_name: str) -> bool:
         ]
     }
 
+    request_url = resolve_chat_completions_url(api_url)
+
     try:
-        response = requests.post(api_url, headers=headers, json=payload, timeout=10)
+        response = requests.post(request_url, headers=headers, json=payload, timeout=10)
         response.raise_for_status()
         
         print("✅ LLM 连通性测试通过！")
@@ -217,6 +220,7 @@ def process_image(image_bytes: bytes, filename: str, content_type: str, experime
         raise ValueError("未找到 API Key，请先配置")
 
     api_url = config.get("provider")
+    request_url = resolve_chat_completions_url(api_url)
     model_name = config.get("model")
 
     if not test_llm_connection(api_url, api_key, model_name):
@@ -268,7 +272,7 @@ def process_image(image_bytes: bytes, filename: str, content_type: str, experime
     max_retries = 3
     for attempt in range(max_retries):
         try:
-            response = requests.post(api_url, headers=headers, json=payload, timeout=120)
+            response = requests.post(request_url, headers=headers, json=payload, timeout=120)
             response.raise_for_status()
             
             result_data = response.json()
@@ -301,6 +305,7 @@ def process_word_definition(word: str) -> dict:
     config = get_config_data()
     api_key = config.get("api_key")
     api_url = config.get("provider")
+    request_url = resolve_chat_completions_url(api_url)
     model_name = config.get("model")
 
     if not api_key: raise ValueError("未找到 API Key，请先配置")
@@ -330,7 +335,7 @@ def process_word_definition(word: str) -> dict:
     print(f"🔄 正在向 LLM 请求基础释义: {word}")
     for attempt in range(3):
         try:
-            response = requests.post(api_url, headers=headers, json=payload, timeout=30)
+            response = requests.post(request_url, headers=headers, json=payload, timeout=30)
             response.raise_for_status()
             llm_reply = _extract_message_content(response.json()['choices'][0]['message']['content'])
             llm_reply = _clean_llm_json_text(llm_reply)
@@ -348,6 +353,7 @@ def process_context_analysis(word: str, context: str) -> dict:
     config = get_config_data()
     api_key = config.get("api_key")
     api_url = config.get("provider")
+    request_url = resolve_chat_completions_url(api_url)
     model_name = config.get("model")
 
     if not api_key: raise ValueError("未找到 API Key，请先配置")
@@ -382,7 +388,7 @@ def process_context_analysis(word: str, context: str) -> dict:
     print(f"🔄 正在向 LLM 请求例句解析: {word}")
     for attempt in range(3):
         try:
-            response = requests.post(api_url, headers=headers, json=payload, timeout=30)
+            response = requests.post(request_url, headers=headers, json=payload, timeout=30)
             response.raise_for_status()
             llm_reply = _extract_message_content(response.json()['choices'][0]['message']['content'])
             llm_reply = _clean_llm_json_text(llm_reply)

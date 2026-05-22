@@ -18,6 +18,13 @@ cp .env.example .env
 - `MASTER_SERVER_LLM_MODEL`
 - `MASTER_SERVER_LLM_API_KEY`
 
+`MASTER_SERVER_LLM_PROVIDER` 现在支持直接填写 Base URL，例如：
+
+- `https://api.openai.com/v1`
+- `https://dashscope.aliyuncs.com/compatible-mode/v1`
+
+服务端请求时会自动补全 `/chat/completions`。
+
 前端“全局配置”会写入 `master-server/local_data/llm_config.json`，用于覆盖 `.env` 中的部分设置。
 
 ## 本地运行

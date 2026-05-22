@@ -5,7 +5,7 @@ services:
       dockerfile: Dockerfile
     container_name: master-server-app
     environment:
-      - MASTER_SERVER_LLM_PROVIDER=${MASTER_SERVER_LLM_PROVIDER:-https://api.openai.com/v1/chat/completions}
+      - MASTER_SERVER_LLM_PROVIDER=${MASTER_SERVER_LLM_PROVIDER:-https://api.openai.com/v1}
       - MASTER_SERVER_LLM_MODEL=${MASTER_SERVER_LLM_MODEL:-gpt-5.4}
       - MASTER_SERVER_LLM_API_KEY=${MASTER_SERVER_LLM_API_KEY:-}
       - MASTER_SERVER_BACKEND_PORT=18081
@@ -38,7 +38,7 @@ services:
     environment:
       - QQ_APP_ID=${QQ_APP_ID:-}
       - QQ_APP_SECRET=${QQ_APP_SECRET:-}
-      - MASTER_SERVER_LLM_PROVIDER=${MASTER_SERVER_LLM_PROVIDER:-https://api.openai.com/v1/chat/completions}
+      - MASTER_SERVER_LLM_PROVIDER=${MASTER_SERVER_LLM_PROVIDER:-https://api.openai.com/v1}
       - MASTER_SERVER_LLM_MODEL=${MASTER_SERVER_LLM_MODEL:-gpt-5.4}
       - MASTER_SERVER_LLM_API_KEY=${MASTER_SERVER_LLM_API_KEY:-}
       - QQ_LINKUALOG_BASE_URL=http://master-server:18081
