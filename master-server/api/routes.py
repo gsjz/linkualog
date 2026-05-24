@@ -12,11 +12,12 @@ from pydantic import BaseModel
 from core.config import get_public_config_data, reset_config_data, save_config_data
 from core.storage import save_temp_file
 from core.tasks import load_tasks, save_tasks, create_task
-from services.llm import process_image, process_word_definition, process_context_analysis
+from services.llm import process_image, process_word_definition, process_context_analysis, recommend_task_name
 from core.vocabulary import (
     merge_or_create_vocab,
     VOCAB_DIR,
     list_vocab_filenames,
+    list_vocab_source_names,
     load_vocab,
     normalize_vocab_lookup_word,
 )
@@ -430,8 +431,29 @@ class TaskRenameRequest(BaseModel):
     name: str
 
 
+class TaskNameRecommendRequest(BaseModel):
+    subject: str = ""
+    context: str = ""
+
+
 class TaskPageParsedResultRequest(BaseModel):
     parsed_result: dict
+
+
+@router.post("/api/task_name/recommend")
+def recommend_resource_task_name(req: TaskNameRecommendRequest):
+    try:
+        source_names = list_vocab_source_names(limit=240)
+        suggestion = recommend_task_name(req.subject, source_names, req.context)
+        return {
+            "status": "success",
+            "data": suggestion,
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.patch("/api/task/{task_id}")
 def rename_task(task_id: str, req: TaskRenameRequest):

@@ -4,7 +4,7 @@ import os
 import re
 from datetime import datetime
 
-from filelock import FileLock
+from filelock import FileLock, Timeout
 
 VOCAB_DIR = os.environ.get("VOCAB_DIR", "../data/")
 os.makedirs(VOCAB_DIR, exist_ok=True)
@@ -52,6 +52,70 @@ def list_vocab_filenames(category: str = "") -> list[str]:
 
 def list_vocab_words(category: str = "") -> list[str]:
     return [os.path.splitext(filename)[0] for filename in list_vocab_filenames(category)]
+
+
+def _normalize_source_name(value) -> str:
+    return re.sub(r"\s+", " ", str(value or "")).strip()
+
+
+def _extract_source_name(source) -> str:
+    if isinstance(source, dict):
+        return _normalize_source_name(
+            source.get("text")
+            or source.get("name")
+            or source.get("title")
+            or source.get("label")
+        )
+    if isinstance(source, str):
+        return _normalize_source_name(source)
+    return ""
+
+
+def list_vocab_source_names(limit: int | None = None) -> list[str]:
+    pattern = os.path.join(VOCAB_DIR, "**", "*.json")
+    counts: dict[str, dict] = {}
+
+    for path in sorted(glob.glob(pattern, recursive=True)):
+        try:
+            with FileLock(f"{path}.lock", timeout=1):
+                with open(path, "r", encoding="utf-8") as f:
+                    payload = json.load(f)
+        except (OSError, json.JSONDecodeError, Timeout):
+            continue
+
+        if not isinstance(payload, dict):
+            continue
+
+        source_names = []
+        top_level_source = _extract_source_name(payload.get("source"))
+        if top_level_source:
+            source_names.append(top_level_source)
+
+        examples = payload.get("examples")
+        if isinstance(examples, list):
+            for example in examples:
+                if not isinstance(example, dict):
+                    continue
+                source_name = _extract_source_name(example.get("source"))
+                if source_name:
+                    source_names.append(source_name)
+
+        for source_name in source_names:
+            dedupe_key = source_name.casefold()
+            item = counts.get(dedupe_key)
+            if item is None:
+                item = {"name": source_name, "count": 0}
+                counts[dedupe_key] = item
+            item["count"] += 1
+
+    source_items = sorted(
+        counts.values(),
+        key=lambda item: (-int(item["count"]), str(item["name"]).casefold()),
+    )
+    names = [str(item["name"]) for item in source_items]
+    if limit is None:
+        return names
+    return names[:max(0, int(limit))]
 
 def load_vocab(word: str, category: str = ""):
     path = get_vocab_path(word, category, create_dir=False)

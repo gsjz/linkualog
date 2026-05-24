@@ -1,6 +1,7 @@
 import base64
 import io
 import json
+import re
 import time
 import requests
 from core.config import get_config_data
@@ -23,6 +24,18 @@ if register_heif_opener is not None:
 
 def _clean_llm_json_text(content: str) -> str:
     return content.replace("```json", "").replace("```", "").strip()
+
+
+def _parse_llm_json_reply(content: str):
+    clean = _clean_llm_json_text(content)
+    try:
+        return json.loads(clean)
+    except json.JSONDecodeError:
+        start = clean.find("{")
+        end = clean.rfind("}")
+        if start >= 0 and end > start:
+            return json.loads(clean[start:end + 1])
+        raise
 
 
 def _extract_message_content(content) -> str:
@@ -395,4 +408,261 @@ def process_context_analysis(word: str, context: str) -> dict:
             return standard_json.loads(llm_reply)
         except Exception as e:
             if attempt == 2: raise Exception(f"请求大模型处理例句解析失败: {e}")
+            time.sleep(1)
+
+
+def _clean_task_name_suggestion(value) -> str:
+    cleaned = re.sub(r"\s+", " ", str(value or "")).strip()
+    cleaned = cleaned.strip("\"'“”‘’`")
+    cleaned = re.sub(r"[\r\n\t]+", " ", cleaned).strip()
+    return cleaned[:80]
+
+
+_CET_BASE_RE = re.compile(
+    r"\b(CET\s*6|CET6|六级)\s*(?:20)?(\d{2})\s*(\d{1,2})\s*(\d+)\b",
+    flags=re.IGNORECASE,
+)
+_CET6_SIGNAL_RE = re.compile(r"\bCET\s*6\b|CET6|六级", flags=re.IGNORECASE)
+_CET_ONLY_SIGNAL_RE = re.compile(r"\bCET\b(?!\s*[46])", flags=re.IGNORECASE)
+_QUESTION_NUMBER_RE = re.compile(r"\b([1-5]\d)\s*[.．]")
+_PASSAGE_RE = re.compile(r"\bPassage\s+(One|Two|Three|Four|1|2|3|4)\b", flags=re.IGNORECASE)
+_ROMAN_PASSAGE_MAP = {"one": 1, "two": 2, "three": 3, "four": 4}
+_TASK_SOURCE_STOPWORDS = {
+    "cet",
+    "cet6",
+    "c",
+    "阅读",
+    "匹配",
+    "听力",
+    "翻译",
+    "选词",
+    "填空",
+    "长篇",
+}
+
+
+def _normalize_cet_base(subject: str) -> str | None:
+    match = _CET_BASE_RE.search(subject or "")
+    if not match:
+        return None
+    exam = "CET6"
+    year = str(int(match.group(2)))
+    month = str(int(match.group(3)))
+    set_no = str(int(match.group(4)))
+    return f"{exam} {year} {month} {set_no}"
+
+
+def _infer_cet_reading_suffix(context: str) -> str:
+    text = str(context or "")
+    if not text.strip():
+        return ""
+
+    passage_numbers = []
+    for match in _PASSAGE_RE.finditer(text):
+        raw = match.group(1).lower()
+        passage_numbers.append(int(raw) if raw.isdigit() else _ROMAN_PASSAGE_MAP.get(raw, 0))
+    passage_numbers = sorted({num for num in passage_numbers if num > 0})
+
+    question_numbers = sorted({int(item) for item in _QUESTION_NUMBER_RE.findall(text)})
+    has_46_50 = any(46 <= num <= 50 for num in question_numbers)
+    has_51_55 = any(51 <= num <= 55 for num in question_numbers)
+
+    if 2 in passage_numbers and 1 not in passage_numbers:
+        return "阅读2"
+    if 1 in passage_numbers and 2 in passage_numbers:
+        return "阅读1-2"
+    if has_51_55 and not has_46_50:
+        return "阅读2"
+    if has_46_50 and not has_51_55:
+        return "阅读1"
+    if has_46_50 and has_51_55:
+        return "阅读1-2"
+    return ""
+
+
+def _build_task_name_context_hints(subject: str, context: str) -> dict:
+    base = _normalize_cet_base(subject)
+    suffix = _infer_cet_reading_suffix(context)
+    hints = {
+        "subject_is_blank": not str(subject or "").strip(),
+        "normalized_base": base or "",
+        "suggested_suffix_from_local_clues": suffix,
+        "visible_edge_or_key_clues": [],
+        "negative_clues": [],
+    }
+    if "Passage Two" in context or "Passage 2" in context:
+        hints["visible_edge_or_key_clues"].append("正文边角/标题位置出现 Passage Two")
+    if re.search(r"Questions\s+51\s+to\s+55", context, flags=re.IGNORECASE):
+        hints["visible_edge_or_key_clues"].append("关键说明出现 Questions 51 to 55")
+    question_numbers = sorted({int(item) for item in _QUESTION_NUMBER_RE.findall(context or "")})
+    if question_numbers:
+        hints["visible_edge_or_key_clues"].append(f"可见题号范围 {question_numbers[0]}-{question_numbers[-1]}")
+    if not str(subject or "").strip() and context.strip():
+        hints["visible_edge_or_key_clues"].append("任务主体未填写，需要主要依靠当前任务文本和已有命名样例推断")
+    if base and suffix:
+        hints["negative_clues"].append("主体只缺阅读篇目信息时，不要改成匹配/长篇阅读/选词填空/翻译/听力")
+    if not str(subject or "").strip() and suffix:
+        hints["negative_clues"].append("主体为空时，可以从已有来源样例学习命名骨架，但年份/月/套数必须来自样例与当前文本的共同证据，不要凭空编造")
+    return hints
+
+
+def _tokenize_source_match_text(value: str) -> set[str]:
+    return {
+        item.casefold()
+        for item in re.findall(r"[A-Za-z]+|\d+|[\u4e00-\u9fff]+", str(value or ""))
+        if item.casefold() not in _TASK_SOURCE_STOPWORDS
+    }
+
+
+def _source_type_bonus(source: str, hints: dict) -> int:
+    suffix = str(hints.get("suggested_suffix_from_local_clues") or "")
+    if not suffix:
+        return 0
+    if suffix in source:
+        return 8
+    if "阅读" in suffix and "阅读" in source and "匹配" not in source:
+        return 4
+    if "匹配" in source and "阅读" in suffix:
+        return -6
+    return 0
+
+
+def _select_task_name_source_examples(source_names: list[str], subject: str, hints: dict, limit: int = 24) -> list[str]:
+    subject_tokens = _tokenize_source_match_text(subject)
+    base_tokens = _tokenize_source_match_text(hints.get("normalized_base") or "")
+    wanted_tokens = subject_tokens | base_tokens
+    suffix = str(hints.get("suggested_suffix_from_local_clues") or "")
+    if not source_names:
+        return []
+
+    scored = []
+    seen = set()
+    for index, source in enumerate(source_names):
+        item = re.sub(r"\s+", " ", str(source or "")).strip()
+        if not item:
+            continue
+        key = item.casefold()
+        if key in seen:
+            continue
+        seen.add(key)
+        source_tokens = _tokenize_source_match_text(item)
+        overlap = len(wanted_tokens & source_tokens)
+        score = (overlap * 3) + _source_type_bonus(item, hints)
+        if not wanted_tokens and suffix:
+            if "阅读" in suffix and "阅读" in item and "匹配" not in item:
+                score += 6
+            elif "匹配" in item and "阅读" in suffix:
+                score -= 6
+        if score <= 0 and len(scored) >= limit:
+            continue
+        scored.append((score, -index, item))
+
+    scored.sort(reverse=True)
+    positive = [item for score, _, item in scored if score > 0]
+    fallback = [item for score, _, item in scored if score <= 0]
+    return (positive + fallback)[:limit]
+
+
+def _build_task_name_source_hints(prompt_sources: list[str]) -> dict:
+    has_cet6 = any(_CET6_SIGNAL_RE.search(source) for source in prompt_sources)
+    has_cet_only = any(_CET_ONLY_SIGNAL_RE.search(source) for source in prompt_sources)
+    hints = {
+        "prefer_cet6_when_cet6_evidence_exists": has_cet6,
+        "has_plain_cet_examples": has_cet_only,
+        "notes": [],
+    }
+    if has_cet6:
+        hints["notes"].append("已有来源样例里出现 CET6/六级证据；如果当前文本和样例都不像 CET4/四级，推荐名里的考试前缀应优先规范成 CET6，而不是单独写 CET")
+    if has_cet_only and has_cet6:
+        hints["notes"].append("裸 CET 样例可能是历史命名缩写；当同组线索存在 CET6 样例时，裸 CET 不应压过 CET6")
+    return hints
+
+
+def recommend_task_name(subject: str = "", source_names: list[str] | None = None, context: str = "") -> dict:
+    config = get_config_data()
+    api_key = config.get("api_key")
+    api_url = config.get("provider")
+    model_name = config.get("model")
+
+    normalized_subject = re.sub(r"\s+", " ", str(subject or "")).strip()
+    context_excerpt = re.sub(r"\s+", " ", str(context or "")).strip()[:6000]
+    context_hints = _build_task_name_context_hints(normalized_subject, context_excerpt)
+
+    if not api_key:
+        raise ValueError("未找到 API Key，请先配置")
+    if not api_url or not model_name:
+        raise ValueError("LLM provider/model 未配置")
+
+    request_url = resolve_chat_completions_url(api_url)
+    headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+    normalized_sources = []
+    seen = set()
+    for source in source_names or []:
+        item = re.sub(r"\s+", " ", str(source or "")).strip()
+        if not item:
+            continue
+        key = item.casefold()
+        if key in seen:
+            continue
+        seen.add(key)
+        normalized_sources.append(item)
+
+    prompt_sources = _select_task_name_source_examples(normalized_sources, normalized_subject, context_hints)
+    source_hints = _build_task_name_source_hints(prompt_sources)
+    prompt = (
+        "你是 Linkualog 的学习任务命名助手。\n"
+        "任务：根据用户填写的任务主体线索，并参考已有词条的来源名称列表，推荐一个最适合作为本次资源解析任务的任务名。\n"
+        "要求：\n"
+        "1. 如果主体线索像某个已有来源，优先沿用或轻微规范化该来源名称。\n"
+        "2. 如果主体线索未填写，不要直接返回通用名；先根据当前任务文本的边角处、标题、题号、说明句、Passage 标记推理任务类型，再参考已有来源名称的命名骨架。\n"
+        "3. 不要编造具体册数、页码、题号或来源编号；来源列表里已有的具体信息可以使用。\n"
+        "4. 先从当前任务文本的边角处、标题、题号、说明句和 Passage 标记推理任务类型；这些位置通常比词条来源频次更可靠。\n"
+        "5. 如果任务主体已经保留了试卷年份、月份、套数，只补充从当前任务文本可确定的阅读篇目，例如“阅读1”“阅读2”“阅读1-2”；如果主体为空，则可以从少量已有来源样例里推断命名格式和可能的考试前缀。\n"
+        "6. 当前任务文本若出现 Passage One/Two 或 46-55 的仔细阅读题号，应优先判断为阅读任务；不要因为已有来源里有“匹配”就推荐“匹配”。\n"
+        "7. “匹配/长篇阅读/选词填空/翻译/听力”等题型只有在当前任务文本明确属于该题型时才能使用。\n"
+        "8. 已有来源名称只是命名风格参考，不是投票结果；如果来源样例与当前任务文本矛盾，以当前任务文本为准。\n"
+        "9. 如果已有来源样例里出现 CET6/六级证据，且没有 CET4/四级证据，推荐名应优先使用 CET6，不要输出单独的 CET；裸 CET 可视为历史缩写。\n"
+        "10. 任务名长度控制在 4-32 个中文字符或等量英文字符，避免标点堆叠。\n"
+        "11. 只输出纯 JSON，不要包含 Markdown 或解释。\n"
+        'JSON 结构：{"name":"推荐任务名","reason":"一句中文理由"}\n\n'
+        f"任务主体线索: {normalized_subject or '未填写'}\n"
+        f"本地预处理线索（仅供你判断，不可机械照抄）: {json.dumps(context_hints, ensure_ascii=False)}\n"
+        f"已有来源前缀线索（仅供规范命名，不可机械照抄）: {json.dumps(source_hints, ensure_ascii=False)}\n"
+        f"当前任务文本摘要: {context_excerpt or '未提供'}\n"
+        "已有来源名称（本地已按主体相关性和题型一致性筛选去重，少量注入）：\n"
+        + json.dumps(prompt_sources, ensure_ascii=False)
+    )
+
+    payload = {
+        "model": model_name,
+        "max_tokens": 256,
+        "temperature": 0.2,
+        "messages": [
+            {"role": "system", "content": "你是一个严格输出 JSON 的中文任务命名助手。"},
+            {"role": "user", "content": prompt},
+        ],
+    }
+
+    for attempt in range(3):
+        try:
+            response = requests.post(request_url, headers=headers, json=payload, timeout=30)
+            response.raise_for_status()
+            llm_reply = _extract_message_content(response.json()["choices"][0]["message"]["content"])
+            parsed = _parse_llm_json_reply(llm_reply)
+            if not isinstance(parsed, dict):
+                raise ValueError("LLM 返回不是 JSON 对象")
+
+            name = _clean_task_name_suggestion(parsed.get("name"))
+            if not name:
+                raise ValueError("LLM 未返回可用任务名")
+            reason = re.sub(r"\s+", " ", str(parsed.get("reason") or "")).strip()
+            return {
+                "name": name,
+                "reason": reason[:160],
+                "source_count": len(prompt_sources),
+                "source": "llm",
+            }
+        except Exception as e:
+            if attempt == 2:
+                raise Exception(f"请求大模型推荐任务名失败: {e}")
             time.sleep(1)
