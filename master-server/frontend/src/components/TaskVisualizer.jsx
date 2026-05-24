@@ -1,7 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import UiIcon from './UiIcon';
+import VocabQueueWidget from './VocabQueueWidget';
 import {
   uploadResource,
+  recommendTaskName,
   getTaskStatus,
   resumeTask,
   getAllTasks,
@@ -1231,8 +1234,21 @@ const ExperimentalMarkView = ({
   );
 };
 
-export default function TaskVisualizer({ onOpenVocabularyEntry = null, simpleCreateOnly = false }) {
+export default function TaskVisualizer({
+  onOpenVocabularyEntry = null,
+  simpleCreateOnly = false,
+  isActive = true,
+  categories = [],
+  defaultCategory = '',
+  onDefaultCategoryChange = null,
+}) {
   const [pageMode, setPageMode] = useState(simpleCreateOnly ? 'create' : 'browse');
+  const [createToolsOpen, setCreateToolsOpen] = useState(false);
+  const [createMetaOpen, setCreateMetaOpen] = useState(false);
+  const [uploadBatchOpen, setUploadBatchOpen] = useState(false);
+  const [vocabQueueOpen, setVocabQueueOpen] = useState(false);
+  const [vocabQueueStats, setVocabQueueStats] = useState({ total: 0, pending: 0, failed: 0 });
+  const [taskToolsOpen, setTaskToolsOpen] = useState(false);
 
   const [historyTasks, setHistoryTasks] = useState([]);
   const [selectedTaskId, setSelectedTaskId] = useState(null);
@@ -1262,6 +1278,9 @@ export default function TaskVisualizer({ onOpenVocabularyEntry = null, simpleCre
   const [regeneratingPages, setRegeneratingPages] = useState({});
   const [editingTaskName, setEditingTaskName] = useState('');
   const [isSavingTaskName, setIsSavingTaskName] = useState(false);
+  const [existingTaskNameSuggestion, setExistingTaskNameSuggestion] = useState(null);
+  const [existingTaskNameSuggestionError, setExistingTaskNameSuggestionError] = useState('');
+  const [isRecommendingExistingTaskName, setIsRecommendingExistingTaskName] = useState(false);
   const [savingPages, setSavingPages] = useState({});
   const [isRightPanelCollapsed, setIsRightPanelCollapsed] = useState(() => localStorage.getItem('taskRightPanelCollapsed') === '1');
   const saveTimersRef = useRef({});
@@ -1296,6 +1315,15 @@ export default function TaskVisualizer({ onOpenVocabularyEntry = null, simpleCre
       setPageMode('create');
     }
   }, [historyTasks.length, pageMode, selectedTaskId, simpleCreateOnly]);
+
+  useEffect(() => {
+    if (isActive) return;
+    setVocabQueueOpen(false);
+    setCreateToolsOpen(false);
+    setCreateMetaOpen(false);
+    setUploadBatchOpen(false);
+    setTaskToolsOpen(false);
+  }, [isActive]);
 
   useEffect(() => {
     let detailInterval;
@@ -1479,6 +1507,8 @@ export default function TaskVisualizer({ onOpenVocabularyEntry = null, simpleCre
     setEditedMarksByPage({});
     setLayoutHeightByPage({});
     setSavingPages({});
+    setExistingTaskNameSuggestion(null);
+    setExistingTaskNameSuggestionError('');
 
     const data = await getTaskStatus(taskId);
     setTaskData(data);
@@ -1493,6 +1523,8 @@ export default function TaskVisualizer({ onOpenVocabularyEntry = null, simpleCre
       setSelectedTaskId(null);
       setTaskData(null);
       setEditingTaskName('');
+      setExistingTaskNameSuggestion(null);
+      setExistingTaskNameSuggestionError('');
       setSelectedMarkByPage({});
       setSelectedMarkSignalByPage({});
       setEditedMarksByPage({});
@@ -1510,6 +1542,8 @@ export default function TaskVisualizer({ onOpenVocabularyEntry = null, simpleCre
       const updatedName = result.name || (editingTaskName || '').trim() || '资源解析任务';
       setTaskData((prev) => (prev ? { ...prev, name: updatedName } : prev));
       setEditingTaskName(updatedName);
+      setExistingTaskNameSuggestion(null);
+      setExistingTaskNameSuggestionError('');
       fetchTasksList();
     } catch (error) {
       alert(`任务名更新失败: ${error.message}`);
@@ -1621,6 +1655,43 @@ export default function TaskVisualizer({ onOpenVocabularyEntry = null, simpleCre
     setStagedFiles((prev) => [...prev, ...files.map((file) => makeStagedFile(file))]);
   };
 
+  const handleRecommendTaskName = async () => {
+    if (!selectedTaskId || !taskData) return;
+    const subject = (editingTaskName || '').trim();
+    const beforeName = subject || '未填写';
+    const context = formattedResults
+      .map((item) => {
+        if (typeof item.content === 'string') return item.content;
+        if (item.content && typeof item.content === 'object') {
+          return item.content.extracted_text || item.content.t || '';
+        }
+        return '';
+      })
+      .filter(Boolean)
+      .join('\n\n')
+      .slice(0, 6000);
+    setIsRecommendingExistingTaskName(true);
+    setExistingTaskNameSuggestionError('');
+    try {
+      const result = await recommendTaskName(subject, context);
+      const suggestion = result?.data || {};
+      if (!suggestion?.name) {
+        throw new Error('未返回可用任务名');
+      }
+      setExistingTaskNameSuggestion({
+        ...suggestion,
+        before_name: beforeName,
+        after_name: suggestion.name,
+      });
+      setEditingTaskName(suggestion.name);
+    } catch (error) {
+      setExistingTaskNameSuggestion(null);
+      setExistingTaskNameSuggestionError(error instanceof Error ? error.message : '推荐失败');
+    } finally {
+      setIsRecommendingExistingTaskName(false);
+    }
+  };
+
   const moveStagedFile = (index, delta) => {
     const nextIndex = index + delta;
     setStagedFiles((prev) => {
@@ -1692,6 +1763,14 @@ export default function TaskVisualizer({ onOpenVocabularyEntry = null, simpleCre
     }
   };
 
+  const closeTaskPopovers = () => {
+    setCreateToolsOpen(false);
+    setCreateMetaOpen(false);
+    setUploadBatchOpen(false);
+    setVocabQueueOpen(false);
+    setTaskToolsOpen(false);
+  };
+
   const getFormattedResults = () => {
     if (!taskData || !taskData.sub_tasks) return [];
 
@@ -1750,6 +1829,85 @@ export default function TaskVisualizer({ onOpenVocabularyEntry = null, simpleCre
       : 'var(--ms-text)';
   const createTaskDisabled = isUploading || !stagedFiles.length;
   const allUploadsSelected = stagedFiles.length > 0 && selectedUploadIds.length === stagedFiles.length;
+  const normalizedDefaultCategory = String(defaultCategory || '').trim();
+  const defaultCategoryLabel = normalizedDefaultCategory ? formatCategoryLabel(normalizedDefaultCategory) : '目录';
+  const queueBadgeCount = vocabQueueStats.pending || vocabQueueStats.failed || 0;
+  const renderTaskNameRecommendationStatus = () => {
+    if (!existingTaskNameSuggestion?.name && !existingTaskNameSuggestionError) return null;
+    if (existingTaskNameSuggestionError) {
+      return (
+        <span className="task-name-recommend-status is-error">
+          {existingTaskNameSuggestionError}
+        </span>
+      );
+    }
+
+    const beforeName = existingTaskNameSuggestion.before_name || normalizedCurrentTaskName;
+    const afterName = existingTaskNameSuggestion.after_name || existingTaskNameSuggestion.name;
+
+    return (
+      <span className="task-name-recommend-status task-name-recommend-compare">
+        <span className="task-name-recommend-pair">
+          <span className="task-name-recommend-label">推荐前</span>
+          <strong>{beforeName}</strong>
+        </span>
+        <span className="task-name-recommend-arrow">→</span>
+        <span className="task-name-recommend-pair">
+          <span className="task-name-recommend-label">推荐后</span>
+          <strong>{afterName}</strong>
+        </span>
+        {existingTaskNameSuggestion.reason ? (
+          <span className="task-name-recommend-reason">{existingTaskNameSuggestion.reason}</span>
+        ) : null}
+      </span>
+    );
+  };
+  const renderCreateFileControls = () => (
+    <div className="task-upload-dropzone-actions">
+      <label className="task-primary-button task-upload-picker task-icon-text-button">
+        <UiIcon name="image" size={17} />
+        <span>选择图片</span>
+        <input className="task-file-input task-file-input-hidden" type="file" multiple accept="image/*" onChange={handleChooseFiles} />
+      </label>
+      <label className="task-secondary-button task-upload-picker task-icon-text-button">
+        <UiIcon name="file" size={17} />
+        <span>选择 PDF</span>
+        <input className="task-file-input task-file-input-hidden" type="file" multiple accept="application/pdf" onChange={handleChooseFiles} />
+      </label>
+    </div>
+  );
+  const renderCreateMetaControls = () => (
+    <div className="task-create-meta-row">
+      <label className="task-control-field task-control-field-name">
+        <span className="task-inline-label" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ms-text)' }}>任务名</span>
+        <input className="task-inline-input" value={createTaskName} onChange={(e) => setCreateTaskName(e.target.value)} placeholder="任务名称（选填）" style={{ padding: '6px 10px', border: '1px solid var(--ms-border)', borderRadius: '6px', fontSize: '13px', width: '220px', outline: 'none', background: '#fff' }} />
+      </label>
+      <label className="task-control-field task-control-field-small">
+        <span className="task-inline-label is-muted" style={{ fontSize: '13px', color: 'var(--ms-text-muted)' }}>起始页</span>
+        <input className="task-inline-input task-inline-input-small" type="number" min="1" value={createStartPage} onChange={(e) => setCreateStartPage(Math.max(1, parseInt(e.target.value, 10) || 1))} style={{ padding: '6px 10px', border: '1px solid var(--ms-border)', borderRadius: '6px', fontSize: '13px', width: '90px', outline: 'none', background: '#fff' }} />
+      </label>
+    </div>
+  );
+  const handleToggleVocabQueue = () => {
+    setVocabQueueOpen((open) => !open);
+    setCreateToolsOpen(false);
+    setCreateMetaOpen(false);
+    setUploadBatchOpen(false);
+    setTaskToolsOpen(false);
+  };
+  const renderVocabQueueButton = (className = '') => (
+    <button
+      type="button"
+      className={`task-icon-button task-vocab-queue-trigger${vocabQueueOpen ? ' is-active' : ''}${queueBadgeCount > 0 ? ' has-badge' : ''}${className ? ` ${className}` : ''}`}
+      onClick={handleToggleVocabQueue}
+      aria-label={`打开词库工具，当前目录 ${defaultCategoryLabel}`}
+      aria-expanded={vocabQueueOpen}
+      title={`词库 · ${defaultCategoryLabel}`}
+    >
+      <UiIcon name="book" size={17} />
+      {queueBadgeCount > 0 ? <span className="task-icon-badge">{queueBadgeCount}</span> : null}
+    </button>
+  );
 
   return (
     <div className="task-layout" style={{ position: 'relative', height: '100%', width: '100%', minHeight: 0, overflow: 'hidden', background: '#fff' }}>
@@ -1760,40 +1918,82 @@ export default function TaskVisualizer({ onOpenVocabularyEntry = null, simpleCre
               <div className="task-create-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                 <div>
                   <div className="task-create-title" style={{ fontSize: '18px', color: 'var(--ms-text)', fontWeight: 600 }}>新建任务</div>
-                  <div className="task-create-subtitle" style={{ fontSize: '12px', color: 'var(--ms-text-muted)', marginTop: '2px' }}>上传后可预览、调整顺序、删除部分文件再确认创建</div>
+                  <div className="task-create-subtitle" style={{ fontSize: '12px', color: 'var(--ms-text-muted)', marginTop: '2px' }}>上传后确认创建</div>
+                </div>
+                <div className="task-create-mobile-actions">
+                  <button
+                    type="button"
+                    className={`task-icon-button${createToolsOpen ? ' is-active' : ''}`}
+                    onClick={() => {
+                      setCreateToolsOpen((open) => !open);
+                      setCreateMetaOpen(false);
+                      setUploadBatchOpen(false);
+                      setVocabQueueOpen(false);
+                    }}
+                    aria-label="打开上传入口"
+                    aria-expanded={createToolsOpen}
+                  >
+                    <UiIcon name="upload" size={17} />
+                  </button>
+                  <button
+                    type="button"
+                    className={`task-icon-button${createMetaOpen ? ' is-active' : ''}`}
+                    onClick={() => {
+                      setCreateMetaOpen((open) => !open);
+                      setCreateToolsOpen(false);
+                      setUploadBatchOpen(false);
+                      setVocabQueueOpen(false);
+                    }}
+                    aria-label="调整任务参数"
+                    aria-expanded={createMetaOpen}
+                  >
+                    <UiIcon name="sliders" size={17} />
+                  </button>
+                  {renderVocabQueueButton()}
                 </div>
                 <div className="task-create-header-actions">
+                  {renderVocabQueueButton()}
                   <button className="task-primary-button task-create-submit-inline" onClick={handleCreateTask} disabled={createTaskDisabled} style={{ padding: '8px 16px', border: '1px solid transparent', borderRadius: '6px', fontSize: '13px', cursor: createTaskDisabled ? 'not-allowed' : 'pointer', background: createTaskDisabled ? 'var(--ms-surface-inset)' : '#111111', color: createTaskDisabled ? 'var(--ms-text-faint)' : '#fff' }}>{isUploading ? '处理中...' : '确认并创建任务'}</button>
                 </div>
               </div>
 
-              <div className="task-create-controls" style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', padding: '12px', border: '1px solid var(--ms-border)', borderRadius: '6px', background: 'rgba(255, 255, 255, 0.9)' }}>
-                <div className="task-create-meta-row">
-                  <label className="task-control-field">
-                    <span className="task-inline-label" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ms-text)' }}>任务名</span>
-                    <input className="task-inline-input" value={createTaskName} onChange={(e) => setCreateTaskName(e.target.value)} placeholder="任务名称（选填）" style={{ padding: '6px 10px', border: '1px solid var(--ms-border)', borderRadius: '6px', fontSize: '13px', width: '220px', outline: 'none', background: '#fff' }} />
-                  </label>
-                  <label className="task-control-field task-control-field-small">
-                    <span className="task-inline-label is-muted" style={{ fontSize: '13px', color: 'var(--ms-text-muted)' }}>起始页</span>
-                    <input className="task-inline-input task-inline-input-small" type="number" min="1" value={createStartPage} onChange={(e) => setCreateStartPage(Math.max(1, parseInt(e.target.value, 10) || 1))} style={{ padding: '6px 10px', border: '1px solid var(--ms-border)', borderRadius: '6px', fontSize: '13px', width: '90px', outline: 'none', background: '#fff' }} />
-                  </label>
+              {(createToolsOpen || createMetaOpen || uploadBatchOpen) ? (
+                <div className="task-floating-layer" role="presentation">
+                  <button type="button" className="task-floating-backdrop" aria-label="关闭任务浮层" onClick={closeTaskPopovers} />
+                  <section className="task-floating-panel task-create-floating-panel" role="dialog" aria-modal="false" aria-label="任务工具">
+                    <div className="task-floating-header">
+                      <div>
+                        <div className="task-floating-title">{createToolsOpen ? '上传文件' : createMetaOpen ? '任务参数' : '批量整理'}</div>
+                        <div className="task-floating-caption">{createToolsOpen ? '图片 / PDF' : createMetaOpen ? '名称 / 页码' : `${selectedUploadIds.length} 已选`}</div>
+                      </div>
+                      <button type="button" className="task-icon-button" aria-label="关闭任务工具" onClick={closeTaskPopovers}>
+                        <UiIcon name="close" size={16} />
+                      </button>
+                    </div>
+                    {createToolsOpen ? renderCreateFileControls() : null}
+                    {createMetaOpen ? renderCreateMetaControls() : null}
+                    {uploadBatchOpen ? (
+                      <div className="task-floating-stack">
+                        <label className="task-inline-toggle">
+                          <input type="checkbox" checked={allUploadsSelected} onChange={toggleSelectAllUploads} />
+                          全选
+                        </label>
+                        <button className="task-secondary-button" onClick={removeSelectedUploads} disabled={!selectedUploadIds.length}>删选中</button>
+                        <button className="task-secondary-button task-danger-button" onClick={clearAllStagedFiles} disabled={!stagedFiles.length}>清空</button>
+                      </div>
+                    ) : null}
+                  </section>
                 </div>
+              ) : null}
+
+              <div className="task-create-controls" style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', padding: '12px', border: '1px solid var(--ms-border)', borderRadius: '6px', background: 'rgba(255, 255, 255, 0.9)' }}>
+                {renderCreateMetaControls()}
 
                 <div className="task-upload-dropzone">
                   <div className="task-upload-dropzone-copy">
                     <div className="task-upload-dropzone-title">上传图片或 PDF</div>
-                    <div className="task-upload-dropzone-hint">手机端建议直接拍照或选图，文件会先暂存在下方列表，确认后再创建任务。</div>
                   </div>
-                  <div className="task-upload-dropzone-actions">
-                    <label className="task-primary-button task-upload-picker">
-                      选择图片
-                      <input className="task-file-input task-file-input-hidden" type="file" multiple accept="image/*" onChange={handleChooseFiles} />
-                    </label>
-                    <label className="task-secondary-button task-upload-picker">
-                      选择 PDF
-                      <input className="task-file-input task-file-input-hidden" type="file" multiple accept="application/pdf" onChange={handleChooseFiles} />
-                    </label>
-                  </div>
+                  {renderCreateFileControls()}
                 </div>
               </div>
 
@@ -1806,11 +2006,25 @@ export default function TaskVisualizer({ onOpenVocabularyEntry = null, simpleCre
                   <button className="task-secondary-button" onClick={removeSelectedUploads} disabled={!selectedUploadIds.length} style={{ padding: '4px 10px', border: '1px solid #e4e4e7', borderRadius: '4px', background: '#fff', fontSize: '12px', cursor: selectedUploadIds.length ? 'pointer' : 'not-allowed', color: selectedUploadIds.length ? '#09090b' : '#a1a1aa' }}>删除选中</button>
                   <button className="task-secondary-button" onClick={clearAllStagedFiles} disabled={!stagedFiles.length} style={{ padding: '4px 10px', border: '1px solid var(--ms-border)', borderRadius: '4px', background: '#fff', fontSize: '12px', cursor: stagedFiles.length ? 'pointer' : 'not-allowed', color: stagedFiles.length ? 'var(--ms-text)' : 'var(--ms-border)' }}>全部删除</button>
                 </div>
+                <button
+                  type="button"
+                  className={`task-icon-button task-upload-mobile-batch${uploadBatchOpen ? ' is-active' : ''}`}
+                  onClick={() => {
+                    setUploadBatchOpen((open) => !open);
+                    setCreateToolsOpen(false);
+                    setCreateMetaOpen(false);
+                    setVocabQueueOpen(false);
+                  }}
+                  aria-label="打开批量整理"
+                  aria-expanded={uploadBatchOpen}
+                >
+                  <UiIcon name="sliders" size={16} />
+                </button>
                 <span className="task-upload-count" style={{ marginLeft: 'auto', fontSize: '12px', color: '#71717a' }}>已上传 {stagedFiles.length} 个文件</span>
               </div>
 
               <div className="task-upload-list" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {stagedFiles.length === 0 && <div className="task-empty-state" style={{ color: '#a1a1aa', textAlign: 'center', padding: '28px 0' }}>请先上传图片/PDF，再确认创建任务。</div>}
+                {stagedFiles.length === 0 && <div className="task-empty-state" style={{ color: '#a1a1aa', textAlign: 'center', padding: '28px 0' }}>待上传</div>}
                 {stagedFiles.map((item, index) => {
                   const selected = selectedUploadIds.includes(item.id);
                   return (
@@ -1850,17 +2064,79 @@ export default function TaskVisualizer({ onOpenVocabularyEntry = null, simpleCre
             <div className="task-toolbar" style={{ padding: '10px 16px', borderBottom: '1px solid #e4e4e7', background: '#fafafa', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
               <div className="task-status-bar" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', fontSize: '12px', color: '#71717a' }}>
                 <span>任务名</span>
-                <input className="task-inline-input" value={editingTaskName} onChange={(e) => setEditingTaskName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && isTaskNameDirty && !isSavingTaskName) handleRenameTask(); }} style={{ padding: '4px 8px', border: '1px solid #e4e4e7', borderRadius: '4px', fontSize: '12px', width: '220px', outline: 'none' }} />
+                <input className="task-inline-input" value={editingTaskName} onChange={(e) => { setEditingTaskName(e.target.value); setExistingTaskNameSuggestion(null); setExistingTaskNameSuggestionError(''); }} onKeyDown={(e) => { if (e.key === 'Enter' && isTaskNameDirty && !isSavingTaskName) handleRenameTask(); }} style={{ padding: '4px 8px', border: '1px solid #e4e4e7', borderRadius: '4px', fontSize: '12px', width: '220px', outline: 'none' }} />
+                <button
+                  type="button"
+                  className="task-secondary-button task-name-recommend-button task-icon-text-button"
+                  onClick={handleRecommendTaskName}
+                  disabled={isRecommendingExistingTaskName || isSavingTaskName}
+                  title="根据当前任务名和已有词条来源推荐任务名"
+                >
+                  <UiIcon name="star" size={15} />
+                  <span>{isRecommendingExistingTaskName ? '推荐中' : '推荐'}</span>
+                </button>
                 <button className="task-secondary-button" onClick={handleRenameTask} disabled={!isTaskNameDirty || isSavingTaskName} style={{ padding: '4px 8px', border: '1px solid #e4e4e7', borderRadius: '4px', background: '#fff', fontSize: '12px', cursor: (!isTaskNameDirty || isSavingTaskName) ? 'not-allowed' : 'pointer', color: (!isTaskNameDirty || isSavingTaskName) ? '#a1a1aa' : '#09090b' }}>{isSavingTaskName ? '保存中...' : '保存'}</button>
+                {renderTaskNameRecommendationStatus()}
                 <span>进度 {taskData.completed} / {taskData.total}</span>
                 <span>状态 {getStatusText(taskData.status)}</span>
               </div>
 
               <div className="task-toolbar-actions" style={{ display: 'flex', gap: '8px' }}>
+                {renderVocabQueueButton()}
                 {taskData.status === 'paused' && <button className="task-secondary-button" onClick={handleResume} style={{ padding: '4px 10px', border: '1px solid #e4e4e7', borderRadius: '4px', background: '#fff', fontSize: '12px', cursor: 'pointer' }}>继续</button>}
                 <button className="task-secondary-button task-danger-button" onClick={handleDeleteTask} style={{ padding: '4px 10px', border: '1px solid var(--ms-border)', borderRadius: '4px', background: '#fff', color: 'var(--ms-text)', fontSize: '12px', cursor: 'pointer' }}>删除任务</button>
               </div>
+              <button
+                type="button"
+                className={`task-icon-button task-toolbar-mobile-trigger${taskToolsOpen ? ' is-active' : ''}`}
+                onClick={() => setTaskToolsOpen((open) => !open)}
+                aria-label="打开任务工具"
+                aria-expanded={taskToolsOpen}
+              >
+                <UiIcon name="sliders" size={16} />
+              </button>
             </div>
+
+            {taskToolsOpen ? (
+              <div className="task-floating-layer" role="presentation">
+                <button type="button" className="task-floating-backdrop" aria-label="关闭任务工具" onClick={() => setTaskToolsOpen(false)} />
+                <section className="task-floating-panel task-detail-floating-panel" role="dialog" aria-modal="false" aria-label="任务工具">
+                  <div className="task-floating-header">
+                    <div>
+                      <div className="task-floating-title">任务工具</div>
+                      <div className="task-floating-caption">名称 / 操作</div>
+                    </div>
+                    <button type="button" className="task-icon-button" aria-label="关闭任务工具" onClick={() => setTaskToolsOpen(false)}>
+                      <UiIcon name="close" size={16} />
+                    </button>
+                  </div>
+                  <div className="task-floating-stack">
+                    <label className="task-control-field">
+                      <span className="task-inline-label">任务名</span>
+                      <input className="task-inline-input" value={editingTaskName} onChange={(e) => { setEditingTaskName(e.target.value); setExistingTaskNameSuggestion(null); setExistingTaskNameSuggestionError(''); }} onKeyDown={(e) => { if (e.key === 'Enter' && isTaskNameDirty && !isSavingTaskName) handleRenameTask(); }} />
+                    </label>
+                    <button
+                      type="button"
+                      className="task-secondary-button task-name-recommend-button task-icon-text-button"
+                      onClick={handleRecommendTaskName}
+                      disabled={isRecommendingExistingTaskName || isSavingTaskName}
+                    >
+                      <UiIcon name="star" size={15} />
+                      <span>{isRecommendingExistingTaskName ? '推荐中' : '推荐'}</span>
+                    </button>
+                    {renderTaskNameRecommendationStatus()}
+                    <button className="task-secondary-button" onClick={handleRenameTask} disabled={!isTaskNameDirty || isSavingTaskName}>
+                      {isSavingTaskName ? '保存中...' : '保存'}
+                    </button>
+                    <div className="task-floating-action-row">
+                      {taskData.status === 'paused' ? <button className="task-secondary-button" onClick={handleResume}>继续</button> : null}
+                      {renderVocabQueueButton('task-floating-icon-row')}
+                      <button className="task-secondary-button task-danger-button" onClick={handleDeleteTask}>删除</button>
+                    </div>
+                  </div>
+                </section>
+              </div>
+            ) : null}
 
             <div className="task-progress-track" style={{ height: '2px', background: 'var(--ms-border)', flexShrink: 0 }}>
               <div className="task-progress-bar" style={{ height: '100%', width: `${progressPct}%`, background: taskProgressColor, transition: 'width 0.3s' }} />
@@ -1943,7 +2219,7 @@ export default function TaskVisualizer({ onOpenVocabularyEntry = null, simpleCre
           </div>
         ) : (
           <div className="task-empty-state task-empty-state-card" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-            <div className="task-empty-state-panel" style={{ width: '100%', maxWidth: '520px', display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'flex-start', border: '1px dashed var(--ms-border)', borderRadius: '10px', padding: '20px', background: 'linear-gradient(180deg, rgba(255,255,255,0.98), rgba(250,250,250,0.98))' }}>
+            <div className="task-empty-state-panel" style={{ width: '100%', maxWidth: '520px', display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'flex-start', border: '1px dashed var(--ms-border)', borderRadius: '6px', padding: '20px', background: 'linear-gradient(180deg, rgba(255,255,255,0.98), rgba(250,250,250,0.98))' }}>
               <div className="task-empty-state-title" style={{ fontSize: '20px', lineHeight: 1.15, fontWeight: 700, color: 'var(--ms-text)' }}>
                 {historyTasks.length ? '先选择一个历史任务' : '先创建你的第一个任务'}
               </div>
@@ -1959,6 +2235,16 @@ export default function TaskVisualizer({ onOpenVocabularyEntry = null, simpleCre
           </div>
         )}
       </div>
+
+      <VocabQueueWidget
+        embedded
+        open={vocabQueueOpen}
+        onOpenChange={setVocabQueueOpen}
+        categories={categories}
+        defaultCategory={defaultCategory}
+        onDefaultCategoryChange={onDefaultCategoryChange}
+        onStatsChange={setVocabQueueStats}
+      />
 
       {!simpleCreateOnly ? (
       <aside className={`task-right-panel${isRightPanelCollapsed ? ' is-collapsed' : ''}`} style={{ position: 'absolute', top: '12px', right: '12px', bottom: '12px', width: isRightPanelCollapsed ? '40px' : '320px', minWidth: '40px', border: '1px solid #e4e4e7', borderRadius: '6px', background: '#fafafa', display: 'flex', flexDirection: 'row', minHeight: 0, overflow: 'hidden', transition: 'width 0.2s ease', boxShadow: 'none', zIndex: 30 }}>

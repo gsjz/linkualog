@@ -1,14 +1,15 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import TaskVisualizer from './components/TaskVisualizer';
 import ConfigForm from './components/ConfigForm';
-import VocabQueueWidget from './components/VocabQueueWidget';
 import VocabularyWorkspace from './components/VocabularyWorkspace';
+import UiIcon from './components/UiIcon';
 import { getVocabularyCategories } from './api/client';
 import './App.css';
 
 const MOBILE_MEDIA_QUERY = '(max-width: 820px)';
 const DESKTOP_MINIMAL_MODE_KEY = 'linkualogDesktopMinimalMode';
 const VALID_TABS = new Set(['tasks', 'vocabulary']);
+const MOBILE_TOOLS_PANEL_ID = 'master-mobile-tools-panel';
 
 const readIsMobileViewport = () => {
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false;
@@ -49,7 +50,6 @@ const readUrlState = () => {
     tab: 'tasks',
     hasMinimal: false,
     minimal: false,
-    editMode: false,
     category: '',
     word: '',
   };
@@ -65,13 +65,11 @@ const readUrlState = () => {
   const pathTab = normalizeTab(pathParts[0]);
   const tab = normalizeTab(params.get('tab')) || pathTab || fallback.tab;
   const minimal = normalizeUrlBoolean(params.get('minimal'));
-  const editMode = normalizeUrlBoolean(params.get('edit'));
 
   return {
     tab,
     hasMinimal: minimal !== null,
     minimal: minimal === true,
-    editMode: editMode === true,
     category: normalizeUrlPart(params.get('cat') || params.get('category') || (tab === 'vocabulary' ? pathParts[1] : '')),
     word: normalizeUrlWord(params.get('word') || (tab === 'vocabulary' ? pathParts[2] : '')),
   };
@@ -88,14 +86,13 @@ const buildVocabularyLaunchRequest = ({ category = '', word = '' } = {}) => {
   };
 };
 
-const writeUrlState = ({ tab, minimal, editMode, category, word }) => {
+const writeUrlState = ({ tab, minimal, category, word }) => {
   if (typeof window === 'undefined') return;
 
   const params = new URLSearchParams();
   const normalizedTab = normalizeTab(tab) || 'tasks';
   if (normalizedTab !== 'tasks') params.set('tab', normalizedTab);
   if (minimal) params.set('minimal', '1');
-  if (editMode) params.set('edit', '1');
 
   const normalizedCategory = normalizeUrlPart(category);
   const normalizedWord = normalizeUrlWord(word);
@@ -112,11 +109,11 @@ const writeUrlState = ({ tab, minimal, editMode, category, word }) => {
 function App() {
   const [initialUrlState] = useState(readUrlState);
   const [showConfig, setShowConfig] = useState(false);
+  const [mobileToolsOpen, setMobileToolsOpen] = useState(false);
   const [currentTab, setCurrentTab] = useState(initialUrlState.tab);
   const [defaultCategory, setDefaultCategory] = useState(() => String(localStorage.getItem('defaultCategory') || '').trim());
   const [categories, setCategories] = useState([]);
   const [vocabularyRouteState, setVocabularyRouteState] = useState(() => ({
-    editMode: initialUrlState.editMode,
     category: initialUrlState.category,
     word: initialUrlState.word,
   }));
@@ -157,6 +154,9 @@ function App() {
     const media = window.matchMedia(MOBILE_MEDIA_QUERY);
     const handleChange = (event) => {
       setIsMobileViewport(event.matches);
+      if (!event.matches) {
+        setMobileToolsOpen(false);
+      }
     };
 
     if (typeof media.addEventListener === 'function') {
@@ -179,7 +179,6 @@ function App() {
       setCurrentTab(nextState.tab);
       setPreferDesktopMinimalMode(nextState.hasMinimal ? nextState.minimal : readDesktopMinimalMode());
       setVocabularyRouteState({
-        editMode: nextState.editMode,
         category: nextState.category,
         word: nextState.word,
       });
@@ -194,7 +193,6 @@ function App() {
     writeUrlState({
       tab: currentTab,
       minimal: preferDesktopMinimalMode,
-      editMode: vocabularyRouteState.editMode,
       category: vocabularyRouteState.category,
       word: vocabularyRouteState.word,
     });
@@ -230,13 +228,6 @@ function App() {
     setCurrentTab('vocabulary');
   };
 
-  const handleVocabularyEditModeChange = useCallback((nextEditMode) => {
-    setVocabularyRouteState((prev) => ({
-      ...prev,
-      editMode: Boolean(nextEditMode),
-    }));
-  }, []);
-
   const handleVocabularySelectionChange = useCallback((selection) => {
     const nextCategory = normalizeUrlPart(selection?.category);
     const nextWord = normalizeUrlWord(selection?.word || selection?.fileKey || selection?.filename);
@@ -252,10 +243,10 @@ function App() {
 
   const handleBrandReset = useCallback(() => {
     setShowConfig(false);
+    setMobileToolsOpen(false);
     setCurrentTab('tasks');
     setPreferDesktopMinimalMode(false);
     setVocabularyRouteState({
-      editMode: false,
       category: '',
       word: '',
     });
@@ -274,11 +265,19 @@ function App() {
     }
   }, [preferDesktopMinimalMode]);
 
+  const handleTabChange = useCallback((nextTab) => {
+    setCurrentTab(nextTab);
+    setMobileToolsOpen(false);
+  }, []);
+
+  const handleOpenConfig = useCallback(() => {
+    setMobileToolsOpen(false);
+    setShowConfig(true);
+  }, []);
+
   return (
     <div className={`master-shell${useDesktopMinimalMode ? ' is-desktop-minimal' : ''}`}>
-      {!usesCompactLayout ? <VocabQueueWidget /> : null}
-
-      <header className="master-header">
+      <header className={`master-header${mobileToolsOpen ? ' has-mobile-tools-open' : ''}`}>
         <div className="master-brand-wrap">
           <button
             type="button"
@@ -292,22 +291,85 @@ function App() {
 
           <div className="master-tabs">
             <button
-              onClick={() => setCurrentTab('tasks')}
+              onClick={() => handleTabChange('tasks')}
+              aria-label="打开上传文件"
               className={`master-tab${currentTab === 'tasks' ? ' active' : ''}`}
             >
-              {usesCompactLayout ? '上传文件' : 'OCR 解析库'}
+              <span className="master-tab-icon">
+                <UiIcon name="upload" size={17} />
+              </span>
+              <span className="master-tab-label">{usesCompactLayout ? '上传' : '上传中心'}</span>
             </button>
             <button
-              onClick={() => setCurrentTab('vocabulary')}
+              onClick={() => handleTabChange('vocabulary')}
+              aria-label="打开词库工作台"
               className={`master-tab${currentTab === 'vocabulary' ? ' active' : ''}`}
             >
-              {usesCompactLayout ? '词库工作台' : '我的生词本'}
+              <span className="master-tab-icon">
+                <UiIcon name="book" size={17} />
+              </span>
+              <span className="master-tab-label">{usesCompactLayout ? '词库' : '我的生词本'}</span>
             </button>
           </div>
         </div>
 
-        {!isMobileViewport ? (
-          <div className={`master-actions${useDesktopMinimalMode ? ' is-compact-layout' : ''}`}>
+        <div className={`master-actions${useDesktopMinimalMode ? ' is-compact-layout' : ''}${isMobileViewport ? ' is-mobile-actions' : ''}`}>
+          {isMobileViewport ? (
+            <>
+              <button
+                type="button"
+                onClick={() => setMobileToolsOpen((open) => !open)}
+                className={`master-icon-button master-mobile-tools-trigger${mobileToolsOpen ? ' is-active' : ''}`}
+                aria-label="打开工具设置"
+                aria-expanded={mobileToolsOpen}
+                aria-controls={MOBILE_TOOLS_PANEL_ID}
+              >
+                <UiIcon name="sliders" size={18} />
+              </button>
+
+              {mobileToolsOpen ? (
+                <div className="master-mobile-tools-layer" role="presentation">
+                  <button
+                    type="button"
+                    className="master-mobile-tools-backdrop"
+                    aria-label="关闭工具设置"
+                    onClick={() => setMobileToolsOpen(false)}
+                  />
+                  <section
+                    className="master-mobile-tools-panel"
+                    id={MOBILE_TOOLS_PANEL_ID}
+                    role="dialog"
+                    aria-modal="false"
+                    aria-label="工具设置"
+                  >
+                    <div className="master-mobile-tools-header">
+                      <div>
+                        <div className="master-mobile-tools-title">工具</div>
+                        <div className="master-mobile-tools-caption">全局设置</div>
+                      </div>
+                      <button
+                        type="button"
+                        className="master-icon-button master-mobile-tools-close"
+                        aria-label="关闭工具设置"
+                        onClick={() => setMobileToolsOpen(false)}
+                      >
+                        <UiIcon name="close" size={17} />
+                      </button>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleOpenConfig}
+                      className="master-primary-button master-mobile-config-button"
+                    >
+                      全局配置
+                    </button>
+                  </section>
+                </div>
+              ) : null}
+            </>
+          ) : (
+            <>
             <button
               type="button"
               onClick={handleDesktopMinimalModeToggle}
@@ -318,32 +380,19 @@ function App() {
             </button>
 
             {!useDesktopMinimalMode ? (
-              <label className="master-select-label">
-                默认生词本目录
-                <select
-                  value={defaultCategory}
-                  onChange={(e) => handleDefaultCategoryChange(e.target.value)}
-                  className="master-select"
-                >
-                  <option value="">请选择目录</option>
-                  {categories.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </label>
-            ) : null}
-
-            {!useDesktopMinimalMode ? (
               <button
-                onClick={() => setShowConfig(true)}
+                onClick={handleOpenConfig}
                 className="master-primary-button"
               >
                 全局配置
               </button>
             ) : null}
-          </div>
-        ) : null}
+            </>
+          )}
+        </div>
       </header>
 
-      {showConfig && !isMobileViewport ? <ConfigForm onClose={() => setShowConfig(false)} categories={categories} /> : null}
+      {showConfig ? <ConfigForm onClose={() => setShowConfig(false)} categories={categories} /> : null}
 
       <main className="app-main">
         <div className="task-container-wrapper">
@@ -351,20 +400,25 @@ function App() {
             className={`master-pane${currentTab === 'tasks' ? ' is-active' : ''}`}
             aria-hidden={currentTab !== 'tasks'}
           >
-            <TaskVisualizer onOpenVocabularyEntry={handleOpenVocabularyEntry} simpleCreateOnly={usesCompactLayout} />
+            <TaskVisualizer
+              onOpenVocabularyEntry={handleOpenVocabularyEntry}
+              simpleCreateOnly={usesCompactLayout}
+              isActive={currentTab === 'tasks'}
+              categories={categories}
+              defaultCategory={defaultCategory}
+              onDefaultCategoryChange={handleDefaultCategoryChange}
+            />
           </div>
           <div
             className={`master-pane${currentTab === 'vocabulary' ? ' is-active' : ''}`}
             aria-hidden={currentTab !== 'vocabulary'}
           >
             <VocabularyWorkspace
-              editMode={vocabularyRouteState.editMode}
               currentSelection={vocabularyRouteState}
               launchRequest={vocabularyLaunchRequest}
               mobileSimple={usesCompactLayout}
               compactDesktop={useDesktopMinimalMode}
-              onOpenConfig={() => setShowConfig(true)}
-              onEditModeChange={handleVocabularyEditModeChange}
+              onOpenConfig={handleOpenConfig}
               onSelectionChange={handleVocabularySelectionChange}
             />
           </div>

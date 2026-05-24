@@ -62,6 +62,15 @@ export const uploadResource = async (formData) => {
   return handleResponse(res);
 };
 
+export const recommendTaskName = async (subject = '', context = '') => {
+  const res = await fetch(`${BACKEND_URL}/api/task_name/recommend`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ subject, context }),
+  });
+  return handleResponse(res);
+};
+
 export const getTaskStatus = async (taskId) => {
   const res = await fetch(`${BACKEND_URL}/api/task/${taskId}`);
   return handleResponse(res);

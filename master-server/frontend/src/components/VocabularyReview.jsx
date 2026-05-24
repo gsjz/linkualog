@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import UiIcon from './UiIcon';
 
 import {
   getVocabularyCategories,
@@ -248,16 +249,6 @@ const buildYouTubeLink = (url, timestamp) => {
 
 const normalizeReviewScore = (score) => Math.max(0, Math.min(5, parseInt(score, 10) || 0));
 
-const formatReviewStars = (score) => {
-  const normalizedScore = normalizeReviewScore(score);
-  return `${'★'.repeat(normalizedScore)}${'☆'.repeat(5 - normalizedScore)}`;
-};
-
-const formatReviewSummary = (score) => {
-  const normalizedScore = normalizeReviewScore(score);
-  return `${formatReviewStars(normalizedScore)} (${normalizedScore}/5, ${SCORE_LABELS[normalizedScore]})`;
-};
-
 const chipStyle = () => ({
   display: 'inline-flex',
   alignItems: 'center',
@@ -275,10 +266,8 @@ const sectionTitleStyle = {
   borderBottom: '1px solid var(--ms-border)',
   paddingBottom: '10px',
   margin: 0,
-  fontSize: '12px',
-  color: 'var(--ms-text-faint)',
-  letterSpacing: '0.12em',
-  textTransform: 'uppercase',
+  fontSize: '13px',
+  color: 'var(--ms-text-muted)',
   fontWeight: 700,
 };
 
@@ -286,7 +275,7 @@ const metaCardStyle = {
   background: 'var(--ms-surface-strong)',
   border: '1px solid var(--ms-border)',
   borderRadius: '6px',
-  padding: '24px',
+  padding: '20px',
 };
 
 const getReviewToneStyle = (score) => {
@@ -316,12 +305,14 @@ const getReviewToneStyle = (score) => {
 };
 
 export default function VocabularyReview({
-  onOpenReviewEntry = null,
   onSelectionChange = null,
   launchRequest = null,
   mobileSimple = false,
   compactDesktop = false,
+  selectionMode = 'random',
 }) {
+  const manualSelectionMode = selectionMode === 'manual';
+  const randomSelectionMode = !manualSelectionMode;
   const [entries, setEntries] = useState([]);
   const [entriesCategory, setEntriesCategory] = useState('');
   const [selectedEntryId, setSelectedEntryId] = useState('');
@@ -333,6 +324,8 @@ export default function VocabularyReview({
   ));
   const [wordQuery, setWordQuery] = useState('');
   const [entryFilter, setEntryFilter] = useState(() => (mobileSimple ? 'all' : 'marked'));
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [mobileInfoOpen, setMobileInfoOpen] = useState(false);
   const [savingMarked, setSavingMarked] = useState(false);
   const [savingReviewScore, setSavingReviewScore] = useState(false);
   const pendingLaunchRef = useRef(null);
@@ -340,6 +333,45 @@ export default function VocabularyReview({
   const entriesRequestRef = useRef(0);
   const detailRequestRef = useRef(0);
   const previousMobileSimpleRef = useRef(mobileSimple);
+  const infoButtonRef = useRef(null);
+  const [mobileInfoPanelPosition, setMobileInfoPanelPosition] = useState(null);
+
+  const updateMobileInfoPanelPosition = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    const button = infoButtonRef.current;
+    if (!button) return;
+
+    const rect = button.getBoundingClientRect();
+    const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+    const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+    const margin = 8;
+    const panelWidth = Math.min(300, Math.max(180, viewportWidth - margin * 2));
+    const minPanelHeight = Math.min(180, Math.max(120, viewportHeight - margin * 2));
+    const leftLimit = Math.max(margin, viewportWidth - panelWidth - margin);
+    const topLimit = Math.max(margin, viewportHeight - minPanelHeight - margin);
+    const nextLeft = Math.min(
+      Math.max(rect.left + rect.width / 2 - panelWidth / 2, margin),
+      leftLimit,
+    );
+    const nextTop = Math.min(Math.max(rect.bottom + margin, margin), topLimit);
+    const nextMaxHeight = Math.max(120, Math.min(420, viewportHeight - nextTop - margin));
+
+    setMobileInfoPanelPosition((current) => {
+      if (
+        current
+        && current.left === nextLeft
+        && current.top === nextTop
+        && current.maxHeight === nextMaxHeight
+      ) {
+        return current;
+      }
+      return {
+        left: nextLeft,
+        top: nextTop,
+        maxHeight: nextMaxHeight,
+      };
+    });
+  }, []);
 
   const resetCurrentEntry = useCallback((nextEntries = []) => {
     detailRequestRef.current += 1;
@@ -489,6 +521,29 @@ export default function VocabularyReview({
   useEffect(() => {
     selectedCategoryRef.current = selectedCategory;
   }, [selectedCategory]);
+
+  useEffect(() => {
+    if (!mobileInfoOpen) {
+      setMobileInfoPanelPosition(null);
+      return undefined;
+    }
+
+    updateMobileInfoPanelPosition();
+    let frame = 0;
+    const scheduleUpdate = () => {
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(updateMobileInfoPanelPosition);
+    };
+
+    window.addEventListener('resize', scheduleUpdate);
+    window.addEventListener('scroll', scheduleUpdate, true);
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener('resize', scheduleUpdate);
+      window.removeEventListener('scroll', scheduleUpdate, true);
+    };
+  }, [mobileInfoOpen, updateMobileInfoPanelPosition]);
 
   useEffect(() => {
     const enteringMobileSimple = mobileSimple && !previousMobileSimpleRef.current;
@@ -685,7 +740,7 @@ export default function VocabularyReview({
       await submitReviewScore(currentEntryCategory, currentEntry.file, score, getTodayLocalDateString());
       const res = await getVocabularyDetail(currentEntry.key || currentEntry.file || currentEntry.word, currentEntryCategory);
       if (res?.data) setDetailData(res.data);
-      shouldAdvance = mobileSimple;
+      shouldAdvance = mobileSimple && randomSelectionMode;
     } catch (error) {
       console.error('记录熟练度失败', error);
       alert('记录熟练度失败');
@@ -695,10 +750,10 @@ export default function VocabularyReview({
         queueMicrotask(() => handleDrawRandomEntry(visibleEntries));
       }
     }
-  }, [detailCategory, detailData, entries, handleDrawRandomEntry, mobileSimple, resolveEntryCandidate, resolveEntryCategory, selectedCategory, selectedEntryId, visibleEntries]);
+  }, [detailCategory, detailData, entries, handleDrawRandomEntry, mobileSimple, randomSelectionMode, resolveEntryCandidate, resolveEntryCategory, selectedCategory, selectedEntryId, visibleEntries]);
 
   useEffect(() => {
-    if (!mobileSimple) return;
+    if (!mobileSimple || !randomSelectionMode) return;
     if (!selectedCategory) return;
     if (entriesCategory !== selectedCategory) return;
     if (!visibleEntries.length) {
@@ -715,7 +770,7 @@ export default function VocabularyReview({
     queueMicrotask(() => {
       handleDrawRandomEntry(visibleEntries);
     });
-  }, [entriesCategory, handleDrawRandomEntry, mobileSimple, selectedCategory, selectedEntryId, visibleEntries]);
+  }, [entriesCategory, handleDrawRandomEntry, mobileSimple, randomSelectionMode, selectedCategory, selectedEntryId, visibleEntries]);
 
   const handleToggleMarked = useCallback(async () => {
     const currentEntry = selectedEntry || resolveEntryCandidate(detailData?.word, selectedCategory, entries);
@@ -748,17 +803,6 @@ export default function VocabularyReview({
     }
   }, [detailCategory, detailData, entries, resolveEntryCandidate, resolveEntryCategory, selectedCategory, selectedEntry]);
 
-  const handleOpenReviewWorkspace = () => {
-    const currentEntry = selectedEntry || resolveEntryCandidate(detailData?.word, selectedCategory, entries);
-    const currentEntryCategory = detailCategory || resolveEntryCategory(currentEntry, selectedCategory);
-    if (!detailData?.word || !currentEntryCategory || typeof onOpenReviewEntry !== 'function') return;
-    onOpenReviewEntry({
-      category: currentEntryCategory,
-      word: currentEntry?.file || currentEntry?.key || detailData.word,
-      focus: 'clean',
-    });
-  };
-
   const reviews = Array.isArray(detailData?.reviews) ? detailData.reviews : [];
   const definitions = Array.isArray(detailData?.definitions) ? detailData.definitions : [];
   const examples = Array.isArray(detailData?.examples) ? detailData.examples : [];
@@ -768,6 +812,12 @@ export default function VocabularyReview({
   const rawTags = Array.isArray(detailData?.tags)
     ? detailData.tags.map((item) => String(item || '').trim()).filter(Boolean)
     : [];
+  const compactDesktopSurface = compactDesktop && !mobileSimple;
+  const sidebarPreviewEntries = visibleEntries.slice(0, 8);
+  const compactMergedFromLabel = mergedFrom.length > 1
+    ? `${mergedFrom[0]} +${mergedFrom.length - 1}`
+    : (mergedFrom[0] || '无');
+  const recentDesktopReviews = reviews.slice().reverse().slice(0, 4);
   const selectedCategoryLabel = formatCategoryChoiceLabel(selectedCategory);
   const detailCategoryLabel = detailCategory ? formatCategoryLabel(detailCategory) : selectedCategoryLabel;
   const categoryTag = detailCategory
@@ -781,7 +831,7 @@ export default function VocabularyReview({
   const latestReview = reviews.length ? reviews[reviews.length - 1] : null;
   const latestReviewTone = latestReview ? getReviewToneStyle(latestReview.score) : null;
   const activeFilterOption = ENTRY_FILTER_OPTIONS.find((item) => item.value === entryFilter) || ENTRY_FILTER_OPTIONS[0];
-  const compactCategoryOptions = mobileSimple
+  const compactCategoryOptions = (mobileSimple || compactDesktop)
     ? [{ value: ALL_CATEGORIES_VALUE, label: '全部目录' }, ...categories.map((item) => ({ value: item, label: item }))]
     : categories.map((item) => ({ value: item, label: item }));
   const mobileSimpleRootStyle = {
@@ -813,11 +863,12 @@ export default function VocabularyReview({
     alignItems: compactDesktop ? 'center' : 'start',
   };
   const mobileSimpleContentStyle = {
-    flex: 1,
+    flex: '0 1 auto',
+    position: 'relative',
     width: '100%',
     maxWidth: compactDesktop ? '1040px' : 'none',
     margin: compactDesktop ? '0 auto' : '0',
-    padding: compactDesktop ? '0 0 118px' : '12px 12px 16px',
+    padding: compactDesktop ? '0' : '12px 12px 8px',
     overflowY: 'auto',
     overflowX: 'hidden',
   };
@@ -894,64 +945,230 @@ export default function VocabularyReview({
     </div>
   ) : null;
 
+  const manualPickerNode = manualSelectionMode ? (
+    <div
+      className={`vocab-review-manual-picker${compactDesktop ? ' is-compact-desktop' : ''}`}
+      style={{
+        width: '100%',
+        maxWidth: compactDesktop ? '1040px' : 'none',
+        margin: compactDesktop ? '0 auto 10px' : '0 0 10px',
+      }}
+    >
+      <div
+        className="vocab-review-card vocab-review-manual-picker-card"
+        style={{ ...metaCardStyle, display: 'grid', gap: '10px' }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          <strong style={{ fontSize: '14px', color: 'var(--ms-text)' }}>
+            手动词池 ({visibleEntries.length}{normalizedWordQuery ? ` / ${filteredEntries.length}` : ''})
+          </strong>
+          <span className="vocab-review-chip" style={chipStyle()}>{selectedCategoryLabel}</span>
+        </div>
+
+        <input
+          className="vocab-review-search-input"
+          type="search"
+          placeholder="筛选单词或文件名"
+          value={wordQuery}
+          onChange={(e) => setWordQuery(e.target.value)}
+          style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--ms-border)', borderRadius: '6px', fontSize: '13px', outline: 'none', background: '#fff', color: 'var(--ms-text)' }}
+        />
+
+        <div
+          className="vocab-review-manual-list"
+          style={{
+            display: 'grid',
+            gridTemplateColumns: compactDesktop ? 'repeat(2, minmax(0, 1fr))' : '1fr',
+            gap: '8px',
+            maxHeight: compactDesktop ? '228px' : '240px',
+            overflowY: 'auto',
+          }}
+        >
+          {visibleEntries.map((entry) => (
+            <button
+              key={entry.id}
+              type="button"
+              className={`vocab-review-word-item${selectedEntryId === entry.id ? ' is-selected' : ''}`}
+              onClick={() => void handleSelectEntry(entry)}
+              style={{
+                padding: '11px 12px',
+                cursor: 'pointer',
+                border: '1px solid rgba(213, 221, 208, 0.82)',
+                borderRadius: '6px',
+                background: selectedEntryId === entry.id ? 'var(--ms-surface-muted)' : '#fff',
+                color: 'var(--ms-text)',
+                textAlign: 'left',
+              }}
+            >
+              <div style={{ display: 'grid', gap: '4px', minWidth: 0 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '14px', fontWeight: selectedEntryId === entry.id ? '700' : '600' }}>
+                    {entry.word}
+                  </span>
+                  {entry.marked ? (
+                    <span style={{ fontSize: '10px', color: 'var(--ms-text-muted)', padding: '2px 6px', borderRadius: '4px', border: '1px solid var(--ms-border)', background: '#fff', flexShrink: 0 }}>
+                      标记
+                    </span>
+                  ) : null}
+                </div>
+                <div style={{ fontSize: '12px', color: 'var(--ms-text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {formatCategoryLabel(entry.category)} / {entry.file}
+                </div>
+              </div>
+            </button>
+          ))}
+          {!visibleEntries.length ? (
+            <div className="vocab-review-empty" style={{ padding: '18px', textAlign: 'center', color: '#a1a1aa', fontSize: '13px' }}>
+              {normalizedWordQuery ? '没有匹配的词条' : `${activeFilterOption.label}为空`}
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  ) : null;
+
+  const emptyTitle = visibleEntries.length
+    ? (randomSelectionMode ? '随机抽词' : '选择词条')
+    : '词池为空';
+  const emptyStatusItems = [
+    selectedCategory ? selectedCategoryLabel : '全部目录',
+    `${visibleEntries.length} / ${entries.length}`,
+    activeFilterOption.label,
+  ];
+
+  const closeMobileFilters = () => setMobileFiltersOpen(false);
+  const closeMobileInfo = () => {
+    setMobileInfoOpen(false);
+    setMobileInfoPanelPosition(null);
+  };
+  const toggleMobileInfo = () => {
+    if (!mobileInfoOpen) updateMobileInfoPanelPosition();
+    setMobileInfoOpen((open) => !open);
+  };
+  const mobileInfoPanelStyle = mobileInfoPanelPosition ? {
+    '--vocab-info-panel-left': `${mobileInfoPanelPosition.left}px`,
+    '--vocab-info-panel-top': `${mobileInfoPanelPosition.top}px`,
+    '--vocab-info-panel-max-height': `${mobileInfoPanelPosition.maxHeight}px`,
+  } : undefined;
+
+  const desktopOverviewCardNode = detailData && !mobileSimple ? (
+    <div className="vocab-review-card vocab-review-desktop-overview-card" style={{ ...metaCardStyle, padding: '14px 16px', display: 'grid', gap: '12px' }}>
+      <div className="vocab-review-desktop-stat-list">
+        {[
+          { key: 'created', icon: 'calendar', label: '初次记录', value: detailData.createdAt || '未知' },
+          { key: 'latest', icon: 'history', label: '最近复习', value: latestReview ? `${latestReview.date} · ${normalizeReviewScore(latestReview.score)}/5` : '暂无' },
+          { key: 'count', icon: 'clock', label: '累计复习', value: `${reviews.length} 次` },
+          { key: 'merged', icon: 'folder', label: '来源', value: compactMergedFromLabel, title: mergedFrom.length ? mergedFrom.join(', ') : '无' },
+        ].map((item) => (
+          <div key={item.key} className="vocab-review-desktop-stat-item" title={item.title || `${item.label}: ${item.value}`}>
+            <span className="vocab-review-desktop-stat-icon">
+              <UiIcon name={item.icon} size={13} />
+            </span>
+            <strong className="vocab-review-desktop-stat-value">{item.value}</strong>
+          </div>
+        ))}
+      </div>
+
+      {displayTags.length ? (
+        <div className="vocab-review-chip-list vocab-review-desktop-tag-list" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          {displayTags.map((tag) => (
+            <span key={tag} className="vocab-review-chip" style={chipStyle()}>{tag}</span>
+          ))}
+        </div>
+      ) : null}
+
+      {recentDesktopReviews.length ? (
+        <div className="vocab-review-desktop-history-list">
+          {recentDesktopReviews.map((review, index) => (
+            <div
+              key={`${review.date || 'unknown'}-${index}`}
+              className="vocab-review-desktop-history-item"
+              style={getReviewToneStyle(review.score)}
+            >
+              <span className="vocab-review-desktop-history-date">{review.date || '未知时间'}</span>
+              <span className="vocab-review-desktop-history-score">{normalizeReviewScore(review.score)}/5 · {SCORE_SHORT_LABELS[normalizeReviewScore(review.score)]}</span>
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  ) : null;
+
   const detailNode = detailData ? (
     <div className="vocab-review-shell">
       <div className="vocab-review-hero" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
         <div className="vocab-review-hero-body">
           <div className="vocab-review-word-line" style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-            <h1 className="vocab-review-hero-title" style={{ fontSize: 'clamp(28px, 5vw, 38px)', margin: 0, color: 'var(--ms-text)', lineHeight: 1.06, wordBreak: 'break-word' }}>{detailData.word}</h1>
+            <h1 className="vocab-review-hero-title" style={{ fontSize: 'clamp(28px, 4vw, 34px)', margin: 0, color: 'var(--ms-text)', lineHeight: 1.04, wordBreak: 'break-word' }}>{detailData.word}</h1>
             <button
               className="vocab-review-audio-button"
               onClick={() => playAudio(detailData.word, 2)}
               title="朗读单词"
-              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', padding: '0 4px' }}
+              style={{ cursor: 'pointer', color: 'var(--ms-text)' }}
             >
-              🔊
+              <UiIcon name="volume" size={18} />
             </button>
+            {mobileSimple ? (
+              <button
+                ref={infoButtonRef}
+                type="button"
+                className={`vocab-review-info-button${mobileInfoOpen ? ' is-active' : ''}`}
+                onClick={toggleMobileInfo}
+                aria-label="打开复习记录"
+                aria-expanded={mobileInfoOpen}
+                title="复习记录"
+              >
+                <UiIcon name="info" size={15} />
+              </button>
+            ) : null}
           </div>
           <div className="vocab-review-hero-meta" style={{ marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <span className="vocab-review-chip" style={chipStyle()}>目录: {detailCategoryLabel}</span>
-            <span className="vocab-review-chip" style={chipStyle()}>释义 {definitions.length}</span>
-            <span className="vocab-review-chip" style={chipStyle()}>例句 {examples.length}</span>
-            <span className="vocab-review-chip" style={chipStyle()}>复习 {reviews.length}</span>
-            {latestReview ? <span className="vocab-review-chip vocab-review-chip-tone" style={{ ...chipStyle(), ...latestReviewTone }}>最近熟练度 {normalizeReviewScore(latestReview.score)}/5</span> : null}
+            <span className="vocab-review-chip vocab-review-category-chip" style={chipStyle()}>
+              <UiIcon name="folder" size={12} />
+              <span>{detailCategoryLabel}</span>
+            </span>
+            <span className="vocab-review-chip" style={chipStyle()}>
+              <UiIcon name="file" size={12} />
+              <span>释义 {definitions.length}</span>
+            </span>
+            <span className="vocab-review-chip" style={chipStyle()}>
+              <UiIcon name="list" size={12} />
+              <span>例句 {examples.length}</span>
+            </span>
+            <span className="vocab-review-chip" style={chipStyle()}>
+              <UiIcon name="history" size={12} />
+              <span>复习 {reviews.length}</span>
+            </span>
+            {latestReview ? (
+              <span className="vocab-review-chip vocab-review-chip-tone" style={{ ...chipStyle(), ...latestReviewTone }}>
+                <UiIcon name="star" size={12} />
+                <span>{normalizeReviewScore(latestReview.score)}/5</span>
+              </span>
+            ) : null}
           </div>
         </div>
 
         <div className="vocab-review-hero-actions" style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          {!mobileSimple && randomSelectionMode ? (
+            <button
+              type="button"
+              className="master-primary-button vocab-review-hero-primary-action"
+              onClick={() => handleDrawRandomEntry()}
+              disabled={!visibleEntries.length}
+            >
+              <UiIcon name="refresh" size={14} />
+              <span>下一个词</span>
+            </button>
+          ) : null}
           {!mobileSimple ? (
             <button
               type="button"
+              className={`vocab-review-hero-secondary-action${detailData?.marked ? ' is-active' : ''}`}
               onClick={() => void handleToggleMarked()}
               disabled={savingMarked}
-              style={{
-                padding: '8px 16px',
-                borderRadius: '6px',
-                border: '1px solid var(--ms-border)',
-                background: detailData?.marked ? 'var(--ms-surface-muted)' : '#fff',
-                color: 'var(--ms-text)',
-                fontSize: '13px',
-                fontWeight: '600',
-                cursor: savingMarked ? 'not-allowed' : 'pointer',
-              }}
             >
-              {savingMarked ? '保存中...' : (detailData?.marked ? '取消标记' : '标记词条')}
-            </button>
-          ) : null}
-          {!mobileSimple && typeof onOpenReviewEntry === 'function' ? (
-            <button
-              onClick={handleOpenReviewWorkspace}
-              className="master-primary-button"
-              style={{
-                padding: '8px 16px',
-                color: '#fff',
-                borderRadius: '6px',
-                fontSize: '13px',
-                fontWeight: '600',
-                cursor: 'pointer',
-              }}
-            >
-              去精修与复习
+              <UiIcon name="star" size={14} />
+              <span>{savingMarked ? '保存中...' : (detailData?.marked ? '已标记' : '标记词条')}</span>
             </button>
           ) : null}
         </div>
@@ -983,7 +1200,7 @@ export default function VocabularyReview({
                 disabled={savingReviewScore}
                 style={{
                   padding: '12px 10px',
-                  borderRadius: '8px',
+                  borderRadius: '6px',
                   border: '1px solid var(--ms-border)',
                   background: '#fff',
                   color: 'var(--ms-text)',
@@ -1005,99 +1222,11 @@ export default function VocabularyReview({
         </div>
       ) : null}
 
-      <div className="vocab-review-card vocab-review-meta-card" style={{ ...metaCardStyle, display: 'flex', flexDirection: 'column', gap: '14px' }}>
-        <h3 style={{ ...sectionTitleStyle, borderBottom: 'none', paddingBottom: 0, fontSize: '16px' }}>词条属性</h3>
+      {!mobileSimple ? (
+        <div className="vocab-review-desktop-main-column vocab-review-desktop-detail-stack">
+          {desktopOverviewCardNode}
 
-        <div className="vocab-review-info-grid">
-          <div>
-            <div className="vocab-review-meta-label" style={{ fontSize: '12px', color: 'var(--ms-text-muted)', marginBottom: '4px' }}>首次记录</div>
-            <div className="vocab-review-meta-value" style={{ fontSize: '14px', color: 'var(--ms-text)', fontWeight: '600' }}>{detailData.createdAt || '未知'}</div>
-          </div>
-          <div>
-            <div className="vocab-review-meta-label" style={{ fontSize: '12px', color: 'var(--ms-text-muted)', marginBottom: '4px' }}>最近复习</div>
-            <div className="vocab-review-meta-value" style={{ fontSize: '14px', color: 'var(--ms-text)', fontWeight: '600' }}>
-              {latestReview ? `${latestReview.date} / ${normalizeReviewScore(latestReview.score)}/5 ${SCORE_LABELS[normalizeReviewScore(latestReview.score)]}` : '暂无'}
-            </div>
-          </div>
-          <div>
-            <div className="vocab-review-meta-label" style={{ fontSize: '12px', color: 'var(--ms-text-muted)', marginBottom: '4px' }}>合并来源</div>
-            <div className="vocab-review-meta-value" style={{ fontSize: '14px', color: 'var(--ms-text)', fontWeight: '600' }}>
-              {mergedFrom.length ? mergedFrom.join(', ') : '无'}
-            </div>
-          </div>
-        </div>
-
-        {displayTags.length ? (
-          <div>
-            <div className="vocab-review-meta-label" style={{ fontSize: '12px', color: 'var(--ms-text-muted)', marginBottom: '8px' }}>标签</div>
-            <div className="vocab-review-chip-list" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              {displayTags.map((tag) => (
-                <span key={tag} className="vocab-review-chip" style={chipStyle()}>{tag}</span>
-              ))}
-            </div>
-          </div>
-        ) : null}
-      </div>
-
-      <div className="vocab-review-card vocab-review-study-card" style={metaCardStyle}>
-        <h3 style={{ ...sectionTitleStyle, borderBottom: 'none', paddingBottom: 0, fontSize: '16px', marginBottom: '14px' }}>学习数据</h3>
-        <div style={{ display: 'grid', gap: '10px' }}>
-          <div className="vocab-review-data-row" style={{ fontSize: '14px', color: 'var(--ms-text-muted)' }}>
-            初次记录: <strong className="vocab-review-data-value" style={{ color: 'var(--ms-text)' }}>{detailData.createdAt || '未知'}</strong>
-          </div>
-          <div className="vocab-review-data-row" style={{ fontSize: '14px', color: 'var(--ms-text-muted)' }}>
-            累计复习: <strong className="vocab-review-data-value" style={{ color: 'var(--ms-text)' }}>{reviews.length}</strong> 次
-          </div>
-          {reviews.length ? (
-            <div className="vocab-review-review-list" style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '4px' }}>
-              {reviews.map((review, index) => (
-                <div
-                  key={`${review.date || 'unknown'}-${index}`}
-                  className="vocab-review-review-row"
-                  style={{
-                    ...getReviewToneStyle(review.score),
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    gap: '12px',
-                    flexWrap: 'wrap',
-                    padding: '10px 12px',
-                    borderRadius: '6px',
-                  }}
-                >
-                  <span className="vocab-review-review-date" style={{ fontSize: '13px', color: 'inherit', fontWeight: '600' }}>{review.date || '未知时间'}</span>
-                  <span className="vocab-review-review-score" style={{ fontSize: '13px', color: 'inherit' }}>
-                    熟练度: {formatReviewSummary(review.score)}
-                  </span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div style={{ fontSize: '13px', color: '#a1a1aa' }}>还没有复习记录。</div>
-          )}
-        </div>
-      </div>
-
-      <div className="vocab-review-sections vocab-review-card vocab-review-definition-card" style={{ ...metaCardStyle, gap: '12px' }}>
-        {mobileSimple ? (
-          <details>
-            <summary className="vocab-review-disclosure-summary">
-              <span>释义 {definitions.length}</span>
-              <span className="vocab-review-disclosure-hint">点按展开</span>
-            </summary>
-            <div style={{ marginTop: '14px' }}>
-              {definitions.length ? (
-                <ul className="vocab-review-definition-list" style={{ paddingLeft: '20px', margin: 0, fontSize: '15px', lineHeight: '1.8' }}>
-                  {definitions.map((definition, index) => (
-                    <li key={`${definition}-${index}`} className="vocab-review-definition-item" style={{ marginBottom: '8px' }}>{definition}</li>
-                  ))}
-                </ul>
-              ) : (
-                <div style={{ color: '#a1a1aa', fontSize: '14px' }}>暂无释义</div>
-              )}
-            </div>
-          </details>
-        ) : (
-          <>
+          <div className="vocab-review-sections vocab-review-card vocab-review-definition-card" style={{ ...metaCardStyle, padding: '18px 20px', gap: '10px' }}>
             <h3 style={sectionTitleStyle}>释义</h3>
             {definitions.length ? (
               <ul className="vocab-review-definition-list" style={{ paddingLeft: '20px', margin: 0, fontSize: '15px', lineHeight: '1.8' }}>
@@ -1108,169 +1237,281 @@ export default function VocabularyReview({
             ) : (
               <div style={{ color: '#a1a1aa', fontSize: '14px' }}>暂无释义</div>
             )}
-          </>
-        )}
-      </div>
+          </div>
 
-      <div className="vocab-review-sections vocab-review-examples-section" style={{ gap: '16px' }}>
-        <h3 style={sectionTitleStyle}>例句</h3>
-        {examples.length ? examples.map((example, index) => {
-          const rawFocus = example.focusPositions ?? example.focusPosition ?? example.fp ?? example.fps ?? [];
-          const normalizedFocus = normalizeFocusPositions(rawFocus, tokenizeFocusText(example.text).length);
+          <div className="vocab-review-sections vocab-review-examples-section" style={{ gap: '12px' }}>
+            <h3 style={sectionTitleStyle}>例句</h3>
+            {examples.length ? examples.map((example, index) => {
+              const rawFocus = example.focusPositions ?? example.focusPosition ?? example.fp ?? example.fps ?? [];
+              const normalizedFocus = normalizeFocusPositions(rawFocus, tokenizeFocusText(example.text).length);
 
-          const renderedText = renderTextWithFocusPositions(example.text, rawFocus)
-            || renderTextWithFocusWords(example.text, example.focusWords);
+              const renderedText = renderTextWithFocusPositions(example.text, rawFocus)
+                || renderTextWithFocusWords(example.text, example.focusWords);
 
-          return (
-            <div
-              key={`example-${index}`}
-              className="vocab-review-example-card"
-              style={{
-                background: 'var(--ms-surface-strong)',
-                padding: '20px',
-                borderRadius: '6px',
-                border: '1px solid var(--ms-border)',
-                borderLeft: '1px solid var(--ms-border)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '12px',
-              }}
-            >
-              <div className="vocab-review-example-header" style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
-                <div className="vocab-review-example-index" style={{ fontSize: '13px', color: 'var(--ms-text-muted)', fontWeight: '600' }}>例句 {index + 1}</div>
-              </div>
-
-              <div className="vocab-review-example-main" style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+              return (
                 <div
-                  className="vocab-review-example-text"
-                  style={{ fontSize: '16px', color: 'var(--ms-text)', lineHeight: '1.7', flex: 1 }}
-                  dangerouslySetInnerHTML={{ __html: renderedText || escapeHtml(example.text) }}
-                />
-                <button
-                  className="vocab-review-audio-button"
-                  onClick={() => playAudio(example.text, 2)}
-                  title="朗读完整例句"
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '16px', padding: '0 4px', flexShrink: 0 }}
+                  key={`example-${index}`}
+                  className="vocab-review-example-card"
+                  style={{
+                    background: 'var(--ms-surface-strong)',
+                    padding: '16px 18px',
+                    borderRadius: '6px',
+                    border: '1px solid var(--ms-border)',
+                    borderLeft: '1px solid var(--ms-border)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '10px',
+                  }}
                 >
-                  🔊
-                </button>
-              </div>
-
-              {example.explanation ? (
-                mobileSimple ? (
-                  <details className="vocab-review-example-note" style={{ background: 'rgba(255, 255, 255, 0.9)', borderRadius: '6px', padding: '10px 12px', border: '1px solid rgba(213, 221, 208, 0.72)' }}>
-                    <summary className="vocab-review-disclosure-summary vocab-review-disclosure-summary-compact">
-                      <span>解析</span>
-                      <span className="vocab-review-disclosure-hint">点按展开</span>
-                    </summary>
-                    <div style={{ marginTop: '10px', fontSize: '14px', color: 'var(--ms-text-muted)' }}>{example.explanation}</div>
-                  </details>
-                ) : (
-                  <div className="vocab-review-example-note" style={{ fontSize: '14px', color: 'var(--ms-text-muted)', background: 'rgba(255, 255, 255, 0.9)', borderRadius: '6px', padding: '10px 12px', border: '1px solid rgba(213, 221, 208, 0.72)' }}>
-                    <strong className="vocab-review-note-label" style={{ color: 'var(--ms-text)' }}>解析:</strong> {example.explanation}
+                  <div className="vocab-review-example-header" style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <div className="vocab-review-example-index" style={{ fontSize: '12px', color: 'var(--ms-text-muted)', fontWeight: '600' }}>例句 {index + 1}</div>
                   </div>
-                )
-              ) : null}
 
-              <div className="vocab-review-chip-list" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {example.source?.text ? (
-                  example.source?.url ? (
-                    <a
-                      href={example.source.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="vocab-review-chip vocab-review-chip-link"
-                      style={{ ...chipStyle(), textDecoration: 'none' }}
+                  <div className="vocab-review-example-main" style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                    <div
+                      className="vocab-review-example-text"
+                      style={{ fontSize: '15px', color: 'var(--ms-text)', lineHeight: '1.65', flex: 1 }}
+                      dangerouslySetInnerHTML={{ __html: renderedText || escapeHtml(example.text) }}
+                    />
+                    <button
+                      className="vocab-review-audio-button"
+                      onClick={() => playAudio(example.text, 2)}
+                      title="朗读完整例句"
+                      style={{ cursor: 'pointer', flexShrink: 0, color: 'var(--ms-text)' }}
                     >
-                      来源: {example.source.text}
-                    </a>
-                  ) : (
-                    <span className="vocab-review-chip" style={chipStyle()}>来源: {example.source.text}</span>
-                  )
-                ) : null}
+                      <UiIcon name="volume" size={16} />
+                    </button>
+                  </div>
 
-                {example.youtube?.url ? (
-                  <a
-                    href={buildYouTubeLink(example.youtube.url, example.youtube.timestamp)}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="vocab-review-chip vocab-review-chip-link"
-                    style={{ ...chipStyle(), textDecoration: 'none' }}
-                  >
-                    YouTube {formatYouTubeLabel(example.youtube.timestamp)}
-                  </a>
-                ) : null}
+                  {example.explanation ? (
+                    <div className="vocab-review-example-note" style={{ fontSize: '13px', color: 'var(--ms-text-muted)', background: 'rgba(255, 255, 255, 0.9)', borderRadius: '6px', padding: '9px 10px', border: '1px solid rgba(213, 221, 208, 0.72)' }}>
+                      <strong className="vocab-review-note-label" style={{ color: 'var(--ms-text)' }}>解析:</strong> {example.explanation}
+                    </div>
+                  ) : null}
 
-                {(Array.isArray(example.focusWords) ? example.focusWords : []).filter(Boolean).map((focusWord) => (
-                  <span key={`${focusWord}-${index}`} className="vocab-review-chip" style={chipStyle()}>
-                    focus: {focusWord}
-                  </span>
-                ))}
+                  <div className="vocab-review-chip-list" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    {example.source?.text ? (
+                      example.source?.url ? (
+                        <a
+                          href={example.source.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="vocab-review-chip vocab-review-chip-link"
+                          style={{ ...chipStyle(), textDecoration: 'none' }}
+                        >
+                          来源: {example.source.text}
+                        </a>
+                      ) : (
+                        <span className="vocab-review-chip" style={chipStyle()}>来源: {example.source.text}</span>
+                      )
+                    ) : null}
 
-                {normalizedFocus.length ? (
-                  <span className="vocab-review-chip" style={chipStyle()}>
-                    positions: {normalizedFocus.join(', ')}
-                  </span>
-                ) : null}
+                    {example.youtube?.url ? (
+                      <a
+                        href={buildYouTubeLink(example.youtube.url, example.youtube.timestamp)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="vocab-review-chip vocab-review-chip-link"
+                        style={{ ...chipStyle(), textDecoration: 'none' }}
+                      >
+                        YouTube {formatYouTubeLabel(example.youtube.timestamp)}
+                      </a>
+                    ) : null}
+
+                    {(Array.isArray(example.focusWords) ? example.focusWords : []).filter(Boolean).map((focusWord) => (
+                      <span key={`${focusWord}-${index}`} className="vocab-review-chip" style={chipStyle()}>
+                        focus: {focusWord}
+                      </span>
+                    ))}
+
+                    {normalizedFocus.length ? (
+                      <span className="vocab-review-chip" style={chipStyle()}>
+                        positions: {normalizedFocus.join(', ')}
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+              );
+            }) : (
+              <div style={{ color: '#a1a1aa', fontSize: '14px' }}>暂无例句</div>
+            )}
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="vocab-review-sections vocab-review-card vocab-review-definition-card" style={{ ...metaCardStyle, gap: '12px' }}>
+            <details>
+              <summary className="vocab-review-disclosure-summary">
+                <span>释义 {definitions.length}</span>
+                <span className="vocab-review-disclosure-hint">点按展开</span>
+              </summary>
+              <div style={{ marginTop: '14px' }}>
+                {definitions.length ? (
+                  <ul className="vocab-review-definition-list" style={{ paddingLeft: '20px', margin: 0, fontSize: '15px', lineHeight: '1.8' }}>
+                    {definitions.map((definition, index) => (
+                      <li key={`${definition}-${index}`} className="vocab-review-definition-item" style={{ marginBottom: '8px' }}>{definition}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div style={{ color: '#a1a1aa', fontSize: '14px' }}>暂无释义</div>
+                )}
               </div>
-            </div>
-          );
-        }) : (
-          <div style={{ color: '#a1a1aa', fontSize: '14px' }}>暂无例句</div>
-        )}
-      </div>
+            </details>
+          </div>
+
+          <div className="vocab-review-sections vocab-review-examples-section" style={{ gap: '16px' }}>
+            <h3 style={sectionTitleStyle}>例句</h3>
+            {examples.length ? examples.map((example, index) => {
+              const rawFocus = example.focusPositions ?? example.focusPosition ?? example.fp ?? example.fps ?? [];
+              const normalizedFocus = normalizeFocusPositions(rawFocus, tokenizeFocusText(example.text).length);
+
+              const renderedText = renderTextWithFocusPositions(example.text, rawFocus)
+                || renderTextWithFocusWords(example.text, example.focusWords);
+
+              return (
+                <div
+                  key={`example-${index}`}
+                  className="vocab-review-example-card"
+                  style={{
+                    background: 'var(--ms-surface-strong)',
+                    padding: '20px',
+                    borderRadius: '6px',
+                    border: '1px solid var(--ms-border)',
+                    borderLeft: '1px solid var(--ms-border)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '12px',
+                  }}
+                >
+                  <div className="vocab-review-example-header" style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <div className="vocab-review-example-index" style={{ fontSize: '13px', color: 'var(--ms-text-muted)', fontWeight: '600' }}>例句 {index + 1}</div>
+                  </div>
+
+                  <div className="vocab-review-example-main" style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                    <div
+                      className="vocab-review-example-text"
+                      style={{ fontSize: '16px', color: 'var(--ms-text)', lineHeight: '1.7', flex: 1 }}
+                      dangerouslySetInnerHTML={{ __html: renderedText || escapeHtml(example.text) }}
+                    />
+                    <button
+                      className="vocab-review-audio-button"
+                      onClick={() => playAudio(example.text, 2)}
+                      title="朗读完整例句"
+                      style={{ cursor: 'pointer', flexShrink: 0, color: 'var(--ms-text)' }}
+                    >
+                      <UiIcon name="volume" size={16} />
+                    </button>
+                  </div>
+
+                  {example.explanation ? (
+                    <details className="vocab-review-example-note" style={{ background: 'rgba(255, 255, 255, 0.9)', borderRadius: '6px', padding: '10px 12px', border: '1px solid rgba(213, 221, 208, 0.72)' }}>
+                      <summary className="vocab-review-disclosure-summary vocab-review-disclosure-summary-compact">
+                        <span>解析</span>
+                        <span className="vocab-review-disclosure-hint">点按展开</span>
+                      </summary>
+                      <div style={{ marginTop: '10px', fontSize: '14px', color: 'var(--ms-text-muted)' }}>{example.explanation}</div>
+                    </details>
+                  ) : null}
+
+                  <div className="vocab-review-chip-list" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    {example.source?.text ? (
+                      example.source?.url ? (
+                        <a
+                          href={example.source.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="vocab-review-chip vocab-review-chip-link"
+                          style={{ ...chipStyle(), textDecoration: 'none' }}
+                        >
+                          来源: {example.source.text}
+                        </a>
+                      ) : (
+                        <span className="vocab-review-chip" style={chipStyle()}>来源: {example.source.text}</span>
+                      )
+                    ) : null}
+
+                    {example.youtube?.url ? (
+                      <a
+                        href={buildYouTubeLink(example.youtube.url, example.youtube.timestamp)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="vocab-review-chip vocab-review-chip-link"
+                        style={{ ...chipStyle(), textDecoration: 'none' }}
+                      >
+                        YouTube {formatYouTubeLabel(example.youtube.timestamp)}
+                      </a>
+                    ) : null}
+
+                    {(Array.isArray(example.focusWords) ? example.focusWords : []).filter(Boolean).map((focusWord) => (
+                      <span key={`${focusWord}-${index}`} className="vocab-review-chip" style={chipStyle()}>
+                        focus: {focusWord}
+                      </span>
+                    ))}
+
+                    {normalizedFocus.length ? (
+                      <span className="vocab-review-chip" style={chipStyle()}>
+                        positions: {normalizedFocus.join(', ')}
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+              );
+            }) : (
+              <div style={{ color: '#a1a1aa', fontSize: '14px' }}>暂无例句</div>
+            )}
+          </div>
+        </>
+      )}
     </div>
   ) : (
-    <div className="vocab-review-empty vocab-review-empty-state" style={{ display: 'flex', minHeight: '100%', alignItems: 'center', justifyContent: 'center', color: '#a1a1aa' }}>
-      <div className="vocab-review-empty-card" style={{ width: '100%', maxWidth: '720px', display: 'grid', gap: '14px', padding: '28px', border: '1px dashed var(--ms-border)', borderRadius: '10px', background: 'linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,248,248,0.98))' }}>
-        <div className="vocab-review-empty-kicker" style={{ fontSize: '12px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ms-text-faint)', fontWeight: 700 }}>
-          Vocabulary Workspace
+    <div className="vocab-review-empty vocab-review-empty-state" style={{ display: 'flex', minHeight: compactDesktop && !mobileSimple ? '0' : '100%', alignItems: compactDesktop && !mobileSimple ? 'flex-start' : 'center', justifyContent: compactDesktop && !mobileSimple ? 'flex-start' : 'center', color: '#a1a1aa' }}>
+      <div className="vocab-review-empty-card" style={{ width: '100%', maxWidth: compactDesktop && !mobileSimple ? '520px' : '560px', display: 'grid', gap: compactDesktop && !mobileSimple ? '10px' : '12px', padding: compactDesktop && !mobileSimple ? '16px 18px' : '20px', border: '1px dashed var(--ms-border)', borderRadius: '6px', background: 'rgba(255,255,255,0.96)' }}>
+        <div className="vocab-review-empty-title" style={{ fontSize: compactDesktop && !mobileSimple ? '18px' : '20px', lineHeight: 1.15, fontWeight: 720, color: 'var(--ms-text)' }}>
+          {emptyTitle}
         </div>
-        <div className="vocab-review-empty-title" style={{ fontSize: 'clamp(24px, 4vw, 36px)', lineHeight: 1.08, fontWeight: 760, color: 'var(--ms-text)' }}>
-          {mobileSimple
-            ? (
-              compactDesktop
-                ? (visibleEntries.length ? '从全部目录里随机抽一个单词' : '先载入全部目录词池')
-                : (visibleEntries.length ? '从全部目录里随机抽一个单词' : '先载入全部目录词池')
-            )
-            : (visibleEntries.length ? '先从词条列表选择一个单词' : '先选目录，再开始复习')}
+        <div className="vocab-review-empty-status" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', color: 'var(--ms-text-muted)', fontSize: '12px' }}>
+          {emptyStatusItems.map((item) => (
+            <span key={item} className="vocab-review-empty-status-item">{item}</span>
+          ))}
+          {!mobileSimple && normalizedWordQuery ? <span className="vocab-review-empty-status-item">{wordQuery.trim()}</span> : null}
         </div>
-        <div className="vocab-review-empty-copy" style={{ fontSize: '15px', lineHeight: '1.7', color: 'var(--ms-text-muted)' }}>
-          {mobileSimple
-            ? (
-              compactDesktop
-                ? (visibleEntries.length
-                    ? '点“随机抽词”后，这里会展示释义、例句和复习记录。'
-                    : '桌面极简模式默认会聚合全部目录和全部词条；如果仍为空，说明当前数据目录本身没有词条。')
-                : (visibleEntries.length
-                    ? '点“随机抽词”后，这里会展示释义、例句和复习记录。'
-                    : '手机模式默认会聚合全部目录和全部词条；如果仍为空，说明当前数据目录本身没有词条。')
-            )
-            : (visibleEntries.length
-                ? '选中后会在这里展示释义、例句、复习记录，并可一键跳转到精修与复习工作区。'
-                : '可以先在右侧切换目录；如果目录里已有词条，也可以用筛选框快速定位。')}
-        </div>
-        <div className="vocab-review-empty-tips" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          {selectedCategory ? <span className="vocab-review-chip" style={chipStyle()}>当前目录: {selectedCategoryLabel}</span> : null}
-          <span className="vocab-review-chip" style={chipStyle()}>{entries.length ? `${entries.length} 个词条` : '还没有载入词条'}</span>
-          <span className="vocab-review-chip" style={chipStyle()}>{activeFilterOption.label}: {filterCounts[entryFilter]}</span>
-          {!mobileSimple && normalizedWordQuery ? <span className="vocab-review-chip" style={chipStyle()}>筛选: {wordQuery.trim()}</span> : null}
-        </div>
+        {compactDesktopSurface ? (
+          <div className="vocab-review-empty-actions">
+            {randomSelectionMode && visibleEntries.length ? (
+              <button
+                type="button"
+                className="master-primary-button vocab-review-empty-primary-action"
+                onClick={() => handleDrawRandomEntry()}
+                disabled={!visibleEntries.length}
+              >
+                <UiIcon name="play" size={14} />
+                <span>随机抽词</span>
+              </button>
+            ) : null}
+            {!randomSelectionMode && visibleEntries.length ? (
+              <div className="vocab-review-empty-hint-pill">
+                <UiIcon name="list" size={14} />
+                <span>右侧点选</span>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
       </div>
     </div>
   );
 
   if (compactDesktop && !mobileSimple) {
+    const randomMode = selectionMode !== 'manual';
     return (
       <div
         className="vocab-review vocab-review-compact-desktop"
         style={{
           display: 'flex',
-          gap: '18px',
+          gap: '14px',
           height: '100%',
           width: '100%',
           minWidth: 0,
-          padding: '20px 24px',
+          padding: '16px 18px 18px',
           background: 'transparent',
           overflow: 'hidden',
         }}
@@ -1282,7 +1523,7 @@ export default function VocabularyReview({
             minWidth: '280px',
             maxWidth: '340px',
             border: '1px solid var(--ms-border)',
-            borderRadius: '10px',
+            borderRadius: '6px',
             background: 'rgba(255, 255, 255, 0.94)',
             display: 'flex',
             flexDirection: 'column',
@@ -1312,164 +1553,162 @@ export default function VocabularyReview({
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
               <span className="vocab-review-chip" style={chipStyle()}>范围: {selectedCategoryLabel}</span>
               <span className="vocab-review-chip" style={chipStyle()}>词池 {visibleEntries.length}</span>
+              <span className="vocab-review-chip" style={chipStyle()}>{randomMode ? '随机跳词' : '手动选词'}</span>
             </div>
           </div>
 
-          <div
-            className="vocab-review-sidebar-search"
-            style={{
-              padding: '12px 16px',
-              borderBottom: '1px solid var(--ms-border)',
-              background: 'rgba(255, 255, 255, 0.96)',
-              display: 'grid',
-              gap: '10px',
-            }}
-          >
-            <input
-              className="vocab-review-search-input"
-              type="search"
-              placeholder="筛选单词或文件名"
-              value={wordQuery}
-              onChange={(e) => setWordQuery(e.target.value)}
-              style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--ms-border)', borderRadius: '6px', fontSize: '13px', outline: 'none', background: '#fff', color: 'var(--ms-text)' }}
-            />
+          {randomMode ? null : (
+            <div
+              className="vocab-review-sidebar-search"
+              style={{
+                padding: '12px 16px',
+                borderBottom: '1px solid var(--ms-border)',
+                background: 'rgba(255, 255, 255, 0.96)',
+                display: 'grid',
+                gap: '10px',
+              }}
+            >
+              <input
+                className="vocab-review-search-input"
+                type="search"
+                placeholder="筛选单词或文件名"
+                value={wordQuery}
+                onChange={(e) => setWordQuery(e.target.value)}
+                style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--ms-border)', borderRadius: '6px', fontSize: '13px', outline: 'none', background: '#fff', color: 'var(--ms-text)' }}
+              />
 
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              {ENTRY_FILTER_OPTIONS.map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => setEntryFilter(option.value)}
-                  style={{
-                    padding: '6px 10px',
-                    borderRadius: '999px',
-                    border: '1px solid var(--ms-border)',
-                    background: entryFilter === option.value ? 'var(--ms-surface-muted)' : '#fff',
-                    color: 'var(--ms-text)',
-                    fontSize: '12px',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                  }}
-                >
-                  {option.label} {filterCounts[option.value]}
-                </button>
-              ))}
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {ENTRY_FILTER_OPTIONS.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setEntryFilter(option.value)}
+                    style={{
+                      padding: '6px 10px',
+                      borderRadius: '6px',
+                      border: '1px solid var(--ms-border)',
+                      background: entryFilter === option.value ? 'var(--ms-surface-muted)' : '#fff',
+                      color: 'var(--ms-text)',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {option.label} {filterCounts[option.value]}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           <div
             className="vocab-review-sidebar-meta"
             style={{
-              padding: '14px 16px',
+              padding: '13px 16px',
               borderBottom: '1px solid var(--ms-border)',
               background: 'rgba(255, 255, 255, 0.98)',
               display: 'grid',
-              gap: '10px',
+              gap: '8px',
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
               <strong className="vocab-review-sidebar-title" style={{ fontSize: '14px', color: 'var(--ms-text)' }}>
-                生词本 ({visibleEntries.length}{normalizedWordQuery ? ` / ${filteredEntries.length}` : ''})
+                {randomMode
+                  ? `随机词池 (${visibleEntries.length}${normalizedWordQuery ? ` / ${filteredEntries.length}` : ''})`
+                  : `生词本 (${visibleEntries.length}${normalizedWordQuery ? ` / ${filteredEntries.length}` : ''})`}
               </strong>
               <button
-                className="vocab-review-refresh-button"
+                className="vocab-review-icon-button"
                 onClick={() => { void loadCategories(); void loadEntries(selectedCategory); }}
                 disabled={!String(selectedCategory || '').trim()}
-                style={{ background: 'none', border: 'none', cursor: String(selectedCategory || '').trim() ? 'pointer' : 'not-allowed', color: 'var(--ms-text)', fontSize: '12px', opacity: String(selectedCategory || '').trim() ? 1 : 0.4 }}
+                title="刷新词池"
+                style={{ cursor: String(selectedCategory || '').trim() ? 'pointer' : 'not-allowed', opacity: String(selectedCategory || '').trim() ? 1 : 0.4 }}
               >
-                刷新
+                <UiIcon name="refresh" size={14} />
               </button>
             </div>
-
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              {detailData ? (
-                <button
-                  type="button"
-                  onClick={() => void handleToggleMarked()}
-                  disabled={savingMarked}
-                  style={{
-                    height: '34px',
-                    padding: '0 10px',
-                    borderRadius: '8px',
-                    border: '1px solid var(--ms-border)',
-                    background: detailData?.marked ? 'var(--ms-surface-muted)' : '#fff',
-                    color: 'var(--ms-text)',
-                    fontSize: '12px',
-                    fontWeight: '600',
-                    whiteSpace: 'nowrap',
-                    cursor: savingMarked ? 'not-allowed' : 'pointer',
-                  }}
-                >
-                  {savingMarked ? '保存中' : (detailData?.marked ? '已标记' : '标记词条')}
-                </button>
-              ) : null}
-              <button
-                type="button"
-                onClick={() => handleDrawRandomEntry()}
-                disabled={!visibleEntries.length}
-                className="master-primary-button"
-                style={{
-                  height: '34px',
-                  padding: '0 12px',
-                  color: '#fff',
-                  borderRadius: '8px',
-                  fontSize: '12px',
-                  fontWeight: '600',
-                  whiteSpace: 'nowrap',
-                  cursor: visibleEntries.length ? 'pointer' : 'not-allowed',
-                }}
-              >
-                {detailData ? '换一个单词' : '随机抽词'}
-              </button>
+            <div className="vocab-review-sidebar-caption">
+              {randomMode ? '点击词条可直接展开，主操作会继续随机跳词。' : '支持筛选、点选和快速定位。'}
             </div>
           </div>
 
-          <ul className="vocab-review-word-list" style={{ listStyle: 'none', padding: 0, margin: 0, overflowY: 'auto', flex: 1, minHeight: 0 }}>
-            {visibleEntries.map((entry) => (
-              <li
-                key={entry.id}
-                className={`vocab-review-word-item${selectedEntryId === entry.id ? ' is-selected' : ''}`}
-                onClick={() => void handleSelectEntry(entry)}
-                style={{
-                  padding: '13px 16px',
-                  cursor: 'pointer',
-                  borderBottom: '1px solid rgba(213, 221, 208, 0.66)',
-                  background: selectedEntryId === entry.id ? 'var(--ms-surface-muted)' : 'transparent',
-                  color: 'var(--ms-text)',
-                }}
-              >
-                <div style={{ display: 'grid', gap: '6px', minWidth: 0 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
-                    <span
-                      className="vocab-review-word-label"
-                      style={{
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                        fontSize: '14px',
-                        fontWeight: selectedEntryId === entry.id ? '600' : '500',
-                      }}
-                    >
-                      {entry.word}
-                    </span>
-                    {entry.marked ? (
-                      <span style={{ fontSize: '11px', color: 'var(--ms-text-muted)', padding: '2px 8px', borderRadius: '999px', border: '1px solid var(--ms-border)', background: '#fff', flexShrink: 0 }}>
-                        已标记
-                      </span>
-                    ) : null}
-                  </div>
-                  <div style={{ fontSize: '12px', color: 'var(--ms-text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {formatCategoryLabel(entry.category)} / {entry.file}
-                  </div>
-                </div>
-              </li>
-            ))}
-            {visibleEntries.length === 0 ? (
-              <div className="vocab-review-empty" style={{ padding: '20px', textAlign: 'center', color: '#a1a1aa', fontSize: '13px' }}>
-                {normalizedWordQuery ? '没有匹配的词条' : `${activeFilterOption.label}为空`}
+          {randomMode ? (
+            <div className="vocab-review-random-preview">
+              <div className="vocab-review-random-preview-header">
+                <strong>词池预览</strong>
+                {visibleEntries.length > sidebarPreviewEntries.length ? (
+                  <span className="vocab-review-random-preview-count">+{visibleEntries.length - sidebarPreviewEntries.length}</span>
+                ) : null}
               </div>
-            ) : null}
-          </ul>
+              {sidebarPreviewEntries.length ? (
+                <ul className="vocab-review-random-preview-list">
+                  {sidebarPreviewEntries.map((entry) => (
+                    <li key={entry.id}>
+                      <button
+                        type="button"
+                        className="vocab-review-random-preview-item"
+                        onClick={() => void handleSelectEntry(entry)}
+                      >
+                        <span className="vocab-review-random-preview-word">{entry.word}</span>
+                        <span className="vocab-review-random-preview-meta">{formatCategoryLabel(entry.category)}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="vocab-review-empty" style={{ padding: '18px 16px', textAlign: 'center', color: '#a1a1aa', fontSize: '13px' }}>
+                  当前词池为空
+                </div>
+              )}
+            </div>
+          ) : (
+            <ul className="vocab-review-word-list" style={{ listStyle: 'none', padding: 0, margin: 0, overflowY: 'auto', flex: 1, minHeight: 0 }}>
+              {visibleEntries.map((entry) => (
+                <li
+                  key={entry.id}
+                  className={`vocab-review-word-item${selectedEntryId === entry.id ? ' is-selected' : ''}`}
+                  onClick={() => void handleSelectEntry(entry)}
+                  style={{
+                    padding: '13px 16px',
+                    cursor: 'pointer',
+                    borderBottom: '1px solid rgba(213, 221, 208, 0.66)',
+                    background: selectedEntryId === entry.id ? 'var(--ms-surface-muted)' : 'transparent',
+                    color: 'var(--ms-text)',
+                  }}
+                >
+                  <div style={{ display: 'grid', gap: '6px', minWidth: 0 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+                      <span
+                        className="vocab-review-word-label"
+                        style={{
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          fontSize: '14px',
+                          fontWeight: selectedEntryId === entry.id ? '600' : '500',
+                        }}
+                      >
+                        {entry.word}
+                      </span>
+                      {entry.marked ? (
+                        <span style={{ fontSize: '11px', color: 'var(--ms-text-muted)', padding: '2px 8px', borderRadius: '4px', border: '1px solid var(--ms-border)', background: '#fff', flexShrink: 0 }}>
+                          已标记
+                        </span>
+                      ) : null}
+                    </div>
+                    <div style={{ fontSize: '12px', color: 'var(--ms-text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {formatCategoryLabel(entry.category)} / {entry.file}
+                    </div>
+                  </div>
+                </li>
+              ))}
+              {visibleEntries.length === 0 ? (
+                <div className="vocab-review-empty" style={{ padding: '20px', textAlign: 'center', color: '#a1a1aa', fontSize: '13px' }}>
+                  {normalizedWordQuery ? '没有匹配的词条' : `${activeFilterOption.label}为空`}
+                </div>
+              ) : null}
+            </ul>
+          )}
         </div>
 
         <div
@@ -1479,7 +1718,7 @@ export default function VocabularyReview({
             minWidth: 0,
             overflowY: 'auto',
             overflowX: 'hidden',
-            padding: '4px 0',
+            padding: '0',
           }}
         >
           {detailNode}
@@ -1495,6 +1734,75 @@ export default function VocabularyReview({
         style={mobileSimpleRootStyle}
       >
         <div className={`vocab-review-mobile-toolbar${compactDesktop ? ' is-compact-desktop' : ''}`} style={mobileSimpleToolbarStyle}>
+          <div className="vocab-review-mobile-compact-row">
+            <div className="vocab-review-mobile-compact-meta">
+              <div className="vocab-review-mobile-compact-title">生词本</div>
+              <div className="vocab-review-mobile-compact-caption">
+                {selectedCategoryLabel} · {activeFilterOption.label} · {visibleEntries.length} / {entries.length}
+              </div>
+            </div>
+            <button
+              type="button"
+              className={`vocab-review-mobile-tools-button${mobileFiltersOpen ? ' is-active' : ''}`}
+              onClick={() => setMobileFiltersOpen((open) => !open)}
+              aria-label="打开复习筛选"
+              aria-expanded={mobileFiltersOpen}
+            >
+              <UiIcon name="sliders" size={17} />
+            </button>
+          </div>
+
+          {mobileFiltersOpen ? (
+            <div className="vocab-review-floating-layer" role="presentation">
+              <button type="button" className="vocab-review-floating-backdrop" aria-label="关闭复习筛选" onClick={closeMobileFilters} />
+              <section className="vocab-review-floating-panel" role="dialog" aria-modal="false" aria-label="复习筛选">
+                <div className="vocab-review-floating-header">
+                  <div>
+                    <div className="vocab-review-floating-title">复习筛选</div>
+                    <div className="vocab-review-floating-caption">{visibleEntries.length} / {entries.length}</div>
+                  </div>
+                  <button type="button" className="vocab-review-mobile-tools-button" aria-label="关闭复习筛选" onClick={closeMobileFilters}>
+                    <UiIcon name="close" size={16} />
+                  </button>
+                </div>
+                <label className="vocab-review-floating-field">
+                  目录
+                  <select
+                    className="vocab-review-select"
+                    value={selectedCategory}
+                    onChange={(e) => applySelectedCategory(e.target.value)}
+                    style={{ width: '100%', padding: '9px 10px', border: '1px solid var(--ms-border)', borderRadius: '6px', fontSize: '13px', outline: 'none', background: '#fff', color: 'var(--ms-text)' }}
+                  >
+                    {compactCategoryOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                  </select>
+                </label>
+                <div className="vocab-review-floating-filter-grid">
+                  {ENTRY_FILTER_OPTIONS.map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      className={`vocab-review-filter-pill${entryFilter === option.value ? ' is-active' : ''}`}
+                      onClick={() => setEntryFilter(option.value)}
+                      style={{
+                        minHeight: '34px',
+                        padding: '6px 8px',
+                        borderRadius: '6px',
+                        border: '1px solid var(--ms-border)',
+                        background: entryFilter === option.value ? 'var(--ms-text)' : '#fff',
+                        color: entryFilter === option.value ? '#fff' : 'var(--ms-text)',
+                        fontSize: '12px',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {option.label} {filterCounts[option.value]}
+                    </button>
+                  ))}
+                </div>
+              </section>
+            </div>
+          ) : null}
+
           <div style={mobileSimpleToolbarGridStyle}>
             <div className="vocab-review-mobile-category-row" style={{ display: 'grid', gap: '10px' }}>
               <select
@@ -1549,8 +1857,74 @@ export default function VocabularyReview({
         </div>
 
         <div className="vocab-review-content" style={mobileSimpleContentStyle}>
+          {manualPickerNode}
           {detailNode}
         </div>
+        {mobileInfoOpen && detailData ? (
+          <div className="vocab-review-floating-layer vocab-review-info-floating-layer" role="presentation">
+            <button type="button" className="vocab-review-floating-backdrop" aria-label="关闭复习记录" onClick={closeMobileInfo} />
+            <section
+              className={`vocab-review-floating-panel vocab-review-info-floating-panel${mobileInfoPanelPosition ? ' is-anchor-positioned' : ''}`}
+              style={mobileInfoPanelStyle}
+              role="dialog"
+              aria-modal="false"
+              aria-label="复习记录"
+            >
+              <div className="vocab-review-floating-header">
+                  <div>
+                    <div className="vocab-review-floating-title">复习记录</div>
+                  <div className="vocab-review-floating-caption">{detailData.word || detailData.key || selectedEntry?.word || ''}</div>
+                </div>
+                <button type="button" className="vocab-review-mobile-tools-button" aria-label="关闭复习记录" onClick={closeMobileInfo}>
+                  <UiIcon name="close" size={16} />
+                </button>
+              </div>
+              <div className="vocab-review-info-floating-stack">
+                <div className="vocab-review-info-summary">
+                  <div>
+                    <span>首次</span>
+                    <strong>{detailData.createdAt || '未知'}</strong>
+                  </div>
+                  <div>
+                    <span>最近</span>
+                    <strong>{latestReview ? `${latestReview.date} · ${normalizeReviewScore(latestReview.score)}/5` : '暂无'}</strong>
+                  </div>
+                  <div>
+                    <span>累计</span>
+                    <strong>{reviews.length} 次</strong>
+                  </div>
+                  <div>
+                    <span>来源</span>
+                    <strong>{mergedFrom.length ? mergedFrom.join(', ') : '无'}</strong>
+                  </div>
+                </div>
+
+                {displayTags.length ? (
+                  <div className="vocab-review-info-tag-row">
+                    {displayTags.map((tag) => (
+                      <span key={tag} className="vocab-review-chip" style={chipStyle()}>{tag}</span>
+                    ))}
+                  </div>
+                ) : null}
+
+                <div className="vocab-review-info-record-list">
+                  {reviews.length ? reviews.map((review, index) => (
+                    <div
+                      key={`${review.date || 'unknown'}-${index}`}
+                      className="vocab-review-info-record-row"
+                      style={getReviewToneStyle(review.score)}
+                    >
+                      <span>{review.date || '未知时间'}</span>
+                      <strong>{normalizeReviewScore(review.score)}/5 · {SCORE_SHORT_LABELS[normalizeReviewScore(review.score)]}</strong>
+                    </div>
+                  )) : (
+                    <div className="vocab-review-info-empty">暂无复习记录</div>
+                  )}
+                </div>
+              </div>
+            </section>
+          </div>
+        ) : null}
         {mobileScoreControls}
       </div>
     );
@@ -1589,7 +1963,7 @@ export default function VocabularyReview({
                 onClick={() => setEntryFilter(option.value)}
                 style={{
                   padding: '6px 10px',
-                  borderRadius: '999px',
+                  borderRadius: '6px',
                   border: '1px solid var(--ms-border)',
                   background: entryFilter === option.value ? 'var(--ms-surface-muted)' : '#fff',
                   color: 'var(--ms-text)',
@@ -1633,7 +2007,7 @@ export default function VocabularyReview({
             >
               <span className="vocab-review-word-label" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{entry.word}</span>
               {entry.marked ? (
-                <span style={{ fontSize: '11px', color: 'var(--ms-text-muted)', padding: '2px 8px', borderRadius: '999px', border: '1px solid var(--ms-border)', background: '#fff', flexShrink: 0 }}>
+                <span style={{ fontSize: '11px', color: 'var(--ms-text-muted)', padding: '2px 8px', borderRadius: '4px', border: '1px solid var(--ms-border)', background: '#fff', flexShrink: 0 }}>
                   已标记
                 </span>
               ) : null}

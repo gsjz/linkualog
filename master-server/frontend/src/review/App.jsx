@@ -1,10 +1,10 @@
 import { useDeferredValue, useEffect, useEffectEvent, useMemo, useRef, useState } from 'react';
 
 import ConfigDrawer from './components/ConfigDrawer';
+import UiIcon from '../components/UiIcon';
 import './index.css';
 import { FOCUS_TOKEN_REGEX as TOKEN_REGEX, tokenizeNonSpace } from './focusTokens';
 import {
-  applyMergeSuggestion,
   applySplitSuggestion,
   fetchCategories,
   fetchConfig,
@@ -14,7 +14,6 @@ import {
   getReviewAdvice,
   renameVocabDetail,
   runFileRefine,
-  runFolderRefine,
   saveConfig,
   saveVocabDetail,
   submitReviewScore,
@@ -51,6 +50,9 @@ const DEFAULT_RECOMMENDATION_PREFERENCES = {
   created_order: 'recent',
   score_order: 'low',
 };
+
+const ORGANIZE_CURRENT_WORD_INCLUDE_LLM = true;
+const ORGANIZE_SPLIT_DELETE_SOURCE = true;
 
 function normalizeCategoryValue(value) {
   return String(value || '').trim();
@@ -424,6 +426,25 @@ function clampScore(value) {
 function formatScoreSummary(score) {
   const normalized = clampScore(score);
   return `${normalized}/5 · ${scoreLabels[normalized]}`;
+}
+
+function formatShortScoreSummary(score) {
+  const normalized = clampScore(score);
+  return `${normalized}/5`;
+}
+
+function formatReviewStatus(status) {
+  if (status === 'overdue') return '逾期';
+  if (status === 'due_today') return '今日';
+  if (status === 'scheduled') return '排期';
+  return status || '--';
+}
+
+function formatDueDays(days) {
+  const value = Number(days);
+  if (!Number.isFinite(value)) return '--';
+  if (value === 0) return '0 天';
+  return `${value > 0 ? '+' : ''}${value} 天`;
 }
 
 function normalizeRecommendationPreferences(value) {
@@ -1169,31 +1190,16 @@ function EditorPanel({
 
 function OrganizePanel({
   cleanData,
-  mergeData,
   draft,
   loading,
-  mergeLoading,
-  includeLlm,
-  setIncludeLlm,
-  includeLowConfidence,
-  setIncludeLowConfidence,
-  includeMergeLlm,
-  setIncludeMergeLlm,
-  deleteSourceAfterMerge,
-  setDeleteSourceAfterMerge,
   onRun,
-  onRunMerge,
-  onRunAll,
   onApplyLlmSuggestion,
   onApplyEntryRenameAndSave,
   onApplyAllSuggestions,
   onApplyAllAndSave,
-  onApplyMerge,
   onApplySplit,
-  applyingKey,
   splitApplyingKey,
   renameApplyingKey,
-  hasCategory,
   hasDraft,
   savingDraft,
   analyzedFrom,
@@ -1217,7 +1223,6 @@ function OrganizePanel({
     return fallback;
   };
 
-  const mergeSuggestions = mergeData?.data?.suggestions || [];
   const currentDefinitions = Array.isArray(draft?.definitions) ? draft.definitions : [];
   const llmEntry = Array.isArray(cleanData?.llm?.entry)
     ? cleanData.llm.entry.filter((item) => isActionableEntrySuggestion(item))
@@ -1234,7 +1239,7 @@ function OrganizePanel({
   const autoEntryCount = llmEntry.filter((item) => normalizeLlmAction(item.action) === 'rename').length;
   const totalAutoCount = autoEntryCount + llmDefinitions.length + llmExamples.length;
   const fileSuggestionCount = llmEntry.length + llmDefinitions.length + llmExamples.length;
-  const totalSuggestionCount = fileSuggestionCount + mergeSuggestions.length;
+  const totalSuggestionCount = fileSuggestionCount;
   const analysisToken = [
     analyzedFrom,
     cleanData?.file || '',
@@ -1244,68 +1249,42 @@ function OrganizePanel({
     llmEntry.length,
   ].join('|');
 
+  const renderOrganizeActions = () => (
+    <div className="organize-actions organize-actions-current">
+      <button className="primary organize-run-current" onClick={onRun} disabled={loading || !hasDraft} title="整理当前词" aria-label="整理当前词">
+        <UiIcon name="search" size={15} />
+        <span>{loading ? '整理中' : '整理当前词'}</span>
+      </button>
+      <button className="ghost" onClick={onApplyAllAndSave} disabled={!hasDraft || !cleanData || totalAutoCount === 0 || savingDraft} title="应用建议并保存" aria-label="应用建议并保存">
+        <UiIcon name="save" size={15} />
+        <span>{savingDraft ? '保存中' : '保存'}</span>
+      </button>
+      <button className="ghost" onClick={onApplyAllSuggestions} disabled={!hasDraft || !cleanData || totalAutoCount === 0} title="应用建议到草稿" aria-label="应用建议到草稿">
+        <UiIcon name="check" size={15} />
+        <span>草稿</span>
+      </button>
+    </div>
+  );
+
   return (
-    <div className="panel">
+    <div className="panel organize-panel">
       <div className="panel-header">
         <div className="panel-heading">
           <h3>整理建议</h3>
-          <div className="panel-caption">
-            {totalSuggestionCount
-              ? `文件 ${fileSuggestionCount} 条 · 合并 ${mergeSuggestions.length} 条 · ${totalAutoCount} 条可自动应用`
-              : '统一生成文件清洗、词条拆分和词形合并建议'}
-          </div>
+          <div className="panel-caption">{totalSuggestionCount ? `当前词 ${fileSuggestionCount} 条 · 可用 ${totalAutoCount}` : '只整理当前词条'}</div>
         </div>
-        <span className={`badge ${totalSuggestionCount ? 'high' : 'medium'}`}>{totalSuggestionCount} 条建议</span>
+        <div className="panel-header-actions">
+          <span className={`badge ${totalSuggestionCount ? 'high' : 'medium'}`}>{totalSuggestionCount} 条建议</span>
+        </div>
       </div>
 
       <div className="panel-body list-body">
         <div className="organize-toolbar">
-          <div className="organize-actions">
-            <button className="primary" onClick={onRunAll} disabled={(loading || mergeLoading) || !hasCategory}>
-              {loading || mergeLoading ? '分析中...' : '分析全部'}
-            </button>
-            <button className="ghost" onClick={onRun} disabled={loading || !hasDraft}>{loading ? '文件中...' : '文件'}</button>
-            <button className="ghost" onClick={onRunMerge} disabled={mergeLoading || !hasCategory}>{mergeLoading ? '目录中...' : '目录'}</button>
-            <button className="ghost" onClick={onApplyAllAndSave} disabled={!hasDraft || !cleanData || totalAutoCount === 0 || savingDraft}>{savingDraft ? '保存中...' : '应用并保存'}</button>
-            <button className="ghost" onClick={onApplyAllSuggestions} disabled={!hasDraft || !cleanData || totalAutoCount === 0}>应用到草稿</button>
-          </div>
-          <details className="organize-options">
-            <summary>选项</summary>
-            <div className="organize-option-grid">
-              <label className="inline-check">
-                <input type="checkbox" checked={includeLlm} onChange={(event) => setIncludeLlm(event.target.checked)} />
-                文件 LLM
-              </label>
-              <label className="inline-check">
-                <input
-                  type="checkbox"
-                  checked={includeMergeLlm}
-                  onChange={(event) => setIncludeMergeLlm(event.target.checked)}
-                />
-                合并 LLM
-              </label>
-              <label className="inline-check">
-                <input
-                  type="checkbox"
-                  checked={includeLowConfidence}
-                  onChange={(event) => setIncludeLowConfidence(event.target.checked)}
-                />
-                低置信度
-              </label>
-              <label className="inline-check">
-                <input
-                  type="checkbox"
-                  checked={deleteSourceAfterMerge}
-                  onChange={(event) => setDeleteSourceAfterMerge(event.target.checked)}
-                />
-                删除源文件
-              </label>
-            </div>
-          </details>
+          {renderOrganizeActions()}
         </div>
         <div className="section-title">当前文件清洗</div>
         {!cleanData ? (
-          <div className="empty">选择词条后点击“分析当前文件”或“一键分析”。</div>
+          <div className="empty">选择词条后点击“整理当前词”。</div>
         ) : (
           <>
             <div className="analysis-source">
@@ -1533,95 +1512,104 @@ function OrganizePanel({
             {cleanData.llm_error ? <div className="error">LLM 建议失败: {cleanData.llm_error}</div> : null}
           </>
         )}
-
-        <div className="organize-divider" />
-        <div className="section-title">词形合并建议 ({mergeSuggestions.length})</div>
-        {!mergeSuggestions.length ? (
-          <div className="empty">点击“扫描目录合并”或“一键分析”生成目录级合并建议。</div>
-        ) : (
-          <ul>
-            {mergeSuggestions.map((item, index) => {
-              const actionKey = `${item.source.file}->${item.target.file}`;
-              const applying = applyingKey === actionKey;
-              const createTarget = Boolean(item.create_target_if_missing || item?.target?.exists === false);
-
-              return (
-                <li key={`merge-${index}`}>
-                  <div className="row-main between merge-row">
-                    <div className="row-main merge-main">
-                      <strong>{item.source.word}</strong>
-                      <span className="arrow">→</span>
-                      <strong>{item.target.word}</strong>
-                      <span className={`badge ${item.confidence_level}`}>{item.confidence_level}</span>
-                      {item.source_model ? <span className="badge medium">{item.source_model}</span> : null}
-                      {createTarget ? <span className="badge medium">new</span> : null}
-                    </div>
-                    <button className="ghost" onClick={() => onApplyMerge(item)} disabled={applying}>
-                      {applying ? '处理中...' : createTarget ? '新建并合并' : '执行合并'}
-                    </button>
-                  </div>
-                  <div className="row-sub merge-path">{item.source.file} → {item.target.file}</div>
-                  <div className="row-sub merge-reason">{item.reason} | 置信度 {item.confidence}</div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-        {mergeData?.llm_error ? <div className="error">LLM 合并建议失败: {mergeData.llm_error}</div> : null}
       </div>
     </div>
   );
 }
 
 function ReviewPanel({ reviewData, loading, reviewDate, setReviewDate, onRefresh, onScore }) {
+  const [toolsOpen, setToolsOpen] = useState(false);
   const before = reviewData?.before;
   const after = reviewData?.after;
   const hasRecordedReview = Boolean(reviewData?.recorded_review && after);
   const current = hasRecordedReview ? after : before;
+  const renderReviewControls = () => (
+    <div className="review-date-controls">
+      <input type="date" value={reviewDate} onChange={(event) => setReviewDate(event.target.value)} />
+      <button className="ghost review-refresh-control" onClick={onRefresh} disabled={loading} title="刷新复习建议">
+        <UiIcon name="refresh" size={15} />
+        <span>{loading ? '刷新中' : '刷新'}</span>
+      </button>
+    </div>
+  );
 
   return (
-    <div className="panel">
-      <div className="panel-header">
-        <div className="panel-heading">
-          <h3>复习建议与熟练度评分</h3>
-          <div className="panel-caption">{current ? `${current.status} · 下次 ${current.next_review_date}` : '查看复习状态并直接记录本次熟练度评分'}</div>
+    <div className="panel review-advice-panel">
+        <div className="panel-header">
+          <div className="panel-heading">
+          <h3>复习评分</h3>
+          <div className="panel-caption">{current ? `${formatReviewStatus(current.status)} · 下次 ${current.next_review_date}` : '选择词条后显示建议'}</div>
         </div>
-        <span className={`badge ${current ? 'high' : 'medium'}`}>{current?.review_count || 0} 次</span>
+        <div className="panel-header-actions">
+          <span className={`badge ${current ? 'high' : 'medium'}`}>{current?.review_count || 0} 次</span>
+          <button
+            type="button"
+            className={`review-icon-button review-panel-tools-trigger${toolsOpen ? ' is-active' : ''}`}
+            onClick={() => setToolsOpen((open) => !open)}
+            aria-label="打开复习设置"
+            aria-expanded={toolsOpen}
+          >
+            <UiIcon name="calendar" size={16} />
+          </button>
+        </div>
       </div>
 
       <div className="panel-body">
         <div className="panel-toolbar">
-          <input type="date" value={reviewDate} onChange={(event) => setReviewDate(event.target.value)} />
-          <button className="ghost" onClick={onRefresh} disabled={loading}>{loading ? '刷新中...' : '刷新建议'}</button>
+          {renderReviewControls()}
         </div>
+        {toolsOpen ? (
+          <div className="review-floating-layer review-panel-floating-layer" role="presentation">
+            <button type="button" className="review-floating-backdrop" aria-label="关闭复习设置" onClick={() => setToolsOpen(false)} />
+            <section className="review-floating-panel review-compact-floating-panel" role="dialog" aria-modal="false" aria-label="复习设置">
+              <div className="review-floating-header">
+                <div>
+                  <div className="review-floating-title">复习设置</div>
+                  <div className="review-floating-caption">日期与刷新</div>
+                </div>
+                <button type="button" className="review-icon-button" aria-label="关闭复习设置" onClick={() => setToolsOpen(false)}>
+                  <UiIcon name="close" size={16} />
+                </button>
+              </div>
+              {renderReviewControls()}
+            </section>
+          </div>
+        ) : null}
         {!current ? (
           <div className="empty">选择词条后可查看复习建议。</div>
         ) : (
           <>
             {hasRecordedReview ? (
-              <div className="analysis-source">当前展示的是本次熟练度评分后的最新复习计划。</div>
+              <div className="analysis-source">已按本次评分更新。</div>
             ) : null}
-            <div className="status-grid">
-              <div>
-                <div className="card-title">当前状态</div>
-                <div className="card-main">{current.status}</div>
-                <div className="card-sub">{current.message}</div>
+            <div className="review-status-strip" title={current.message}>
+              <div
+                className={`review-status-item review-status-item-${current.status || 'unknown'}`}
+                title={`当前状态: ${current.message || formatReviewStatus(current.status)}`}
+              >
+                <span className="review-status-icon"><UiIcon name="clock" size={15} /></span>
+                <span className="review-status-main">{formatReviewStatus(current.status)}</span>
+                <span className="review-status-sub">{formatDueDays(current.days_until_due)}</span>
               </div>
 
-              <div>
-                <div className="card-title">预测下次复习</div>
-                <div className="card-main">{current.next_review_date}</div>
-                <div className="card-sub">剩余 {current.days_until_due} 天</div>
+              <div className="review-status-item" title={`预测下次复习: ${current.next_review_date || '--'}`}>
+                <span className="review-status-icon"><UiIcon name="calendar" size={15} /></span>
+                <span className="review-status-main">{current.next_review_date}</span>
               </div>
 
-              <div>
-                <div className="card-title">最近一次熟练度记录</div>
-                <div className="card-main">{current.last_review ? `${current.last_review.date} / ${formatScoreSummary(current.last_review.score)}` : '无'}</div>
-                <div className="card-sub">累计 {current.review_count} 次</div>
+              <div
+                className="review-status-item"
+                title={current.last_review ? `最近一次: ${current.last_review.date} / ${formatScoreSummary(current.last_review.score)} / 累计 ${current.review_count} 次` : '最近一次: 无记录'}
+              >
+                <span className="review-status-icon"><UiIcon name="history" size={15} /></span>
+                <span className="review-status-main">
+                  {current.last_review ? `${current.last_review.date} / ${formatShortScoreSummary(current.last_review.score)}` : '无记录'}
+                </span>
+                <span className="review-status-sub">{current.review_count} 次</span>
               </div>
             </div>
 
-            <div className="section-title">本次熟练度评分</div>
+            <div className="section-title">熟练度</div>
             <div className="score-grid">
               {[0, 1, 2, 3, 4, 5].map((score) => (
                 <button key={score} className="score-btn" onClick={() => onScore(score)} disabled={loading}>
@@ -1681,58 +1669,91 @@ function ManualSelectionPanel({
   onCategorySelect,
   onFilenameSelect,
 }) {
+  const [toolsOpen, setToolsOpen] = useState(false);
+
+  const handleFloatingCategorySelect = (item) => {
+    onCategorySelect(item);
+    setToolsOpen(false);
+  };
+
+  const renderCategoryControls = (compact = false) => (
+    <div className={`manual-category-controls${compact ? ' is-compact' : ''}`}>
+      <div className="section-title">目录</div>
+      <div className="nav-list nav-list-scroll category-list-scroll">
+        {loadingCategories ? <div className="empty">目录加载中...</div> : null}
+        {!loadingCategories && !categories.length ? <div className="empty">还没有可用目录。</div> : null}
+        {categories.map((item) => (
+          <button
+            key={item}
+            type="button"
+            className={`nav-item ${item === category ? 'active' : ''}`}
+            onClick={() => (compact ? handleFloatingCategorySelect(item) : onCategorySelect(item))}
+          >
+            <span>{item}</span>
+            {item === category ? <span className="nav-state">当前</span> : null}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+
+  const renderFilterControls = () => (
+    <div className="manual-filter-controls">
+      <label>
+        筛选词条
+        <input
+          className="field"
+          placeholder="输入文件名或单词"
+          value={fileQuery}
+          onChange={(event) => setFileQuery(event.target.value)}
+          disabled={loadingFiles}
+        />
+      </label>
+
+      <div className="recommend-actions manual-filter-actions">
+        {ENTRY_FILTER_OPTIONS.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            className={entryFilter === option.value ? 'primary' : 'ghost'}
+            onClick={() => onEntryFilterChange(option.value)}
+            disabled={loadingFiles}
+          >
+            {option.label} {filterCounts[option.value]}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+
   return (
     <div className="panel sidebar-panel manual-selection-panel">
       <div className="panel-header">
-        <h3>手动选择</h3>
-        <span className="badge high">{entries.length} files</span>
+        <div className="panel-heading">
+          <h3>手动选择</h3>
+          <div className="panel-caption">{category ? formatCategoryLabel(category) : '先选目录'}</div>
+        </div>
+        <div className="panel-header-actions">
+          <span className="badge high">{entries.length} files</span>
+          <button
+            type="button"
+            className={`review-icon-button review-panel-tools-trigger${toolsOpen ? ' is-active' : ''}`}
+            onClick={() => setToolsOpen((open) => !open)}
+            aria-label="打开手动筛选"
+            aria-expanded={toolsOpen}
+          >
+            <UiIcon name="filter" size={16} />
+          </button>
+        </div>
       </div>
 
       <div className="panel-body sidebar-section category-section">
-        <div className="section-title">目录</div>
-        <div className="nav-list nav-list-scroll category-list-scroll">
-          {loadingCategories ? <div className="empty">目录加载中...</div> : null}
-          {!loadingCategories && !categories.length ? <div className="empty">还没有可用目录。</div> : null}
-          {categories.map((item) => (
-            <button
-              key={item}
-              type="button"
-              className={`nav-item ${item === category ? 'active' : ''}`}
-              onClick={() => onCategorySelect(item)}
-            >
-              <span>{item}</span>
-              {item === category ? <span className="nav-state">当前</span> : null}
-            </button>
-          ))}
-        </div>
+        {renderCategoryControls()}
       </div>
 
       <div className="panel-body sidebar-section sidebar-fill file-section">
         <div className="section-title">文件</div>
-        <label>
-          筛选词条
-          <input
-            className="field"
-            placeholder="输入文件名或单词"
-            value={fileQuery}
-            onChange={(event) => setFileQuery(event.target.value)}
-            disabled={loadingFiles}
-          />
-        </label>
-
-        <div className="recommend-actions">
-          {ENTRY_FILTER_OPTIONS.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              className={entryFilter === option.value ? 'primary' : 'ghost'}
-              onClick={() => onEntryFilterChange(option.value)}
-              disabled={loadingFiles}
-            >
-              {option.label} {filterCounts[option.value]}
-            </button>
-          ))}
-        </div>
+        {renderFilterControls()}
 
         <div className="file-list-meta">
           <span>{loadingFiles ? '词条加载中...' : category ? `${filteredEntries.length} / ${entries.length} 条` : '先选目录'}</span>
@@ -1758,6 +1779,25 @@ function ManualSelectionPanel({
           ))}
         </div>
       </div>
+
+      {toolsOpen ? (
+        <div className="review-floating-layer review-panel-floating-layer" role="presentation">
+          <button type="button" className="review-floating-backdrop" aria-label="关闭手动筛选" onClick={() => setToolsOpen(false)} />
+          <section className="review-floating-panel review-compact-floating-panel" role="dialog" aria-modal="false" aria-label="手动筛选">
+            <div className="review-floating-header">
+              <div>
+                <div className="review-floating-title">手动筛选</div>
+                <div className="review-floating-caption">目录、搜索与标记状态</div>
+              </div>
+              <button type="button" className="review-icon-button" aria-label="关闭手动筛选" onClick={() => setToolsOpen(false)}>
+                <UiIcon name="close" size={16} />
+              </button>
+            </div>
+            {renderCategoryControls(true)}
+            {renderFilterControls()}
+          </section>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -1777,6 +1817,7 @@ function RecommendationModePanel({
   onUse,
   savingPreferences,
 }) {
+  const [toolsOpen, setToolsOpen] = useState(false);
   const current = recommendation;
   const status = current?.advice?.status || '';
   const normalizedPreferences = normalizeRecommendationPreferences(preferences);
@@ -1790,113 +1831,133 @@ function RecommendationModePanel({
     onPreferencesChange({ [key]: value });
   };
 
+  const renderRecommendationControls = (compact = false) => (
+    <div className={`recommend-control-stack${compact ? ' is-compact' : ''}`}>
+      <label>
+        推荐范围
+        <select value={scope} onChange={(event) => onScopeChange(event.target.value)}>
+          <option value={ALL_SCOPE}>全部目录</option>
+          {categories.map((item) => (
+            <option key={item} value={item}>{item}</option>
+          ))}
+        </select>
+      </label>
+
+      <details className="recommend-tuning">
+        <summary className="recommend-tuning-summary">
+          <span>
+            <span className="section-title">算法偏好</span>
+            <span>
+              {formatRecommendationPreferenceSummary(normalizedPreferences)}
+              {savingPreferences ? ' · 保存中' : ''}
+            </span>
+          </span>
+        </summary>
+
+        <div className="recommend-tuning-body">
+          <div className="recommend-segment-group">
+            <div className="recommend-segment-label">创建时间</div>
+            <div className="recommend-segment" role="group" aria-label="创建时间方向">
+              <button
+                type="button"
+                className={normalizedPreferences.created_order === 'recent' ? 'active' : ''}
+                onClick={() => updateChoice('created_order', 'recent')}
+                disabled={loading}
+              >
+                最近加入
+              </button>
+              <button
+                type="button"
+                className={normalizedPreferences.created_order === 'oldest' ? 'active' : ''}
+                onClick={() => updateChoice('created_order', 'oldest')}
+                disabled={loading}
+              >
+                最早加入
+              </button>
+            </div>
+          </div>
+
+          <div className="recommend-segment-group">
+            <div className="recommend-segment-label">最近评分</div>
+            <div className="recommend-segment" role="group" aria-label="评分方向">
+              <button
+                type="button"
+                className={normalizedPreferences.score_order === 'low' ? 'active' : ''}
+                onClick={() => updateChoice('score_order', 'low')}
+                disabled={loading}
+              >
+                低分/未记录
+              </button>
+              <button
+                type="button"
+                className={normalizedPreferences.score_order === 'high' ? 'active' : ''}
+                onClick={() => updateChoice('score_order', 'high')}
+                disabled={loading}
+              >
+                高分
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="recommend-weight-list">
+          {RECOMMENDATION_WEIGHT_OPTIONS.map((option) => (
+            <label key={option.key} className="recommend-weight-row">
+              <span className="recommend-weight-head">
+                <strong>{option.label}</strong>
+                <output>{normalizedPreferences[option.key].toFixed(2)}</output>
+              </span>
+              <span className="recommend-weight-help">{option.description}</span>
+              <input
+                type="range"
+                min="0"
+                max="5"
+                step="0.05"
+                value={normalizedPreferences[option.key]}
+                onChange={(event) => updateWeight(option.key, event.target.value)}
+                disabled={loading}
+              />
+            </label>
+          ))}
+        </div>
+
+        <button
+          type="button"
+          className="ghost recommend-reset-button"
+          onClick={() => onPreferencesChange(DEFAULT_RECOMMENDATION_PREFERENCES)}
+          disabled={loading}
+        >
+          重置默认权重
+        </button>
+      </details>
+    </div>
+  );
+
   return (
-    <div className="panel sidebar-panel">
+    <div className="panel sidebar-panel recommendation-panel">
       <div className="panel-header">
-        <h3>推荐模式</h3>
-        <span className={`badge ${status === 'overdue' || status === 'due_today' ? 'medium' : 'high'}`}>
-          {current?.advice?.status || 'idle'}
-        </span>
+        <div className="panel-heading">
+          <h3>推荐模式</h3>
+          <div className="panel-caption">{scope === ALL_SCOPE ? '全部目录' : formatCategoryLabel(scope)}</div>
+        </div>
+        <div className="panel-header-actions">
+          <span className={`badge ${status === 'overdue' || status === 'due_today' ? 'medium' : 'high'}`}>
+            {current?.advice?.status || 'idle'}
+          </span>
+          <button
+            type="button"
+            className={`review-icon-button review-panel-tools-trigger${toolsOpen ? ' is-active' : ''}`}
+            onClick={() => setToolsOpen((open) => !open)}
+            aria-label="打开推荐设置"
+            aria-expanded={toolsOpen}
+          >
+            <UiIcon name="target" size={16} />
+          </button>
+        </div>
       </div>
 
       <div className="panel-body sidebar-section">
-        <label>
-          推荐范围
-          <select value={scope} onChange={(event) => onScopeChange(event.target.value)}>
-            <option value={ALL_SCOPE}>全部目录</option>
-            {categories.map((item) => (
-              <option key={item} value={item}>{item}</option>
-            ))}
-          </select>
-        </label>
-
-        <details className="recommend-tuning">
-          <summary className="recommend-tuning-summary">
-            <span>
-              <span className="section-title">算法偏好</span>
-              <span>
-                {formatRecommendationPreferenceSummary(normalizedPreferences)}
-                {savingPreferences ? ' · 保存中' : ''}
-              </span>
-            </span>
-          </summary>
-
-          <div className="recommend-tuning-body">
-            <div className="recommend-segment-group">
-              <div className="recommend-segment-label">创建时间</div>
-              <div className="recommend-segment" role="group" aria-label="创建时间方向">
-                <button
-                  type="button"
-                  className={normalizedPreferences.created_order === 'recent' ? 'active' : ''}
-                  onClick={() => updateChoice('created_order', 'recent')}
-                  disabled={loading}
-                >
-                  最近加入
-                </button>
-                <button
-                  type="button"
-                  className={normalizedPreferences.created_order === 'oldest' ? 'active' : ''}
-                  onClick={() => updateChoice('created_order', 'oldest')}
-                  disabled={loading}
-                >
-                  最早加入
-                </button>
-              </div>
-            </div>
-
-            <div className="recommend-segment-group">
-              <div className="recommend-segment-label">最近评分</div>
-              <div className="recommend-segment" role="group" aria-label="评分方向">
-                <button
-                  type="button"
-                  className={normalizedPreferences.score_order === 'low' ? 'active' : ''}
-                  onClick={() => updateChoice('score_order', 'low')}
-                  disabled={loading}
-                >
-                  低分/未记录
-                </button>
-                <button
-                  type="button"
-                  className={normalizedPreferences.score_order === 'high' ? 'active' : ''}
-                  onClick={() => updateChoice('score_order', 'high')}
-                  disabled={loading}
-                >
-                  高分
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="recommend-weight-list">
-            {RECOMMENDATION_WEIGHT_OPTIONS.map((option) => (
-              <label key={option.key} className="recommend-weight-row">
-                <span className="recommend-weight-head">
-                  <strong>{option.label}</strong>
-                  <output>{normalizedPreferences[option.key].toFixed(2)}</output>
-                </span>
-                <span className="recommend-weight-help">{option.description}</span>
-                <input
-                  type="range"
-                  min="0"
-                  max="5"
-                  step="0.05"
-                  value={normalizedPreferences[option.key]}
-                  onChange={(event) => updateWeight(option.key, event.target.value)}
-                  disabled={loading}
-                />
-              </label>
-            ))}
-          </div>
-
-          <button
-            type="button"
-            className="ghost recommend-reset-button"
-            onClick={() => onPreferencesChange(DEFAULT_RECOMMENDATION_PREFERENCES)}
-            disabled={loading}
-          >
-            重置默认权重
-          </button>
-        </details>
+        {renderRecommendationControls()}
 
         <div className="recommend-actions">
           <button type="button" className="primary" onClick={onPush} disabled={loading}>
@@ -1950,7 +2011,7 @@ function RecommendationModePanel({
         {alternatives.length ? (
           <>
             <div className="section-title">备选词条</div>
-            <div className="nav-list">
+            <div className="nav-list recommend-alternative-list">
               {alternatives.map((item) => (
                 <button
                   key={item.key}
@@ -1966,17 +2027,38 @@ function RecommendationModePanel({
           </>
         ) : null}
       </div>
+
+      {toolsOpen ? (
+        <div className="review-floating-layer review-panel-floating-layer" role="presentation">
+          <button type="button" className="review-floating-backdrop" aria-label="关闭推荐设置" onClick={() => setToolsOpen(false)} />
+          <section className="review-floating-panel review-compact-floating-panel" role="dialog" aria-modal="false" aria-label="推荐设置">
+            <div className="review-floating-header">
+              <div>
+                <div className="review-floating-title">推荐设置</div>
+                <div className="review-floating-caption">范围与算法偏好</div>
+              </div>
+              <button type="button" className="review-icon-button" aria-label="关闭推荐设置" onClick={() => setToolsOpen(false)}>
+                <UiIcon name="close" size={16} />
+              </button>
+            </div>
+            {renderRecommendationControls(true)}
+          </section>
+        </div>
+      ) : null}
     </div>
   );
 }
 
 export default function App({
   embedded = false,
+  overlayMode = false,
   onOpenConfig = null,
   launchRequest = null,
   onSelectionChange = null,
 }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [topbarToolsOpen, setTopbarToolsOpen] = useState(false);
+  const [wordToolsOpen, setWordToolsOpen] = useState(false);
   const [mode, setMode] = useState('manual');
   const [selectionSource, setSelectionSource] = useState('manual');
 
@@ -2002,26 +2084,19 @@ export default function App({
   const [draft, setDraft] = useState(null);
   const [draftDirty, setDraftDirty] = useState(false);
 
-  const [mergeData, setMergeData] = useState(null);
   const [cleanData, setCleanData] = useState(null);
   const [reviewData, setReviewData] = useState(null);
 
-  const [includeLowConfidence, setIncludeLowConfidence] = useState(false);
-  const [deleteSourceAfterMerge, setDeleteSourceAfterMerge] = useState(true);
-  const [includeMergeLlm, setIncludeMergeLlm] = useState(true);
-  const [includeLlm, setIncludeLlm] = useState(true);
   const [reviewDate, setReviewDate] = useState(TODAY);
   const [editorSyncToken, setEditorSyncToken] = useState(0);
 
   const [loadingCategories, setLoadingCategories] = useState(false);
   const [loadingFiles, setLoadingFiles] = useState(false);
   const [loadingRecommendation, setLoadingRecommendation] = useState(false);
-  const [loadingMerge, setLoadingMerge] = useState(false);
   const [loadingClean, setLoadingClean] = useState(false);
   const [loadingReview, setLoadingReview] = useState(false);
   const [savingDraft, setSavingDraft] = useState(false);
   const [savingMarked, setSavingMarked] = useState(false);
-  const [mergeApplyingKey, setMergeApplyingKey] = useState('');
   const [splitApplyingKey, setSplitApplyingKey] = useState('');
   const [renameApplyingKey, setRenameApplyingKey] = useState('');
   const [notice, setNotice] = useState('');
@@ -2032,7 +2107,8 @@ export default function App({
   const recommendPreferenceHydratedRef = useRef(false);
   const savedRecommendPreferenceKeyRef = useRef('');
   const recommendPreferenceSaveTimerRef = useRef(null);
-  const cleanPanelRef = useRef(null);
+  const editorPanelRef = useRef(null);
+  const organizePanelRef = useRef(null);
   const reviewPanelRef = useRef(null);
 
   const deferredFileQuery = useDeferredValue(fileQuery);
@@ -2267,8 +2343,12 @@ export default function App({
       return null;
     }
 
+    if (embedded) {
+      return null;
+    }
+
     return window.setTimeout(() => {
-      scrollToFocusPanel(request?.focus === 'review' ? 'review' : 'clean');
+      scrollToFocusPanel(request?.focus || 'organize');
     }, changed ? 220 : 60);
   });
 
@@ -2325,7 +2405,6 @@ export default function App({
 
     setEntries([]);
     setFilename('');
-    setMergeData(null);
     resetEntryState();
     setLoadingFiles(false);
 
@@ -2453,6 +2532,18 @@ export default function App({
     return () => window.clearTimeout(timer);
   }, [launchRequest]);
 
+  useEffect(() => {
+    if (!overlayMode) return;
+    if (!launchRequest?.focus) return;
+    if (!hasSelection) return;
+
+    const timer = window.setTimeout(() => {
+      scrollToFocusPanel(launchRequest.focus || 'organize');
+    }, 80);
+
+    return () => window.clearTimeout(timer);
+  }, [hasSelection, launchRequest?.focus, overlayMode]);
+
   const handleCategorySelect = (nextCategory) => {
     if (!selectEntry(nextCategory, '', 'manual')) return;
     setFileQuery('');
@@ -2549,93 +2640,6 @@ export default function App({
     }
   };
 
-  const handleMerge = async () => {
-    if (!apiCategory) {
-      showError('先选择目录，再分析目录');
-      return;
-    }
-
-    setLoadingMerge(true);
-    try {
-      setError('');
-      const res = await runFolderRefine(apiCategory, includeLowConfidence, includeMergeLlm);
-      setMergeData(res);
-    } catch (err) {
-      showError(err.message);
-    } finally {
-      setLoadingMerge(false);
-    }
-  };
-
-  const handleApplyMerge = async (item) => {
-    if (!item?.source?.file || !item?.target?.file) return;
-
-    const sourceFile = item.source.file;
-    const targetFile = item.target.file;
-    const createTargetIfMissing = Boolean(item.create_target_if_missing || item?.target?.exists === false);
-    const actionKey = `${sourceFile}->${targetFile}`;
-
-    setMergeApplyingKey(actionKey);
-    try {
-      setError('');
-      const mergeApplyRes = await applyMergeSuggestion(
-        apiCategory,
-        sourceFile,
-        targetFile,
-        deleteSourceAfterMerge,
-        createTargetIfMissing,
-      );
-
-      setMergeData((prev) => {
-        if (!prev?.data || !Array.isArray(prev?.data?.suggestions)) {
-          return prev;
-        }
-        const nextSuggestions = prev.data.suggestions.filter((candidate) => {
-          const candidateSourceFile = candidate?.source?.file || '';
-          const candidateKey = `${candidate?.source?.file || ''}->${candidate?.target?.file || ''}`;
-          if (candidateKey === actionKey) return false;
-          if (candidateSourceFile === sourceFile) return false;
-          return true;
-        });
-        return {
-          ...prev,
-          data: {
-            ...prev.data,
-            suggestions: nextSuggestions,
-          },
-        };
-      });
-
-      void refreshFiles();
-
-      if (deleteSourceAfterMerge && filename === sourceFile) {
-        setFilename(targetFile);
-      }
-
-      if (filename === targetFile) {
-        void Promise.all([
-          fetchVocabDetail(apiCategory, targetFile),
-          getReviewAdvice(apiCategory, targetFile),
-        ])
-          .then(([detailRes, reviewRes]) => {
-            hydrateDetailAndDraft(detailRes.data || null);
-            setReviewData(reviewRes || null);
-          })
-          .catch((err) => showError(err.message));
-      }
-
-      if (mergeApplyRes?.target_created) {
-        showNotice(`已新建并合并: ${sourceFile} → ${targetFile}`);
-      } else {
-        showNotice(`已执行合并: ${sourceFile} → ${targetFile}`);
-      }
-    } catch (err) {
-      showError(err.message);
-    } finally {
-      setMergeApplyingKey('');
-    }
-  };
-
   const handleClean = async () => {
     if (!hasSelection) return;
 
@@ -2643,7 +2647,7 @@ export default function App({
     try {
       setError('');
       const analysisDraft = draft ? sanitizeDraftForSave(draft, filename.replace(/\.json$/i, '')) : null;
-      const res = await runFileRefine(apiCategory, filename, includeLlm, analysisDraft);
+      const res = await runFileRefine(apiCategory, filename, ORGANIZE_CURRENT_WORD_INCLUDE_LLM, analysisDraft);
       setCleanData(res);
       if (res?.analyzed_from === 'draft') {
         showNotice('已基于当前草稿生成清洗建议');
@@ -2652,65 +2656,6 @@ export default function App({
       showError(err.message);
     } finally {
       setLoadingClean(false);
-    }
-  };
-
-  const handleOrganize = async () => {
-    if (!apiCategory) {
-      showError('先选择目录，再生成整理建议');
-      return;
-    }
-
-    const shouldAnalyzeFile = Boolean(hasSelection);
-    setLoadingMerge(true);
-    if (shouldAnalyzeFile) {
-      setLoadingClean(true);
-    }
-
-    try {
-      setError('');
-      const jobs = [
-        runFolderRefine(apiCategory, includeLowConfidence, includeMergeLlm),
-      ];
-
-      if (shouldAnalyzeFile) {
-        const analysisDraft = draft ? sanitizeDraftForSave(draft, filename.replace(/\.json$/i, '')) : null;
-        jobs.unshift(runFileRefine(apiCategory, filename, includeLlm, analysisDraft));
-      }
-
-      const results = await Promise.allSettled(jobs);
-      const errors = [];
-      let folderIndex = 0;
-
-      if (shouldAnalyzeFile) {
-        const fileResult = results[0];
-        folderIndex = 1;
-        if (fileResult.status === 'fulfilled') {
-          setCleanData(fileResult.value);
-        } else {
-          errors.push(fileResult.reason?.message || '文件清洗建议失败');
-        }
-      }
-
-      const folderResult = results[folderIndex];
-      if (folderResult.status === 'fulfilled') {
-        setMergeData(folderResult.value);
-      } else {
-        errors.push(folderResult.reason?.message || '词形合并建议失败');
-      }
-
-      if (errors.length) {
-        showError(errors.join('；'));
-      } else if (shouldAnalyzeFile) {
-        showNotice('已生成当前文件和目录合并整理建议');
-      } else {
-        showNotice('已生成目录合并整理建议');
-      }
-    } finally {
-      setLoadingMerge(false);
-      if (shouldAnalyzeFile) {
-        setLoadingClean(false);
-      }
     }
   };
 
@@ -2797,7 +2742,7 @@ export default function App({
         apiCategory,
         filename,
         item,
-        deleteSourceAfterMerge,
+        ORGANIZE_SPLIT_DELETE_SOURCE,
         payload,
       );
       const entriesCreated = Array.isArray(res?.entries) ? res.entries : [];
@@ -2808,7 +2753,7 @@ export default function App({
       setCleanData(null);
       void refreshFiles();
 
-      if (deleteSourceAfterMerge && firstTarget) {
+      if (ORGANIZE_SPLIT_DELETE_SOURCE && firstTarget) {
         pendingSelectionRef.current = { category: apiCategory, filename: firstTarget };
         setDraftDirty(false);
         setFilename(firstTarget);
@@ -2816,17 +2761,17 @@ export default function App({
         showNotice(`已拆分：新建 ${createdCount} 个，更新 ${updatedCount} 个`);
       }
 
-      if (deleteSourceAfterMerge && !firstTarget) {
+      if (ORGANIZE_SPLIT_DELETE_SOURCE && !firstTarget) {
         setFilename('');
         resetEntryState();
       }
 
-      if (firstTarget && !deleteSourceAfterMerge) {
+      if (firstTarget && !ORGANIZE_SPLIT_DELETE_SOURCE) {
         const refreshed = await runFileRefine(apiCategory, filename, false, payload);
         setCleanData(refreshed);
       }
 
-      if (deleteSourceAfterMerge && firstTarget) {
+      if (ORGANIZE_SPLIT_DELETE_SOURCE && firstTarget) {
         showNotice(`已拆分：新建 ${createdCount} 个，更新 ${updatedCount} 个，并切换到 ${firstTarget}`);
       }
     } catch (err) {
@@ -3044,17 +2989,55 @@ export default function App({
     window.speechSynthesis.cancel();
   };
 
-  const scrollToFocusPanel = (focus) => {
-    const targetRef = focus === 'review' ? reviewPanelRef : cleanPanelRef;
+  const scrollToFocusPanel = useEffectEvent((focus) => {
+    const normalizedFocus = String(focus || '').trim().toLowerCase();
+    const targetRef = normalizedFocus === 'review' && !overlayMode
+      ? reviewPanelRef
+      : normalizedFocus === 'editor'
+        ? editorPanelRef
+        : organizePanelRef;
     targetRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
+  });
 
   const handleOpenYoudao = () => {
     if (!youdaoUrl) return;
     window.open(youdaoUrl, '_blank', 'noopener,noreferrer');
   };
 
+  const renderWordTools = (compact = false) => (
+    <div className={`word-tools${compact ? ' word-tools-floating' : ''}`}>
+      <button
+        type="button"
+        className={currentMarked ? 'primary workspace-mark-button is-marked' : 'ghost workspace-mark-button'}
+        onClick={handleToggleMarked}
+        disabled={savingMarked}
+      >
+        {compact ? <UiIcon name="star" size={15} /> : null}
+        <span>{savingMarked ? '保存中...' : (currentMarked ? '取消标记' : '标记词条')}</span>
+      </button>
+      <button type="button" className="ghost" onClick={() => handleSpeakWord('en-US', '美音')} disabled={!ttsSupported}>
+        {compact ? <UiIcon name="volume" size={15} /> : null}
+        <span>{ttsVoiceLabel === '美音' ? '朗读中·美音' : '美音'}</span>
+      </button>
+      <button type="button" className="ghost" onClick={() => handleSpeakWord('en-GB', '英音')} disabled={!ttsSupported}>
+        {compact ? <UiIcon name="volume" size={15} /> : null}
+        <span>{ttsVoiceLabel === '英音' ? '朗读中·英音' : '英音'}</span>
+      </button>
+      <button type="button" className="ghost" onClick={handleOpenYoudao} disabled={!youdaoUrl}>
+        {compact ? <UiIcon name="external-link" size={15} /> : null}
+        <span>有道词典</span>
+      </button>
+      {ttsVoiceLabel ? (
+        <button type="button" className="ghost" onClick={handleStopSpeech}>
+          {compact ? <UiIcon name="close" size={15} /> : null}
+          <span>停止</span>
+        </button>
+      ) : null}
+    </div>
+  );
+
   const handleOpenConfig = () => {
+    setTopbarToolsOpen(false);
     if (typeof onOpenConfig === 'function') {
       onOpenConfig();
       return;
@@ -3062,8 +3045,177 @@ export default function App({
     setDrawerOpen(true);
   };
 
+  const renderEditorSurface = () => (
+    <div className="panel">
+      <div className="panel-header">
+        <h3>词条编辑器</h3>
+        {draft ? <span className={`badge ${draftDirty ? 'medium' : 'high'}`}>{draftDirty ? 'draft' : 'synced'}</span> : null}
+      </div>
+      <EditorPanel
+        key={`editor-${editorSyncToken}`}
+        draft={draft}
+        dirty={draftDirty}
+        saving={savingDraft}
+        onWordChange={(value) => updateDraft((base) => ({ ...base, word: value }))}
+        onDefinitionChange={(index, value) => updateDraft((base) => {
+          const definitions = Array.isArray(base.definitions) ? [...base.definitions] : [];
+          definitions[index] = value;
+          return { ...base, definitions };
+        })}
+        onDefinitionAdd={() => updateDraft((base) => {
+          const definitions = Array.isArray(base.definitions) ? [...base.definitions] : [];
+          definitions.push('');
+          return { ...base, definitions };
+        })}
+        onDefinitionRemove={(index) => updateDraft((base) => {
+          const definitions = Array.isArray(base.definitions) ? [...base.definitions] : [];
+          definitions.splice(index, 1);
+          return { ...base, definitions };
+        })}
+        onExampleChange={(index, field, value) => updateDraft((base) => {
+          if (index === -1 && field === 'createdAt') {
+            return { ...base, createdAt: value };
+          }
+
+          const examples = Array.isArray(base.examples) ? [...base.examples] : [];
+          if (index < 0 || index >= examples.length) return { ...base, examples };
+
+          const example = { ...(examples[index] || {}) };
+          if (field === 'focusWords') {
+            example.focusWords = String(value || '')
+              .split(',')
+              .map((item) => item.trim())
+              .filter((item) => Boolean(item));
+          } else if (field === 'focusPositions') {
+            const tokenCount = tokenizeNonSpace(example.text).length;
+            const normalizedPositions = normalizeExampleFocusPositions(
+              String(value || '').split(','),
+              tokenCount,
+            );
+            if (normalizedPositions.length) {
+              example.focusPositions = normalizedPositions;
+            } else {
+              delete example.focusPositions;
+            }
+          } else if (field === 'source.text' || field === 'source.url') {
+            const currentSource = normalizeExampleSource(example);
+            const sourceField = field === 'source.text' ? 'text' : 'url';
+            const nextSource = {
+              ...currentSource,
+              [sourceField]: sourceField === 'text' ? collapseWhitespace(value) : String(value || '').trim(),
+            };
+            if (nextSource.text || nextSource.url) {
+              example.source = nextSource;
+            } else {
+              delete example.source;
+            }
+          } else if (field === 'youtube.url' || field === 'youtube.timestamp') {
+            const currentYoutube = normalizeExampleYoutube(example);
+            const nextYoutube = {
+              ...currentYoutube,
+              [field === 'youtube.url' ? 'url' : 'timestamp']: field === 'youtube.url'
+                ? String(value || '').trim()
+                : Math.max(0, parseInt(value, 10) || 0),
+            };
+            if (nextYoutube.url) {
+              example.youtube = nextYoutube;
+            } else {
+              delete example.youtube;
+            }
+          } else {
+            example[field] = value;
+            if (field === 'text' && Array.isArray(example.focusPositions)) {
+              const normalizedPositions = normalizeExampleFocusPositions(
+                example.focusPositions,
+                tokenizeNonSpace(value).length,
+              );
+              if (normalizedPositions.length) {
+                example.focusPositions = normalizedPositions;
+              } else {
+                delete example.focusPositions;
+              }
+            }
+          }
+
+          examples[index] = example;
+          return { ...base, examples };
+        })}
+        onExampleAdd={() => updateDraft((base) => {
+          const examples = Array.isArray(base.examples) ? [...base.examples] : [];
+          examples.push({
+            text: '',
+            explanation: '',
+            source: { text: '', url: '' },
+            youtube: { url: '', timestamp: 0 },
+            focusWords: [String(base.word || '').trim()].filter(Boolean),
+          });
+          return { ...base, examples };
+        })}
+        onExampleRemove={(index) => updateDraft((base) => {
+          const examples = Array.isArray(base.examples) ? [...base.examples] : [];
+          examples.splice(index, 1);
+          return { ...base, examples };
+        })}
+        onExampleToggleFocusPosition={(index, tokenIndex) => updateDraft((base) => {
+          const examples = Array.isArray(base.examples) ? [...base.examples] : [];
+          if (index < 0 || index >= examples.length) return { ...base, examples };
+
+          const example = { ...(examples[index] || {}) };
+          const tokenCount = tokenizeNonSpace(example.text).length;
+          if (!tokenCount) return { ...base, examples };
+
+          const current = normalizeExampleFocusPositions(example.focusPositions, tokenCount);
+          const next = current.includes(tokenIndex)
+            ? current.filter((item) => item !== tokenIndex)
+            : [...current, tokenIndex];
+          const normalized = normalizeExampleFocusPositions(next, tokenCount);
+
+          if (normalized.length) {
+            example.focusPositions = normalized;
+          } else {
+            delete example.focusPositions;
+          }
+
+          examples[index] = example;
+          return { ...base, examples };
+        })}
+        onExampleClearFocusPositions={(index) => updateDraft((base) => {
+          const examples = Array.isArray(base.examples) ? [...base.examples] : [];
+          if (index < 0 || index >= examples.length) return { ...base, examples };
+
+          const example = { ...(examples[index] || {}) };
+          delete example.focusPositions;
+          examples[index] = example;
+          return { ...base, examples };
+        })}
+        onExampleApplyFocusPositions={(index, positions) => updateDraft((base) => {
+          const examples = Array.isArray(base.examples) ? [...base.examples] : [];
+          if (index < 0 || index >= examples.length) return { ...base, examples };
+
+          const example = { ...(examples[index] || {}) };
+          const normalized = normalizeExampleFocusPositions(
+            Array.isArray(positions) ? positions : [],
+            tokenizeNonSpace(example.text).length,
+          );
+          if (!normalized.length) return { ...base, examples };
+
+          example.focusPositions = normalized;
+          examples[index] = example;
+          return { ...base, examples };
+        })}
+        onReplaceDraft={(value) => updateDraft(() => deepClone(value || {}))}
+        onReset={handleDraftReset}
+        onSave={handleDraftSave}
+      />
+    </div>
+  );
+
+  const overlayFocus = String(launchRequest?.focus || '').trim().toLowerCase() === 'editor'
+    ? 'editor'
+    : 'organize';
+
   return (
-    <div className={`review-scope page workspace-page${embedded ? ' embedded' : ''}`}>
+    <div className={`review-scope page workspace-page${embedded ? ' embedded' : ''}${overlayMode ? ' overlay-mode' : ''}`}>
       {!embedded ? (
         <header className="topbar">
           <div className="brand-wrap">
@@ -3080,11 +3232,43 @@ export default function App({
               {loadingFiles ? '刷新中...' : '刷新当前目录'}
             </button>
             <button className="primary" onClick={handleOpenConfig}>配置</button>
+            <button
+              type="button"
+              className={`review-icon-button review-topbar-tools-trigger${topbarToolsOpen ? ' is-active' : ''}`}
+              onClick={() => setTopbarToolsOpen((open) => !open)}
+              aria-label="打开工具"
+              aria-expanded={topbarToolsOpen}
+            >
+              <UiIcon name="sliders" size={17} />
+            </button>
           </div>
+
+          {topbarToolsOpen ? (
+            <div className="review-floating-layer" role="presentation">
+              <button type="button" className="review-floating-backdrop" aria-label="关闭工具" onClick={() => setTopbarToolsOpen(false)} />
+              <section className="review-floating-panel review-topbar-floating-panel" role="dialog" aria-modal="false" aria-label="工具">
+                <div className="review-floating-header">
+                  <div>
+                    <div className="review-floating-title">工具</div>
+                    <div className="review-floating-caption">模式、刷新与配置</div>
+                  </div>
+                  <button type="button" className="review-icon-button" aria-label="关闭工具" onClick={() => setTopbarToolsOpen(false)}>
+                    <UiIcon name="close" size={16} />
+                  </button>
+                </div>
+                <ModeSwitch mode={mode} onChange={setMode} />
+                <button className="ghost" onClick={refreshFiles} disabled={loadingFiles || !apiCategory}>
+                  {loadingFiles ? '刷新中...' : '刷新当前目录'}
+                </button>
+                <button className="primary" onClick={handleOpenConfig}>配置</button>
+              </section>
+            </div>
+          ) : null}
         </header>
       ) : null}
 
       <main className="workspace-shell">
+        {!overlayMode ? (
         <aside className="workspace-sidebar">
           {mode === 'manual' ? (
             <ManualSelectionPanel
@@ -3121,8 +3305,10 @@ export default function App({
             />
           )}
         </aside>
+        ) : null}
 
         <section className="workspace-main">
+          {!overlayMode ? (
           <section className={`panel panel-soft workspace-summary${hasSelection ? '' : ' is-empty'}`}>
             <div className="panel-body">
               <div className="workspace-summary-top">
@@ -3133,28 +3319,37 @@ export default function App({
                       {hasSelection ? (activeWord || filename.replace(/\.json$/i, '')) : '先选择一个词条开始处理'}
                     </div>
                     {hasSelection ? (
-                      <div className="word-tools">
+                      <>
+                        {renderWordTools()}
                         <button
                           type="button"
-                          className={currentMarked ? 'primary workspace-mark-button is-marked' : 'ghost workspace-mark-button'}
-                          onClick={handleToggleMarked}
-                          disabled={savingMarked}
+                          className={`review-icon-button review-word-tools-trigger${wordToolsOpen ? ' is-active' : ''}`}
+                          onClick={() => setWordToolsOpen((open) => !open)}
+                          aria-label="打开词条工具"
+                          aria-expanded={wordToolsOpen}
                         >
-                          {savingMarked ? '保存中...' : (currentMarked ? '取消标记' : '标记词条')}
+                          <UiIcon name="volume" size={16} />
                         </button>
-                        <button type="button" className="ghost" onClick={() => handleSpeakWord('en-US', '美音')} disabled={!ttsSupported}>
-                          {ttsVoiceLabel === '美音' ? '朗读中·美音' : '美音'}
-                        </button>
-                        <button type="button" className="ghost" onClick={() => handleSpeakWord('en-GB', '英音')} disabled={!ttsSupported}>
-                          {ttsVoiceLabel === '英音' ? '朗读中·英音' : '英音'}
-                        </button>
-                        <button type="button" className="ghost" onClick={handleOpenYoudao} disabled={!youdaoUrl}>有道词典</button>
-                        {ttsVoiceLabel ? (
-                          <button type="button" className="ghost" onClick={handleStopSpeech}>停止</button>
-                        ) : null}
-                      </div>
+                      </>
                     ) : null}
                   </div>
+                  {wordToolsOpen && hasSelection ? (
+                    <div className="review-floating-layer review-word-floating-layer" role="presentation">
+                      <button type="button" className="review-floating-backdrop" aria-label="关闭词条工具" onClick={() => setWordToolsOpen(false)} />
+                      <section className="review-floating-panel review-compact-floating-panel" role="dialog" aria-modal="false" aria-label="词条工具">
+                        <div className="review-floating-header">
+                          <div>
+                            <div className="review-floating-title">词条工具</div>
+                            <div className="review-floating-caption">标记、朗读与词典</div>
+                          </div>
+                          <button type="button" className="review-icon-button" aria-label="关闭词条工具" onClick={() => setWordToolsOpen(false)}>
+                            <UiIcon name="close" size={16} />
+                          </button>
+                        </div>
+                        {renderWordTools(true)}
+                      </section>
+                    </div>
+                  ) : null}
                   <p className="selection-sub">
                     {hasSelection
                       ? `${formatCategoryLabel(category)} / ${filename}`
@@ -3180,213 +3375,47 @@ export default function App({
               </div>
             </div>
           </section>
+          ) : null}
 
-          <div className="workspace-columns">
+          <div className={`workspace-columns${overlayMode ? ` is-overlay-focus-${overlayFocus}` : ''}`}>
+            {overlayMode ? null : (
             <aside className="editor-column">
-              <div className="panel">
-                <div className="panel-header">
-                  <h3>词条编辑器</h3>
-                  {draft ? <span className={`badge ${draftDirty ? 'medium' : 'high'}`}>{draftDirty ? 'draft' : 'synced'}</span> : null}
-                </div>
-                <EditorPanel
-                  key={`editor-${editorSyncToken}`}
-                  draft={draft}
-                  dirty={draftDirty}
-                  saving={savingDraft}
-                  onWordChange={(value) => updateDraft((base) => ({ ...base, word: value }))}
-                  onDefinitionChange={(index, value) => updateDraft((base) => {
-                    const definitions = Array.isArray(base.definitions) ? [...base.definitions] : [];
-                    definitions[index] = value;
-                    return { ...base, definitions };
-                  })}
-                  onDefinitionAdd={() => updateDraft((base) => {
-                    const definitions = Array.isArray(base.definitions) ? [...base.definitions] : [];
-                    definitions.push('');
-                    return { ...base, definitions };
-                  })}
-                  onDefinitionRemove={(index) => updateDraft((base) => {
-                    const definitions = Array.isArray(base.definitions) ? [...base.definitions] : [];
-                    definitions.splice(index, 1);
-                    return { ...base, definitions };
-                  })}
-                  onExampleChange={(index, field, value) => updateDraft((base) => {
-                    if (index === -1 && field === 'createdAt') {
-                      return { ...base, createdAt: value };
-                    }
-
-                    const examples = Array.isArray(base.examples) ? [...base.examples] : [];
-                    if (index < 0 || index >= examples.length) return { ...base, examples };
-
-                    const example = { ...(examples[index] || {}) };
-                    if (field === 'focusWords') {
-                      example.focusWords = String(value || '')
-                        .split(',')
-                        .map((item) => item.trim())
-                        .filter((item) => Boolean(item));
-                    } else if (field === 'focusPositions') {
-                      const tokenCount = tokenizeNonSpace(example.text).length;
-                      const normalizedPositions = normalizeExampleFocusPositions(
-                        String(value || '').split(','),
-                        tokenCount,
-                      );
-                      if (normalizedPositions.length) {
-                        example.focusPositions = normalizedPositions;
-                      } else {
-                        delete example.focusPositions;
-                      }
-                    } else if (field === 'source.text' || field === 'source.url') {
-                      const currentSource = normalizeExampleSource(example);
-                      const sourceField = field === 'source.text' ? 'text' : 'url';
-                      const nextSource = {
-                        ...currentSource,
-                        [sourceField]: sourceField === 'text' ? collapseWhitespace(value) : String(value || '').trim(),
-                      };
-                      if (nextSource.text || nextSource.url) {
-                        example.source = nextSource;
-                      } else {
-                        delete example.source;
-                      }
-                    } else if (field === 'youtube.url' || field === 'youtube.timestamp') {
-                      const currentYoutube = normalizeExampleYoutube(example);
-                      const nextYoutube = {
-                        ...currentYoutube,
-                        [field === 'youtube.url' ? 'url' : 'timestamp']: field === 'youtube.url'
-                          ? String(value || '').trim()
-                          : Math.max(0, parseInt(value, 10) || 0),
-                      };
-                      if (nextYoutube.url) {
-                        example.youtube = nextYoutube;
-                      } else {
-                        delete example.youtube;
-                      }
-                    } else {
-                      example[field] = value;
-                      if (field === 'text' && Array.isArray(example.focusPositions)) {
-                        const normalizedPositions = normalizeExampleFocusPositions(
-                          example.focusPositions,
-                          tokenizeNonSpace(value).length,
-                        );
-                        if (normalizedPositions.length) {
-                          example.focusPositions = normalizedPositions;
-                        } else {
-                          delete example.focusPositions;
-                        }
-                      }
-                    }
-
-                    examples[index] = example;
-                    return { ...base, examples };
-                  })}
-                  onExampleAdd={() => updateDraft((base) => {
-                    const examples = Array.isArray(base.examples) ? [...base.examples] : [];
-                    examples.push({
-                      text: '',
-                      explanation: '',
-                      source: { text: '', url: '' },
-                      youtube: { url: '', timestamp: 0 },
-                      focusWords: [String(base.word || '').trim()].filter(Boolean),
-                    });
-                    return { ...base, examples };
-                  })}
-                  onExampleRemove={(index) => updateDraft((base) => {
-                    const examples = Array.isArray(base.examples) ? [...base.examples] : [];
-                    examples.splice(index, 1);
-                    return { ...base, examples };
-                  })}
-                  onExampleToggleFocusPosition={(index, tokenIndex) => updateDraft((base) => {
-                    const examples = Array.isArray(base.examples) ? [...base.examples] : [];
-                    if (index < 0 || index >= examples.length) return { ...base, examples };
-
-                    const example = { ...(examples[index] || {}) };
-                    const tokenCount = tokenizeNonSpace(example.text).length;
-                    if (!tokenCount) return { ...base, examples };
-
-                    const current = normalizeExampleFocusPositions(example.focusPositions, tokenCount);
-                    const next = current.includes(tokenIndex)
-                      ? current.filter((item) => item !== tokenIndex)
-                      : [...current, tokenIndex];
-                    const normalized = normalizeExampleFocusPositions(next, tokenCount);
-
-                    if (normalized.length) {
-                      example.focusPositions = normalized;
-                    } else {
-                      delete example.focusPositions;
-                    }
-
-                    examples[index] = example;
-                    return { ...base, examples };
-                  })}
-                  onExampleClearFocusPositions={(index) => updateDraft((base) => {
-                    const examples = Array.isArray(base.examples) ? [...base.examples] : [];
-                    if (index < 0 || index >= examples.length) return { ...base, examples };
-
-                    const example = { ...(examples[index] || {}) };
-                    delete example.focusPositions;
-                    examples[index] = example;
-                    return { ...base, examples };
-                  })}
-                  onExampleApplyFocusPositions={(index, positions) => updateDraft((base) => {
-                    const examples = Array.isArray(base.examples) ? [...base.examples] : [];
-                    if (index < 0 || index >= examples.length) return { ...base, examples };
-
-                    const example = { ...(examples[index] || {}) };
-                    const normalized = normalizeExampleFocusPositions(
-                      Array.isArray(positions) ? positions : [],
-                      tokenizeNonSpace(example.text).length,
-                    );
-                    if (!normalized.length) return { ...base, examples };
-
-                    example.focusPositions = normalized;
-                    examples[index] = example;
-                    return { ...base, examples };
-                  })}
-                  onReplaceDraft={(value) => updateDraft(() => deepClone(value || {}))}
-                  onReset={handleDraftReset}
-                  onSave={handleDraftSave}
-                />
-              </div>
+              {renderEditorSurface()}
             </aside>
+            )}
 
             <section className="inspector-column">
-              <div ref={reviewPanelRef}>
-                <ReviewPanel
-                  reviewData={reviewData}
-                  loading={loadingReview}
-                  reviewDate={reviewDate}
-                  setReviewDate={setReviewDate}
-                  onRefresh={handleReviewRefresh}
-                  onScore={handleScore}
-                />
-              </div>
+              {overlayMode ? (
+                <div ref={editorPanelRef} className="overlay-focus-panel overlay-focus-editor">
+                  {renderEditorSurface()}
+                </div>
+              ) : null}
+              {!overlayMode ? (
+                <div ref={reviewPanelRef} className="overlay-focus-panel overlay-focus-review">
+                  <ReviewPanel
+                    reviewData={reviewData}
+                    loading={loadingReview}
+                    reviewDate={reviewDate}
+                    setReviewDate={setReviewDate}
+                    onRefresh={handleReviewRefresh}
+                    onScore={handleScore}
+                  />
+                </div>
+              ) : null}
 
-              <div ref={cleanPanelRef}>
+              <div ref={organizePanelRef} className="overlay-focus-panel overlay-focus-organize">
                 <OrganizePanel
                   cleanData={cleanData}
-                  mergeData={mergeData}
                   draft={draft}
                   loading={loadingClean}
-                  mergeLoading={loadingMerge}
-                  includeLlm={includeLlm}
-                  setIncludeLlm={setIncludeLlm}
-                  includeLowConfidence={includeLowConfidence}
-                  setIncludeLowConfidence={setIncludeLowConfidence}
-                  includeMergeLlm={includeMergeLlm}
-                  setIncludeMergeLlm={setIncludeMergeLlm}
-                  deleteSourceAfterMerge={deleteSourceAfterMerge}
-                  setDeleteSourceAfterMerge={setDeleteSourceAfterMerge}
                   onRun={handleClean}
-                  onRunMerge={handleMerge}
-                  onRunAll={handleOrganize}
                   onApplyLlmSuggestion={handleApplyLlmSuggestion}
                   onApplyEntryRenameAndSave={handleApplyEntryRenameAndSave}
                   onApplyAllSuggestions={handleApplyAllSuggestions}
                   onApplyAllAndSave={handleApplyAllAndSave}
-                  onApplyMerge={handleApplyMerge}
                   onApplySplit={handleApplySplit}
-                  applyingKey={mergeApplyingKey}
                   splitApplyingKey={splitApplyingKey}
                   renameApplyingKey={renameApplyingKey}
-                  hasCategory={Boolean(apiCategory)}
                   hasDraft={Boolean(draft)}
                   savingDraft={savingDraft}
                   analyzedFrom={cleanData?.analyzed_from || 'file'}
