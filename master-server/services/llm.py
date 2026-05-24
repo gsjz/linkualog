@@ -224,7 +224,7 @@ def process_image(image_bytes: bytes, filename: str, content_type: str, experime
     model_name = config.get("model")
 
     if not test_llm_connection(api_url, api_key, model_name):
-        raise ConnectionError("LLM 连通性测试未通过，请检查网络、API 地址或 API Key 是否正确。")
+        print("⚠️ LLM 连通性测试未通过，将继续执行图片解析正式请求。")
 
     print(f"收到图片: {filename}, 准备进行预处理...")
 
