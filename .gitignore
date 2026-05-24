@@ -46,6 +46,7 @@ local_data_runtime/
 
 .codex
 .codex-local.md
+AGENTS.md
 
 # Server-local deployment files
 deploy/nginx/*.private.conf
