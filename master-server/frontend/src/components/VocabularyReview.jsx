@@ -72,6 +72,19 @@ const buildVocabularyEntryId = (category, value) => {
   return `${categoryKey}::${buildVocabularyWordKey(value)}`;
 };
 
+const buildLaunchRequestKey = (request) => {
+  const targetWord = normalizeVocabularyLaunchWord(request?.word || request?.filename || request?.fileKey);
+  const targetFileKey = normalizeVocabularyLaunchWord(request?.fileKey || request?.filename || request?.word);
+  if (!targetWord && !targetFileKey) return '';
+  return [
+    String(request?.category || '').trim(),
+    targetWord,
+    targetFileKey,
+    String(request?.focus || '').trim(),
+    String(request?.autoRefineToken || '').trim(),
+  ].join('\u0001');
+};
+
 const normalizeVocabularyEntry = (entry, fallbackCategory = '') => {
   const key = normalizeVocabularyLaunchWord(entry?.key || entry?.file || entry?.word);
   const file = String(entry?.file || (key ? `${key}.json` : '')).trim();
@@ -332,6 +345,7 @@ export default function VocabularyReview({
   const selectedCategoryRef = useRef(selectedCategory);
   const entriesRequestRef = useRef(0);
   const detailRequestRef = useRef(0);
+  const handledLaunchRequestKeyRef = useRef('');
   const previousMobileSimpleRef = useRef(mobileSimple);
   const infoButtonRef = useRef(null);
   const [mobileInfoPanelPosition, setMobileInfoPanelPosition] = useState(null);
@@ -623,6 +637,10 @@ export default function VocabularyReview({
 
   useEffect(() => {
     if (!launchRequest?.word && !launchRequest?.filename && !launchRequest?.fileKey) return;
+
+    const launchRequestKey = buildLaunchRequestKey(launchRequest);
+    if (!launchRequestKey || handledLaunchRequestKeyRef.current === launchRequestKey) return;
+    handledLaunchRequestKeyRef.current = launchRequestKey;
 
     const targetCategory = String(launchRequest.category || '').trim();
     const targetWord = normalizeVocabularyLaunchWord(launchRequest.word || launchRequest.filename || launchRequest.fileKey);
