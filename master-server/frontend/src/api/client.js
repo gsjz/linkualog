@@ -193,3 +193,17 @@ export const submitReviewScore = async (category, filename, score, reviewDate) =
   });
   return handleResponse(res);
 };
+
+export const fetchRecommendedWord = async (category = '', excludeKeys = [], limit = 5, preferences = {}) => {
+  const res = await fetch(`${BACKEND_URL}/api/review/recommend`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      category: String(category || '').trim() || null,
+      exclude_keys: Array.isArray(excludeKeys) ? excludeKeys : [],
+      limit,
+      ...(preferences || {}),
+    }),
+  });
+  return handleResponse(res);
+};

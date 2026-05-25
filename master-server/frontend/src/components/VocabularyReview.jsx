@@ -1,15 +1,19 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import UiIcon from './UiIcon';
 
 import {
+  fetchConfig,
+  fetchRecommendedWord,
   getVocabularyCategories,
   getVocabularyDetail,
   getVocabularyList,
+  saveConfig,
   saveVocabularyDetail,
   submitReviewScore,
 } from '../api/client';
 
 const REVIEW_CATEGORY_KEY = 'vocabReviewCategory';
+const DESKTOP_CONTENT_COLLAPSED_KEY = 'vocabReviewDesktopContentDefaultCollapsed';
 const ALL_CATEGORIES_VALUE = '__all_categories__';
 const FOCUS_RENDER_TOKEN_REGEX = /\s+|[\p{L}\p{N}_]+|[^\s]/gu;
 const CATEGORY_LABELS = {
@@ -36,9 +40,22 @@ const SCORE_SHORT_LABELS = {
   5: '熟练',
 };
 const ENTRY_FILTER_OPTIONS = [
-  { value: 'marked', label: '标记词条' },
-  { value: 'all', label: '全部词条' },
-  { value: 'unmarked', label: '未标记' },
+  { value: 'marked', label: '标记词条', compactLabel: '标记' },
+  { value: 'all', label: '全部词条', compactLabel: '全部' },
+  { value: 'unmarked', label: '未标记', compactLabel: '未标' },
+];
+const ALL_RECOMMEND_SCOPE = '__all_recommend_scope__';
+const DEFAULT_RECOMMENDATION_PREFERENCES = {
+  due_weight: 2.2,
+  created_weight: 0.35,
+  score_weight: 0.75,
+  created_order: 'recent',
+  score_order: 'low',
+};
+const RECOMMENDATION_WEIGHT_OPTIONS = [
+  { key: 'due_weight', label: '到期', description: '逾期、今天到期、新词条' },
+  { key: 'created_weight', label: '创建', description: '按创建时间方向排序' },
+  { key: 'score_weight', label: '评分', description: '按最近一次评分排序' },
 ];
 
 const getTodayLocalDateString = () => {
@@ -56,6 +73,10 @@ const getStoredReviewCategory = () => {
     : String(localStorage.getItem('defaultCategory') || '').trim();
   return isAllCategoriesValue(fallbackCategory) ? '' : fallbackCategory;
 };
+
+const getStoredDesktopContentDefaultCollapsed = () => (
+  localStorage.getItem(DESKTOP_CONTENT_COLLAPSED_KEY) === '1'
+);
 
 const isAllCategoriesValue = (value) => String(value || '').trim() === ALL_CATEGORIES_VALUE;
 
@@ -98,6 +119,59 @@ const normalizeVocabularyEntry = (entry, fallbackCategory = '') => {
     category,
     marked: Boolean(entry?.marked),
   };
+};
+
+const getRecommendationFileName = (item) => {
+  const explicitFile = String(item?.file || '').trim();
+  if (explicitFile) return explicitFile;
+  const key = String(item?.key || '').trim();
+  return key.split('/').filter(Boolean).pop() || key;
+};
+
+const getRecommendationCategory = (item) => {
+  const explicitCategory = String(item?.category || '').trim();
+  if (explicitCategory) return explicitCategory;
+  const key = String(item?.key || '').trim();
+  return key.includes('/') ? key.split('/')[0] : '';
+};
+
+const buildRecommendationQueue = (res, pool = [], limit = 8) => {
+  const poolMap = new Map((Array.isArray(pool) ? pool : [])
+    .filter(Boolean)
+    .map((item) => [item.id, item]));
+  const candidates = [
+    res?.recommended,
+    ...(Array.isArray(res?.alternatives) ? res.alternatives : []),
+  ].filter(Boolean);
+  const seen = new Set();
+
+  return candidates.map((item) => {
+    const category = getRecommendationCategory(item);
+    const file = getRecommendationFileName(item);
+    const targetEntry = normalizeVocabularyEntry({
+      key: file,
+      file,
+      word: item.word,
+      marked: Boolean(item.marked),
+      category,
+    }, category);
+    const poolEntry = poolMap.get(targetEntry.id);
+    if (!poolEntry) return null;
+
+    const uniqueKey = String(item.key || `${targetEntry.category}/${targetEntry.file}`).trim();
+    if (seen.has(uniqueKey)) return null;
+    seen.add(uniqueKey);
+
+    return {
+      ...item,
+      id: targetEntry.id,
+      key: uniqueKey,
+      category: targetEntry.category,
+      file: targetEntry.file,
+      word: targetEntry.word,
+      marked: Boolean(poolEntry.marked || item.marked),
+    };
+  }).filter(Boolean).slice(0, limit);
 };
 
 const pickRandomEntry = (items, currentId = '') => {
@@ -262,6 +336,68 @@ const buildYouTubeLink = (url, timestamp) => {
 
 const normalizeReviewScore = (score) => Math.max(0, Math.min(5, parseInt(score, 10) || 0));
 
+const normalizeRecommendationPreferences = (value) => {
+  const raw = value && typeof value === 'object' ? value : {};
+  const clampWeight = (item, fallback) => {
+    const number = Number(item);
+    if (!Number.isFinite(number)) return fallback;
+    if (number < 0) return 0;
+    if (number > 5) return 5;
+    return Math.round(number * 100) / 100;
+  };
+
+  return {
+    due_weight: clampWeight(raw.due_weight, DEFAULT_RECOMMENDATION_PREFERENCES.due_weight),
+    created_weight: clampWeight(raw.created_weight, DEFAULT_RECOMMENDATION_PREFERENCES.created_weight),
+    score_weight: clampWeight(raw.score_weight, DEFAULT_RECOMMENDATION_PREFERENCES.score_weight),
+    created_order: raw.created_order === 'oldest' ? 'oldest' : 'recent',
+    score_order: raw.score_order === 'high' ? 'high' : 'low',
+  };
+};
+
+const recommendationPreferencesFromConfig = (config) => normalizeRecommendationPreferences({
+  due_weight: config?.review_recommend_due_weight,
+  created_weight: config?.review_recommend_created_weight,
+  score_weight: config?.review_recommend_score_weight,
+  created_order: config?.review_recommend_created_order,
+  score_order: config?.review_recommend_score_order,
+});
+
+const recommendationPreferencesToConfig = (preferences) => {
+  const normalized = normalizeRecommendationPreferences(preferences);
+  return {
+    review_recommend_due_weight: normalized.due_weight,
+    review_recommend_created_weight: normalized.created_weight,
+    review_recommend_score_weight: normalized.score_weight,
+    review_recommend_created_order: normalized.created_order,
+    review_recommend_score_order: normalized.score_order,
+  };
+};
+
+const recommendationPreferencesKey = (preferences) => {
+  const normalized = normalizeRecommendationPreferences(preferences);
+  return [
+    normalized.due_weight.toFixed(2),
+    normalized.created_weight.toFixed(2),
+    normalized.score_weight.toFixed(2),
+    normalized.created_order,
+    normalized.score_order,
+  ].join('|');
+};
+
+const formatRecommendationPreferenceSummary = (preferences) => {
+  const normalized = normalizeRecommendationPreferences(preferences);
+  const created = normalized.created_order === 'oldest' ? '最早加入' : '最近加入';
+  const score = normalized.score_order === 'high' ? '高分优先' : '低分优先';
+  return `${created} · ${score}`;
+};
+
+const buildYoudaoUrl = (word) => {
+  const normalized = String(word || '').trim();
+  if (!normalized) return '';
+  return `https://www.youdao.com/result?word=${encodeURIComponent(normalized)}&lang=en`;
+};
+
 const chipStyle = () => ({
   display: 'inline-flex',
   alignItems: 'center',
@@ -320,33 +456,55 @@ const getReviewToneStyle = (score) => {
 export default function VocabularyReview({
   onSelectionChange = null,
   launchRequest = null,
+  entryUpdateRequest = null,
   mobileSimple = false,
   compactDesktop = false,
   selectionMode = 'random',
 }) {
-  const manualSelectionMode = selectionMode === 'manual';
-  const randomSelectionMode = !manualSelectionMode;
+  const randomSelectionMode = selectionMode === 'random';
   const [entries, setEntries] = useState([]);
   const [entriesCategory, setEntriesCategory] = useState('');
   const [selectedEntryId, setSelectedEntryId] = useState('');
+  const [selectedEntrySnapshot, setSelectedEntrySnapshot] = useState(null);
   const [detailData, setDetailData] = useState(null);
   const [detailCategory, setDetailCategory] = useState('');
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(() => (
-    mobileSimple ? ALL_CATEGORIES_VALUE : getStoredReviewCategory()
+    (mobileSimple || compactDesktop || randomSelectionMode)
+      ? ALL_CATEGORIES_VALUE
+      : (getStoredReviewCategory() || ALL_CATEGORIES_VALUE)
   ));
   const [wordQuery, setWordQuery] = useState('');
-  const [entryFilter, setEntryFilter] = useState(() => (mobileSimple ? 'all' : 'marked'));
+  const [entryFilter, setEntryFilter] = useState(() => ((mobileSimple || compactDesktop || randomSelectionMode) ? 'all' : 'marked'));
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [mobileInfoOpen, setMobileInfoOpen] = useState(false);
+  const [desktopContentDefaultCollapsed, setDesktopContentDefaultCollapsed] = useState(() => getStoredDesktopContentDefaultCollapsed());
+  const [desktopDefinitionsCollapsed, setDesktopDefinitionsCollapsed] = useState(() => getStoredDesktopContentDefaultCollapsed());
+  const [desktopExampleNotesCollapsed, setDesktopExampleNotesCollapsed] = useState(() => getStoredDesktopContentDefaultCollapsed());
+  const [recommendSettingsOpen, setRecommendSettingsOpen] = useState(false);
   const [savingMarked, setSavingMarked] = useState(false);
   const [savingReviewScore, setSavingReviewScore] = useState(false);
+  const [loadingRecommendation, setLoadingRecommendation] = useState(false);
+  const [loadingRecommendationQueue, setLoadingRecommendationQueue] = useState(false);
+  const [savingRecommendPreferences, setSavingRecommendPreferences] = useState(false);
+  const [recommendation, setRecommendation] = useState(null);
+  const [recommendationQueue, setRecommendationQueue] = useState([]);
+  const [recommendExcludeKeys, setRecommendExcludeKeys] = useState([]);
+  const [recommendScope, setRecommendScope] = useState(ALL_RECOMMEND_SCOPE);
+  const [recommendPreferences, setRecommendPreferences] = useState(() => (
+    normalizeRecommendationPreferences(DEFAULT_RECOMMENDATION_PREFERENCES)
+  ));
   const pendingLaunchRef = useRef(null);
   const selectedCategoryRef = useRef(selectedCategory);
   const entriesRequestRef = useRef(0);
   const detailRequestRef = useRef(0);
+  const handledEntryUpdateTokenRef = useRef('');
   const handledLaunchRequestKeyRef = useRef('');
   const previousMobileSimpleRef = useRef(mobileSimple);
+  const recommendPreferenceHydratedRef = useRef(false);
+  const savedRecommendPreferenceKeyRef = useRef(recommendationPreferencesKey(DEFAULT_RECOMMENDATION_PREFERENCES));
+  const recommendPreferenceSaveTimerRef = useRef(null);
+  const recommendationQueueRequestRef = useRef(0);
   const infoButtonRef = useRef(null);
   const [mobileInfoPanelPosition, setMobileInfoPanelPosition] = useState(null);
 
@@ -387,11 +545,19 @@ export default function VocabularyReview({
     });
   }, []);
 
+  const handleDesktopContentDefaultCollapsedChange = useCallback((collapsed) => {
+    setDesktopContentDefaultCollapsed(collapsed);
+    setDesktopDefinitionsCollapsed(collapsed);
+    setDesktopExampleNotesCollapsed(collapsed);
+    localStorage.setItem(DESKTOP_CONTENT_COLLAPSED_KEY, collapsed ? '1' : '0');
+  }, []);
+
   const resetCurrentEntry = useCallback((nextEntries = []) => {
     detailRequestRef.current += 1;
     setEntries(nextEntries);
     setEntriesCategory('');
     setSelectedEntryId('');
+    setSelectedEntrySnapshot(null);
     setDetailData(null);
     setDetailCategory('');
   }, []);
@@ -399,6 +565,14 @@ export default function VocabularyReview({
   const applySelectedCategory = useCallback((nextCategory, { resetQuery = true } = {}) => {
     const normalizedCategory = String(nextCategory || '').trim();
     setSelectedCategory(normalizedCategory);
+    setRecommendScope(
+      normalizedCategory && !isAllCategoriesValue(normalizedCategory)
+        ? normalizedCategory
+        : ALL_RECOMMEND_SCOPE,
+    );
+    setRecommendExcludeKeys([]);
+    setRecommendation(null);
+    setRecommendationQueue([]);
     resetCurrentEntry([]);
     if (resetQuery) setWordQuery('');
   }, [resetCurrentEntry]);
@@ -510,6 +684,7 @@ export default function VocabularyReview({
     const requestId = detailRequestRef.current + 1;
     detailRequestRef.current = requestId;
     setSelectedEntryId(resolvedEntry.id);
+    setSelectedEntrySnapshot(resolvedEntry);
     setDetailData(null);
     setDetailCategory(requestCategory);
     if (typeof onSelectionChange === 'function') {
@@ -535,6 +710,69 @@ export default function VocabularyReview({
   useEffect(() => {
     selectedCategoryRef.current = selectedCategory;
   }, [selectedCategory]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchConfig()
+      .then((config) => {
+        if (cancelled) return;
+        const nextPreferences = recommendationPreferencesFromConfig(config || {});
+        savedRecommendPreferenceKeyRef.current = recommendationPreferencesKey(nextPreferences);
+        setRecommendPreferences(nextPreferences);
+      })
+      .catch((error) => {
+        console.error('读取推荐偏好失败', error);
+      })
+      .finally(() => {
+        if (!cancelled) {
+          recommendPreferenceHydratedRef.current = true;
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => () => {
+    if (recommendPreferenceSaveTimerRef.current) {
+      window.clearTimeout(recommendPreferenceSaveTimerRef.current);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!recommendPreferenceHydratedRef.current) return undefined;
+
+    const currentKey = recommendationPreferencesKey(recommendPreferences);
+    if (currentKey === savedRecommendPreferenceKeyRef.current) return undefined;
+
+    if (recommendPreferenceSaveTimerRef.current) {
+      window.clearTimeout(recommendPreferenceSaveTimerRef.current);
+    }
+
+    recommendPreferenceSaveTimerRef.current = window.setTimeout(() => {
+      setSavingRecommendPreferences(true);
+      saveConfig(recommendationPreferencesToConfig(recommendPreferences))
+        .then((res) => {
+          const nextPreferences = recommendationPreferencesFromConfig(res?.data || {});
+          savedRecommendPreferenceKeyRef.current = recommendationPreferencesKey(nextPreferences);
+          setRecommendPreferences(nextPreferences);
+          window.dispatchEvent(new Event('config-updated'));
+        })
+        .catch((error) => {
+          console.error('保存推荐偏好失败', error);
+        })
+        .finally(() => {
+          setSavingRecommendPreferences(false);
+        });
+    }, 420);
+
+    return () => {
+      if (recommendPreferenceSaveTimerRef.current) {
+        window.clearTimeout(recommendPreferenceSaveTimerRef.current);
+      }
+    };
+  }, [recommendPreferences]);
 
   useEffect(() => {
     if (!mobileInfoOpen) {
@@ -580,12 +818,6 @@ export default function VocabularyReview({
       return;
     }
 
-    if (!mobileSimple && isAllCategoriesValue(selectedCategoryRef.current)) {
-      applySelectedCategory(getStoredReviewCategory(), { resetQuery: true });
-    }
-    if (!mobileSimple) {
-      setEntryFilter('marked');
-    }
     previousMobileSimpleRef.current = mobileSimple;
   }, [applySelectedCategory, compactDesktop, mobileSimple]);
 
@@ -595,16 +827,16 @@ export default function VocabularyReview({
     });
 
     const handleConfigUpdate = () => {
-      if (mobileSimple && isAllCategoriesValue(selectedCategoryRef.current)) {
-        return;
-      }
       if (compactDesktop) {
         if (!isAllCategoriesValue(selectedCategoryRef.current)) {
           applySelectedCategory(ALL_CATEGORIES_VALUE);
         }
         return;
       }
-      const nextCategory = getStoredReviewCategory();
+      if (isAllCategoriesValue(selectedCategoryRef.current)) {
+        return;
+      }
+      const nextCategory = getStoredReviewCategory() || ALL_CATEGORIES_VALUE;
       if (nextCategory === selectedCategoryRef.current) return;
       applySelectedCategory(nextCategory);
     };
@@ -622,6 +854,18 @@ export default function VocabularyReview({
     if (isAllCategoriesValue(selectedCategory)) return;
     localStorage.setItem(REVIEW_CATEGORY_KEY, selectedCategory || '');
   }, [selectedCategory]);
+
+  useEffect(() => {
+    const normalizedCategory = String(selectedCategory || '').trim();
+    const nextScope = normalizedCategory && !isAllCategoriesValue(normalizedCategory)
+      ? normalizedCategory
+      : ALL_RECOMMEND_SCOPE;
+    if (recommendScope === nextScope) return;
+    setRecommendScope(nextScope);
+    setRecommendExcludeKeys([]);
+    setRecommendation(null);
+    setRecommendationQueue([]);
+  }, [recommendScope, selectedCategory]);
 
   useEffect(() => {
     if (!String(selectedCategory || '').trim()) {
@@ -703,6 +947,68 @@ export default function VocabularyReview({
     });
   }, [entries, entriesCategory, handleSelectEntry, resolveEntryCandidate, selectedCategory]);
 
+  useEffect(() => {
+    const updateToken = String(entryUpdateRequest?.token || '');
+    if (!updateToken || handledEntryUpdateTokenRef.current === updateToken) return;
+    handledEntryUpdateTokenRef.current = updateToken;
+
+    const targetCategory = String(entryUpdateRequest.category || '').trim();
+    const targetFile = normalizeVocabularyLaunchWord(
+      entryUpdateRequest.file
+      || entryUpdateRequest.target_file
+      || entryUpdateRequest.filename
+      || entryUpdateRequest.fileKey
+      || entryUpdateRequest.word,
+    );
+    if (!targetCategory || !targetFile) return;
+
+    const nextEntry = normalizeVocabularyEntry({
+      key: targetFile,
+      file: targetFile.endsWith('.json') ? targetFile : `${targetFile}.json`,
+      word: entryUpdateRequest.data?.word || entryUpdateRequest.word || targetFile,
+      marked: Boolean(entryUpdateRequest.data?.marked),
+      category: targetCategory,
+    }, targetCategory);
+    const browsingAllCategories = isAllCategoriesValue(selectedCategory);
+    const shouldSelectUpdatedEntry = browsingAllCategories || selectedCategory === targetCategory;
+
+    if (shouldSelectUpdatedEntry) {
+      setEntries((prev) => {
+        const sourceFile = normalizeVocabularyLaunchWord(entryUpdateRequest.source_file || '');
+        const filtered = sourceFile
+          ? prev.filter((item) => !(
+              item.category === targetCategory
+              && buildVocabularyWordKey(item.file || item.key || item.word) === buildVocabularyWordKey(sourceFile)
+            ))
+          : prev;
+        const existingIndex = filtered.findIndex((item) => item.id === nextEntry.id);
+        if (existingIndex >= 0) {
+          const next = [...filtered];
+          next[existingIndex] = {
+            ...next[existingIndex],
+            ...nextEntry,
+          };
+          return next;
+        }
+        return [...filtered, nextEntry].sort((a, b) => (
+          String(a.word || '').localeCompare(String(b.word || ''), undefined, { sensitivity: 'base' })
+          || String(a.category || '').localeCompare(String(b.category || ''), undefined, { sensitivity: 'base' })
+        ));
+      });
+
+      setSelectedEntryId(nextEntry.id);
+      setSelectedEntrySnapshot(nextEntry);
+      setDetailCategory(targetCategory);
+      if (entryUpdateRequest.data) {
+        setDetailData(entryUpdateRequest.data);
+      }
+    }
+
+    queueMicrotask(() => {
+      void loadEntries(selectedCategory);
+    });
+  }, [entryUpdateRequest, loadEntries, selectedCategory]);
+
   const playAudio = (text, type = 2) => {
     if (!('speechSynthesis' in window)) {
       alert('您的浏览器不支持语音朗读功能');
@@ -721,24 +1027,25 @@ export default function VocabularyReview({
     }
   };
 
-  const selectedEntry = entries.find((item) => item.id === selectedEntryId) || null;
+  const selectedEntry = entries.find((item) => item.id === selectedEntryId)
+    || (selectedEntrySnapshot?.id === selectedEntryId ? selectedEntrySnapshot : null);
   const normalizedWordQuery = String(wordQuery || '').trim().toLowerCase();
   const filterCounts = {
     marked: entries.filter((item) => item.marked).length,
     all: entries.length,
     unmarked: entries.filter((item) => !item.marked).length,
   };
-  const filteredEntries = entries.filter((entry) => {
+  const filteredEntries = useMemo(() => entries.filter((entry) => {
     if (entryFilter === 'marked') return entry.marked;
     if (entryFilter === 'unmarked') return !entry.marked;
     return true;
-  });
-  const visibleEntries = filteredEntries.filter((entry) => {
+  }), [entries, entryFilter]);
+  const visibleEntries = useMemo(() => filteredEntries.filter((entry) => {
     if (!normalizedWordQuery) return true;
     return [entry.word, entry.key, entry.file]
       .map((item) => String(item || '').toLowerCase())
       .some((item) => item.includes(normalizedWordQuery));
-  });
+  }), [filteredEntries, normalizedWordQuery]);
 
   const handleDrawRandomEntry = useCallback((pool = visibleEntries) => {
     const picked = pickRandomEntry(pool, selectedEntryId);
@@ -746,9 +1053,119 @@ export default function VocabularyReview({
     void handleSelectEntry(picked, selectedCategory, entries);
   }, [entries, handleSelectEntry, selectedCategory, selectedEntryId, visibleEntries]);
 
+  const applyRecommendationResult = useCallback((res, pool) => {
+    const queue = buildRecommendationQueue(res, pool, 8);
+    const recommended = queue[0] || null;
+    setRecommendationQueue(queue);
+    setRecommendation(recommended);
+    return recommended;
+  }, []);
+
+  const handleUseRecommendation = useCallback((item) => {
+    if (!item?.file) return;
+    const targetCategory = String(item.category || selectedCategory || '').trim();
+    if (!targetCategory) return;
+    const targetEntry = normalizeVocabularyEntry({
+      key: item.file,
+      file: item.file,
+      word: item.word,
+      marked: Boolean(item.marked),
+      category: targetCategory,
+    }, targetCategory);
+    void handleSelectEntry(targetEntry, isAllCategoriesValue(selectedCategory) ? selectedCategory : targetCategory, entries);
+  }, [entries, handleSelectEntry, selectedCategory]);
+
+  const handleRecommendPreferencesChange = useCallback((patch) => {
+    setRecommendPreferences((prev) => normalizeRecommendationPreferences({
+      ...prev,
+      ...(patch || {}),
+    }));
+    setRecommendExcludeKeys([]);
+    setRecommendation(null);
+    setRecommendationQueue([]);
+  }, []);
+
+  const runRecommendationRefresh = useCallback(async (excludeKeys = [], options = {}) => {
+    const fallbackPool = Array.isArray(options?.fallbackPool) ? options.fallbackPool : visibleEntries;
+    const fallbackOnEmpty = Boolean(options?.fallbackOnEmpty);
+    setLoadingRecommendation(true);
+    try {
+      const scopeCategory = recommendScope === ALL_RECOMMEND_SCOPE ? '' : recommendScope;
+      const res = await fetchRecommendedWord(
+        scopeCategory,
+        excludeKeys,
+        20,
+        recommendPreferences,
+      );
+      recommendationQueueRequestRef.current += 1;
+      setLoadingRecommendationQueue(false);
+      const recommended = applyRecommendationResult(res, fallbackPool);
+      if (recommended) {
+        handleUseRecommendation(recommended);
+        return recommended;
+      }
+      if (fallbackOnEmpty) {
+        handleDrawRandomEntry(fallbackPool);
+      }
+      return null;
+    } catch (error) {
+      console.error('推荐词条失败', error);
+      if (fallbackOnEmpty) {
+        handleDrawRandomEntry(fallbackPool);
+      }
+      return null;
+    } finally {
+      setLoadingRecommendation(false);
+    }
+  }, [applyRecommendationResult, handleDrawRandomEntry, handleUseRecommendation, recommendPreferences, recommendScope, visibleEntries]);
+
+  useEffect(() => {
+    if (!randomSelectionMode || !visibleEntries.length) {
+      recommendationQueueRequestRef.current += 1;
+      setLoadingRecommendationQueue(false);
+      setRecommendationQueue([]);
+      return undefined;
+    }
+
+    const requestId = recommendationQueueRequestRef.current + 1;
+    recommendationQueueRequestRef.current = requestId;
+    const scopeCategory = recommendScope === ALL_RECOMMEND_SCOPE ? '' : recommendScope;
+    setLoadingRecommendationQueue(true);
+
+    fetchRecommendedWord(scopeCategory, [], 8, recommendPreferences)
+      .then((res) => {
+        if (recommendationQueueRequestRef.current !== requestId) return;
+        setRecommendationQueue(buildRecommendationQueue(res, visibleEntries, 8));
+      })
+      .catch((error) => {
+        if (recommendationQueueRequestRef.current !== requestId) return;
+        console.error('加载推荐队列失败', error);
+        setRecommendationQueue([]);
+      })
+      .finally(() => {
+        if (recommendationQueueRequestRef.current === requestId) {
+          setLoadingRecommendationQueue(false);
+        }
+      });
+
+    return undefined;
+  }, [randomSelectionMode, recommendPreferences, recommendScope, visibleEntries]);
+
+  const handleRecommendationNext = useCallback((poolArg = null) => {
+    const fallbackPool = Array.isArray(poolArg) ? poolArg : visibleEntries;
+    if (!fallbackPool.length) return;
+    const selectedFile = String(selectedEntry?.file || '').trim();
+    const selectedCategoryForKey = String(selectedEntry?.category || detailCategory || '').trim();
+    const currentKey = selectedFile && selectedCategoryForKey
+      ? `${selectedCategoryForKey}/${selectedFile}`
+      : (recommendation?.key || '');
+    const nextExcluded = [...new Set([...recommendExcludeKeys, currentKey].filter(Boolean))];
+    setRecommendExcludeKeys(nextExcluded);
+    void runRecommendationRefresh(nextExcluded, { fallbackPool, fallbackOnEmpty: true });
+  }, [detailCategory, recommendExcludeKeys, recommendation?.key, runRecommendationRefresh, selectedEntry?.category, selectedEntry?.file, visibleEntries]);
+
   const handleSubmitReviewScore = useCallback(async (score) => {
-    const currentEntry = entries.find((item) => item.id === selectedEntryId)
-      || resolveEntryCandidate(detailData?.word, selectedCategory, entries);
+    const currentEntry = selectedEntry || resolveEntryCandidate(detailData?.word, selectedCategory, entries);
     const currentEntryCategory = detailCategory || resolveEntryCategory(currentEntry, selectedCategory);
     if (!detailData || !currentEntry?.file || !currentEntryCategory) return;
 
@@ -758,17 +1175,17 @@ export default function VocabularyReview({
       await submitReviewScore(currentEntryCategory, currentEntry.file, score, getTodayLocalDateString());
       const res = await getVocabularyDetail(currentEntry.key || currentEntry.file || currentEntry.word, currentEntryCategory);
       if (res?.data) setDetailData(res.data);
-      shouldAdvance = mobileSimple && randomSelectionMode;
+      shouldAdvance = randomSelectionMode;
     } catch (error) {
       console.error('记录熟练度失败', error);
       alert('记录熟练度失败');
     } finally {
       setSavingReviewScore(false);
       if (shouldAdvance && visibleEntries.length > 1) {
-        queueMicrotask(() => handleDrawRandomEntry(visibleEntries));
+        queueMicrotask(() => handleRecommendationNext(visibleEntries));
       }
     }
-  }, [detailCategory, detailData, entries, handleDrawRandomEntry, mobileSimple, randomSelectionMode, resolveEntryCandidate, resolveEntryCategory, selectedCategory, selectedEntryId, visibleEntries]);
+  }, [detailCategory, detailData, entries, handleRecommendationNext, randomSelectionMode, resolveEntryCandidate, resolveEntryCategory, selectedCategory, selectedEntry, visibleEntries]);
 
   useEffect(() => {
     if (!mobileSimple || !randomSelectionMode) return;
@@ -777,6 +1194,7 @@ export default function VocabularyReview({
     if (!visibleEntries.length) {
       detailRequestRef.current += 1;
       setSelectedEntryId('');
+      setSelectedEntrySnapshot(null);
       setDetailData(null);
       setDetailCategory('');
       return;
@@ -786,9 +1204,24 @@ export default function VocabularyReview({
     if (stillVisible) return;
 
     queueMicrotask(() => {
-      handleDrawRandomEntry(visibleEntries);
+      handleRecommendationNext(visibleEntries);
     });
-  }, [entriesCategory, handleDrawRandomEntry, mobileSimple, randomSelectionMode, selectedCategory, selectedEntryId, visibleEntries]);
+  }, [entriesCategory, handleRecommendationNext, mobileSimple, randomSelectionMode, selectedCategory, selectedEntryId, visibleEntries]);
+
+  useEffect(() => {
+    if (!randomSelectionMode) {
+      setRecommendSettingsOpen(false);
+    }
+    setRecommendExcludeKeys([]);
+    setRecommendation(null);
+    setRecommendationQueue([]);
+  }, [randomSelectionMode, recommendPreferences, recommendScope]);
+
+  useEffect(() => {
+    if (!detailData || mobileSimple) return;
+    setDesktopDefinitionsCollapsed(desktopContentDefaultCollapsed);
+    setDesktopExampleNotesCollapsed(desktopContentDefaultCollapsed);
+  }, [desktopContentDefaultCollapsed, detailData, mobileSimple]);
 
   const handleToggleMarked = useCallback(async () => {
     const currentEntry = selectedEntry || resolveEntryCandidate(detailData?.word, selectedCategory, entries);
@@ -813,6 +1246,15 @@ export default function VocabularyReview({
             }
           : item
       )));
+      setSelectedEntrySnapshot((prev) => (
+        prev?.id === currentEntry.id
+          ? {
+              ...prev,
+              word: String(nextData?.word || prev.word || '').trim() || prev.word,
+              marked: Boolean(nextData?.marked),
+            }
+          : prev
+      ));
     } catch (error) {
       console.error('更新词条标记失败', error);
       alert('更新词条标记失败');
@@ -831,11 +1273,6 @@ export default function VocabularyReview({
     ? detailData.tags.map((item) => String(item || '').trim()).filter(Boolean)
     : [];
   const compactDesktopSurface = compactDesktop && !mobileSimple;
-  const sidebarPreviewEntries = visibleEntries.slice(0, 8);
-  const compactMergedFromLabel = mergedFrom.length > 1
-    ? `${mergedFrom[0]} +${mergedFrom.length - 1}`
-    : (mergedFrom[0] || '无');
-  const recentDesktopReviews = reviews.slice().reverse().slice(0, 4);
   const selectedCategoryLabel = formatCategoryChoiceLabel(selectedCategory);
   const detailCategoryLabel = detailCategory ? formatCategoryLabel(detailCategory) : selectedCategoryLabel;
   const categoryTag = detailCategory
@@ -849,9 +1286,14 @@ export default function VocabularyReview({
   const latestReview = reviews.length ? reviews[reviews.length - 1] : null;
   const latestReviewTone = latestReview ? getReviewToneStyle(latestReview.score) : null;
   const activeFilterOption = ENTRY_FILTER_OPTIONS.find((item) => item.value === entryFilter) || ENTRY_FILTER_OPTIONS[0];
-  const compactCategoryOptions = (mobileSimple || compactDesktop)
-    ? [{ value: ALL_CATEGORIES_VALUE, label: '全部目录' }, ...categories.map((item) => ({ value: item, label: item }))]
-    : categories.map((item) => ({ value: item, label: item }));
+  const youdaoUrl = buildYoudaoUrl(detailData?.word || selectedEntry?.word || '');
+  const recommendationPreferenceSummary = formatRecommendationPreferenceSummary(recommendPreferences);
+  const recommendationScopeLabel = recommendScope === ALL_RECOMMEND_SCOPE ? '全部目录' : formatCategoryLabel(recommendScope);
+  const selectedRecommendationKey = selectedEntry
+    ? `${selectedEntry.category}/${selectedEntry.file}`
+    : '';
+  const compactCategoryOptions = [{ value: ALL_CATEGORIES_VALUE, label: '全部目录' }, ...categories.map((item) => ({ value: item, label: item }))];
+  const recommendScopeOptions = [{ value: ALL_RECOMMEND_SCOPE, label: '全部目录' }, ...categories.map((item) => ({ value: item, label: item }))];
   const mobileSimpleRootStyle = {
     display: 'flex',
     flexDirection: 'column',
@@ -873,12 +1315,6 @@ export default function VocabularyReview({
     background: 'rgba(255, 255, 255, 0.94)',
     display: 'grid',
     gap: '10px',
-  };
-  const mobileSimpleToolbarGridStyle = {
-    display: 'grid',
-    gap: '10px',
-    gridTemplateColumns: compactDesktop ? 'minmax(220px, 0.75fr) minmax(360px, 1fr)' : '1fr',
-    alignItems: compactDesktop ? 'center' : 'start',
   };
   const mobileSimpleContentStyle = {
     flex: '0 1 auto',
@@ -954,93 +1390,11 @@ export default function VocabularyReview({
         <button
           type="button"
           className="master-primary-button vocab-review-draw-button"
-          onClick={() => handleDrawRandomEntry()}
-          disabled={!visibleEntries.length}
+          onClick={randomSelectionMode ? (() => handleRecommendationNext()) : (() => handleDrawRandomEntry())}
+          disabled={randomSelectionMode ? (loadingRecommendation || !visibleEntries.length) : !visibleEntries.length}
         >
-          {detailData ? '下一个词' : '随机抽词'}
+          {loadingRecommendation && randomSelectionMode ? '抽取中' : (detailData ? '下一个词' : '随机抽词')}
         </button>
-      </div>
-    </div>
-  ) : null;
-
-  const manualPickerNode = manualSelectionMode ? (
-    <div
-      className={`vocab-review-manual-picker${compactDesktop ? ' is-compact-desktop' : ''}`}
-      style={{
-        width: '100%',
-        maxWidth: compactDesktop ? '1040px' : 'none',
-        margin: compactDesktop ? '0 auto 10px' : '0 0 10px',
-      }}
-    >
-      <div
-        className="vocab-review-card vocab-review-manual-picker-card"
-        style={{ ...metaCardStyle, display: 'grid', gap: '10px' }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-          <strong style={{ fontSize: '14px', color: 'var(--ms-text)' }}>
-            手动词池 ({visibleEntries.length}{normalizedWordQuery ? ` / ${filteredEntries.length}` : ''})
-          </strong>
-          <span className="vocab-review-chip" style={chipStyle()}>{selectedCategoryLabel}</span>
-        </div>
-
-        <input
-          className="vocab-review-search-input"
-          type="search"
-          placeholder="筛选单词或文件名"
-          value={wordQuery}
-          onChange={(e) => setWordQuery(e.target.value)}
-          style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--ms-border)', borderRadius: '6px', fontSize: '13px', outline: 'none', background: '#fff', color: 'var(--ms-text)' }}
-        />
-
-        <div
-          className="vocab-review-manual-list"
-          style={{
-            display: 'grid',
-            gridTemplateColumns: compactDesktop ? 'repeat(2, minmax(0, 1fr))' : '1fr',
-            gap: '8px',
-            maxHeight: compactDesktop ? '228px' : '240px',
-            overflowY: 'auto',
-          }}
-        >
-          {visibleEntries.map((entry) => (
-            <button
-              key={entry.id}
-              type="button"
-              className={`vocab-review-word-item${selectedEntryId === entry.id ? ' is-selected' : ''}`}
-              onClick={() => void handleSelectEntry(entry)}
-              style={{
-                padding: '11px 12px',
-                cursor: 'pointer',
-                border: '1px solid rgba(213, 221, 208, 0.82)',
-                borderRadius: '6px',
-                background: selectedEntryId === entry.id ? 'var(--ms-surface-muted)' : '#fff',
-                color: 'var(--ms-text)',
-                textAlign: 'left',
-              }}
-            >
-              <div style={{ display: 'grid', gap: '4px', minWidth: 0 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '14px', fontWeight: selectedEntryId === entry.id ? '700' : '600' }}>
-                    {entry.word}
-                  </span>
-                  {entry.marked ? (
-                    <span style={{ fontSize: '10px', color: 'var(--ms-text-muted)', padding: '2px 6px', borderRadius: '4px', border: '1px solid var(--ms-border)', background: '#fff', flexShrink: 0 }}>
-                      标记
-                    </span>
-                  ) : null}
-                </div>
-                <div style={{ fontSize: '12px', color: 'var(--ms-text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {formatCategoryLabel(entry.category)} / {entry.file}
-                </div>
-              </div>
-            </button>
-          ))}
-          {!visibleEntries.length ? (
-            <div className="vocab-review-empty" style={{ padding: '18px', textAlign: 'center', color: '#a1a1aa', fontSize: '13px' }}>
-              {normalizedWordQuery ? '没有匹配的词条' : `${activeFilterOption.label}为空`}
-            </div>
-          ) : null}
-        </div>
       </div>
     </div>
   ) : null;
@@ -1054,10 +1408,14 @@ export default function VocabularyReview({
     activeFilterOption.label,
   ];
 
-  const closeMobileFilters = () => setMobileFiltersOpen(false);
+  const closeMobileTools = () => setMobileFiltersOpen(false);
   const closeMobileInfo = () => {
     setMobileInfoOpen(false);
     setMobileInfoPanelPosition(null);
+  };
+  const openYoudao = () => {
+    if (!youdaoUrl) return;
+    window.open(youdaoUrl, '_blank', 'noopener,noreferrer');
   };
   const toggleMobileInfo = () => {
     if (!mobileInfoOpen) updateMobileInfoPanelPosition();
@@ -1068,47 +1426,484 @@ export default function VocabularyReview({
     '--vocab-info-panel-top': `${mobileInfoPanelPosition.top}px`,
     '--vocab-info-panel-max-height': `${mobileInfoPanelPosition.maxHeight}px`,
   } : undefined;
+  const renderEntryFilterPill = (option) => {
+    const selected = entryFilter === option.value;
+    const count = filterCounts[option.value] || 0;
+    return (
+      <button
+        key={option.value}
+        type="button"
+        className={`vocab-review-filter-pill${selected ? ' is-active' : ''}`}
+        onClick={() => setEntryFilter(option.value)}
+        aria-pressed={selected}
+        aria-label={`${option.label} ${count}`}
+        title={`${option.label} ${count}`}
+      >
+        <span className="vocab-review-filter-pill-check">
+          <UiIcon name="check" size={11} />
+        </span>
+        <span className="vocab-review-filter-pill-label">{option.compactLabel}</span>
+        <span className="vocab-review-filter-pill-count">{count}</span>
+      </button>
+    );
+  };
 
-  const desktopOverviewCardNode = detailData && !mobileSimple ? (
-    <div className="vocab-review-card vocab-review-desktop-overview-card" style={{ ...metaCardStyle, padding: '14px 16px', display: 'grid', gap: '12px' }}>
-      <div className="vocab-review-desktop-stat-list">
-        {[
-          { key: 'created', icon: 'calendar', label: '初次记录', value: detailData.createdAt || '未知' },
-          { key: 'latest', icon: 'history', label: '最近复习', value: latestReview ? `${latestReview.date} · ${normalizeReviewScore(latestReview.score)}/5` : '暂无' },
-          { key: 'count', icon: 'clock', label: '累计复习', value: `${reviews.length} 次` },
-          { key: 'merged', icon: 'folder', label: '来源', value: compactMergedFromLabel, title: mergedFrom.length ? mergedFrom.join(', ') : '无' },
-        ].map((item) => (
-          <div key={item.key} className="vocab-review-desktop-stat-item" title={item.title || `${item.label}: ${item.value}`}>
-            <span className="vocab-review-desktop-stat-icon">
-              <UiIcon name={item.icon} size={13} />
-            </span>
-            <strong className="vocab-review-desktop-stat-value">{item.value}</strong>
+  const reviewFilterControlsNode = (
+    <>
+      <label className="vocab-review-floating-field vocab-review-sidebar-category-field">
+        <span className="vocab-review-field-label">目录</span>
+        <select
+          className="vocab-review-select"
+          value={selectedCategory}
+          onChange={(e) => applySelectedCategory(e.target.value)}
+          style={{ width: '100%', padding: '9px 10px', border: '1px solid var(--ms-border)', borderRadius: '6px', fontSize: '13px', outline: 'none', background: '#fff', color: 'var(--ms-text)' }}
+        >
+          {compactCategoryOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+        </select>
+      </label>
+
+      <div className="vocab-review-floating-filter-grid" role="group" aria-label="词池筛选">
+        {ENTRY_FILTER_OPTIONS.map(renderEntryFilterPill)}
+      </div>
+    </>
+  );
+
+  const desktopPoolControlsNode = (
+    <div
+      className="vocab-review-sidebar-pool-controls"
+      style={{
+        padding: '8px 14px',
+        borderBottom: '1px solid var(--ms-border)',
+        background: 'rgba(255, 255, 255, 0.94)',
+        display: 'grid',
+        gap: '7px',
+      }}
+    >
+      {reviewFilterControlsNode}
+      {!randomSelectionMode ? (
+        <label className="vocab-review-floating-field">
+          <span className="vocab-review-field-label">搜索</span>
+          <input
+            className="vocab-review-search-input"
+            type="search"
+            placeholder="筛选单词或文件名"
+            value={wordQuery}
+            onChange={(e) => setWordQuery(e.target.value)}
+            style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--ms-border)', borderRadius: '6px', fontSize: '13px', outline: 'none', background: '#fff', color: 'var(--ms-text)' }}
+          />
+        </label>
+      ) : null}
+    </div>
+  );
+
+  const desktopReviewControlsNode = !mobileSimple ? (
+    <div className="vocab-review-desktop-review-controls">
+      <div className="vocab-review-desktop-review-head">
+        <div>
+          <div className="vocab-review-desktop-review-title">{detailData ? '本次打分' : '开始刷题'}</div>
+          <div className="vocab-review-desktop-review-status">
+            {detailData
+              ? (
+                savingReviewScore
+                  ? '正在保存...'
+                  : latestReview
+                    ? `最近 ${normalizeReviewScore(latestReview.score)}/5`
+                    : '记录今天熟练度'
+              )
+              : `当前词池 ${visibleEntries.length} / ${entries.length}`}
           </div>
+        </div>
+      </div>
+
+      {detailData ? (
+        <div className="score-grid vocab-review-desktop-score-grid" role="group" aria-label="本次打分">
+          {[0, 1, 2, 3, 4, 5].map((score) => (
+            <button
+              key={score}
+              type="button"
+              className="score-btn vocab-review-desktop-score-button"
+              onClick={() => void handleSubmitReviewScore(score)}
+              disabled={savingReviewScore}
+            >
+              <strong>{score}</strong>
+              <span>{SCORE_SHORT_LABELS[score]}</span>
+            </button>
+          ))}
+        </div>
+      ) : null}
+
+      <div className={`vocab-review-desktop-review-actions${detailData ? '' : ' is-single'}`}>
+        {detailData ? (
+          <button
+            type="button"
+            className={`vocab-review-mark-button${detailData?.marked ? ' is-active' : ''}`}
+            onClick={() => void handleToggleMarked()}
+            disabled={savingMarked}
+          >
+            <UiIcon name="star" size={14} />
+            <span>{savingMarked ? '保存中' : (detailData?.marked ? '已标记' : '标记')}</span>
+          </button>
+        ) : null}
+        <button
+          type="button"
+          className="master-primary-button vocab-review-draw-button"
+          onClick={randomSelectionMode ? (() => handleRecommendationNext()) : (() => handleDrawRandomEntry())}
+          disabled={randomSelectionMode ? (loadingRecommendation || !visibleEntries.length) : !visibleEntries.length}
+        >
+          <UiIcon name="shuffle" size={14} />
+          <span>{loadingRecommendation && randomSelectionMode ? '抽取中' : (detailData ? '下一个词' : '随机抽词')}</span>
+        </button>
+      </div>
+    </div>
+  ) : null;
+
+  const desktopContentPreferenceNode = !mobileSimple && !compactDesktop ? (
+    <div className="vocab-review-desktop-preference-panel">
+      <button
+        type="button"
+        className={`vocab-review-desktop-toggle-row${desktopContentDefaultCollapsed ? ' is-active' : ''}`}
+        onClick={() => handleDesktopContentDefaultCollapsedChange(!desktopContentDefaultCollapsed)}
+        aria-pressed={desktopContentDefaultCollapsed}
+      >
+        <span className="vocab-review-desktop-toggle-copy">
+          <strong>释义和解析默认折叠</strong>
+          <span>{desktopContentDefaultCollapsed ? '新词条先收起内容' : '新词条直接展开内容'}</span>
+        </span>
+        <span className="vocab-review-desktop-toggle-switch" aria-hidden="true">
+          <span />
+        </span>
+      </button>
+    </div>
+  ) : null;
+
+  const recommendationSettingsControlsNode = (
+    <>
+      <label className="vocab-review-floating-field vocab-recommend-scope-field">
+        推荐范围
+        <select
+          className="vocab-review-select"
+          value={recommendScope}
+          onChange={(event) => applySelectedCategory(
+            event.target.value === ALL_RECOMMEND_SCOPE ? ALL_CATEGORIES_VALUE : event.target.value,
+          )}
+        >
+          {recommendScopeOptions.map((option) => (
+            <option key={option.value} value={option.value}>{option.label}</option>
+          ))}
+        </select>
+      </label>
+
+      <div className="vocab-recommend-segment-stack">
+        <div className="vocab-recommend-segment-group">
+          <div className="vocab-recommend-segment-label">创建时间</div>
+          <div className="vocab-recommend-segment" role="group" aria-label="创建时间方向">
+            <button
+              type="button"
+              className={recommendPreferences.created_order === 'recent' ? 'active' : ''}
+              onClick={() => handleRecommendPreferencesChange({ created_order: 'recent' })}
+              aria-pressed={recommendPreferences.created_order === 'recent'}
+            >
+              最近加入
+            </button>
+            <button
+              type="button"
+              className={recommendPreferences.created_order === 'oldest' ? 'active' : ''}
+              onClick={() => handleRecommendPreferencesChange({ created_order: 'oldest' })}
+              aria-pressed={recommendPreferences.created_order === 'oldest'}
+            >
+              最早加入
+            </button>
+          </div>
+        </div>
+
+        <div className="vocab-recommend-segment-group">
+          <div className="vocab-recommend-segment-label">最近评分</div>
+          <div className="vocab-recommend-segment" role="group" aria-label="评分方向">
+            <button
+              type="button"
+              className={recommendPreferences.score_order === 'low' ? 'active' : ''}
+              onClick={() => handleRecommendPreferencesChange({ score_order: 'low' })}
+              aria-pressed={recommendPreferences.score_order === 'low'}
+            >
+              低分优先
+            </button>
+            <button
+              type="button"
+              className={recommendPreferences.score_order === 'high' ? 'active' : ''}
+              onClick={() => handleRecommendPreferencesChange({ score_order: 'high' })}
+              aria-pressed={recommendPreferences.score_order === 'high'}
+            >
+              高分优先
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="vocab-recommend-weight-list">
+        {RECOMMENDATION_WEIGHT_OPTIONS.map((option) => (
+          <label key={option.key} className="vocab-recommend-weight-row">
+            <span className="vocab-recommend-weight-head">
+              <strong>{option.label}</strong>
+              <output>{Number(recommendPreferences[option.key] || 0).toFixed(2)}</output>
+            </span>
+            <span className="vocab-recommend-weight-help">{option.description}</span>
+            <input
+              type="range"
+              min="0"
+              max="5"
+              step="0.05"
+              value={recommendPreferences[option.key]}
+              onChange={(event) => handleRecommendPreferencesChange({ [option.key]: Number(event.target.value) })}
+            />
+          </label>
         ))}
       </div>
 
-      {displayTags.length ? (
-        <div className="vocab-review-chip-list vocab-review-desktop-tag-list" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          {displayTags.map((tag) => (
-            <span key={tag} className="vocab-review-chip" style={chipStyle()}>{tag}</span>
-          ))}
-        </div>
-      ) : null}
+      <div className="vocab-recommend-panel-actions">
+        <button
+          type="button"
+          className="vocab-review-filter-pill"
+          onClick={() => handleRecommendPreferencesChange(DEFAULT_RECOMMENDATION_PREFERENCES)}
+        >
+          重置
+        </button>
+        <button
+          type="button"
+          className="master-primary-button"
+          onClick={() => {
+            setRecommendExcludeKeys([]);
+            setRecommendationQueue([]);
+            void runRecommendationRefresh([], { fallbackPool: visibleEntries, fallbackOnEmpty: true });
+          }}
+          disabled={loadingRecommendation}
+        >
+          {loadingRecommendation ? '抽取中' : '重新抽词'}
+        </button>
+      </div>
+    </>
+  );
 
-      {recentDesktopReviews.length ? (
-        <div className="vocab-review-desktop-history-list">
-          {recentDesktopReviews.map((review, index) => (
-            <div
-              key={`${review.date || 'unknown'}-${index}`}
-              className="vocab-review-desktop-history-item"
-              style={getReviewToneStyle(review.score)}
-            >
-              <span className="vocab-review-desktop-history-date">{review.date || '未知时间'}</span>
-              <span className="vocab-review-desktop-history-score">{normalizeReviewScore(review.score)}/5 · {SCORE_SHORT_LABELS[normalizeReviewScore(review.score)]}</span>
+  const mobileManualPoolNode = (
+    <div className="vocab-review-mobile-manual-pool">
+      <label className="vocab-review-floating-field">
+        搜索
+        <input
+          className="vocab-review-search-input"
+          type="search"
+          placeholder="筛选单词或文件名"
+          value={wordQuery}
+          onChange={(e) => setWordQuery(e.target.value)}
+          style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--ms-border)', borderRadius: '6px', fontSize: '13px', outline: 'none', background: '#fff', color: 'var(--ms-text)' }}
+        />
+      </label>
+
+      <div className="vocab-review-mobile-pool-summary">
+        <span>{selectedCategoryLabel}</span>
+        <strong>{visibleEntries.length}{normalizedWordQuery ? ` / ${filteredEntries.length}` : ''}</strong>
+      </div>
+
+      <div className="vocab-review-mobile-pool-list" role="listbox" aria-label="手动词池">
+        {visibleEntries.map((entry) => (
+          <button
+            key={entry.id}
+            type="button"
+            role="option"
+            aria-selected={selectedEntryId === entry.id}
+            className={`vocab-review-word-item${selectedEntryId === entry.id ? ' is-selected' : ''}`}
+            onClick={() => {
+              closeMobileTools();
+              void handleSelectEntry(entry);
+            }}
+          >
+            <span className="vocab-review-mobile-pool-word">{entry.word}</span>
+            <span className="vocab-review-mobile-pool-meta">
+              {formatCategoryLabel(entry.category)} / {entry.file}
+              {entry.marked ? ' / 标记' : ''}
+            </span>
+          </button>
+        ))}
+        {!visibleEntries.length ? (
+          <div className="vocab-review-empty vocab-review-mobile-pool-empty">
+            {normalizedWordQuery ? '没有匹配的词条' : `${activeFilterOption.label}为空`}
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+
+  const sidebarWordListNode = (
+    <ul className="vocab-review-word-list" style={{ listStyle: 'none', padding: 0, margin: 0, overflowY: 'auto', flex: 1, minHeight: 0 }}>
+      {visibleEntries.map((entry) => (
+        <li
+          key={entry.id}
+          className={`vocab-review-word-item${selectedEntryId === entry.id ? ' is-selected' : ''}`}
+          onClick={() => void handleSelectEntry(entry)}
+          style={{
+            padding: '13px 16px',
+            cursor: 'pointer',
+            borderBottom: '1px solid rgba(213, 221, 208, 0.66)',
+            background: selectedEntryId === entry.id ? 'var(--ms-surface-muted)' : 'transparent',
+            color: 'var(--ms-text)',
+          }}
+        >
+          <div style={{ display: 'grid', gap: '6px', minWidth: 0 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+              <span
+                className="vocab-review-word-label"
+                style={{
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  fontSize: '14px',
+                  fontWeight: selectedEntryId === entry.id ? '600' : '500',
+                }}
+              >
+                {entry.word}
+              </span>
+              {entry.marked ? (
+                <span style={{ fontSize: '11px', color: 'var(--ms-text-muted)', padding: '2px 8px', borderRadius: '4px', border: '1px solid var(--ms-border)', background: '#fff', flexShrink: 0 }}>
+                  已标记
+                </span>
+              ) : null}
             </div>
-          ))}
+            <div style={{ fontSize: '12px', color: 'var(--ms-text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {formatCategoryLabel(entry.category)} / {entry.file}
+            </div>
+          </div>
+        </li>
+      ))}
+      {visibleEntries.length === 0 ? (
+        <div className="vocab-review-empty" style={{ padding: '20px', textAlign: 'center', color: '#a1a1aa', fontSize: '13px' }}>
+          {normalizedWordQuery ? '没有匹配的词条' : `${activeFilterOption.label}为空`}
         </div>
       ) : null}
+    </ul>
+  );
+
+  const sidebarRandomPreviewNode = (
+    <div className="vocab-review-random-preview">
+      <div className="vocab-review-random-preview-header">
+        <strong>推荐队列</strong>
+        {loadingRecommendationQueue ? (
+          <span className="vocab-review-random-preview-count">
+            更新中
+          </span>
+        ) : recommendationQueue.length ? (
+          <span className="vocab-review-random-preview-count">
+            {recommendationQueue.length}
+          </span>
+        ) : null}
+      </div>
+      {recommendationQueue.length ? (
+        <ul className="vocab-review-random-preview-list">
+          {recommendationQueue.map((entry, index) => {
+            const active = selectedEntryId === entry.id || selectedRecommendationKey === entry.key;
+            const score = Number(entry.priority_score);
+            return (
+              <li key={entry.key || entry.id}>
+                <button
+                  type="button"
+                  className={`vocab-review-random-preview-item${active ? ' is-selected' : ''}`}
+                  onClick={() => handleUseRecommendation(entry)}
+                  aria-pressed={active}
+                >
+                  <span className="vocab-review-random-preview-rank">{index + 1}</span>
+                  <span className="vocab-review-random-preview-main">
+                    <span className="vocab-review-random-preview-word">{entry.word}</span>
+                    <span className="vocab-review-random-preview-meta">{formatCategoryLabel(entry.category)} / {entry.file}</span>
+                  </span>
+                  {Number.isFinite(score) ? (
+                    <span className="vocab-review-random-preview-score">{score.toFixed(2)}</span>
+                  ) : null}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        <div className="vocab-review-empty" style={{ padding: '18px 16px', textAlign: 'center', color: '#a1a1aa', fontSize: '13px' }}>
+          {loadingRecommendationQueue ? '正在更新推荐队列' : (normalizedWordQuery ? '没有匹配的推荐词条' : `${activeFilterOption.label}为空`)}
+        </div>
+      )}
+    </div>
+  );
+
+  const mobileToolsTitle = randomSelectionMode ? '随机设置' : '手动词池';
+  const mobileToolsCaption = randomSelectionMode
+    ? `${selectedCategoryLabel} · ${activeFilterOption.label} · ${visibleEntries.length} / ${entries.length}`
+    : `${activeFilterOption.label} · ${visibleEntries.length}${normalizedWordQuery ? ` / ${filteredEntries.length}` : ''}`;
+  const mobileUnifiedToolsNode = mobileFiltersOpen ? (
+    <div className="vocab-review-floating-layer vocab-review-mobile-tools-layer" role="presentation">
+      <button
+        type="button"
+        className="vocab-review-floating-backdrop"
+        aria-label={`关闭${mobileToolsTitle}`}
+        onClick={closeMobileTools}
+      />
+      <section
+        className={`vocab-review-floating-panel vocab-review-mobile-tools-panel${randomSelectionMode ? ' is-random-tools' : ' is-manual-tools'}`}
+        role="dialog"
+        aria-modal="false"
+        aria-label={mobileToolsTitle}
+      >
+        <div className="vocab-review-floating-header">
+          <div>
+            <div className="vocab-review-floating-title">{mobileToolsTitle}</div>
+            <div className="vocab-review-floating-caption">{mobileToolsCaption}</div>
+          </div>
+          <button
+            type="button"
+            className="vocab-review-mobile-tools-button"
+            aria-label={`关闭${mobileToolsTitle}`}
+            onClick={closeMobileTools}
+          >
+            <UiIcon name="close" size={16} />
+          </button>
+        </div>
+
+        <div className="vocab-review-mobile-tools-section">
+          <div className="vocab-review-mobile-tools-section-title">词池</div>
+          {reviewFilterControlsNode}
+        </div>
+
+        {randomSelectionMode ? (
+          <div className="vocab-review-mobile-tools-section">
+            <div className="vocab-review-mobile-tools-section-title">随机策略</div>
+            {recommendationSettingsControlsNode}
+          </div>
+        ) : mobileManualPoolNode}
+      </section>
+    </div>
+  ) : null;
+
+  const recommendationSettingsNode = recommendSettingsOpen ? (
+    <div className="vocab-review-floating-layer vocab-review-recommend-floating-layer" role="presentation">
+      <button
+        type="button"
+        className="vocab-review-floating-backdrop"
+        aria-label="关闭随机设置"
+        onClick={() => setRecommendSettingsOpen(false)}
+      />
+      <section className="vocab-review-floating-panel vocab-review-recommend-panel" role="dialog" aria-modal="false" aria-label="随机设置">
+        <div className="vocab-review-floating-header">
+          <div>
+            <div className="vocab-review-floating-title">随机设置</div>
+            <div className="vocab-review-floating-caption">
+              {recommendationScopeLabel} · {recommendationPreferenceSummary}
+              {savingRecommendPreferences ? ' · 保存中' : ''}
+            </div>
+          </div>
+          <button
+            type="button"
+            className="vocab-review-mobile-tools-button"
+            aria-label="关闭随机设置"
+            onClick={() => setRecommendSettingsOpen(false)}
+          >
+            <UiIcon name="close" size={16} />
+          </button>
+        </div>
+        {recommendationSettingsControlsNode}
+      </section>
     </div>
   ) : null;
 
@@ -1125,6 +1920,17 @@ export default function VocabularyReview({
               style={{ cursor: 'pointer', color: 'var(--ms-text)' }}
             >
               <UiIcon name="volume" size={18} />
+            </button>
+            <button
+              type="button"
+              className="vocab-review-audio-button"
+              onClick={openYoudao}
+              disabled={!youdaoUrl}
+              title="打开有道词典"
+              aria-label="打开有道词典"
+              style={{ cursor: youdaoUrl ? 'pointer' : 'not-allowed', color: 'var(--ms-text)' }}
+            >
+              <UiIcon name="dictionary-link" size={17} />
             </button>
             {mobileSimple ? (
               <button
@@ -1166,30 +1972,7 @@ export default function VocabularyReview({
           </div>
         </div>
 
-        <div className="vocab-review-hero-actions" style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-          {!mobileSimple && randomSelectionMode ? (
-            <button
-              type="button"
-              className="master-primary-button vocab-review-hero-primary-action"
-              onClick={() => handleDrawRandomEntry()}
-              disabled={!visibleEntries.length}
-            >
-              <UiIcon name="refresh" size={14} />
-              <span>下一个词</span>
-            </button>
-          ) : null}
-          {!mobileSimple ? (
-            <button
-              type="button"
-              className={`vocab-review-hero-secondary-action${detailData?.marked ? ' is-active' : ''}`}
-              onClick={() => void handleToggleMarked()}
-              disabled={savingMarked}
-            >
-              <UiIcon name="star" size={14} />
-              <span>{savingMarked ? '保存中...' : (detailData?.marked ? '已标记' : '标记词条')}</span>
-            </button>
-          ) : null}
-        </div>
+        {!mobileSimple ? <div className="vocab-review-hero-actions" aria-hidden="true" /> : null}
       </div>
 
       {mobileSimple ? (
@@ -1242,117 +2025,144 @@ export default function VocabularyReview({
 
       {!mobileSimple ? (
         <div className="vocab-review-desktop-main-column vocab-review-desktop-detail-stack">
-          {desktopOverviewCardNode}
-
-          <div className="vocab-review-sections vocab-review-card vocab-review-definition-card" style={{ ...metaCardStyle, padding: '18px 20px', gap: '10px' }}>
-            <h3 style={sectionTitleStyle}>释义</h3>
-            {definitions.length ? (
-              <ul className="vocab-review-definition-list" style={{ paddingLeft: '20px', margin: 0, fontSize: '15px', lineHeight: '1.8' }}>
-                {definitions.map((definition, index) => (
-                  <li key={`${definition}-${index}`} className="vocab-review-definition-item" style={{ marginBottom: '8px' }}>{definition}</li>
-                ))}
-              </ul>
-            ) : (
-              <div style={{ color: '#a1a1aa', fontSize: '14px' }}>暂无释义</div>
-            )}
+          <div className={`vocab-review-sections vocab-review-card vocab-review-definition-card vocab-review-desktop-disclosure-card${desktopDefinitionsCollapsed ? ' is-collapsed' : ''}`} style={{ ...metaCardStyle, padding: '0', gap: '0' }}>
+            <button
+              type="button"
+              className="vocab-review-desktop-disclosure-toggle"
+              onClick={() => setDesktopDefinitionsCollapsed((collapsed) => !collapsed)}
+              aria-expanded={!desktopDefinitionsCollapsed}
+            >
+              <span>释义</span>
+              <span className="vocab-review-desktop-disclosure-meta">{definitions.length}</span>
+              <UiIcon name={desktopDefinitionsCollapsed ? 'chevron-down' : 'chevron-up'} size={14} />
+            </button>
+            {!desktopDefinitionsCollapsed ? (
+              <div className="vocab-review-desktop-disclosure-body">
+                {definitions.length ? (
+                  <ul className="vocab-review-definition-list" style={{ paddingLeft: '20px', margin: 0, fontSize: '15px', lineHeight: '1.8' }}>
+                    {definitions.map((definition, index) => (
+                      <li key={`${definition}-${index}`} className="vocab-review-definition-item" style={{ marginBottom: '8px' }}>{definition}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div style={{ color: '#a1a1aa', fontSize: '14px' }}>暂无释义</div>
+                )}
+              </div>
+            ) : null}
           </div>
 
-          <div className="vocab-review-sections vocab-review-examples-section" style={{ gap: '12px' }}>
-            <h3 style={sectionTitleStyle}>例句</h3>
-            {examples.length ? examples.map((example, index) => {
-              const rawFocus = example.focusPositions ?? example.focusPosition ?? example.fp ?? example.fps ?? [];
-              const normalizedFocus = normalizeFocusPositions(rawFocus, tokenizeFocusText(example.text).length);
+          <div className="vocab-review-sections vocab-review-examples-section vocab-review-desktop-examples-card" style={{ gap: '0' }}>
+            <div className="vocab-review-desktop-examples-header">
+              <span>例句</span>
+              <span className="vocab-review-desktop-disclosure-meta">{examples.length}</span>
+            </div>
+            <div className="vocab-review-desktop-example-stack">
+              {examples.length ? examples.map((example, index) => {
+                const rawFocus = example.focusPositions ?? example.focusPosition ?? example.fp ?? example.fps ?? [];
+                const normalizedFocus = normalizeFocusPositions(rawFocus, tokenizeFocusText(example.text).length);
 
-              const renderedText = renderTextWithFocusPositions(example.text, rawFocus)
-                || renderTextWithFocusWords(example.text, example.focusWords);
+                const renderedText = renderTextWithFocusPositions(example.text, rawFocus)
+                  || renderTextWithFocusWords(example.text, example.focusWords);
 
-              return (
-                <div
-                  key={`example-${index}`}
-                  className="vocab-review-example-card"
-                  style={{
-                    background: 'var(--ms-surface-strong)',
-                    padding: '16px 18px',
-                    borderRadius: '6px',
-                    border: '1px solid var(--ms-border)',
-                    borderLeft: '1px solid var(--ms-border)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '10px',
-                  }}
-                >
-                  <div className="vocab-review-example-header" style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
-                    <div className="vocab-review-example-index" style={{ fontSize: '12px', color: 'var(--ms-text-muted)', fontWeight: '600' }}>例句 {index + 1}</div>
-                  </div>
-
-                  <div className="vocab-review-example-main" style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-                    <div
-                      className="vocab-review-example-text"
-                      style={{ fontSize: '15px', color: 'var(--ms-text)', lineHeight: '1.65', flex: 1 }}
-                      dangerouslySetInnerHTML={{ __html: renderedText || escapeHtml(example.text) }}
-                    />
-                    <button
-                      className="vocab-review-audio-button"
-                      onClick={() => playAudio(example.text, 2)}
-                      title="朗读完整例句"
-                      style={{ cursor: 'pointer', flexShrink: 0, color: 'var(--ms-text)' }}
-                    >
-                      <UiIcon name="volume" size={16} />
-                    </button>
-                  </div>
-
-                  {example.explanation ? (
-                    <div className="vocab-review-example-note" style={{ fontSize: '13px', color: 'var(--ms-text-muted)', background: 'rgba(255, 255, 255, 0.9)', borderRadius: '6px', padding: '9px 10px', border: '1px solid rgba(213, 221, 208, 0.72)' }}>
-                      <strong className="vocab-review-note-label" style={{ color: 'var(--ms-text)' }}>解析:</strong> {example.explanation}
+                return (
+                  <div
+                    key={`example-${index}`}
+                    className="vocab-review-example-card"
+                    style={{
+                      background: 'var(--ms-surface-strong)',
+                      padding: '16px 18px',
+                      borderRadius: '6px',
+                      border: '1px solid var(--ms-border)',
+                      borderLeft: '1px solid var(--ms-border)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '10px',
+                    }}
+                  >
+                    <div className="vocab-review-example-header" style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+                      <div className="vocab-review-example-index" style={{ fontSize: '12px', color: 'var(--ms-text-muted)', fontWeight: '600' }}>例句 {index + 1}</div>
                     </div>
-                  ) : null}
 
-                  <div className="vocab-review-chip-list" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                    {example.source?.text ? (
-                      example.source?.url ? (
+                    <div className="vocab-review-example-main" style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                      <div
+                        className="vocab-review-example-text"
+                        style={{ fontSize: '15px', color: 'var(--ms-text)', lineHeight: '1.65', flex: 1 }}
+                        dangerouslySetInnerHTML={{ __html: renderedText || escapeHtml(example.text) }}
+                      />
+                      <button
+                        className="vocab-review-audio-button"
+                        onClick={() => playAudio(example.text, 2)}
+                        title="朗读完整例句"
+                        style={{ cursor: 'pointer', flexShrink: 0, color: 'var(--ms-text)' }}
+                      >
+                        <UiIcon name="volume" size={16} />
+                      </button>
+                    </div>
+
+                    {example.explanation ? (
+                      <div className={`vocab-review-example-note vocab-review-desktop-example-note${desktopExampleNotesCollapsed ? ' is-collapsed' : ''}`} style={{ fontSize: '13px', color: 'var(--ms-text-muted)', background: 'rgba(255, 255, 255, 0.9)', borderRadius: '6px', padding: '9px 10px', border: '1px solid rgba(213, 221, 208, 0.72)' }}>
+                        <button
+                          type="button"
+                          className="vocab-review-desktop-note-toggle"
+                          onClick={() => setDesktopExampleNotesCollapsed((collapsed) => !collapsed)}
+                          aria-expanded={!desktopExampleNotesCollapsed}
+                        >
+                          <span>解析</span>
+                          <UiIcon name={desktopExampleNotesCollapsed ? 'chevron-down' : 'chevron-up'} size={13} />
+                        </button>
+                        {!desktopExampleNotesCollapsed ? (
+                          <div className="vocab-review-desktop-note-body">{example.explanation}</div>
+                        ) : null}
+                      </div>
+                    ) : null}
+
+                    <div className="vocab-review-chip-list" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      {example.source?.text ? (
+                        example.source?.url ? (
+                          <a
+                            href={example.source.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="vocab-review-chip vocab-review-chip-link"
+                            style={{ ...chipStyle(), textDecoration: 'none' }}
+                          >
+                            来源: {example.source.text}
+                          </a>
+                        ) : (
+                          <span className="vocab-review-chip" style={chipStyle()}>来源: {example.source.text}</span>
+                        )
+                      ) : null}
+
+                      {example.youtube?.url ? (
                         <a
-                          href={example.source.url}
+                          href={buildYouTubeLink(example.youtube.url, example.youtube.timestamp)}
                           target="_blank"
                           rel="noreferrer"
                           className="vocab-review-chip vocab-review-chip-link"
                           style={{ ...chipStyle(), textDecoration: 'none' }}
                         >
-                          来源: {example.source.text}
+                          YouTube {formatYouTubeLabel(example.youtube.timestamp)}
                         </a>
-                      ) : (
-                        <span className="vocab-review-chip" style={chipStyle()}>来源: {example.source.text}</span>
-                      )
-                    ) : null}
+                      ) : null}
 
-                    {example.youtube?.url ? (
-                      <a
-                        href={buildYouTubeLink(example.youtube.url, example.youtube.timestamp)}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="vocab-review-chip vocab-review-chip-link"
-                        style={{ ...chipStyle(), textDecoration: 'none' }}
-                      >
-                        YouTube {formatYouTubeLabel(example.youtube.timestamp)}
-                      </a>
-                    ) : null}
+                      {(Array.isArray(example.focusWords) ? example.focusWords : []).filter(Boolean).map((focusWord) => (
+                        <span key={`${focusWord}-${index}`} className="vocab-review-chip" style={chipStyle()}>
+                          focus: {focusWord}
+                        </span>
+                      ))}
 
-                    {(Array.isArray(example.focusWords) ? example.focusWords : []).filter(Boolean).map((focusWord) => (
-                      <span key={`${focusWord}-${index}`} className="vocab-review-chip" style={chipStyle()}>
-                        focus: {focusWord}
-                      </span>
-                    ))}
-
-                    {normalizedFocus.length ? (
-                      <span className="vocab-review-chip" style={chipStyle()}>
-                        positions: {normalizedFocus.join(', ')}
-                      </span>
-                    ) : null}
+                      {normalizedFocus.length ? (
+                        <span className="vocab-review-chip" style={chipStyle()}>
+                          positions: {normalizedFocus.join(', ')}
+                        </span>
+                      ) : null}
+                    </div>
                   </div>
-                </div>
-              );
-            }) : (
-              <div style={{ color: '#a1a1aa', fontSize: '14px' }}>暂无例句</div>
-            )}
+                );
+              }) : (
+                <div className="vocab-review-desktop-disclosure-body" style={{ color: '#a1a1aa', fontSize: '14px' }}>暂无例句</div>
+              )}
+            </div>
           </div>
         </div>
       ) : (
@@ -1499,11 +2309,11 @@ export default function VocabularyReview({
               <button
                 type="button"
                 className="master-primary-button vocab-review-empty-primary-action"
-                onClick={() => handleDrawRandomEntry()}
-                disabled={!visibleEntries.length}
+                onClick={() => handleRecommendationNext()}
+                disabled={loadingRecommendation || !visibleEntries.length}
               >
-                <UiIcon name="play" size={14} />
-                <span>随机抽词</span>
+                <UiIcon name="shuffle" size={14} />
+                <span>{loadingRecommendation ? '抽取中' : '随机抽词'}</span>
               </button>
             ) : null}
             {!randomSelectionMode && visibleEntries.length ? (
@@ -1519,7 +2329,7 @@ export default function VocabularyReview({
   );
 
   if (compactDesktop && !mobileSimple) {
-    const randomMode = selectionMode !== 'manual';
+    const randomMode = selectionMode === 'random';
     return (
       <div
         className="vocab-review vocab-review-compact-desktop"
@@ -1571,53 +2381,13 @@ export default function VocabularyReview({
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
               <span className="vocab-review-chip" style={chipStyle()}>范围: {selectedCategoryLabel}</span>
               <span className="vocab-review-chip" style={chipStyle()}>词池 {visibleEntries.length}</span>
-              <span className="vocab-review-chip" style={chipStyle()}>{randomMode ? '随机跳词' : '手动选词'}</span>
+              <span className="vocab-review-chip" style={chipStyle()}>
+                {randomMode ? '随机跳词' : '手动选词'}
+              </span>
             </div>
           </div>
 
-          {randomMode ? null : (
-            <div
-              className="vocab-review-sidebar-search"
-              style={{
-                padding: '12px 16px',
-                borderBottom: '1px solid var(--ms-border)',
-                background: 'rgba(255, 255, 255, 0.96)',
-                display: 'grid',
-                gap: '10px',
-              }}
-            >
-              <input
-                className="vocab-review-search-input"
-                type="search"
-                placeholder="筛选单词或文件名"
-                value={wordQuery}
-                onChange={(e) => setWordQuery(e.target.value)}
-                style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--ms-border)', borderRadius: '6px', fontSize: '13px', outline: 'none', background: '#fff', color: 'var(--ms-text)' }}
-              />
-
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {ENTRY_FILTER_OPTIONS.map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => setEntryFilter(option.value)}
-                    style={{
-                      padding: '6px 10px',
-                      borderRadius: '6px',
-                      border: '1px solid var(--ms-border)',
-                      background: entryFilter === option.value ? 'var(--ms-surface-muted)' : '#fff',
-                      color: 'var(--ms-text)',
-                      fontSize: '12px',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {option.label} {filterCounts[option.value]}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+          {desktopPoolControlsNode}
 
           <div
             className="vocab-review-sidebar-meta"
@@ -1632,7 +2402,7 @@ export default function VocabularyReview({
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
               <strong className="vocab-review-sidebar-title" style={{ fontSize: '14px', color: 'var(--ms-text)' }}>
                 {randomMode
-                  ? `随机词池 (${visibleEntries.length}${normalizedWordQuery ? ` / ${filteredEntries.length}` : ''})`
+                  ? `推荐范围 (${visibleEntries.length}${normalizedWordQuery ? ` / ${filteredEntries.length}` : ''})`
                   : `生词本 (${visibleEntries.length}${normalizedWordQuery ? ` / ${filteredEntries.length}` : ''})`}
               </strong>
               <button
@@ -1646,87 +2416,34 @@ export default function VocabularyReview({
               </button>
             </div>
             <div className="vocab-review-sidebar-caption">
-              {randomMode ? '点击词条可直接展开，主操作会继续随机跳词。' : '支持筛选、点选和快速定位。'}
+              {randomMode
+                ? '点击词条可直接展开，主操作会继续随机跳词。'
+                : '支持筛选、点选和快速定位。'}
             </div>
+            {randomMode ? (
+              <div className="vocab-recommend-sidebar-actions">
+                <button
+                  type="button"
+                  className="master-primary-button"
+                  onClick={() => handleRecommendationNext()}
+                  disabled={loadingRecommendation || !visibleEntries.length}
+                >
+                  {loadingRecommendation ? '抽取中' : '随机抽词'}
+                </button>
+                <button
+                  type="button"
+                  className={`vocab-review-filter-pill${recommendSettingsOpen ? ' is-active' : ''}`}
+                  onClick={() => setRecommendSettingsOpen((open) => !open)}
+                  aria-label="打开随机设置"
+                  aria-expanded={recommendSettingsOpen}
+                >
+                  设置
+                </button>
+              </div>
+            ) : null}
           </div>
 
-          {randomMode ? (
-            <div className="vocab-review-random-preview">
-              <div className="vocab-review-random-preview-header">
-                <strong>词池预览</strong>
-                {visibleEntries.length > sidebarPreviewEntries.length ? (
-                  <span className="vocab-review-random-preview-count">+{visibleEntries.length - sidebarPreviewEntries.length}</span>
-                ) : null}
-              </div>
-              {sidebarPreviewEntries.length ? (
-                <ul className="vocab-review-random-preview-list">
-                  {sidebarPreviewEntries.map((entry) => (
-                    <li key={entry.id}>
-                      <button
-                        type="button"
-                        className="vocab-review-random-preview-item"
-                        onClick={() => void handleSelectEntry(entry)}
-                      >
-                        <span className="vocab-review-random-preview-word">{entry.word}</span>
-                        <span className="vocab-review-random-preview-meta">{formatCategoryLabel(entry.category)}</span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <div className="vocab-review-empty" style={{ padding: '18px 16px', textAlign: 'center', color: '#a1a1aa', fontSize: '13px' }}>
-                  当前词池为空
-                </div>
-              )}
-            </div>
-          ) : (
-            <ul className="vocab-review-word-list" style={{ listStyle: 'none', padding: 0, margin: 0, overflowY: 'auto', flex: 1, minHeight: 0 }}>
-              {visibleEntries.map((entry) => (
-                <li
-                  key={entry.id}
-                  className={`vocab-review-word-item${selectedEntryId === entry.id ? ' is-selected' : ''}`}
-                  onClick={() => void handleSelectEntry(entry)}
-                  style={{
-                    padding: '13px 16px',
-                    cursor: 'pointer',
-                    borderBottom: '1px solid rgba(213, 221, 208, 0.66)',
-                    background: selectedEntryId === entry.id ? 'var(--ms-surface-muted)' : 'transparent',
-                    color: 'var(--ms-text)',
-                  }}
-                >
-                  <div style={{ display: 'grid', gap: '6px', minWidth: 0 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
-                      <span
-                        className="vocab-review-word-label"
-                        style={{
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                          fontSize: '14px',
-                          fontWeight: selectedEntryId === entry.id ? '600' : '500',
-                        }}
-                      >
-                        {entry.word}
-                      </span>
-                      {entry.marked ? (
-                        <span style={{ fontSize: '11px', color: 'var(--ms-text-muted)', padding: '2px 8px', borderRadius: '4px', border: '1px solid var(--ms-border)', background: '#fff', flexShrink: 0 }}>
-                          已标记
-                        </span>
-                      ) : null}
-                    </div>
-                    <div style={{ fontSize: '12px', color: 'var(--ms-text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {formatCategoryLabel(entry.category)} / {entry.file}
-                    </div>
-                  </div>
-                </li>
-              ))}
-              {visibleEntries.length === 0 ? (
-                <div className="vocab-review-empty" style={{ padding: '20px', textAlign: 'center', color: '#a1a1aa', fontSize: '13px' }}>
-                  {normalizedWordQuery ? '没有匹配的词条' : `${activeFilterOption.label}为空`}
-                </div>
-              ) : null}
-            </ul>
-          )}
+          {randomMode ? sidebarRandomPreviewNode : sidebarWordListNode}
         </div>
 
         <div
@@ -1739,6 +2456,7 @@ export default function VocabularyReview({
             padding: '0',
           }}
         >
+          {recommendationSettingsNode}
           {detailNode}
         </div>
       </div>
@@ -1748,7 +2466,7 @@ export default function VocabularyReview({
   if (mobileSimple) {
     return (
       <div
-        className={`vocab-review vocab-review-mobile-simple${compactDesktop ? ' is-compact-desktop' : ''}`}
+        className={`vocab-review vocab-review-mobile-simple${compactDesktop ? ' is-compact-desktop' : ''}${randomSelectionMode ? ' is-random-mode' : ''}`}
         style={mobileSimpleRootStyle}
       >
         <div className={`vocab-review-mobile-toolbar${compactDesktop ? ' is-compact-desktop' : ''}`} style={mobileSimpleToolbarStyle}>
@@ -1756,126 +2474,25 @@ export default function VocabularyReview({
             <div className="vocab-review-mobile-compact-meta">
               <div className="vocab-review-mobile-compact-title">生词本</div>
               <div className="vocab-review-mobile-compact-caption">
-                {selectedCategoryLabel} · {activeFilterOption.label} · {visibleEntries.length} / {entries.length}
+                {`${selectedCategoryLabel} · ${activeFilterOption.label} · ${visibleEntries.length} / ${entries.length}`}
               </div>
             </div>
             <button
               type="button"
-              className={`vocab-review-mobile-tools-button${mobileFiltersOpen ? ' is-active' : ''}`}
+              className={`vocab-review-mobile-tools-button vocab-review-mode-tools-button${mobileFiltersOpen ? ' is-active' : ''}`}
               onClick={() => setMobileFiltersOpen((open) => !open)}
-              aria-label="打开复习筛选"
+              aria-label={`打开${mobileToolsTitle}`}
               aria-expanded={mobileFiltersOpen}
+              title={mobileToolsTitle}
             >
-              <UiIcon name="sliders" size={17} />
+              <UiIcon name={randomSelectionMode ? 'tune' : 'list'} size={17} />
             </button>
           </div>
 
-          {mobileFiltersOpen ? (
-            <div className="vocab-review-floating-layer" role="presentation">
-              <button type="button" className="vocab-review-floating-backdrop" aria-label="关闭复习筛选" onClick={closeMobileFilters} />
-              <section className="vocab-review-floating-panel" role="dialog" aria-modal="false" aria-label="复习筛选">
-                <div className="vocab-review-floating-header">
-                  <div>
-                    <div className="vocab-review-floating-title">复习筛选</div>
-                    <div className="vocab-review-floating-caption">{visibleEntries.length} / {entries.length}</div>
-                  </div>
-                  <button type="button" className="vocab-review-mobile-tools-button" aria-label="关闭复习筛选" onClick={closeMobileFilters}>
-                    <UiIcon name="close" size={16} />
-                  </button>
-                </div>
-                <label className="vocab-review-floating-field">
-                  目录
-                  <select
-                    className="vocab-review-select"
-                    value={selectedCategory}
-                    onChange={(e) => applySelectedCategory(e.target.value)}
-                    style={{ width: '100%', padding: '9px 10px', border: '1px solid var(--ms-border)', borderRadius: '6px', fontSize: '13px', outline: 'none', background: '#fff', color: 'var(--ms-text)' }}
-                  >
-                    {compactCategoryOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-                  </select>
-                </label>
-                <div className="vocab-review-floating-filter-grid">
-                  {ENTRY_FILTER_OPTIONS.map((option) => (
-                    <button
-                      key={option.value}
-                      type="button"
-                      className={`vocab-review-filter-pill${entryFilter === option.value ? ' is-active' : ''}`}
-                      onClick={() => setEntryFilter(option.value)}
-                      style={{
-                        minHeight: '34px',
-                        padding: '6px 8px',
-                        borderRadius: '6px',
-                        border: '1px solid var(--ms-border)',
-                        background: entryFilter === option.value ? 'var(--ms-text)' : '#fff',
-                        color: entryFilter === option.value ? '#fff' : 'var(--ms-text)',
-                        fontSize: '12px',
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                      }}
-                    >
-                      {option.label} {filterCounts[option.value]}
-                    </button>
-                  ))}
-                </div>
-              </section>
-            </div>
-          ) : null}
-
-          <div style={mobileSimpleToolbarGridStyle}>
-            <div className="vocab-review-mobile-category-row" style={{ display: 'grid', gap: '10px' }}>
-              <select
-                className="vocab-review-select"
-                value={selectedCategory}
-                onChange={(e) => applySelectedCategory(e.target.value)}
-                style={{ width: '100%', padding: '9px 10px', border: '1px solid var(--ms-border)', borderRadius: '6px', fontSize: '13px', outline: 'none', background: '#fff', color: 'var(--ms-text)' }}
-              >
-                {compactCategoryOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-              </select>
-
-              {compactDesktop ? (
-                <div className="vocab-review-pool-chip-row" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                  <span className="vocab-review-chip" style={chipStyle()}>范围: {selectedCategoryLabel}</span>
-                  <span className="vocab-review-chip" style={chipStyle()}>词池 {visibleEntries.length} / {entries.length}</span>
-                </div>
-              ) : null}
-            </div>
-
-            <div className="vocab-review-mobile-control-row" style={{ display: 'grid', gap: '10px' }}>
-              <div className="vocab-review-filter-pills" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '6px' }}>
-                {ENTRY_FILTER_OPTIONS.map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    className={`vocab-review-filter-pill${entryFilter === option.value ? ' is-active' : ''}`}
-                    onClick={() => setEntryFilter(option.value)}
-                    style={{
-                      minHeight: '34px',
-                      padding: '6px 8px',
-                      borderRadius: '6px',
-                      border: '1px solid var(--ms-border)',
-                      background: entryFilter === option.value ? 'var(--ms-text)' : '#fff',
-                      color: entryFilter === option.value ? '#fff' : 'var(--ms-text)',
-                      fontSize: '12px',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {option.label} {filterCounts[option.value]}
-                  </button>
-                ))}
-              </div>
-
-              <div className="vocab-review-pool-row" style={{ display: 'grid', gap: '8px', alignItems: 'center', gridTemplateColumns: 'minmax(0, 1fr)' }}>
-                <div className="vocab-review-pool-status" style={{ fontSize: '12px', color: 'var(--ms-text-muted)', minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  当前词池: <strong style={{ color: 'var(--ms-text)' }}>{visibleEntries.length}</strong> / {entries.length}
-                </div>
-              </div>
-            </div>
-          </div>
+          {mobileUnifiedToolsNode}
         </div>
 
         <div className="vocab-review-content" style={mobileSimpleContentStyle}>
-          {manualPickerNode}
           {detailNode}
         </div>
         {mobileInfoOpen && detailData ? (
@@ -1949,101 +2566,38 @@ export default function VocabularyReview({
   }
 
   return (
-    <div className="vocab-review" style={{ display: 'flex', height: '100%', width: '100%', background: 'transparent' }}>
-      <div className="vocab-review-sidebar" style={{ width: '296px', borderRight: '1px solid var(--ms-border)', background: 'rgba(255, 255, 255, 0.92)', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
-        <div className="vocab-review-sidebar-header" style={{ padding: '14px 16px', borderBottom: '1px solid var(--ms-border)', background: 'rgba(255, 255, 255, 0.96)' }}>
-          <select
-            className="vocab-review-select"
-            value={selectedCategory}
-            onChange={(e) => applySelectedCategory(e.target.value)}
-            style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--ms-border)', borderRadius: '6px', fontSize: '13px', outline: 'none', background: 'var(--ms-surface-muted)', color: 'var(--ms-text)' }}
-          >
-            <option value="">请选择目录</option>
-            {categories.map((c) => <option key={c} value={c}>{c}</option>)}
-          </select>
-        </div>
-
-        <div className="vocab-review-sidebar-search" style={{ padding: '12px 16px', borderBottom: '1px solid var(--ms-border)', background: 'rgba(255, 255, 255, 0.94)', display: 'grid', gap: '10px' }}>
-          <input
-            className="vocab-review-search-input"
-            type="search"
-            placeholder="筛选单词"
-            value={wordQuery}
-            onChange={(e) => setWordQuery(e.target.value)}
-            style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--ms-border)', borderRadius: '6px', fontSize: '13px', outline: 'none', background: '#fff', color: 'var(--ms-text)' }}
-          />
-
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            {ENTRY_FILTER_OPTIONS.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => setEntryFilter(option.value)}
-                style={{
-                  padding: '6px 10px',
-                  borderRadius: '6px',
-                  border: '1px solid var(--ms-border)',
-                  background: entryFilter === option.value ? 'var(--ms-surface-muted)' : '#fff',
-                  color: 'var(--ms-text)',
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                }}
-              >
-                {option.label} {filterCounts[option.value]}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="vocab-review-sidebar-meta" style={{ padding: '16px', borderBottom: '1px solid var(--ms-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
-          <strong className="vocab-review-sidebar-title" style={{ fontSize: '14px', color: 'var(--ms-text)' }}>
-            生词本 ({visibleEntries.length}{normalizedWordQuery ? ` / ${filteredEntries.length}` : ''})
-          </strong>
-          <button className="vocab-review-refresh-button" onClick={() => { void loadCategories(); void loadEntries(selectedCategory); }} disabled={!String(selectedCategory || '').trim()} style={{ background: 'none', border: 'none', cursor: String(selectedCategory || '').trim() ? 'pointer' : 'not-allowed', color: 'var(--ms-text)', fontSize: '12px', opacity: String(selectedCategory || '').trim() ? 1 : 0.4 }}>刷新</button>
-        </div>
-
-        <ul className="vocab-review-word-list" style={{ listStyle: 'none', padding: 0, margin: 0, overflowY: 'auto', flex: 1 }}>
-          {visibleEntries.map((entry) => (
-            <li
-              key={entry.id}
-              className={`vocab-review-word-item${selectedEntryId === entry.id ? ' is-selected' : ''}`}
-              onClick={() => void handleSelectEntry(entry)}
-              style={{
-                padding: '13px 16px',
-                cursor: 'pointer',
-                borderBottom: '1px solid rgba(213, 221, 208, 0.66)',
-                background: selectedEntryId === entry.id ? 'var(--ms-surface-muted)' : 'transparent',
-                fontSize: '14px',
-                fontWeight: selectedEntryId === entry.id ? '600' : '400',
-                color: 'var(--ms-text)',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                gap: '12px',
-              }}
-            >
-              <span className="vocab-review-word-label" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{entry.word}</span>
-              {entry.marked ? (
-                <span style={{ fontSize: '11px', color: 'var(--ms-text-muted)', padding: '2px 8px', borderRadius: '4px', border: '1px solid var(--ms-border)', background: '#fff', flexShrink: 0 }}>
-                  已标记
-                </span>
-              ) : null}
-            </li>
-          ))}
-          {visibleEntries.length === 0 ? (
-            <div className="vocab-review-empty" style={{ padding: '20px', textAlign: 'center', color: '#a1a1aa', fontSize: '13px' }}>
-              {String(selectedCategory || '').trim()
-                ? (normalizedWordQuery ? '没有匹配的词条' : `${activeFilterOption.label}为空`)
-                : '先选择一个目录'}
-            </div>
-          ) : null}
-        </ul>
-      </div>
-
+    <div className={`vocab-review vocab-review-desktop-split${randomSelectionMode ? ' is-random-mode' : ''}`} style={{ display: 'flex', height: '100%', width: '100%', background: 'transparent' }}>
+      {recommendationSettingsNode}
       <div className="vocab-review-content" style={{ flex: 1, padding: '30px 32px', overflowY: 'auto' }}>
         {detailNode}
       </div>
+
+      <aside className="vocab-review-sidebar vocab-review-control-sidebar" style={{ width: '312px', borderLeft: '1px solid var(--ms-border)', background: 'rgba(255, 255, 255, 0.92)', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
+        {desktopReviewControlsNode}
+        {desktopContentPreferenceNode}
+        {desktopPoolControlsNode}
+
+        <div className="vocab-review-sidebar-meta" style={{ padding: '10px 14px', borderBottom: '1px solid var(--ms-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
+          <strong className="vocab-review-sidebar-title" style={{ fontSize: '14px', color: 'var(--ms-text)' }}>
+            {randomSelectionMode ? '推荐范围' : '生词本'} ({visibleEntries.length}{normalizedWordQuery ? ` / ${filteredEntries.length}` : ''})
+          </strong>
+          {randomSelectionMode ? (
+            <button
+              className="vocab-review-refresh-button"
+              onClick={() => setRecommendSettingsOpen((open) => !open)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ms-text)', fontSize: '12px' }}
+              aria-label="打开随机设置"
+              aria-expanded={recommendSettingsOpen}
+            >
+              设置
+            </button>
+          ) : (
+            <button className="vocab-review-refresh-button" onClick={() => { void loadCategories(); void loadEntries(selectedCategory); }} disabled={!String(selectedCategory || '').trim()} style={{ background: 'none', border: 'none', cursor: String(selectedCategory || '').trim() ? 'pointer' : 'not-allowed', color: 'var(--ms-text)', fontSize: '12px', opacity: String(selectedCategory || '').trim() ? 1 : 0.4 }}>刷新</button>
+          )}
+        </div>
+
+        {randomSelectionMode ? sidebarRandomPreviewNode : sidebarWordListNode}
+      </aside>
     </div>
   );
 }

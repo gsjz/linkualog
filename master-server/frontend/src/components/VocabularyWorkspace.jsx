@@ -30,29 +30,30 @@ const buildReviewLaunchRequest = ({ category = '', word = '', focus = 'clean' } 
 };
 
 const EDITOR_SURFACE_OPTIONS = [
-  { key: 'organize', label: '整理', icon: 'sliders' },
+  { key: 'organize', label: '整理', icon: 'wand' },
   { key: 'editor', label: '编辑', icon: 'edit' },
+];
+
+const STUDY_MODE_OPTIONS = [
+  { key: 'random', label: '随机', icon: 'shuffle' },
+  { key: 'manual', label: '手动', icon: 'list' },
 ];
 
 function StudyModeSwitch({ mode, onChange }) {
   return (
     <div className="vocab-study-switch" role="tablist" aria-label="选词模式">
-      <button
-        type="button"
-        className={`vocab-study-chip ${mode === 'random' ? 'active' : ''}`}
-        onClick={() => onChange('random')}
-      >
-        <UiIcon name="play" size={15} />
-        <span>随机</span>
-      </button>
-      <button
-        type="button"
-        className={`vocab-study-chip ${mode === 'manual' ? 'active' : ''}`}
-        onClick={() => onChange('manual')}
-      >
-        <UiIcon name="list" size={15} />
-        <span>手动</span>
-      </button>
+      {STUDY_MODE_OPTIONS.map((option) => (
+        <button
+          key={option.key}
+          type="button"
+          className={`vocab-study-chip ${mode === option.key ? 'active' : ''}`}
+          onClick={() => onChange(option.key)}
+          aria-label={`${option.label}模式`}
+        >
+          <UiIcon name={option.icon} size={15} />
+          <span>{option.label}</span>
+        </button>
+      ))}
     </div>
   );
 }
@@ -85,6 +86,8 @@ export default function VocabularyWorkspace({
 }) {
   const [studyMode, setStudyMode] = useState('random');
   const [editorSurface, setEditorSurface] = useState('');
+  const [editorLaunchToken, setEditorLaunchToken] = useState(0);
+  const [reviewEntryUpdate, setReviewEntryUpdate] = useState(null);
   const reviewSurfaceMobileSimple = mobileSimple;
 
   const sharedLaunchRequest = useMemo(() => (
@@ -106,9 +109,53 @@ export default function VocabularyWorkspace({
         })
       : null
   ), [editorSurface, sharedLaunchRequest?.category, sharedLaunchRequest?.filename, sharedLaunchRequest?.word]);
+  const finalOverlayLaunchRequest = useMemo(() => (
+    overlayLaunchRequest
+      ? {
+          ...overlayLaunchRequest,
+          autoRefineToken: editorLaunchToken,
+        }
+      : null
+  ), [editorLaunchToken, overlayLaunchRequest]);
   const openEditorPanel = () => {
     if (!hasSelection) return;
+    setEditorLaunchToken((token) => token + 1);
     setEditorSurface('organize');
+  };
+
+  const handleVocabularyEntryChange = (change) => {
+    const normalizedCategory = String(change?.category || sharedLaunchRequest?.category || '').trim();
+    const savedFilename = normalizeVocabularyLaunchWord(
+      change?.file
+      || change?.target_file
+      || change?.filename
+      || change?.fileKey
+      || change?.data?.word
+      || change?.word,
+    );
+    if (!normalizedCategory || !savedFilename) return;
+
+    const nextUpdate = {
+      ...(change || {}),
+      category: normalizedCategory,
+      file: savedFilename.endsWith('.json') ? savedFilename : `${savedFilename}.json`,
+      fileKey: savedFilename,
+      token: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    };
+    setReviewEntryUpdate(nextUpdate);
+
+    if (typeof onSelectionChange === 'function') {
+      onSelectionChange({
+        category: normalizedCategory,
+        word: savedFilename,
+        fileKey: savedFilename,
+        filename: nextUpdate.file,
+      });
+    }
+
+    if (change?.closeEditor !== false) {
+      setEditorSurface('');
+    }
   };
 
   return (
@@ -116,7 +163,9 @@ export default function VocabularyWorkspace({
       <div className="vocab-workspace-toolbar">
         <div className="vocab-workspace-heading">
           <div className="vocab-workspace-title">生词本</div>
-          <div className="vocab-workspace-caption">{studyMode === 'random' ? '随机跳词' : '手动选词'}</div>
+          <div className="vocab-workspace-caption">
+            {studyMode === 'random' ? '随机跳词' : '手动选词'}
+          </div>
         </div>
         <div className="vocab-workspace-actions">
           <StudyModeSwitch mode={studyMode} onChange={setStudyMode} />
@@ -128,6 +177,7 @@ export default function VocabularyWorkspace({
         <section className="vocab-workspace-panel is-active">
           <VocabularyReview
             launchRequest={sharedLaunchRequest}
+            entryUpdateRequest={reviewEntryUpdate}
             mobileSimple={reviewSurfaceMobileSimple}
             compactDesktop={reviewSurfaceCompactDesktop}
             selectionMode={studyMode}
@@ -184,8 +234,9 @@ export default function VocabularyWorkspace({
                   embedded
                   overlayMode
                   onOpenConfig={onOpenConfig}
-                  launchRequest={overlayLaunchRequest}
+                  launchRequest={finalOverlayLaunchRequest}
                   onSelectionChange={onSelectionChange}
+                  onVocabularyChange={handleVocabularyEntryChange}
                 />
               </div>
             </section>

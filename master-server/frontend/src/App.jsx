@@ -6,14 +6,14 @@ import UiIcon from './components/UiIcon';
 import { getVocabularyCategories } from './api/client';
 import './App.css';
 
-const MOBILE_MEDIA_QUERY = '(max-width: 820px)';
+const COMPACT_LAYOUT_MEDIA_QUERY = '(max-width: 1180px)';
 const DESKTOP_MINIMAL_MODE_KEY = 'linkualogDesktopMinimalMode';
 const VALID_TABS = new Set(['tasks', 'vocabulary']);
 const MOBILE_TOOLS_PANEL_ID = 'master-mobile-tools-panel';
 
-const readIsMobileViewport = () => {
+const readUsesCompactViewport = () => {
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false;
-  return window.matchMedia(MOBILE_MEDIA_QUERY).matches;
+  return window.matchMedia(COMPACT_LAYOUT_MEDIA_QUERY).matches;
 };
 
 const readDesktopMinimalMode = () => {
@@ -120,12 +120,12 @@ function App() {
   const [vocabularyLaunchRequest, setVocabularyLaunchRequest] = useState(() => (
     buildVocabularyLaunchRequest(initialUrlState)
   ));
-  const [isMobileViewport, setIsMobileViewport] = useState(readIsMobileViewport);
+  const [usesCompactViewport, setUsesCompactViewport] = useState(readUsesCompactViewport);
   const [preferDesktopMinimalMode, setPreferDesktopMinimalMode] = useState(() => (
     initialUrlState.hasMinimal ? initialUrlState.minimal : readDesktopMinimalMode()
   ));
-  const useDesktopMinimalMode = !isMobileViewport && preferDesktopMinimalMode;
-  const usesCompactLayout = isMobileViewport || useDesktopMinimalMode;
+  const useDesktopMinimalMode = !usesCompactViewport && preferDesktopMinimalMode;
+  const usesCompactLayout = usesCompactViewport || useDesktopMinimalMode;
   const brandSubtitle = useDesktopMinimalMode
     ? 'Desktop Study'
     : (usesCompactLayout ? 'Mobile Study' : 'Master Server Workspace');
@@ -151,9 +151,9 @@ function App() {
   useEffect(() => {
     if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return undefined;
 
-    const media = window.matchMedia(MOBILE_MEDIA_QUERY);
+    const media = window.matchMedia(COMPACT_LAYOUT_MEDIA_QUERY);
     const handleChange = (event) => {
-      setIsMobileViewport(event.matches);
+      setUsesCompactViewport(event.matches);
       if (!event.matches) {
         setMobileToolsOpen(false);
       }
@@ -313,8 +313,8 @@ function App() {
           </div>
         </div>
 
-        <div className={`master-actions${useDesktopMinimalMode ? ' is-compact-layout' : ''}${isMobileViewport ? ' is-mobile-actions' : ''}`}>
-          {isMobileViewport ? (
+        <div className={`master-actions${useDesktopMinimalMode ? ' is-compact-layout' : ''}${usesCompactViewport ? ' is-mobile-actions' : ''}`}>
+          {usesCompactViewport ? (
             <>
               <button
                 type="button"
