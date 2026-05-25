@@ -62,10 +62,11 @@ export default function UiIcon({ name, size = 18 }) {
   if (name === 'book') {
     return (
       <svg {...commonProps}>
-        <path d="M4.5 5.5A2.5 2.5 0 0 1 7 3h12.5v16H7a2.5 2.5 0 0 0-2.5 2.5z" />
-        <path d="M4.5 5.5v16" />
-        <path d="M8 7h7" />
-        <path d="M8 10h5" />
+        <path d="M5 5.5A2.5 2.5 0 0 1 7.5 3H20v16H7.5A2.5 2.5 0 0 0 5 21.5z" />
+        <path d="M5 5.5v16" />
+        <path d="M9 7h7" />
+        <path d="M9 10.5h5" />
+        <path d="M8.2 16.2h8.5" />
       </svg>
     );
   }
@@ -73,12 +74,43 @@ export default function UiIcon({ name, size = 18 }) {
   if (name === 'sliders') {
     return (
       <svg {...commonProps}>
-        <path d="M4 7h7" />
-        <path d="M15 7h5" />
-        <path d="M13 5v4" />
-        <path d="M4 17h5" />
-        <path d="M13 17h7" />
-        <path d="M11 15v4" />
+        <path d="M4 6.5h4" />
+        <path d="M12 6.5h8" />
+        <circle cx="10" cy="6.5" r="2" />
+        <path d="M4 17.5h9" />
+        <path d="M17 17.5h3" />
+        <circle cx="15" cy="17.5" r="2" />
+      </svg>
+    );
+  }
+
+  if (name === 'tune') {
+    return (
+      <svg {...commonProps}>
+        <path d="M5 6.5h7" />
+        <path d="M16 6.5h3" />
+        <circle cx="14" cy="6.5" r="1.8" />
+        <path d="M5 12h3" />
+        <path d="M12 12h7" />
+        <circle cx="10" cy="12" r="1.8" />
+        <path d="M5 17.5h9" />
+        <path d="M18 17.5h1" />
+        <circle cx="16" cy="17.5" r="1.8" />
+      </svg>
+    );
+  }
+
+  if (name === 'wand') {
+    return (
+      <svg {...commonProps}>
+        <path d="m5 19 9.5-9.5" />
+        <path d="m13 8 3 3" />
+        <path d="M17.5 3.8v2.8" />
+        <path d="M16.1 5.2h2.8" />
+        <path d="M7 4.8v2.4" />
+        <path d="M5.8 6h2.4" />
+        <path d="M19 15.8v2.4" />
+        <path d="M17.8 17h2.4" />
       </svg>
     );
   }
@@ -129,6 +161,19 @@ export default function UiIcon({ name, size = 18 }) {
     return (
       <svg {...commonProps}>
         <path d="M8 5.5v13l11-6.5z" />
+        <path d="M5 6.5v11" />
+      </svg>
+    );
+  }
+
+  if (name === 'shuffle') {
+    return (
+      <svg {...commonProps}>
+        <path d="M4 7h2.2c2.2 0 3.3 1.1 4.6 3.2l2.4 3.6c1.3 2.1 2.4 3.2 4.6 3.2H20" />
+        <path d="M17 14.5 20 17l-3 2.5" />
+        <path d="M4 17h2.2c1.7 0 2.8-.7 3.8-2.2" />
+        <path d="M13.5 8.8c1.1-1.2 2.2-1.8 4.3-1.8H20" />
+        <path d="M17 4.5 20 7l-3 2.5" />
       </svg>
     );
   }
@@ -173,8 +218,9 @@ export default function UiIcon({ name, size = 18 }) {
   if (name === 'edit') {
     return (
       <svg {...commonProps}>
-        <path d="M4 20h4l11-11a2.1 2.1 0 0 0-3-3L5 17z" />
-        <path d="m14 7 3 3" />
+        <path d="M4.5 19.5h4.2L19 9.2a2 2 0 0 0-2.8-2.8L5.9 16.7z" />
+        <path d="m14.8 7.8 2.8 2.8" />
+        <path d="M4.5 19.5 5.9 16.7" />
       </svg>
     );
   }
@@ -182,9 +228,9 @@ export default function UiIcon({ name, size = 18 }) {
   if (name === 'filter') {
     return (
       <svg {...commonProps}>
-        <path d="M4 5h16" />
-        <path d="M7 12h10" />
-        <path d="M10 19h4" />
+        <path d="M4.5 5.5h15" />
+        <path d="m8.5 10 3.5 3.8V19l4-2v-3.2L19.5 10" />
+        <path d="M7 10h10" />
       </svg>
     );
   }
@@ -206,12 +252,13 @@ export default function UiIcon({ name, size = 18 }) {
   if (name === 'target') {
     return (
       <svg {...commonProps}>
-        <circle cx="12" cy="12" r="7.5" />
+        <circle cx="12" cy="12" r="8" />
         <circle cx="12" cy="12" r="3" />
-        <path d="M12 2.8v3" />
-        <path d="M12 18.2v3" />
-        <path d="M2.8 12h3" />
-        <path d="M18.2 12h3" />
+        <path d="M12 2.5v3" />
+        <path d="M12 18.5v3" />
+        <path d="M2.5 12h3" />
+        <path d="M18.5 12h3" />
+        <path d="m15 9 4-4" />
       </svg>
     );
   }
@@ -229,7 +276,7 @@ export default function UiIcon({ name, size = 18 }) {
     return (
       <svg {...commonProps}>
         <path d="M4 9.5v5h3.5L12 18V6L7.5 9.5z" />
-        <path d="M16 9a4 4 0 0 1 0 6" />
+        <path d="M15.5 9.5a3.5 3.5 0 0 1 0 5" />
         <path d="M18.5 6.5a7.5 7.5 0 0 1 0 11" />
       </svg>
     );
@@ -239,8 +286,22 @@ export default function UiIcon({ name, size = 18 }) {
     return (
       <svg {...commonProps}>
         <path d="M14 4h6v6" />
-        <path d="m20 4-9 9" />
+        <path d="m20 4-8.5 8.5" />
         <path d="M11 6H6.5A2.5 2.5 0 0 0 4 8.5v9A2.5 2.5 0 0 0 6.5 20h9a2.5 2.5 0 0 0 2.5-2.5V13" />
+        <path d="M8 13.5h5" />
+      </svg>
+    );
+  }
+
+  if (name === 'dictionary-link') {
+    return (
+      <svg {...commonProps}>
+        <path d="M5 5.5A2.5 2.5 0 0 1 7.5 3H18v14.5H7.5A2.5 2.5 0 0 0 5 20z" />
+        <path d="M5 5.5V20" />
+        <path d="M8.5 7h5" />
+        <path d="M8.5 10h3.5" />
+        <path d="M14 14h5v5" />
+        <path d="m19 14-6 6" />
       </svg>
     );
   }

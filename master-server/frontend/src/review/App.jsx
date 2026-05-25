@@ -1,4 +1,4 @@
-import { useDeferredValue, useEffect, useEffectEvent, useMemo, useRef, useState } from 'react';
+import { useCallback, useDeferredValue, useEffect, useEffectEvent, useMemo, useRef, useState } from 'react';
 
 import ConfigDrawer from './components/ConfigDrawer';
 import UiIcon from '../components/UiIcon';
@@ -1224,6 +1224,7 @@ function OrganizePanel({
   };
 
   const currentDefinitions = Array.isArray(draft?.definitions) ? draft.definitions : [];
+  const currentExamples = Array.isArray(draft?.examples) ? draft.examples : [];
   const llmEntry = Array.isArray(cleanData?.llm?.entry)
     ? cleanData.llm.entry.filter((item) => isActionableEntrySuggestion(item))
     : [];
@@ -1239,7 +1240,13 @@ function OrganizePanel({
   const autoEntryCount = llmEntry.filter((item) => normalizeLlmAction(item.action) === 'rename').length;
   const totalAutoCount = autoEntryCount + llmDefinitions.length + llmExamples.length;
   const fileSuggestionCount = llmEntry.length + llmDefinitions.length + llmExamples.length;
-  const totalSuggestionCount = fileSuggestionCount;
+  const totalSuggestionCount = fileSuggestionCount + llmNotes.length;
+  const hasSuggestions = totalSuggestionCount > 0;
+  const sourceLabel = cleanData
+    ? analyzedFrom === 'draft'
+      ? '当前草稿'
+      : '已保存文件'
+    : '待分析';
   const analysisToken = [
     analyzedFrom,
     cleanData?.file || '',
@@ -1249,261 +1256,347 @@ function OrganizePanel({
     llmEntry.length,
   ].join('|');
 
+  const formatActionLabel = (action) => ({
+    append: '新增',
+    drop: '删除',
+    rename: '重命名',
+    replace: '替换',
+    replace_all: '重写',
+    rewrite: '改写',
+    split: '拆分',
+    trim: '精简',
+  }[action] || action || '建议');
+
+  const formatConfidence = (value) => {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return `${Math.round(value * 100)}%`;
+    }
+    const normalized = String(value ?? '').trim();
+    return normalized || '';
+  };
+
+  const renderSummaryItem = (key, label, value, caption) => (
+    <div className={`organize-summary-item organize-summary-${key}`} key={key}>
+      <span>{label}</span>
+      <strong>{value}</strong>
+      <small>{caption}</small>
+    </div>
+  );
+
   const renderOrganizeActions = () => (
     <div className="organize-actions organize-actions-current">
       <button className="primary organize-run-current" onClick={onRun} disabled={loading || !hasDraft} title="整理当前词" aria-label="整理当前词">
         <UiIcon name="search" size={15} />
         <span>{loading ? '整理中' : '整理当前词'}</span>
       </button>
-      <button className="ghost" onClick={onApplyAllAndSave} disabled={!hasDraft || !cleanData || totalAutoCount === 0 || savingDraft} title="应用建议并保存" aria-label="应用建议并保存">
-        <UiIcon name="save" size={15} />
-        <span>{savingDraft ? '保存中' : '保存'}</span>
-      </button>
       <button className="ghost" onClick={onApplyAllSuggestions} disabled={!hasDraft || !cleanData || totalAutoCount === 0} title="应用建议到草稿" aria-label="应用建议到草稿">
         <UiIcon name="check" size={15} />
-        <span>草稿</span>
+        <span>应用到草稿</span>
+      </button>
+      <button className="ghost" onClick={onApplyAllAndSave} disabled={!hasDraft || !cleanData || totalAutoCount === 0 || savingDraft} title="应用建议并保存" aria-label="应用建议并保存">
+        <UiIcon name="save" size={15} />
+        <span>{savingDraft ? '保存中' : '应用并保存'}</span>
       </button>
     </div>
+  );
+
+  const renderSuggestionGroup = (title, count, children) => {
+    if (!count) return null;
+    return (
+      <section className="organize-suggestion-group">
+        <div className="organize-group-header">
+          <h4>{title}</h4>
+          <span>{count}</span>
+        </div>
+        <div className="organize-card-list">
+          {children}
+        </div>
+      </section>
+    );
+  };
+
+  const renderCardMeta = (kind, action, confidence = '') => (
+    <div className="organize-card-meta">
+      <span className="organize-kind">{kind}</span>
+      <strong>{formatActionLabel(action)}</strong>
+      {confidence ? <span className="badge medium">{confidence}</span> : null}
+    </div>
+  );
+
+  const renderReason = (reason) => {
+    const normalized = String(reason || '').trim();
+    if (!normalized) return null;
+    return <p className="organize-reason">{normalized}</p>;
+  };
+
+  const renderEntryCard = (item, index) => {
+    const action = normalizeLlmAction(item.action);
+    const entries = Array.isArray(item.suggested_entries) ? item.suggested_entries : [];
+    const splitActionKey = suggestionItemKey(`entry-split:${analysisToken}`, item, index);
+    const renameActionKey = suggestionItemKey(`entry-rename:${analysisToken}`, item, index);
+    const confidence = formatConfidence(item.confidence);
+
+    return (
+      <article className="organize-suggestion-card" key={`llm-entry-${index}`}>
+        <div className="organize-card-head">
+          {renderCardMeta('词条', action, confidence)}
+          {action === 'rename' ? (
+            <div className="suggestion-actions">
+              <button
+                className="ghost"
+                onClick={() => onApplyLlmSuggestion('entry', item)}
+                disabled={!hasDraft || Boolean(renameApplyingKey)}
+              >
+                改草稿
+              </button>
+              <button
+                className="primary"
+                onClick={() => onApplyEntryRenameAndSave(item, renameActionKey)}
+                disabled={!hasDraft || savingDraft || Boolean(renameApplyingKey)}
+              >
+                {renameApplyingKey === renameActionKey ? '重命名中...' : '重命名保存'}
+              </button>
+            </div>
+          ) : action === 'split' ? (
+            <button
+              className="ghost"
+              onClick={() => onApplySplit(item, splitActionKey)}
+              disabled={!hasDraft || Boolean(splitApplyingKey)}
+            >
+              {splitApplyingKey === splitActionKey ? '拆分中...' : '自动拆分'}
+            </button>
+          ) : (
+            <span className="muted">需手动处理</span>
+          )}
+        </div>
+        {renderReason(item.reason)}
+        {action === 'rename' ? (
+          <div className="organize-preview-grid">
+            <div className="organize-preview-item">
+              <span>当前</span>
+              <strong>{draft?.word || cleanData?.heuristic?.word || cleanData?.file || '-'}</strong>
+            </div>
+            <div className="organize-preview-item is-target">
+              <span>建议</span>
+              <strong>{item.suggested_word}</strong>
+            </div>
+          </div>
+        ) : null}
+        {action === 'split' ? (
+          <div className="organize-split-list">
+            {entries.map((entry, entryIndex) => {
+              const definitions = Array.isArray(entry.definitions) ? entry.definitions : [];
+              return (
+                <div className="organize-split-item" key={`split-entry-${entryIndex}`}>
+                  <strong>{entry.word || `词条 ${entryIndex + 1}`}</strong>
+                  {definitions[0] ? <span>{definitions[0]}</span> : null}
+                </div>
+              );
+            })}
+          </div>
+        ) : null}
+      </article>
+    );
+  };
+
+  const renderDefinitionCard = (item, index) => {
+    const action = normalizeLlmAction(item.action);
+    const itemIndex = parseIndex(item.index);
+    const itemKey = suggestionItemKey(`llm-def:${analysisToken}`, item, index);
+    const editorField = action === 'replace_all' ? 'suggested_definitions' : 'suggested';
+    const editedValue = getEditorValue(
+      itemKey,
+      editorField,
+      getDefinitionSuggestionEditorValue(item),
+    );
+    const patched = patchDefinitionSuggestionFromEditor(item, editedValue);
+    const currentDefinition = itemIndex !== null && itemIndex < currentDefinitions.length
+      ? String(currentDefinitions[itemIndex] || '').trim()
+      : '';
+    const showEditor = action !== 'drop';
+    const targetLabel = action === 'append'
+      ? '新增释义'
+      : action === 'replace_all'
+        ? `重写全部 ${currentDefinitions.length} 条释义`
+        : itemIndex !== null
+          ? `第 ${itemIndex + 1} 条释义`
+          : '目标释义';
+
+    return (
+      <article className="organize-suggestion-card" key={`llm-def-${index}`}>
+        <div className="organize-card-head">
+          {renderCardMeta('释义', action)}
+          <button
+            className="ghost"
+            onClick={() => onApplyLlmSuggestion('definition', patched)}
+            disabled={!hasDraft}
+          >
+            应用
+          </button>
+        </div>
+        <div className="organize-target-row">
+          <span>目标</span>
+          <strong>{targetLabel}</strong>
+        </div>
+        {currentDefinition ? <div className="organize-current-text">{currentDefinition}</div> : null}
+        {renderReason(item.reason)}
+        {showEditor ? (
+          <label className="organize-suggestion-editor">
+            <span>{action === 'replace_all' ? '建议释义，每行一条' : '建议内容'}</span>
+            <textarea
+              className="field textarea suggestion-input"
+              rows={action === 'replace_all' ? 4 : 2}
+              value={editedValue}
+              onChange={(event) => setEditorValue(itemKey, editorField, event.target.value)}
+            />
+          </label>
+        ) : (
+          <div className="organize-preview-line">
+            <span>处理</span>
+            <strong>删除这条释义</strong>
+          </div>
+        )}
+      </article>
+    );
+  };
+
+  const renderExampleCard = (item, index) => {
+    const action = normalizeLlmAction(item.action);
+    const itemIndex = parseIndex(item.index);
+    const itemKey = suggestionItemKey(`llm-ex:${analysisToken}`, item, index);
+    const suggestedText = getEditorValue(itemKey, 'suggested_text', String(item.suggested_text || ''));
+    const suggestedExplanation = getEditorValue(itemKey, 'suggested_explanation', String(item.suggested_explanation || ''));
+    const patched = {
+      ...item,
+      suggested_text: suggestedText,
+      suggested_explanation: suggestedExplanation,
+    };
+    const currentExample = itemIndex !== null && itemIndex < currentExamples.length
+      ? currentExamples[itemIndex]
+      : null;
+    const currentText = String(currentExample?.text || '').trim();
+    const hasTextEditor = action !== 'drop' && Boolean(String(item.suggested_text || '').trim());
+    const hasExplanationEditor = action !== 'drop' && Boolean(String(item.suggested_explanation || '').trim());
+    const targetLabel = itemIndex !== null ? `第 ${itemIndex + 1} 条例句` : '目标例句';
+
+    return (
+      <article className="organize-suggestion-card" key={`llm-ex-${index}`}>
+        <div className="organize-card-head">
+          {renderCardMeta('例句', action)}
+          <button
+            className="ghost"
+            onClick={() => onApplyLlmSuggestion('example', patched)}
+            disabled={!hasDraft}
+          >
+            应用
+          </button>
+        </div>
+        <div className="organize-target-row">
+          <span>目标</span>
+          <strong>{targetLabel}</strong>
+        </div>
+        {currentText ? <div className="organize-current-text">{currentText}</div> : null}
+        {renderReason(item.reason)}
+        {hasTextEditor || hasExplanationEditor ? (
+          <div className="suggestion-edit organize-suggestion-editors">
+            {hasTextEditor ? (
+              <label className="organize-suggestion-editor">
+                <span>建议例句</span>
+                <textarea
+                  className="field textarea suggestion-input"
+                  rows={2}
+                  value={suggestedText}
+                  onChange={(event) => setEditorValue(itemKey, 'suggested_text', event.target.value)}
+                />
+              </label>
+            ) : null}
+            {hasExplanationEditor ? (
+              <label className="organize-suggestion-editor">
+                <span>建议解释</span>
+                <textarea
+                  className="field textarea suggestion-input"
+                  rows={2}
+                  value={suggestedExplanation}
+                  onChange={(event) => setEditorValue(itemKey, 'suggested_explanation', event.target.value)}
+                />
+              </label>
+            ) : null}
+          </div>
+        ) : (
+          <div className="organize-preview-line">
+            <span>处理</span>
+            <strong>{action === 'drop' ? '删除这条例句' : '精简例句格式'}</strong>
+          </div>
+        )}
+      </article>
+    );
+  };
+
+  const renderNoteCard = (item, index) => (
+    <article className="organize-note-card" key={`llm-note-${index}`}>
+      <span>备注</span>
+      <p>{item}</p>
+    </article>
   );
 
   return (
     <div className="panel organize-panel">
       <div className="panel-header">
         <div className="panel-heading">
-          <h3>整理建议</h3>
-          <div className="panel-caption">{totalSuggestionCount ? `当前词 ${fileSuggestionCount} 条 · 可用 ${totalAutoCount}` : '只整理当前词条'}</div>
+          <h3>整理</h3>
+          <div className="panel-caption">
+            {cleanData ? `${sourceLabel} · ${totalSuggestionCount} 条结果` : '当前词条'}
+          </div>
         </div>
         <div className="panel-header-actions">
-          <span className={`badge ${totalSuggestionCount ? 'high' : 'medium'}`}>{totalSuggestionCount} 条建议</span>
+          <span className={`badge ${totalAutoCount ? 'high' : 'medium'}`}>
+            {cleanData ? `${totalAutoCount} 可批量` : '待整理'}
+          </span>
         </div>
       </div>
 
-      <div className="panel-body list-body">
+      <div className="panel-body list-body organize-body">
         <div className="organize-toolbar">
           {renderOrganizeActions()}
         </div>
-        <div className="section-title">当前文件清洗</div>
+        <div className="organize-summary-strip" aria-label="整理结果摘要">
+          {renderSummaryItem('entry', '词条', llmEntry.length, '重命名/拆分')}
+          {renderSummaryItem('definition', '释义', llmDefinitions.length, '可直接应用')}
+          {renderSummaryItem('example', '例句', llmExamples.length, '可直接应用')}
+          {renderSummaryItem('note', '备注', llmNotes.length, sourceLabel)}
+        </div>
+
         {!cleanData ? (
-          <div className="empty">选择词条后点击“整理当前词”。</div>
+          <div className="organize-empty-state">
+            <UiIcon name="wand" size={20} />
+            <div>
+              <strong>暂无整理结果</strong>
+              <span>生成后会在这里按词条、释义和例句分组展示。</span>
+            </div>
+          </div>
         ) : (
           <>
-            <div className="analysis-source">
-              分析基于: {analyzedFrom === 'draft' ? '当前草稿（含未保存修改）' : 'data 中已保存文件'}
-            </div>
             {cleanData.llm ? (
               <>
-                <div className="section-title">LLM 建议</div>
-                {llmEntry.length || llmDefinitions.length || llmExamples.length || llmNotes.length ? (
-                  <>
-                    {llmEntry.length ? (
-                      <>
-                        <div className="section-title">Entry</div>
-                        <ul>
-                          {llmEntry.map((item, index) => {
-                            const action = normalizeLlmAction(item.action);
-                            const entries = Array.isArray(item.suggested_entries) ? item.suggested_entries : [];
-                            const splitActionKey = suggestionItemKey(`entry-split:${analysisToken}`, item, index);
-                            const renameActionKey = suggestionItemKey(`entry-rename:${analysisToken}`, item, index);
-                            return (
-                              <li key={`llm-entry-${index}`}>
-                                <div className="row-main between">
-                                  <div className="row-main">
-                                    <strong>{action}</strong>
-                                    <span className="badge medium">{item.confidence ?? 'llm'}</span>
-                                  </div>
-                                  {action === 'rename' ? (
-                                    <div className="suggestion-actions">
-                                      <button
-                                        className="ghost"
-                                        onClick={() => onApplyLlmSuggestion('entry', item)}
-                                        disabled={!hasDraft || Boolean(renameApplyingKey)}
-                                      >
-                                        仅改草稿
-                                      </button>
-                                      <button
-                                        className="primary"
-                                        onClick={() => onApplyEntryRenameAndSave(item, renameActionKey)}
-                                        disabled={!hasDraft || savingDraft || Boolean(renameApplyingKey)}
-                                      >
-                                        {renameApplyingKey === renameActionKey ? '重命名中...' : '应用并重命名'}
-                                      </button>
-                                    </div>
-                                  ) : action === 'split' ? (
-                                    <button
-                                      className="ghost"
-                                      onClick={() => onApplySplit(item, splitActionKey)}
-                                      disabled={!hasDraft || Boolean(splitApplyingKey)}
-                                    >
-                                      {splitApplyingKey === splitActionKey ? '拆分中...' : '自动拆分'}
-                                    </button>
-                                  ) : (
-                                    <span className="muted">需手动处理</span>
-                                  )}
-                                </div>
-                                <div className="row-sub">{item.reason || ''}</div>
-                                {action === 'rename' ? (
-                                  <div className="suggestion-edit">
-                                    <div className="row-sub">建议词条</div>
-                                    <div className="json-box">{item.suggested_word}</div>
-                                  </div>
-                                ) : null}
-                                {action === 'split' ? (
-                                  <div className="suggestion-edit">
-                                    <div className="row-sub">建议拆分为</div>
-                                    <pre className="json-box">{JSON.stringify(entries, null, 2)}</pre>
-                                  </div>
-                                ) : null}
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      </>
-                    ) : null}
-
-                    {llmDefinitions.length ? (
-                      <>
-                        <div className="section-title">Definitions</div>
-                        <ul>
-                          {llmDefinitions.map((item, index) => (
-                            <li key={`llm-def-${index}`}>
-                              {(() => {
-                                const action = normalizeLlmAction(item.action);
-                                const itemIndex = parseIndex(item.index);
-                                const itemKey = suggestionItemKey(`llm-def:${analysisToken}`, item, index);
-                                const editorField = action === 'replace_all' ? 'suggested_definitions' : 'suggested';
-                                const editedValue = getEditorValue(
-                                  itemKey,
-                                  editorField,
-                                  getDefinitionSuggestionEditorValue(item),
-                                );
-                                const patched = patchDefinitionSuggestionFromEditor(item, editedValue);
-                                const currentDefinition = itemIndex !== null && itemIndex < currentDefinitions.length
-                                  ? String(currentDefinitions[itemIndex] || '').trim()
-                                  : '';
-                                const showEditor = action !== 'drop';
-                                const suggestionLabel = action === 'append'
-                                  ? '将追加到 Definitions 末尾'
-                                  : action === 'replace_all'
-                                    ? '将整体替换当前 Definitions'
-                                    : itemIndex !== null
-                                      ? `当前 #${itemIndex}: ${currentDefinition || '(空释义)'}`
-                                      : '目标释义';
-
-                                return (
-                                  <>
-                                    <div className="row-main between">
-                                      <div className="row-main">
-                                        <strong>{itemIndex !== null ? `#${itemIndex}` : 'new'}</strong>
-                                        <span className="badge medium">{action}</span>
-                                      </div>
-                                      <button
-                                        className="ghost"
-                                        onClick={() => onApplyLlmSuggestion('definition', patched)}
-                                        disabled={!hasDraft}
-                                      >
-                                        应用此条
-                                      </button>
-                                    </div>
-                                    <div className="row-sub">{item.reason || ''}</div>
-                                    <div className="row-sub">{suggestionLabel}</div>
-                                    {showEditor ? (
-                                      <div className="suggestion-edit">
-                                        <div className="row-sub">
-                                          {action === 'replace_all' ? '可编辑建议释义列表（每行一条）' : '可编辑建议释义'}
-                                        </div>
-                                        <textarea
-                                          className="field textarea suggestion-input"
-                                          rows={action === 'replace_all' ? 4 : 2}
-                                          value={editedValue}
-                                          onChange={(event) => setEditorValue(itemKey, editorField, event.target.value)}
-                                        />
-                                      </div>
-                                    ) : null}
-                                  </>
-                                );
-                              })()}
-                            </li>
-                          ))}
-                        </ul>
-                      </>
-                    ) : null}
-
-                    {llmExamples.length ? (
-                      <>
-                        <div className="section-title">Examples</div>
-                        <ul>
-                          {llmExamples.map((item, index) => (
-                            <li key={`llm-ex-${index}`}>
-                              {(() => {
-                                const itemKey = suggestionItemKey(`llm-ex:${analysisToken}`, item, index);
-                                const suggestedText = getEditorValue(itemKey, 'suggested_text', String(item.suggested_text || ''));
-                                const suggestedExplanation = getEditorValue(itemKey, 'suggested_explanation', String(item.suggested_explanation || ''));
-                                const patched = {
-                                  ...item,
-                                  suggested_text: suggestedText,
-                                  suggested_explanation: suggestedExplanation,
-                                };
-
-                                return (
-                                  <>
-                                    <div className="row-main between">
-                                      <div className="row-main">
-                                        <strong>#{item.index}</strong>
-                                        <span className="badge medium">{normalizeLlmAction(item.action)}</span>
-                                      </div>
-                                      <button
-                                        className="ghost"
-                                        onClick={() => onApplyLlmSuggestion('example', patched)}
-                                        disabled={!hasDraft}
-                                      >
-                                        应用此条
-                                      </button>
-                                    </div>
-                                    <div className="row-sub">{item.reason || ''}</div>
-                                    <div className="suggestion-edit">
-                                      <div className="row-sub">可编辑建议 text</div>
-                                      <textarea
-                                        className="field textarea suggestion-input"
-                                        rows={2}
-                                        value={suggestedText}
-                                        onChange={(event) => setEditorValue(itemKey, 'suggested_text', event.target.value)}
-                                      />
-                                      <div className="row-sub">可编辑建议 explanation</div>
-                                      <textarea
-                                        className="field textarea suggestion-input"
-                                        rows={2}
-                                        value={suggestedExplanation}
-                                        onChange={(event) => setEditorValue(itemKey, 'suggested_explanation', event.target.value)}
-                                      />
-                                    </div>
-                                  </>
-                                );
-                              })()}
-                            </li>
-                          ))}
-                        </ul>
-                      </>
-                    ) : null}
-
-                    {llmNotes.length ? (
-                      <>
-                        <div className="section-title">Global Notes</div>
-                        <ul>
-                          {llmNotes.map((item, index) => (
-                            <li key={`llm-note-${index}`}>
-                              <div className="row-sub">{item}</div>
-                            </li>
-                          ))}
-                        </ul>
-                      </>
-                    ) : null}
-                  </>
+                {hasSuggestions ? (
+                  <div className="organize-suggestions">
+                    {renderSuggestionGroup('词条', llmEntry.length, llmEntry.map(renderEntryCard))}
+                    {renderSuggestionGroup('释义', llmDefinitions.length, llmDefinitions.map(renderDefinitionCard))}
+                    {renderSuggestionGroup('例句', llmExamples.length, llmExamples.map(renderExampleCard))}
+                    {renderSuggestionGroup('备注', llmNotes.length, llmNotes.map(renderNoteCard))}
+                  </div>
                 ) : (
-                  <div className="muted">LLM 未返回额外可执行建议。</div>
+                  <div className="organize-empty-state is-complete">
+                    <UiIcon name="check" size={20} />
+                    <div>
+                      <strong>没有可执行建议</strong>
+                      <span>当前词条无需批量整理。</span>
+                    </div>
+                  </div>
                 )}
 
-                <details className="llm-raw">
-                  <summary>查看原始 LLM JSON</summary>
+                <details className="llm-raw organize-raw">
+                  <summary>原始 JSON</summary>
                   <pre className="json-box">{JSON.stringify(cleanData.llm, null, 2)}</pre>
                 </details>
               </>
@@ -1641,13 +1734,6 @@ function ModeSwitch({ mode, onChange }) {
         onClick={() => onChange('manual')}
       >
         手动选取
-      </button>
-      <button
-        type="button"
-        className={`mode-chip ${mode === 'recommend' ? 'active' : ''}`}
-        onClick={() => onChange('recommend')}
-      >
-        推荐推送
       </button>
     </div>
   );
@@ -1937,7 +2023,7 @@ function RecommendationModePanel({
     <div className="panel sidebar-panel recommendation-panel">
       <div className="panel-header">
         <div className="panel-heading">
-          <h3>推荐模式</h3>
+          <h3>算法抽词</h3>
           <div className="panel-caption">{scope === ALL_SCOPE ? '全部目录' : formatCategoryLabel(scope)}</div>
         </div>
         <div className="panel-header-actions">
@@ -1948,7 +2034,7 @@ function RecommendationModePanel({
             type="button"
             className={`review-icon-button review-panel-tools-trigger${toolsOpen ? ' is-active' : ''}`}
             onClick={() => setToolsOpen((open) => !open)}
-            aria-label="打开推荐设置"
+            aria-label="打开算法设置"
             aria-expanded={toolsOpen}
           >
             <UiIcon name="target" size={16} />
@@ -2030,14 +2116,14 @@ function RecommendationModePanel({
 
       {toolsOpen ? (
         <div className="review-floating-layer review-panel-floating-layer" role="presentation">
-          <button type="button" className="review-floating-backdrop" aria-label="关闭推荐设置" onClick={() => setToolsOpen(false)} />
-          <section className="review-floating-panel review-compact-floating-panel" role="dialog" aria-modal="false" aria-label="推荐设置">
+          <button type="button" className="review-floating-backdrop" aria-label="关闭算法设置" onClick={() => setToolsOpen(false)} />
+          <section className="review-floating-panel review-compact-floating-panel" role="dialog" aria-modal="false" aria-label="算法设置">
             <div className="review-floating-header">
               <div>
-                <div className="review-floating-title">推荐设置</div>
+                <div className="review-floating-title">算法设置</div>
                 <div className="review-floating-caption">范围与算法偏好</div>
               </div>
-              <button type="button" className="review-icon-button" aria-label="关闭推荐设置" onClick={() => setToolsOpen(false)}>
+              <button type="button" className="review-icon-button" aria-label="关闭算法设置" onClick={() => setToolsOpen(false)}>
                 <UiIcon name="close" size={16} />
               </button>
             </div>
@@ -2055,6 +2141,7 @@ export default function App({
   onOpenConfig = null,
   launchRequest = null,
   onSelectionChange = null,
+  onVocabularyChange = null,
 }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [topbarToolsOpen, setTopbarToolsOpen] = useState(false);
@@ -2110,6 +2197,7 @@ export default function App({
   const editorPanelRef = useRef(null);
   const organizePanelRef = useRef(null);
   const reviewPanelRef = useRef(null);
+  const handledAutoRefineTokenRef = useRef('');
 
   const deferredFileQuery = useDeferredValue(fileQuery);
   const hasSelection = Boolean(category && filename);
@@ -2492,6 +2580,11 @@ export default function App({
   }, [categories.length, mode, recommendScope, normalizedRecommendPreferences]);
 
   useEffect(() => {
+    if (mode !== 'recommend') return;
+    setMode('manual');
+  }, [mode]);
+
+  useEffect(() => {
     if (!hasSelection) return undefined;
 
     let cancelled = false;
@@ -2640,7 +2733,7 @@ export default function App({
     }
   };
 
-  const handleClean = async () => {
+  const handleClean = useCallback(async () => {
     if (!hasSelection) return;
 
     setLoadingClean(true);
@@ -2657,7 +2750,7 @@ export default function App({
     } finally {
       setLoadingClean(false);
     }
-  };
+  }, [apiCategory, draft, filename, hasSelection]);
 
   const handleApplyLlmSuggestion = (kind, item) => {
     if (!draft || !item) return;
@@ -2715,12 +2808,23 @@ export default function App({
       setFilename(savedFilename);
       void refreshFiles();
 
-      const refreshed = await runFileRefine(apiCategory, savedFilename, false, savedData);
-      setCleanData(refreshed);
+      if (!overlayMode) {
+        const refreshed = await runFileRefine(apiCategory, savedFilename, false, savedData);
+        setCleanData(refreshed);
+      }
       if (res?.merged_to_existing) {
         showNotice(`已合并到已有词条: ${filename} → ${savedFilename}`);
       } else {
         showNotice(`已重命名: ${filename} → ${savedFilename}`);
+      }
+      if (typeof onVocabularyChange === 'function') {
+        onVocabularyChange({
+          ...res,
+          category: apiCategory,
+          file: savedFilename,
+          target_file: savedFilename,
+          data: savedData,
+        });
       }
     } catch (err) {
       showError(err.message);
@@ -2824,9 +2928,20 @@ export default function App({
       }
       void refreshFiles();
 
-      const refreshed = await runFileRefine(apiCategory, savedFilename, false, res.data || payload);
-      setCleanData(refreshed);
+      if (!overlayMode) {
+        const refreshed = await runFileRefine(apiCategory, savedFilename, false, res.data || payload);
+        setCleanData(refreshed);
+      }
       showNotice(`已一键应用 ${totalAutoCount} 条建议并保存到 data`);
+      if (typeof onVocabularyChange === 'function') {
+        onVocabularyChange({
+          ...res,
+          category: apiCategory,
+          file: savedFilename,
+          target_file: savedFilename,
+          data: res.data || payload,
+        });
+      }
     } catch (err) {
       showError(err.message);
     } finally {
@@ -2855,11 +2970,20 @@ export default function App({
       }
       void refreshFiles();
 
-      if (cleanData) {
+      if (cleanData && !overlayMode) {
         const refreshed = await runFileRefine(apiCategory, savedFilename, false, res.data || payload);
         setCleanData(refreshed);
       }
       showNotice('已保存到 data');
+      if (typeof onVocabularyChange === 'function') {
+        onVocabularyChange({
+          ...res,
+          category: apiCategory,
+          file: savedFilename,
+          target_file: savedFilename,
+          data: res.data || payload,
+        });
+      }
     } catch (err) {
       showError(err.message);
     } finally {
@@ -2884,6 +3008,16 @@ export default function App({
 
       setDetail(deepClone(nextData));
       setDraft((prev) => (prev ? { ...prev, marked: Boolean(nextData.marked) } : prev));
+      if (typeof onVocabularyChange === 'function') {
+        onVocabularyChange({
+          ...res,
+          category: apiCategory,
+          file: res.file || filename,
+          target_file: res.file || filename,
+          data: nextData,
+          closeEditor: false,
+        });
+      }
       setEntries((prev) => prev.map((item) => (
         item.file === filename
           ? {
@@ -2989,6 +3123,16 @@ export default function App({
     window.speechSynthesis.cancel();
   };
 
+  useEffect(() => {
+    const token = String(launchRequest?.autoRefineToken || '').trim();
+    if (!overlayMode || !token || !hasSelection || !draft || loadingClean) return;
+
+    if (handledAutoRefineTokenRef.current === token) return;
+    handledAutoRefineTokenRef.current = token;
+
+    void handleClean();
+  }, [draft, handleClean, hasSelection, launchRequest?.autoRefineToken, loadingClean, overlayMode]);
+
   const scrollToFocusPanel = useEffectEvent((focus) => {
     const normalizedFocus = String(focus || '').trim().toLowerCase();
     const targetRef = normalizedFocus === 'review' && !overlayMode
@@ -3024,7 +3168,7 @@ export default function App({
         <span>{ttsVoiceLabel === '英音' ? '朗读中·英音' : '英音'}</span>
       </button>
       <button type="button" className="ghost" onClick={handleOpenYoudao} disabled={!youdaoUrl}>
-        {compact ? <UiIcon name="external-link" size={15} /> : null}
+        {compact ? <UiIcon name="dictionary-link" size={15} /> : null}
         <span>有道词典</span>
       </button>
       {ttsVoiceLabel ? (
@@ -3353,9 +3497,7 @@ export default function App({
                   <p className="selection-sub">
                     {hasSelection
                       ? `${formatCategoryLabel(category)} / ${filename}`
-                      : mode === 'recommend'
-                        ? '推荐模式下，从推荐面板直接进入编辑、清洗和复习。'
-                        : '手动模式下，先选目录，再点具体词条文件。'}
+                      : '先选目录，再点具体词条文件。'}
                   </p>
                   {!hasSelection ? (
                     <div className="workspace-empty-steps">
