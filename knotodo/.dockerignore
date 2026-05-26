@@ -1,0 +1,17 @@
+.git
+.venv
+venv
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.env
+.env.local
+.env.*.local
+frontend/node_modules
+frontend/dist
+local_data
+.idea
+.vscode
+.DS_Store
+*.log
