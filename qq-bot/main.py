@@ -48,6 +48,7 @@ UPLOAD_COMMAND = f"{COMMAND_PREFIX}upload"
 NAME_COMMAND = f"{COMMAND_PREFIX}name"
 AUTO_COMMAND = f"{COMMAND_PREFIX}auto"
 REVIEW_COMMAND = f"{COMMAND_PREFIX}review"
+TODO_COMMAND = f"{COMMAND_PREFIX}todo"
 MODE_COMMAND = f"{COMMAND_PREFIX}mode"
 SKIP_COMMAND = f"{COMMAND_PREFIX}skip"
 TASK_COMMAND = f"{COMMAND_PREFIX}task"
@@ -60,7 +61,8 @@ WS_EVENT_TYPES_REQUIRING_REPLY = {
 
 DEFAULT_LINKUALOG_ENV_FILE = str(REPO_ROOT / ".env")
 DEFAULT_LINKUALOG_BASE_URL = "http://127.0.0.1:8080"
-DEFAULT_LINKUALOG_DATA_DIR = str(REPO_ROOT / "data")
+DEFAULT_LINKUALOG_DATA_DIR = str(REPO_ROOT / "data" / "vocabulary")
+DEFAULT_KNOTODO_BASE_URL = "http://127.0.0.1:8081/todo"
 
 WS_PATTERN = re.compile(r"\s+")
 MENTION_PATTERN = re.compile(r"<@[^>]+>")
@@ -122,6 +124,8 @@ HELP_TEXT = (
     f"- `{PROCESS_COMMAND} [task_id]` 开始处理最近任务或指定任务\n"
     f"- `{TASK_COMMAND} [task_id]` 查看最近任务或指定任务\n"
     f"- `{REVIEW_COMMAND}` 进入复习模式\n"
+    f"- `{TODO_COMMAND}` 查看今天的 KnoTodo 待办\n"
+    f"- `{TODO_COMMAND} add 标题 | 日期 | 优先级 | 备注` 添加待办\n"
     f"- `{MODE_COMMAND} 1|2|3` 设置复习题型，并记住下次默认值\n"
     f"- `{SKIP_COMMAND}` 复习时跳过当前词\n"
     f"- `{END_COMMAND}` 结束当前模式\n\n"
@@ -869,6 +873,56 @@ class LinkuaLogClient:
         return tasks if isinstance(tasks, list) else []
 
 
+class KnotodoClient:
+    def __init__(self, base_url: str) -> None:
+        self.base_url = str(base_url or "").strip().rstrip("/")
+
+    @property
+    def enabled(self) -> bool:
+        return bool(self.base_url)
+
+    def _url(self, path: str, query: dict[str, str] | None = None) -> str:
+        if not self.base_url:
+            raise RuntimeError("knotodo disabled")
+        url = self.base_url + path
+        if query:
+            clean_query = {key: value for key, value in query.items() if value != ""}
+            if clean_query:
+                url += "?" + urllib.parse.urlencode(clean_query)
+        return url
+
+    def health(self) -> dict:
+        return http_json("GET", self._url("/api/health"), timeout=10.0)
+
+    def list_todos(self, day: str) -> list[dict]:
+        result = http_json("GET", self._url("/api/todos", {"day": day}), timeout=20.0)
+        items = result.get("items")
+        return items if isinstance(items, list) else []
+
+    def create_todo(
+        self,
+        *,
+        title: str,
+        day: str,
+        priority: str = "medium",
+        notes: str = "",
+        due_time: str = "",
+    ) -> dict:
+        return http_json(
+            "POST",
+            self._url("/api/todos"),
+            data={
+                "title": title,
+                "date": day,
+                "due_time": due_time,
+                "priority": priority,
+                "notes": notes,
+                "completed": False,
+            },
+            timeout=30.0,
+        )
+
+
 class LLMClient:
     def __init__(self, *, provider: str, model: str, api_key: str, enabled: bool) -> None:
         self.provider = provider.strip()
@@ -972,11 +1026,15 @@ class QQLinkuaLogApp:
         llm_client: LLMClient,
         add_fetch_llm: bool,
         route_confidence_threshold: float,
+        knotodo_client: KnotodoClient | None = None,
+        knotodo_public_url: str = "",
     ) -> None:
         self.local_data_dir = local_data_dir
         self.linkualog_data_dir = linkualog_data_dir
         self.linkualog_client = linkualog_client
         self.llm_client = llm_client
+        self.knotodo_client = knotodo_client or KnotodoClient("")
+        self.knotodo_public_url = str(knotodo_public_url or "").strip().rstrip("/")
         self.add_fetch_llm = add_fetch_llm
         self.route_confidence_threshold = route_confidence_threshold
         self.local_data_dir.mkdir(parents=True, exist_ok=True)
@@ -1150,6 +1208,9 @@ class QQLinkuaLogApp:
         if command == TASK_COMMAND:
             return self.show_task_status(session, argument)
 
+        if command == TODO_COMMAND:
+            return self.handle_todo_command(argument)
+
         if command == PROCESS_COMMAND:
             return self.process_task(session, argument)
 
@@ -1260,6 +1321,8 @@ class QQLinkuaLogApp:
         pending = session.get("pending_confirmation")
         if isinstance(pending, dict) and pending:
             lines.append(f"- 待确认动作: `{pending.get('summary', 'unknown')}`")
+        if self.knotodo_public_url:
+            lines.append(f"- KnoTodo: {self.knotodo_public_url}")
         return "\n".join(lines)
 
     def build_categories_text(self) -> str:
@@ -1554,6 +1617,145 @@ class QQLinkuaLogApp:
             status="success",
             task_count=len(tasks),
             message_format="markdown",
+        )
+
+    def handle_todo_command(self, raw_argument: str) -> ToolResult:
+        if not self.knotodo_client.enabled:
+            return self.reply(
+                "knotodo",
+                "KnoTodo 未配置。请设置 QQ_KNOTODO_BASE_URL 后重启 qq-bot。",
+                status="disabled",
+            )
+
+        argument = collapse_ws(raw_argument)
+        if not argument:
+            return self.show_todos(today_iso())
+
+        command, rest = self.split_todo_argument(argument)
+        if command in {"today", "list", "ls"}:
+            day = today_iso() if command == "today" else collapse_ws(rest) or today_iso()
+            return self.show_todos(day)
+
+        if command in {"add", "+"}:
+            return self.create_todo_from_text(rest)
+
+        if re.fullmatch(r"\d{4}-\d{2}-\d{2}", argument):
+            return self.show_todos(argument)
+
+        return self.create_todo_from_text(argument)
+
+    def split_todo_argument(self, argument: str) -> tuple[str, str]:
+        parts = argument.split(" ", 1)
+        command = parts[0].strip().lower()
+        rest = parts[1].strip() if len(parts) > 1 else ""
+        return command, rest
+
+    def normalize_todo_priority(self, value: str) -> str:
+        priority = collapse_ws(value).lower()
+        aliases = {
+            "h": "high",
+            "high": "high",
+            "高": "high",
+            "高优先级": "high",
+            "m": "medium",
+            "mid": "medium",
+            "medium": "medium",
+            "中": "medium",
+            "中优先级": "medium",
+            "l": "low",
+            "low": "low",
+            "低": "low",
+            "低优先级": "low",
+        }
+        return aliases.get(priority, "medium")
+
+    def create_todo_from_text(self, text: str) -> ToolResult:
+        parts = [collapse_ws(part) for part in re.split(r"\s*[|｜]\s*", text)]
+        while parts and not parts[-1]:
+            parts.pop()
+        title = parts[0] if parts else ""
+        if not title:
+            return self.reply_md(
+                "knotodo_create",
+                (
+                    "### KnoTodo\n\n"
+                    f"- 查看今天: `{TODO_COMMAND}`\n"
+                    f"- 查看日期: `{TODO_COMMAND} 2026-05-26`\n"
+                    f"- 添加: `{TODO_COMMAND} add 标题 | 2026-05-26 | high | 备注`"
+                ),
+                status="error",
+            )
+
+        day = parts[1] if len(parts) > 1 and parts[1] else today_iso()
+        priority = self.normalize_todo_priority(parts[2] if len(parts) > 2 else "")
+        notes = " | ".join(parts[3:]) if len(parts) > 3 else ""
+        try:
+            result = self.knotodo_client.create_todo(
+                title=title,
+                day=day,
+                priority=priority,
+                notes=notes,
+            )
+        except Exception as exc:
+            return self.reply("knotodo_create", f"写入 KnoTodo 失败: {exc}", status="error")
+
+        item = result.get("item") if isinstance(result.get("item"), dict) else {}
+        item_id = str(item.get("id") or "").strip()
+        lines = [
+            "### 已添加 KnoTodo",
+            "",
+            f"- 标题: **{title}**",
+            f"- 日期: `{day}`",
+            f"- 优先级: `{priority}`",
+        ]
+        if notes:
+            lines.append(f"- 备注: {notes}")
+        if item_id:
+            lines.append(f"- ID: `{item_id}`")
+        if self.knotodo_public_url:
+            lines.append(f"- 打开: {self.knotodo_public_url}")
+        return self.reply_md(
+            "knotodo_create",
+            "\n".join(lines),
+            status="success",
+            todo_id=item_id,
+            day=day,
+            priority=priority,
+        )
+
+    def show_todos(self, day: str, limit: int = 8) -> ToolResult:
+        target_day = collapse_ws(day) or today_iso()
+        try:
+            items = self.knotodo_client.list_todos(target_day)
+        except Exception as exc:
+            return self.reply("knotodo_list", f"读取 KnoTodo 失败: {exc}", status="error", day=target_day)
+
+        lines = ["### KnoTodo", "", f"- 日期: `{target_day}`", f"- 待办数: `{len(items)}`"]
+        if self.knotodo_public_url:
+            lines.append(f"- 打开: {self.knotodo_public_url}")
+        lines.append("")
+
+        if not items:
+            lines.append(f"暂无待办。可发 `{TODO_COMMAND} add 标题` 添加。")
+        else:
+            for index, item in enumerate(items[:limit], start=1):
+                if not isinstance(item, dict):
+                    continue
+                marker = "x" if item.get("completed") else " "
+                priority = collapse_ws(str(item.get("priority") or "medium"))
+                due_time = collapse_ws(str(item.get("due_time") or ""))
+                time_text = f" `{due_time}`" if due_time else ""
+                title = collapse_ws(str(item.get("title") or "未命名待办"))
+                lines.append(f"{index}. [{marker}] **{title}**{time_text} · `{priority}`")
+            if len(items) > limit:
+                lines.extend(["", f"_仅显示前 {limit} 条，共 {len(items)} 条。_"])
+
+        return self.reply_md(
+            "knotodo_list",
+            "\n".join(lines).rstrip(),
+            status="success",
+            day=target_day,
+            todo_count=len(items),
         )
 
     def process_task(self, session: dict, raw_argument: str) -> ToolResult:
@@ -3322,6 +3524,8 @@ async def async_main() -> int:
     linkualog_data_dir = env_path("QQ_LINKUALOG_DATA_DIR", Path(DEFAULT_LINKUALOG_DATA_DIR))
     local_data_dir = env_path("QQ_LOCAL_DATA_DIR", Path(__file__).with_name("local_data"))
     linkualog_base_url = os.environ.get("QQ_LINKUALOG_BASE_URL", DEFAULT_LINKUALOG_BASE_URL).strip() or DEFAULT_LINKUALOG_BASE_URL
+    knotodo_base_url = os.environ.get("QQ_KNOTODO_BASE_URL", DEFAULT_KNOTODO_BASE_URL).strip()
+    knotodo_public_url = os.environ.get("QQ_KNOTODO_PUBLIC_URL", "").strip()
     session_state_file = env_path("QQ_SESSION_STATE_FILE", local_data_dir / "session_state.json")
     llm_enabled = env_bool("QQ_LLM_ROUTE_ENABLED", True)
     llm_provider = (
@@ -3350,6 +3554,7 @@ async def async_main() -> int:
         enabled=llm_enabled,
     )
     linkualog_client = LinkuaLogClient(linkualog_base_url)
+    knotodo_client = KnotodoClient(knotodo_base_url)
     app = QQLinkuaLogApp(
         session_state_file=session_state_file,
         local_data_dir=local_data_dir,
@@ -3358,10 +3563,14 @@ async def async_main() -> int:
         llm_client=llm_client,
         add_fetch_llm=add_fetch_llm,
         route_confidence_threshold=route_confidence_threshold,
+        knotodo_client=knotodo_client,
+        knotodo_public_url=knotodo_public_url,
     )
 
     print(f"[router] linkualog_base_url={linkualog_base_url}")
     print(f"[router] linkualog_data_dir={linkualog_data_dir}")
+    print(f"[router] knotodo_base_url={knotodo_base_url or '<disabled>'}")
+    print(f"[router] knotodo_public_url={knotodo_public_url or '<unset>'}")
     print(f"[router] local_data_dir={local_data_dir}")
     print(f"[router] session_state_file={session_state_file}")
     print(f"[router] llm_enabled={llm_client.enabled}")
@@ -3371,6 +3580,13 @@ async def async_main() -> int:
         print(f"[linkualog] health={health}")
     except Exception as exc:
         print(f"[linkualog] health check failed: {exc}")
+
+    if knotodo_client.enabled:
+        try:
+            health = knotodo_client.health()
+            print(f"[knotodo] health={health}")
+        except Exception as exc:
+            print(f"[knotodo] health check failed: {exc}")
 
     token_manager = TokenManager(app_id, app_secret)
     print(f"[token] requesting access token for app_id={app_id}")

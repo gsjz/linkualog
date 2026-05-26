@@ -9,7 +9,7 @@ ENV UV_LINK_MODE=copy
 ENV PIP_INDEX_URL="${PIP_INDEX_URL}"
 ENV QQ_RUN_SECONDS=0
 ENV QQ_LINKUALOG_BASE_URL="http://master-server:8080"
-ENV QQ_LINKUALOG_DATA_DIR="/app/data"
+ENV QQ_LINKUALOG_DATA_DIR="/app/data/vocabulary"
 ENV QQ_LOCAL_DATA_DIR="/app/qq-bot/local_data"
 ENV QQ_SESSION_STATE_FILE="/app/qq-bot/local_data/session_state.json"
 

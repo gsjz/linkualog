@@ -1,6 +1,7 @@
 # Linkualog QQ Bot
 
 `qq-bot/` 是 Linkualog 的可选 QQ 机器人入口。它连接 QQ 机器人网关，把聊天中的加词、上传、任务处理和复习命令转发给 `master-server`。
+KnoTodo 命令也合并在这个 bot 中，不再单独部署第二个 bot。
 
 ## 功能
 
@@ -10,6 +11,7 @@
 - `\process` 处理上传任务
 - `\task` 查看任务状态
 - `\review` 进入复习
+- `\todo` 查看或添加 KnoTodo 待办
 - `\search` 查词
 - `\status` 查看当前状态
 
@@ -30,10 +32,12 @@ cp .env.example .env
 - `QQ_APP_ID`
 - `QQ_APP_SECRET`
 
-本机运行时默认连接 `http://127.0.0.1:8080`。如需覆盖：
+本机运行时默认连接 `http://127.0.0.1:8080`；Docker 部署时 Compose 会设置为容器内的 `http://master-server:18081`。如需覆盖：
 
 - `QQ_LINKUALOG_BASE_URL`
 - `QQ_LINKUALOG_DATA_DIR`
+- `QQ_KNOTODO_BASE_URL`
+- `QQ_KNOTODO_PUBLIC_URL`
 - `QQ_LOCAL_DATA_DIR`
 - `QQ_LINKUALOG_ENV_FILE`
 
@@ -59,7 +63,7 @@ uv run main.py
 
 ## Docker 运行
 
-直出公网端口部署时，使用仓库根目录的 `deploy.sh`：
+使用仓库根目录的唯一部署入口：
 
 ```bash
 cd /path/to/linkualog
@@ -69,16 +73,8 @@ cd /path/to/linkualog
 它会通过 `docker-compose.yml` 启动：
 
 - `master-server`
+- `knotodo`
 - `qq-bot`
-
-如果你当前使用的是 Nginx 反代域名部署，改用：
-
-```bash
-cd /path/to/linkualog
-./deploy-domain.sh
-```
-
-它会通过 `docker-compose.domain.yml` 启动同一套 `master-server + qq-bot`，避免把 bot 拉到错误的 Compose 网络里。
 
 查看状态和日志：
 
@@ -87,17 +83,11 @@ docker compose -f docker-compose.yml --profile qq-bot ps
 docker compose -f docker-compose.yml --profile qq-bot logs -f qq-bot
 ```
 
-域名反代部署对应：
-
-```bash
-docker compose -f docker-compose.domain.yml --profile qq-bot ps
-docker compose -f docker-compose.domain.yml --profile qq-bot logs -f qq-bot
-```
-
 如果当前用户没有 Docker 权限，可以按环境改用 `sudo docker compose ...`。
 
 ## 数据
 
-- 词条数据仍在仓库根目录 `data/`
+- 词条数据在仓库根目录 `data/vocabulary/`
+- KnoTodo 数据在仓库根目录 `data/knotodo/`
 - bot 会把会话状态写入 `qq-bot/local_data/`
-- Docker 中 `data/` 以只读方式挂载给 bot
+- Docker 中 `data/vocabulary/` 以只读方式挂载给 bot

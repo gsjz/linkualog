@@ -218,6 +218,39 @@ class FakeLLMClient:
         raise AssertionError(f"unexpected system prompt: {system_prompt}")
 
 
+class FakeKnotodoClient:
+    enabled = True
+
+    def __init__(self) -> None:
+        self.created: list[dict] = []
+        self.items_by_day: dict[str, list[dict]] = {}
+
+    def list_todos(self, day: str) -> list[dict]:
+        return copy.deepcopy(self.items_by_day.get(day, []))
+
+    def create_todo(
+        self,
+        *,
+        title: str,
+        day: str,
+        priority: str = "medium",
+        notes: str = "",
+        due_time: str = "",
+    ) -> dict:
+        item = {
+            "id": f"todo-{len(self.created) + 1}",
+            "title": title,
+            "date": day,
+            "priority": priority,
+            "notes": notes,
+            "due_time": due_time,
+            "completed": False,
+        }
+        self.created.append(copy.deepcopy(item))
+        self.items_by_day.setdefault(day, []).append(copy.deepcopy(item))
+        return {"item": item}
+
+
 class QQBotReviewExperienceTests(unittest.TestCase):
     def setUp(self) -> None:
         self.tempdir = TemporaryDirectory()
@@ -238,6 +271,7 @@ class QQBotReviewExperienceTests(unittest.TestCase):
         payload: dict,
         llm_enabled: bool,
         llm_client: FakeLLMClient | None = None,
+        knotodo_client: FakeKnotodoClient | None = None,
     ) -> tuple[object, FakeLinkuaLogClient]:
         client = FakeLinkuaLogClient(payload)
         llm = llm_client or FakeLLMClient(enabled=llm_enabled)
@@ -249,6 +283,8 @@ class QQBotReviewExperienceTests(unittest.TestCase):
             llm_client=llm,
             add_fetch_llm=False,
             route_confidence_threshold=0.72,
+            knotodo_client=knotodo_client,
+            knotodo_public_url="https://log.shujie.cc/todo" if knotodo_client else "",
         )
         return app, client
 
@@ -268,6 +304,48 @@ class QQBotReviewExperienceTests(unittest.TestCase):
             "mentions_bot": False,
             "raw_payload": {},
         }
+
+    def test_todo_command_creates_knotodo_item(self):
+        knotodo = FakeKnotodoClient()
+        app, _ = self.make_app(
+            payload={"word": "abandon", "definitions": [], "examples": []},
+            llm_enabled=False,
+            knotodo_client=knotodo,
+        )
+
+        result = app.handle_envelope(self.make_envelope(r"\todo add Write notes | 2026-05-26 | high | chapter 1"))
+
+        self.assertEqual(result.metadata.get("status"), "success")
+        self.assertEqual(knotodo.created[0]["title"], "Write notes")
+        self.assertEqual(knotodo.created[0]["date"], "2026-05-26")
+        self.assertEqual(knotodo.created[0]["priority"], "high")
+        self.assertEqual(knotodo.created[0]["notes"], "chapter 1")
+        self.assertIn("https://log.shujie.cc/todo", result.reply_text)
+
+    def test_todo_command_lists_day_items(self):
+        knotodo = FakeKnotodoClient()
+        knotodo.items_by_day["2026-05-26"] = [
+            {
+                "id": "todo-1",
+                "title": "Review vocabulary",
+                "date": "2026-05-26",
+                "priority": "medium",
+                "due_time": "09:30",
+                "completed": False,
+            }
+        ]
+        app, _ = self.make_app(
+            payload={"word": "abandon", "definitions": [], "examples": []},
+            llm_enabled=False,
+            knotodo_client=knotodo,
+        )
+
+        result = app.handle_envelope(self.make_envelope(r"\todo 2026-05-26"))
+
+        self.assertEqual(result.metadata.get("status"), "success")
+        self.assertEqual(result.metadata.get("todo_count"), 1)
+        self.assertIn("Review vocabulary", result.reply_text)
+        self.assertIn("09:30", result.reply_text)
 
     def test_status_and_search_render_markdown(self) -> None:
         vocab_path = self.linkualog_data_dir / "daily" / "abandon.json"
