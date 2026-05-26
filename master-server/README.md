@@ -60,25 +60,25 @@ sudo chown -R "$USER":"$USER" /path/to/linkualog/master-server/local_data
 
 ```bash
 cd /path/to/linkualog
-docker compose up -d --build master-server
+./deploy.sh master-server
 ```
 
 默认地址：
 
-- 前端：`http://服务器IP/`
-- 后端 API：`http://服务器IP:8080/`
+- 前端和 API：`http://127.0.0.1:18080/`
+- FastAPI 直连端口：`http://127.0.0.1:18081/`
 
 常用命令：
 
 ```bash
-docker compose logs -f master-server
-docker compose restart master-server
-docker compose up -d --build master-server
+make logs-master
+make rebuild-master
+make ps
 ```
 
 持久化目录：
 
-- `./data`
+- `./data/vocabulary`
 - `./master-server/local_data`
 
 ## 测试

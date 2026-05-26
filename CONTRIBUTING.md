@@ -43,7 +43,7 @@ Examples:
 Do commit:
 
 - generic deployment examples
-- `.env.example` and `.env.domain.example`
+- `.env.example`
 - public docs and setup guides
 
 Do not commit:

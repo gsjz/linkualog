@@ -25,7 +25,19 @@ dist-ssr
 
 # Python and uv
 .venv/
+venv/
 __pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.py,cover
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+*.egg-info/
 
 # Zensical
 site/
@@ -43,6 +55,8 @@ repomix-output.xml
 local_data/
 local_data_runtime/
 .local-notes/
+data/knotodo/*
+!data/knotodo/.gitkeep
 
 .codex
 .codex-local.md

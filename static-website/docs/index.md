@@ -35,53 +35,36 @@ uv run main.py
 - 主前端：`http://localhost:8000`
 - 后端 API：`http://localhost:8080`
 
-### Docker 运行
+### Docker 部署
 
-适合服务器、NAS 或小主机。
+适合服务器、NAS 或小主机。官方部署方式是 Compose 服务只监听本机端口，再由 Nginx 对外代理域名。
 
 ```bash
 cd /path/to/linkualog
 cp .env.example .env
 # 编辑 .env，至少填入 MASTER_SERVER_LLM_API_KEY
 
-docker compose up -d --build master-server
+./deploy.sh master-server
 ```
 
 默认地址：
 
-- 主前端：`http://服务器IP/`
-- 后端 API：`http://服务器IP:8080/`
+- 主前端和 API：`http://127.0.0.1:18080/`
+- FastAPI 直连端口：`http://127.0.0.1:18081/`
 
 常用命令：
 
 ```bash
-docker compose logs -f master-server
-docker compose restart master-server
-docker compose up -d --build master-server
-```
-
-### 域名反代部署
-
-如果你打算让 `master-server` 只监听本机端口，再由 Nginx 反代域名访问，使用单独入口：
-
-```bash
-cd /path/to/linkualog
-cp .env.domain.example .env
-# 编辑 .env，至少填入 MASTER_SERVER_LLM_API_KEY
-
-./deploy-domain.sh master-server
-```
-
-如果还要同时部署 QQ bot：
-
-```bash
-./deploy-domain.sh
+make logs-master
+make rebuild-master
+make ps
 ```
 
 这套部署默认暴露：
 
 - `127.0.0.1:18080` -> 前端和 API
 - `127.0.0.1:18081` -> 同一个 FastAPI 服务端口
+- `127.0.0.1:18082` -> KnoTodo `/todo`
 
 然后由 Nginx 反代到：
 
@@ -97,10 +80,8 @@ deploy/nginx/linkualog.example.conf
 
 ### 重要约束
 
-- 不要混用 `docker-compose.yml` 和 `docker-compose.domain.yml`。
-- 直出公网端口部署用 `./deploy.sh`。
-- 域名反代部署用 `./deploy-domain.sh`。
-- `qq-bot` 依赖和 `master-server` 在同一个 Compose 网络里，单独拉起 bot 时也必须走同一套脚本/compose 文件。
+- 部署只使用 `docker-compose.yml` 和 `./deploy.sh`。
+- `qq-bot` 依赖和 `master-server` 在同一个 Compose 网络里，单独拉起 bot 时也必须走同一个脚本/compose 文件。
 
 ## 怎么使用
 
@@ -108,12 +89,12 @@ deploy/nginx/linkualog.example.conf
 2. 在 `OCR 解析库` 上传图片或 PDF，让系统提取词条和上下文。
 3. 在 `我的生词本` 查看已保存的 JSON 词条。
 4. 在 `精修与复习` 进行合并建议、释义修正和复习打分。
-5. 需要静态展示时，用 `static-website` 把 `data/` 转成网站。
+5. 需要静态展示时，用 `static-website` 把 `data/vocabulary/` 转成网站。
 
 如果你想从 YouTube 字幕收集词条，安装 `browser-plugin/user/linkualog.user.js`，并把插件里的 `LAN Sync URL` 指向：
 
 ```text
-http://<你的主机>:8080/api/vocabulary/add
+https://你的域名/api/vocabulary/add
 ```
 
 如果你需要 QQ 入口，先在 `.env` 中填写 `QQ_APP_ID` 和 `QQ_APP_SECRET`，再运行：
@@ -122,24 +103,22 @@ http://<你的主机>:8080/api/vocabulary/add
 ./deploy.sh
 ```
 
-如果当前使用的是域名反代部署，改用：
-
-```bash
-./deploy-domain.sh
-```
-
 ## 数据在哪里
 
-核心数据放在仓库根目录的 `data/`：
+核心数据放在仓库根目录的 `data/vocabulary/`：
 
 ```text
 data/
-  daily/*.json
-  cet/*.json
-  ielts/*.json
+  vocabulary/
+    daily/*.json
+    cet/*.json
+    ielts/*.json
+  knotodo/
+    state.json
 ```
 
 每个 JSON 通常对应一个单词或短语，包含释义、例句、来源、复习记录等信息。`master-server` 直接读写这些文件；静态站会从这些 JSON 生成 Markdown 页面。
+`data/knotodo/` 是 KnoTodo 的独立持久化目录。
 
 当前内置分类：
 
@@ -162,14 +141,14 @@ make serve
 默认参数：
 
 - `PORT=6789`
-- `DATA_DIR=../data`
+- `DATA_DIR=../data/vocabulary`
 
 常用命令：
 
 ```bash
 make data                         # 只生成 docs/dictionary/
-make serve PORT=6789 DATA_DIR=../data
-make build DATA_DIR=../data       # 输出到 static-website/site/
+make serve PORT=6789 DATA_DIR=../data/vocabulary
+make build DATA_DIR=../data/vocabulary
 make clean
 ```
 
@@ -184,7 +163,8 @@ make clean
 | `browser-plugin/dev/` | 浏览器插件开发工程 |
 | `qq-bot/` | 可选 QQ 机器人 connector |
 | `static-website/` | Zensical 静态网站 |
-| `data/` | 默认词条数据库 |
+| `data/vocabulary/` | 默认词条数据库 |
+| `data/knotodo/` | KnoTodo 本地状态 |
 
 更多细节优先看：
 
