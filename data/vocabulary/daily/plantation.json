@@ -1,0 +1,37 @@
+{
+  "word": "plantation",
+  "createdAt": "2026-05-17",
+  "reviews": [
+    {
+      "date": "2026-05-20",
+      "score": 1
+    },
+    {
+      "date": "2026-05-26",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "种植园；（尤指热带地区种植香蕉、甘蔗、棉花等经济作物的大型）农场"
+  ],
+  "examples": [
+    {
+      "text": "who owned over 40% of Guatemala’s arable land at one point. They cleared rainforest in Costa Rica, Colombia, Guatemala, Honduras, and Panama to build plantations, along with railroads, ports, and towns to house workers. Lured by relatively high-paying jobs, people migrated to banana zones.",
+      "explanation": "这里的 plantation 指“种植园”，通常是大规模种植经济作物的土地。句子说这些公司为了建立种植园，砍伐了多个国家的雨林，并配套修建铁路、港口和工人居住的城镇。",
+      "focusWords": [
+        "plantations"
+      ],
+      "source": {
+        "text": "The dark history of bananas - John Soluri",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=esvycD1O3cM",
+        "timestamp": 154
+      }
+    }
+  ],
+  "mergedFrom": [
+    "plantations"
+  ]
+}

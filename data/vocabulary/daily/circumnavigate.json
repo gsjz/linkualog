@@ -1,0 +1,42 @@
+{
+  "word": "circumnavigate",
+  "createdAt": "2026-05-02",
+  "reviews": [
+    {
+      "date": "2026-04-19",
+      "score": 0
+    },
+    {
+      "date": "2026-04-20",
+      "score": 5
+    },
+    {
+      "date": "2026-05-22",
+      "score": 4
+    }
+  ],
+  "definitions": [
+    "环航；环绕……航行；绕行全球（尤指乘船、飞机或徒步完成整圈）"
+  ],
+  "examples": [
+    {
+      "text": "Jean Béliveau jumped at the opportunity. For the past three years, Béliveau had\nbeen walking from country to country, with the goal of circumnavigating\nthe globe on foot. This required sleeping in tents, strangers’ homes, and the\noccasional jail cell along the way.",
+      "explanation": "这里的 circumnavigating the globe on foot 指“徒步环绕地球一圈”。词根上是“围着……航行/绕行”，在这个句子里引申为从一个国家走到另一个国家，目标是完成全球绕行。",
+      "focusWords": [
+        "circumnavigating"
+      ],
+      "source": {
+        "text": "Do you really need to take 10,000 steps a day? - Shannon Odell",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=eEWa7cpiyD8",
+        "timestamp": 17
+      }
+    }
+  ],
+  "mergedFrom": [
+    "circumnavigating"
+  ],
+  "marked": true
+}

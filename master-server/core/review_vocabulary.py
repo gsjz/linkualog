@@ -5,12 +5,15 @@ from pathlib import Path
 
 from filelock import FileLock
 
-VOCAB_DIR = os.environ.get("VOCAB_DIR", "../data/")
+from core.data_paths import ensure_vocabulary_dir, get_vocabulary_dir
+
+DEFAULT_VOCAB_DIR = get_vocabulary_dir()
+VOCAB_DIR = str(ensure_vocabulary_dir())
 MAX_SCAN_FILES = int(os.environ.get("MAX_SCAN_FILES", "2000"))
 
 
 def _vocab_root() -> str:
-    root = os.path.abspath(VOCAB_DIR)
+    root = os.path.abspath(str(VOCAB_DIR or get_vocabulary_dir()))
     os.makedirs(root, exist_ok=True)
     return root
 

@@ -97,21 +97,21 @@ def _read_bool_env(key: str, default: bool) -> bool:
 APP_DIR = Path(__file__).resolve().parent
 REPO_ROOT = APP_DIR.parent
 _load_dotenv(REPO_ROOT / ".env")
+
+os.environ.setdefault("DATA_DIR", str(REPO_ROOT / "data"))
+os.environ.setdefault("VOCAB_DIR", str(REPO_ROOT / "data" / "vocabulary"))
+os.environ.setdefault("STORAGE_DIR", str(APP_DIR / "local_data/temp_storage"))
+os.environ.setdefault("TASKS_FILE", str(APP_DIR / "local_data/tasks_db.json"))
+os.environ.setdefault("LOCK_FILE", str(APP_DIR / "local_data/tasks_db.json.lock"))
+os.environ.setdefault("MAX_SIZE_BYTES", str(1 * 1024 * 1024 * 1024))
+os.environ.setdefault("MAX_SCAN_FILES", "2000")
+
 from core.config import get_config_data, is_running_in_docker
 from api.routes import router as master_router
 from api.review_routes import router as review_router
 from utils.runner import start_frontend_dev
 
 _configure_logging(get_config_data())
-
-os.environ.setdefault("STORAGE_DIR", str(APP_DIR / "local_data/temp_storage"))
-os.environ.setdefault("MAX_SIZE_BYTES", str(1 * 1024 * 1024 * 1024))
-
-os.environ.setdefault("TASKS_FILE", str(APP_DIR / "local_data/tasks_db.json"))
-os.environ.setdefault("LOCK_FILE", str(APP_DIR / "local_data/tasks_db.json.lock"))
-
-os.environ.setdefault("VOCAB_DIR", str(REPO_ROOT / "data"))
-os.environ.setdefault("MAX_SCAN_FILES", "2000")
 
 
 def _should_serve_built_frontend() -> bool:

@@ -1,0 +1,26 @@
+{
+  "word": "prevalent",
+  "createdAt": "2026-05-24",
+  "reviews": [
+    {
+      "date": "2026-05-26",
+      "score": 1
+    }
+  ],
+  "definitions": [
+    "普遍存在的；盛行的；流行的"
+  ],
+  "examples": [
+    {
+      "text": "What conclusion did Margaret Mead reach after studying dozens of different cultures? C) Competition is relatively more prevalent in Western societies.",
+      "explanation": "这里的 prevalent 表示“更普遍的、更常见的”。整句意思是：玛格丽特·米德研究了许多不同文化后得出的结论是：竞争在西方社会中相对更为普遍。",
+      "focusWords": [
+        "prevalent"
+      ],
+      "source": {
+        "text": "CET6 23 12 2 阅读2",
+        "url": ""
+      }
+    }
+  ]
+}

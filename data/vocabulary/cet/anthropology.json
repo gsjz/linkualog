@@ -1,0 +1,24 @@
+{
+  "word": "anthropology",
+  "createdAt": "2026-05-24",
+  "reviews": [
+    {
+      "date": "2026-05-25",
+      "score": 3
+    }
+  ],
+  "definitions": [],
+  "examples": [
+    {
+      "text": "Current work in anthropology（人类学）has suggested, however, that this view of the role of competition in human behavior may be incorrect.",
+      "explanation": "",
+      "focusWords": [
+        "anthropology"
+      ],
+      "source": {
+        "text": "CET6 23 12 2 阅读2",
+        "url": ""
+      }
+    }
+  ]
+}

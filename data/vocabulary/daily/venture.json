@@ -1,0 +1,37 @@
+{
+  "word": "venture",
+  "createdAt": "2026-05-18",
+  "reviews": [
+    {
+      "date": "2026-05-20",
+      "score": 2
+    },
+    {
+      "date": "2026-05-26",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "冒险前往；大胆去（某地）"
+  ],
+  "examples": [
+    {
+      "text": "most of which looked nothing like the bananas in supermarket aisles today. In the 1800s, captains from New Orleans and New England ventured to the Caribbean in search of coconuts and other goods. They began to experiment with bananas, purchasing one kind, called Gros Michel, from Afro-Caribbean farmers in Jamaica, Cuba, and Honduras.",
+      "explanation": "这里的 ventured to the Caribbean 表示“冒险前往加勒比地区”。venture 强调带有风险、不确定性或开拓性质地去某地。整句是在说：19世纪时，来自新奥尔良和新英格兰的船长们为了寻找椰子和其他货物，冒险前往加勒比地区。",
+      "focusWords": [
+        "ventured"
+      ],
+      "source": {
+        "text": "The dark history of bananas - John Soluri",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=esvycD1O3cM",
+        "timestamp": 79
+      }
+    }
+  ],
+  "mergedFrom": [
+    "ventured"
+  ]
+}

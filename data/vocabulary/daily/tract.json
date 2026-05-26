@@ -1,0 +1,33 @@
+{
+  "word": "tract",
+  "createdAt": "2026-05-17",
+  "reviews": [
+    {
+      "date": "2026-05-26",
+      "score": 2
+    }
+  ],
+  "definitions": [
+    "（尤指大片的）土地，地带；一大片区域"
+  ],
+  "examples": [
+    {
+      "text": "in Costa Rica, Honduras, and Guatemala, leaving thousands of farmers and workers jobless. The companies then felled extensive tracts of rainforests in order to establish new plantations. After World War II,",
+      "explanation": "这里的 tract / tracts 指“大片土地、大片区域”。extensive tracts of rainforests 表示“大片大片的雨林”。整句意思是：这些公司随后砍伐了大面积雨林，以建立新的种植园。",
+      "focusWords": [
+        "tracts"
+      ],
+      "source": {
+        "text": "The dark history of bananas - John Soluri",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=esvycD1O3cM",
+        "timestamp": 224
+      }
+    }
+  ],
+  "mergedFrom": [
+    "tracts"
+  ]
+}

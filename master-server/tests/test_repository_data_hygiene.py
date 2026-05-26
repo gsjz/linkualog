@@ -4,7 +4,7 @@ from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-DATA_DIR = REPO_ROOT / "data"
+DATA_DIR = REPO_ROOT / "data" / "vocabulary"
 
 QQ_CONNECTOR_E2E_MARKERS = (
     "qqe2e-session",

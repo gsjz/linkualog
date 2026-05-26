@@ -1,0 +1,41 @@
+{
+  "word": "trait",
+  "createdAt": "2026-03-30",
+  "reviews": [
+    {
+      "date": "2026-05-07",
+      "score": 1
+    },
+    {
+      "date": "2026-05-25",
+      "score": 4
+    }
+  ],
+  "definitions": [
+    "n. 特质；特征"
+  ],
+  "examples": [
+    {
+      "text": "The drive to create the new is a trait of being human.",
+      "explanation": "创造新事物的冲动是人类的一种特质。",
+      "focusWords": [
+        "trait"
+      ],
+      "source": {
+        "text": "CET6 23 12 1 听力",
+        "url": ""
+      }
+    },
+    {
+      "text": "This doctrine, which takes for granted that those species best able to adapt to and master the natural environment in which they live will survive, has suggested that the struggle for survival is an inherent human trait which determines a person’s success.",
+      "explanation": "这种观点认为，最能适应并掌控其所处自然环境的物种会生存下来，因此它提出：为生存而进行的斗争是人类与生俱来的特质，并且会决定一个人的成功。",
+      "focusWords": [
+        "trait"
+      ],
+      "source": {
+        "text": "CET6 23 12 2 阅读2",
+        "url": ""
+      }
+    }
+  ]
+}

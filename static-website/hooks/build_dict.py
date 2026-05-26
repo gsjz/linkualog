@@ -4,7 +4,7 @@ import glob
 import shutil
 import re
 
-DATA_DIR = os.environ.get("DATA_DIR", "../data")
+DATA_DIR = os.environ.get("DATA_DIR", "../data/vocabulary")
 OUTPUT_DIR = "docs/dictionary"
 TAGS_MAP_PATH = "hooks/tags.json" 
 FOCUS_TOKEN_RE = re.compile(r"\s+|[\w]+|[^\w\s]", flags=re.UNICODE)

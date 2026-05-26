@@ -1,0 +1,60 @@
+{
+  "word": "aptitude",
+  "createdAt": "2026-03-30",
+  "reviews": [
+    {
+      "date": "2026-04-17",
+      "score": 2
+    },
+    {
+      "date": "2026-04-20",
+      "score": 5
+    },
+    {
+      "date": "2026-05-13",
+      "score": 3
+    },
+    {
+      "date": "2026-05-23",
+      "score": 4
+    }
+  ],
+  "definitions": [
+    "n. 天赋（在此语境下指感知与识别能力）"
+  ],
+  "examples": [
+    {
+      "text": "Not only can your dog sense when you have a cold, but domestic dogs have shown an aptitude for detecting both much smaller mood fluctuations and far more serious physical conditions.",
+      "explanation": "不仅你的狗能察觉你感冒了，家犬还展现出对检测更细微的情绪波动和更严重身体状况的天赋。",
+      "focusWords": [
+        "aptitude"
+      ],
+      "source": {
+        "text": "CET6 23 12 1 听力",
+        "url": ""
+      }
+    }
+  ],
+  "reviewSessions": [
+    {
+      "timestamp": "2026-04-20T16:39:00",
+      "platform": "qq",
+      "conversation_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "sender_id": "1EF180EF364DDF08E1C414A7A86B3EA7",
+      "word": "aptitude",
+      "example_text": "Not only can your dog sense when you have a cold, but domestic dogs have shown an aptitude for detecting both much smaller mood fluctuations and far more serious physical conditions.",
+      "expected_definitions": [
+        "n. 天赋（在此语境下指感知与识别能力）"
+      ],
+      "review_mode": 1,
+      "user_answer": "天赋",
+      "score": 5,
+      "feedback": "答案准确，抓住了核心含义。",
+      "matched_points": [
+        "对应“天赋”这一核心释义",
+        "符合语境中“感知与识别能力”的含义"
+      ],
+      "missing_points": []
+    }
+  ]
+}

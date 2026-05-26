@@ -1,0 +1,26 @@
+{
+  "word": "indulgence",
+  "createdAt": "2026-05-24",
+  "reviews": [
+    {
+      "date": "2026-05-25",
+      "score": 4
+    }
+  ],
+  "definitions": [
+    "放纵；纵容；沉溺于享乐（尤指顺从自己的欲望）"
+  ],
+  "examples": [
+    {
+      "text": "Thereafter, we are at the mercy of a battle between our base impulses for self-fulfillment and social and cultural norms which prohibit pure indulgence.",
+      "explanation": "这里的 indulgence 表示“放纵、纵容、沉溺于欲望”。pure indulgence 可理解为“纯粹的放纵/一味顺从欲望”。整句意思是：此后，我们只能受制于一场冲突——一边是追求自我满足的原始冲动，另一边是禁止纯粹放纵的社会和文化规范。",
+      "focusWords": [
+        "indulgence"
+      ],
+      "source": {
+        "text": "CET6 23 12 2 阅读2",
+        "url": ""
+      }
+    }
+  ]
+}

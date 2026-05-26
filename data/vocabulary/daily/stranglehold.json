@@ -1,0 +1,30 @@
+{
+  "word": "stranglehold",
+  "createdAt": "2026-05-17",
+  "reviews": [
+    {
+      "date": "2026-05-26",
+      "score": 2
+    }
+  ],
+  "definitions": [
+    "控制；束缚；尤其指强力而难以摆脱的控制（如 have/lose a stranglehold on sth）"
+  ],
+  "examples": [
+    {
+      "text": "Today, bananas are no longer as economically vital in Central America, and United Fruit Company, rechristened Chiquita, has lost its stranglehold on Latin American politics. But the modern banana industry isn’t without problems. Cavendish bananas require frequent applications of pesticides.",
+      "explanation": "这里的 stranglehold 指“强有力的控制、钳制”。句子意思是：如今香蕉在中美洲已不再像过去那样具有重大的经济意义，而联合果品公司（后更名为 Chiquita）也失去了它对拉丁美洲政治的强力控制。重点搭配是 lose its stranglehold on...，表示“失去对……的控制”。",
+      "focusWords": [
+        "stranglehold"
+      ],
+      "source": {
+        "text": "The dark history of bananas - John Soluri",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=esvycD1O3cM",
+        "timestamp": 313
+      }
+    }
+  ]
+}

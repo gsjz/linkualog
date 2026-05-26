@@ -1,0 +1,34 @@
+{
+  "word": "arable",
+  "createdAt": "2026-05-17",
+  "reviews": [
+    {
+      "date": "2026-05-18",
+      "score": 2
+    },
+    {
+      "date": "2026-05-26",
+      "score": 2
+    }
+  ],
+  "definitions": [
+    "可耕种的；适于耕作的（常见搭配：arable land 可耕地）"
+  ],
+  "examples": [
+    {
+      "text": "who had financed his return to power with land concessions. By the 1930s, one company dominated the region: United Fruit, who owned over 40% of Guatemala’s arable land at one point. They cleared rainforest in Costa Rica, Colombia, Guatemala, Honduras, and Panama to build plantations,",
+      "explanation": "这里的 arable land 指“可耕地、适合种植作物的土地”。句子说联合果品公司一度拥有危地马拉 40% 以上的可耕地，强调其对土地资源的高度控制。",
+      "focusWords": [
+        "arable"
+      ],
+      "source": {
+        "text": "The dark history of bananas - John Soluri",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=esvycD1O3cM",
+        "timestamp": 143
+      }
+    }
+  ]
+}

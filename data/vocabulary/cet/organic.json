@@ -1,0 +1,26 @@
+{
+  "word": "organic",
+  "createdAt": "2026-05-24",
+  "reviews": [
+    {
+      "date": "2026-05-25",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "有机的；生物性的；器官的（在 organic drives 中可理解为“生理本能的、源于机体的”）"
+  ],
+  "examples": [
+    {
+      "text": "According to Sigmund Freud, humans are born screaming for attention and full of organic drives for fulfillment in various areas.",
+      "explanation": "这里的 organic 不是“有机食品”的意思，而是指“生物性的、机体本能的”。organic drives 表示“源于人的生理/本能需求的驱力、本能冲动”。整句可理解为：按照弗洛伊德的说法，人一出生就会通过哭喊来寻求关注，并且天生带有在多个方面寻求满足的本能驱力。",
+      "focusWords": [
+        "organic"
+      ],
+      "source": {
+        "text": "CET6 23 12 2 阅读2",
+        "url": ""
+      }
+    }
+  ]
+}

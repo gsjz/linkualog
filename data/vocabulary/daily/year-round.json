@@ -1,0 +1,30 @@
+{
+  "word": "year-round",
+  "createdAt": "2026-05-17",
+  "reviews": [
+    {
+      "date": "2026-05-26",
+      "score": 2
+    }
+  ],
+  "definitions": [
+    "全年（都）；常年（一整年持续地）"
+  ],
+  "examples": [
+    {
+      "text": "ideal for shipping. By the end of the 1800s, bananas were a hit in the US. They were affordable, available year-round, and endorsed by medical doctors. As bananas became big business,",
+      "explanation": "这里的 year-round 表示“全年都能买到 / 常年供应”。句子意思是：到 19 世纪末，香蕉在美国很受欢迎，因为价格实惠、全年都能买到，而且还得到医生的推崇。",
+      "focusWords": [
+        "year-round"
+      ],
+      "source": {
+        "text": "The dark history of bananas - John Soluri",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=esvycD1O3cM",
+        "timestamp": 107
+      }
+    }
+  ]
+}

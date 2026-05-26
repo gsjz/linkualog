@@ -1,0 +1,30 @@
+{
+  "word": "underreported",
+  "createdAt": "2026-05-17",
+  "reviews": [
+    {
+      "date": "2026-05-26",
+      "score": 2
+    }
+  ],
+  "definitions": [
+    "少报；低报（如少报价值、收入、数字等）"
+  ],
+  "examples": [
+    {
+      "text": "and redistribute it to landless farmers. The Arbenz government offered to pay a price based on tax records— where United Fruit had underreported the value of the land. El Pulpo was not happy. The company launched propaganda campaigns against Arbenz",
+      "explanation": "这里的 underreported the value of the land 表示“少报了土地价值”。也就是联合水果公司在税务记录中把土地价格报得偏低，因此政府按税务记录给出的补偿价格也较低。",
+      "focusWords": [
+        "underreported"
+      ],
+      "source": {
+        "text": "The dark history of bananas - John Soluri",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=esvycD1O3cM",
+        "timestamp": 255
+      }
+    }
+  ]
+}

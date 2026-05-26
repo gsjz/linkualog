@@ -1,0 +1,26 @@
+{
+  "word": "prevalence",
+  "createdAt": "2026-05-24",
+  "reviews": [
+    {
+      "date": "2026-05-26",
+      "score": 1
+    }
+  ],
+  "definitions": [
+    "普遍存在；流行程度；盛行率（尤指某种现象、观念或疾病在某群体中的常见程度）"
+  ],
+  "examples": [
+    {
+      "text": "After studying dozens of such cultures, Mead’s final conclusion was that competitiveness is a culturally created aspect of human behavior, and that its prevalence in a particular society is relative to how that society values it.",
+      "explanation": "这里的 prevalence 指“普遍存在的程度、流行程度”。整句意思是：某种社会中的“竞争性”有多普遍，取决于这个社会有多重视它。",
+      "focusWords": [
+        "prevalence"
+      ],
+      "source": {
+        "text": "CET6 23 12 2 阅读2",
+        "url": ""
+      }
+    }
+  ]
+}

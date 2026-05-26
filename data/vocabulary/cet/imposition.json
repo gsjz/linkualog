@@ -1,0 +1,26 @@
+{
+  "word": "imposition",
+  "createdAt": "2026-05-24",
+  "reviews": [
+    {
+      "date": "2026-05-25",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "强加；施加（尤指把意志、规则、负担等加诸于他人或事物）"
+  ],
+  "examples": [
+    {
+      "text": "Thomas Hobbes, one of the great philosophers of the seventeenth century, is perhaps best remembered for his characterization of the “natural world,” that is, the world before the imposition of the will of humanity, as being “nasty, brutish, and short.”",
+      "explanation": "这里的 imposition of the will of humanity 指“人类意志的强加/施加”。整句意思是：霍布斯把“自然世界”理解为在人类意志强加于其上之前的世界。该词在这里突出“把某种力量、意志或规则加到对象之上”的含义。",
+      "focusWords": [
+        "imposition"
+      ],
+      "source": {
+        "text": "CET6 23 12 2 阅读2",
+        "url": ""
+      }
+    }
+  ]
+}

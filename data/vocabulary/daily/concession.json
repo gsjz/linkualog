@@ -1,0 +1,37 @@
+{
+  "word": "concession",
+  "createdAt": "2026-05-17",
+  "reviews": [
+    {
+      "date": "2026-05-18",
+      "score": 2
+    },
+    {
+      "date": "2026-05-26",
+      "score": 2
+    }
+  ],
+  "definitions": [
+    "concession：让步；特许权；租让地（如 land concession 指土地特许权、土地租让）"
+  ],
+  "examples": [
+    {
+      "text": "and even funded coups to ensure they had allies in power. In Honduras, Manuel Bonilla repaid the banana man who had financed his return to power with land concessions. By the 1930s, one company dominated the region: United Fruit, who owned over 40% of Guatemala’s arable land at one point.",
+      "explanation": "这里的 concession 不是一般口语里的“让步”意思，而是指政府授予的“特许权、租让地”。land concessions 表示把土地使用或控制权作为回报让给对方。整句是在说：洪都拉斯的 Manuel Bonilla 为了回报资助自己复权的人，把土地特许权给了他。",
+      "focusWords": [
+        "concessions"
+      ],
+      "source": {
+        "text": "The dark history of bananas - John Soluri",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=esvycD1O3cM",
+        "timestamp": 134
+      }
+    }
+  ],
+  "mergedFrom": [
+    "concessions"
+  ]
+}

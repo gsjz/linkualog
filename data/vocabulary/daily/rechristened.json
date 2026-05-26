@@ -1,0 +1,39 @@
+{
+  "word": "rechristened",
+  "createdAt": "2026-05-17",
+  "reviews": [
+    {
+      "date": "2026-05-20",
+      "score": 1
+    },
+    {
+      "date": "2026-05-23",
+      "score": 1
+    },
+    {
+      "date": "2026-05-26",
+      "score": 2
+    }
+  ],
+  "definitions": [
+    "（被）重新命名为；改名为"
+  ],
+  "examples": [
+    {
+      "text": "Today, bananas are no longer as economically vital in Central America, and United Fruit Company, rechristened Chiquita, has lost its stranglehold on Latin American politics.",
+      "explanation": "这里的 rechristened Chiquita 表示“后被改名为 Chiquita（奇基塔）”。rechristened 是过去分词作插入成分，补充说明 United Fruit Company 后来改了名字。",
+      "focusWords": [
+        "rechristened"
+      ],
+      "source": {
+        "text": "The dark history of bananas - John Soluri",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=esvycD1O3cM",
+        "timestamp": 310
+      }
+    }
+  ],
+  "marked": true
+}

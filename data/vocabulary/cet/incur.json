@@ -1,0 +1,33 @@
+{
+  "word": "incur",
+  "createdAt": "2026-05-24",
+  "reviews": [
+    {
+      "date": "2026-05-25",
+      "score": 2
+    },
+    {
+      "date": "2026-05-26",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "招致，遭受，承担（不良后果、损失、风险、费用等）"
+  ],
+  "examples": [
+    {
+      "text": "According to psychology, what do people strive to do following the initial stage of their life? A) Fulfill individual needs without incurring adverse effects of human drives.",
+      "explanation": "这里的 incurring 是 incur 的现在分词，接在 without 后面，表示“在不招致……的情况下”。without incurring adverse effects of human drives 可理解为“不至于招致人类本能驱动力带来的负面影响”。其中 adverse effects 表示“负面影响、不良后果”。",
+      "focusWords": [
+        "incur"
+      ],
+      "source": {
+        "text": "CET6 23 12 2 阅读2",
+        "url": ""
+      },
+      "focusPositions": [
+        24
+      ]
+    }
+  ]
+}

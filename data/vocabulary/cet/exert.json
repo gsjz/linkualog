@@ -1,0 +1,30 @@
+{
+  "word": "exert",
+  "createdAt": "2026-05-24",
+  "reviews": [
+    {
+      "date": "2026-05-25",
+      "score": 2
+    },
+    {
+      "date": "2026-05-26",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "施加，发挥（作用、影响等）；用（力）"
+  ],
+  "examples": [
+    {
+      "text": "Whatever it is, you cannot but recognize the effect competition is exerting in academics and many other areas of contemporary life.",
+      "explanation": "这里的 exerting 是 exert 的现在分词，用在 the effect competition is exerting 中，表示“竞争正在产生/施加的影响”。整句可理解为：不管那是什么，你都不得不承认，竞争正在学术界和当代生活的许多其他领域发挥影响。",
+      "focusWords": [
+        "exert"
+      ],
+      "source": {
+        "text": "CET6 23 12 2 阅读2",
+        "url": ""
+      }
+    }
+  ]
+}

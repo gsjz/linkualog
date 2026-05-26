@@ -1,0 +1,37 @@
+{
+  "word": "dictatorship",
+  "createdAt": "2026-05-17",
+  "reviews": [
+    {
+      "date": "2026-05-18",
+      "score": 3
+    },
+    {
+      "date": "2026-05-22",
+      "score": 4
+    }
+  ],
+  "definitions": [
+    "独裁统治，专制政权（a country or government ruled by one person or a small group with absolute power）"
+  ],
+  "examples": [
+    {
+      "text": "in order to establish new plantations. After World War II, the dictatorships with which United Fruit had partnered in Guatemala and Honduras yielded to democratically elected governments that called for land reform. In Guatemala, President Jacobo Arbenz tried to buy back land from United Fruit",
+      "explanation": "这里的 dictatorships 是 dictatorship 的复数，指“独裁政权/独裁统治下的政府”。句子意思是：二战后，联合果品公司在危地马拉和洪都拉斯曾合作过的那些独裁政权，被主张土地改革的民选政府所取代。",
+      "focusWords": [
+        "dictatorships"
+      ],
+      "source": {
+        "text": "The dark history of bananas - John Soluri",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=esvycD1O3cM",
+        "timestamp": 233
+      }
+    }
+  ],
+  "mergedFrom": [
+    "dictatorships"
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "word": "pornographic",
+  "createdAt": "2026-05-26",
+  "reviews": [
+    {
+      "date": "2026-05-26",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "色情的；淫秽的；带有性露骨意味的"
+  ],
+  "examples": [
+    {
+      "text": "But \"Yong Xin Bang\" does not mean bodyguard, it means \"a diligent stick\". And yes, it sounds every bit as pornographic in Chinese. Now, this is John Woo's 2008 epic, Red Cliff, or in Chinese, \"Chi Bi\". When it was distributed in Japan, the distributor saw those Kanji and thought,",
+      "explanation": "这里的 pornographic 表示“听起来很色情/很淫秽”。说话人是在调侃这个中文表达在中文里会让人产生带有性意味的联想，并不是说它真的属于色情内容。",
+      "focusWords": [
+        "pornographic"
+      ],
+      "source": {
+        "text": "[中字] Why Japan Uses English Titles for Chinese Movies",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=eKDxdciwufA",
+        "timestamp": 18
+      }
+    }
+  ]
+}

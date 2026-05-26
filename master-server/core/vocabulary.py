@@ -3,11 +3,20 @@ import json
 import os
 import re
 from datetime import datetime
+from pathlib import Path
 
 from filelock import FileLock, Timeout
 
-VOCAB_DIR = os.environ.get("VOCAB_DIR", "../data/")
-os.makedirs(VOCAB_DIR, exist_ok=True)
+from core.data_paths import ensure_vocabulary_dir, get_vocabulary_dir
+
+DEFAULT_VOCAB_DIR = get_vocabulary_dir()
+VOCAB_DIR = str(ensure_vocabulary_dir())
+
+
+def _vocab_dir() -> str:
+    path = Path(VOCAB_DIR) if str(VOCAB_DIR or "").strip() else get_vocabulary_dir()
+    path.mkdir(parents=True, exist_ok=True)
+    return str(path)
 
 
 def normalize_vocab_lookup_word(word: str) -> str:
@@ -36,7 +45,8 @@ def get_vocab_path(word: str, category: str = "", require_subdir: bool = False, 
     normalized_word = normalize_vocab_lookup_word(word)
     clean_word = re.sub(r'[\s_]+', '-', normalized_word.lower())
     safe_category = require_vocab_subdir(category) if require_subdir else _sanitize_category(category)
-    base_dir = os.path.join(VOCAB_DIR, safe_category) if safe_category else VOCAB_DIR
+    vocab_dir = _vocab_dir()
+    base_dir = os.path.join(vocab_dir, safe_category) if safe_category else vocab_dir
     if create_dir:
         os.makedirs(base_dir, exist_ok=True)
     return os.path.join(base_dir, f"{clean_word}.json")
@@ -44,7 +54,8 @@ def get_vocab_path(word: str, category: str = "", require_subdir: bool = False, 
 
 def list_vocab_filenames(category: str = "") -> list[str]:
     safe_category = _sanitize_category(category)
-    target_dir = os.path.join(VOCAB_DIR, safe_category) if safe_category else VOCAB_DIR
+    vocab_dir = _vocab_dir()
+    target_dir = os.path.join(vocab_dir, safe_category) if safe_category else vocab_dir
     if not os.path.isdir(target_dir):
         return []
     return sorted(os.path.basename(path) for path in glob.glob(os.path.join(target_dir, "*.json")))
@@ -72,7 +83,7 @@ def _extract_source_name(source) -> str:
 
 
 def list_vocab_source_names(limit: int | None = None) -> list[str]:
-    pattern = os.path.join(VOCAB_DIR, "**", "*.json")
+    pattern = os.path.join(_vocab_dir(), "**", "*.json")
     counts: dict[str, dict] = {}
 
     for path in sorted(glob.glob(pattern, recursive=True)):

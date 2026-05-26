@@ -1,0 +1,26 @@
+{
+  "word": "world-renowned",
+  "createdAt": "2026-05-24",
+  "reviews": [
+    {
+      "date": "2026-05-26",
+      "score": 2
+    }
+  ],
+  "definitions": [
+    "世界闻名的，举世闻名的"
+  ],
+  "examples": [
+    {
+      "text": "In 1937, the world-renowned anthropologist Margaret Mead published Cooperation and Competition among Primitive Peoples, based on her studies of several societies that did not prize competition, and, in fact, seemed at times to place a negative value on it.",
+      "explanation": "这里的 world-renowned 用作形容词，修饰 anthropologist，表示“世界闻名的”。整句可理解为：1937年，世界闻名的人类学家玛格丽特·米德根据自己对若干社会的研究，出版了《原始民族中的合作与竞争》；这些社会并不推崇竞争，事实上有时似乎还对竞争持否定态度。",
+      "focusWords": [
+        "world-renowned"
+      ],
+      "source": {
+        "text": "CET6 23 12 2 阅读2",
+        "url": ""
+      }
+    }
+  ]
+}

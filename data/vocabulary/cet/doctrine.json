@@ -1,0 +1,26 @@
+{
+  "word": "doctrine",
+  "createdAt": "2026-05-24",
+  "reviews": [
+    {
+      "date": "2026-05-25",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "（尤指宗教、政治或学术中的）教义，主义，信条；学说，主张"
+  ],
+  "examples": [
+    {
+      "text": "This image of the pre-rational world is still widely held, reinforced by Charles Darwin’s highly influential work, The Origin of Species, which established the doctrine of natural selection.",
+      "explanation": "这里的 doctrine 指“学说、主张、信条”。the doctrine of natural selection 就是“自然选择学说”。整句意思是：这种关于前理性世界的图景至今仍被广泛接受，而达尔文极具影响力的《物种起源》进一步强化了这种看法，并确立了自然选择学说。",
+      "focusWords": [
+        "doctrine"
+      ],
+      "source": {
+        "text": "CET6 23 12 2 阅读2",
+        "url": ""
+      }
+    }
+  ]
+}

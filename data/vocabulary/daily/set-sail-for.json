@@ -1,0 +1,30 @@
+{
+  "word": "set sail for",
+  "createdAt": "2026-05-17",
+  "reviews": [
+    {
+      "date": "2026-05-26",
+      "score": 2
+    }
+  ],
+  "definitions": [
+    "乘船前往；起航去往（某地）"
+  ],
+  "examples": [
+    {
+      "text": "With a group of heavily armed accomplices, he set sail for Honduras in hopes of reclaiming power by whatever means necessary.",
+      "explanation": "这里的 set sail for 表示“起航前往”，强调乘船出发去洪都拉斯。整句意思是：他带着一群全副武装的同伙，乘船前往洪都拉斯，希望不择手段重新夺回权力。",
+      "focusWords": [
+        "set sail for"
+      ],
+      "source": {
+        "text": "The dark history of bananas - John Soluri",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=esvycD1O3cM",
+        "timestamp": 19
+      }
+    }
+  ]
+}

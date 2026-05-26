@@ -1,0 +1,30 @@
+{
+  "word": "misrepresented",
+  "createdAt": "2026-05-24",
+  "reviews": [
+    {
+      "date": "2026-05-25",
+      "score": 2
+    },
+    {
+      "date": "2026-05-26",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "误述；歪曲地表达；不如实地呈现"
+  ],
+  "examples": [
+    {
+      "text": "What do we learn about the “natural world” characterized by Thomas Hobbes? A) It gets misrepresented by philosophers and anthropologists.",
+      "explanation": "这里的 misrepresented 表示“被歪曲地描述/被误述”。整句意思是：哲学家和人类学家把这种“自然状态下的世界”描述得不准确。",
+      "focusWords": [
+        "misrepresented"
+      ],
+      "source": {
+        "text": "CET6 23 12 2 阅读2",
+        "url": ""
+      }
+    }
+  ]
+}

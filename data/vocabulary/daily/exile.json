@@ -1,0 +1,41 @@
+{
+  "word": "exile",
+  "createdAt": "2026-05-17",
+  "reviews": [
+    {
+      "date": "2026-05-18",
+      "score": 1
+    },
+    {
+      "date": "2026-05-20",
+      "score": 1
+    },
+    {
+      "date": "2026-05-25",
+      "score": 2
+    }
+  ],
+  "definitions": [
+    "exile：流放；放逐；被迫离开祖国（或故土）的人；exiled：被流放的、被放逐的"
+  ],
+  "examples": [
+    {
+      "text": "On a December night in 1910, the exiled former leader of Honduras, Manuel Bonilla, boarded a borrowed yacht in New Orleans. With a group of heavily armed accomplices,",
+      "explanation": "这里的 exiled 是形容词，表示“被流放的、被放逐的”。the exiled former leader of Honduras 指“这位被流放的洪都拉斯前领导人”。整句是在交代人物身份和当时的行动背景。",
+      "focusWords": [
+        "exiled"
+      ],
+      "source": {
+        "text": "The dark history of bananas - John Soluri",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=esvycD1O3cM",
+        "timestamp": 7
+      }
+    }
+  ],
+  "mergedFrom": [
+    "exiled"
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "word": "adverse",
+  "createdAt": "2026-05-24",
+  "reviews": [
+    {
+      "date": "2026-05-25",
+      "score": 1
+    },
+    {
+      "date": "2026-05-26",
+      "score": 2
+    }
+  ],
+  "definitions": [
+    "不利的；有害的（常用于 adverse effects 表示“负面影响/不良后果”）"
+  ],
+  "examples": [
+    {
+      "text": "According to psychology, what do people strive to do following the initial stage of their life? A) Fulfill individual needs without incurring adverse effects of human drives.",
+      "explanation": "adverse 在这里表示“负面的、不利的、有害的”。adverse effects of human drives 可理解为“人类驱动力带来的不良影响/负面后果”。",
+      "focusWords": [
+        "adverse"
+      ],
+      "source": {
+        "text": "CET6 23 12 2 阅读2",
+        "url": ""
+      }
+    }
+  ]
+}

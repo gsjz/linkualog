@@ -1,0 +1,30 @@
+{
+  "word": "yielded to",
+  "createdAt": "2026-05-17",
+  "reviews": [
+    {
+      "date": "2026-05-25",
+      "score": 2
+    }
+  ],
+  "definitions": [
+    "向……让步；屈服于……；被……取代/让位于……"
+  ],
+  "examples": [
+    {
+      "text": "After World War II, the dictatorships with which United Fruit had partnered in Guatemala and Honduras yielded to democratically elected governments that called for land reform. In Guatemala, President Jacobo Arbenz tried to buy back land from United Fruit and redistribute it to landless farmers.",
+      "explanation": "这里的 yielded to 表示“让位于、被……取代”，不是主动“产出”的意思。整句是在说：二战后，危地马拉和洪都拉斯那些曾与联合果品公司合作的独裁政权，被主张土地改革的民选政府所取代。",
+      "focusWords": [
+        "yielded to"
+      ],
+      "source": {
+        "text": "The dark history of bananas - John Soluri",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=esvycD1O3cM",
+        "timestamp": 237
+      }
+    }
+  ]
+}

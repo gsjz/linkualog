@@ -1,0 +1,37 @@
+{
+  "word": "accomplice",
+  "createdAt": "2026-05-17",
+  "reviews": [
+    {
+      "date": "2026-05-17",
+      "score": 2
+    },
+    {
+      "date": "2026-05-26",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "同伙；帮凶；共犯（尤指参与违法或阴谋行为的人）"
+  ],
+  "examples": [
+    {
+      "text": "On a December night in 1910, the exiled former leader of Honduras, Manuel Bonilla, boarded a borrowed yacht in New Orleans. With a group of heavily armed accomplices, he set sail for Honduras in hopes of reclaiming power by whatever means necessary.",
+      "explanation": "这里的 accomplices 指“同伙、帮凶、共犯”。句子说的是：1910年12月的一个夜晚，被流放的洪都拉斯前领导人曼努埃尔·博尼利亚在新奥尔良登上一艘借来的游艇，并与一群全副武装的同伙一起启程前往洪都拉斯，想不择手段地重新夺回政权。",
+      "focusWords": [
+        "accomplices"
+      ],
+      "source": {
+        "text": "The dark history of bananas - John Soluri",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=esvycD1O3cM",
+        "timestamp": 17
+      }
+    }
+  ],
+  "mergedFrom": [
+    "accomplices"
+  ]
+}

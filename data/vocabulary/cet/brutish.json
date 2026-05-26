@@ -1,0 +1,26 @@
+{
+  "word": "brutish",
+  "createdAt": "2026-05-24",
+  "reviews": [
+    {
+      "date": "2026-05-26",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "残忍粗暴的；野蛮的；兽性的"
+  ],
+  "examples": [
+    {
+      "text": "Thomas Hobbes, one of the great philosophers of the seventeenth century, is perhaps best remembered for his characterization of the “natural world,” that is, the world before the imposition of the will of humanity, as being “nasty, brutish, and short.”",
+      "explanation": "这里的 brutish 用来形容“自然状态下的世界/生活”具有野蛮、粗暴、近乎兽性的特点。整句话引用霍布斯的著名概括：在没有社会秩序约束时，人类处境是“肮脏、野蛮而短暂的”。",
+      "focusWords": [
+        "brutish"
+      ],
+      "source": {
+        "text": "CET6 23 12 2 阅读2",
+        "url": ""
+      }
+    }
+  ]
+}

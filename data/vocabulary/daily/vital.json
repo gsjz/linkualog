@@ -1,0 +1,30 @@
+{
+  "word": "vital",
+  "createdAt": "2026-05-17",
+  "reviews": [
+    {
+      "date": "2026-05-26",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "至关重要的；必不可少的（尤指对经济、发展或生存很重要）"
+  ],
+  "examples": [
+    {
+      "text": "United Fruit finally switched from Gros Michel to Panama disease-resistant Cavendish bananas in the early 1960s. Today, bananas are no longer as economically vital in Central America, and United Fruit Company, rechristened Chiquita, has lost its stranglehold on Latin American politics.",
+      "explanation": "这里的 vital 表示“至关重要的、非常重要的”。as economically vital 意思是“在经济上不再像过去那样重要”。整句是在说：如今香蕉对中美洲经济已经没有以前那么关键了。",
+      "focusWords": [
+        "vital"
+      ],
+      "source": {
+        "text": "The dark history of bananas - John Soluri",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=esvycD1O3cM",
+        "timestamp": 305
+      }
+    }
+  ]
+}
