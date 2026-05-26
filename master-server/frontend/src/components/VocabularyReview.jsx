@@ -500,11 +500,11 @@ export default function VocabularyReview({
   const detailRequestRef = useRef(0);
   const handledEntryUpdateTokenRef = useRef('');
   const handledLaunchRequestKeyRef = useRef('');
-  const previousMobileSimpleRef = useRef(mobileSimple);
   const recommendPreferenceHydratedRef = useRef(false);
   const savedRecommendPreferenceKeyRef = useRef(recommendationPreferencesKey(DEFAULT_RECOMMENDATION_PREFERENCES));
   const recommendPreferenceSaveTimerRef = useRef(null);
   const recommendationQueueRequestRef = useRef(0);
+  const autoRecommendationPoolKeyRef = useRef('');
   const infoButtonRef = useRef(null);
   const [mobileInfoPanelPosition, setMobileInfoPanelPosition] = useState(null);
 
@@ -573,6 +573,7 @@ export default function VocabularyReview({
     setRecommendExcludeKeys([]);
     setRecommendation(null);
     setRecommendationQueue([]);
+    autoRecommendationPoolKeyRef.current = '';
     resetCurrentEntry([]);
     if (resetQuery) setWordQuery('');
   }, [resetCurrentEntry]);
@@ -798,41 +799,11 @@ export default function VocabularyReview({
   }, [mobileInfoOpen, updateMobileInfoPanelPosition]);
 
   useEffect(() => {
-    const enteringMobileSimple = mobileSimple && !previousMobileSimpleRef.current;
-
-    if (compactDesktop) {
-      if (!isAllCategoriesValue(selectedCategoryRef.current)) {
-        applySelectedCategory(ALL_CATEGORIES_VALUE, { resetQuery: true });
-      }
-      setEntryFilter('all');
-      setWordQuery('');
-      previousMobileSimpleRef.current = mobileSimple;
-      return;
-    }
-
-    if (enteringMobileSimple) {
-      applySelectedCategory(ALL_CATEGORIES_VALUE, { resetQuery: true });
-      setEntryFilter('all');
-      setWordQuery('');
-      previousMobileSimpleRef.current = mobileSimple;
-      return;
-    }
-
-    previousMobileSimpleRef.current = mobileSimple;
-  }, [applySelectedCategory, compactDesktop, mobileSimple]);
-
-  useEffect(() => {
     queueMicrotask(() => {
       void loadCategories();
     });
 
     const handleConfigUpdate = () => {
-      if (compactDesktop) {
-        if (!isAllCategoriesValue(selectedCategoryRef.current)) {
-          applySelectedCategory(ALL_CATEGORIES_VALUE);
-        }
-        return;
-      }
       if (isAllCategoriesValue(selectedCategoryRef.current)) {
         return;
       }
@@ -848,7 +819,7 @@ export default function VocabularyReview({
       window.removeEventListener('config-updated', handleConfigUpdate);
       window.removeEventListener('default-category-updated', handleConfigUpdate);
     };
-  }, [applySelectedCategory, compactDesktop, loadCategories, mobileSimple]);
+  }, [applySelectedCategory, loadCategories]);
 
   useEffect(() => {
     if (isAllCategoriesValue(selectedCategory)) return;
@@ -1160,7 +1131,11 @@ export default function VocabularyReview({
       ? `${selectedCategoryForKey}/${selectedFile}`
       : (recommendation?.key || '');
     const nextExcluded = [...new Set([...recommendExcludeKeys, currentKey].filter(Boolean))];
-    setRecommendExcludeKeys(nextExcluded);
+    const excludeUnchanged = nextExcluded.length === recommendExcludeKeys.length
+      && nextExcluded.every((item, index) => item === recommendExcludeKeys[index]);
+    if (!excludeUnchanged) {
+      setRecommendExcludeKeys(nextExcluded);
+    }
     void runRecommendationRefresh(nextExcluded, { fallbackPool, fallbackOnEmpty: true });
   }, [detailCategory, recommendExcludeKeys, recommendation?.key, runRecommendationRefresh, selectedEntry?.category, selectedEntry?.file, visibleEntries]);
 
@@ -1189,9 +1164,11 @@ export default function VocabularyReview({
 
   useEffect(() => {
     if (!mobileSimple || !randomSelectionMode) return;
+    if (loadingRecommendation) return;
     if (!selectedCategory) return;
     if (entriesCategory !== selectedCategory) return;
     if (!visibleEntries.length) {
+      autoRecommendationPoolKeyRef.current = '';
       detailRequestRef.current += 1;
       setSelectedEntryId('');
       setSelectedEntrySnapshot(null);
@@ -1201,12 +1178,29 @@ export default function VocabularyReview({
     }
 
     const stillVisible = visibleEntries.some((item) => item.id === selectedEntryId);
-    if (stillVisible) return;
+    if (stillVisible) {
+      autoRecommendationPoolKeyRef.current = '';
+      return;
+    }
+
+    const firstVisibleId = visibleEntries[0]?.id || '';
+    const lastVisibleId = visibleEntries[visibleEntries.length - 1]?.id || '';
+    const poolKey = [
+      selectedCategory,
+      entriesCategory,
+      entryFilter,
+      normalizedWordQuery,
+      visibleEntries.length,
+      firstVisibleId,
+      lastVisibleId,
+    ].join('\u0001');
+    if (autoRecommendationPoolKeyRef.current === poolKey) return;
+    autoRecommendationPoolKeyRef.current = poolKey;
 
     queueMicrotask(() => {
       handleRecommendationNext(visibleEntries);
     });
-  }, [entriesCategory, handleRecommendationNext, mobileSimple, randomSelectionMode, selectedCategory, selectedEntryId, visibleEntries]);
+  }, [entriesCategory, entryFilter, handleRecommendationNext, loadingRecommendation, mobileSimple, normalizedWordQuery, randomSelectionMode, selectedCategory, selectedEntryId, visibleEntries]);
 
   useEffect(() => {
     if (!randomSelectionMode) {

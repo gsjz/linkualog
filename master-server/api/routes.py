@@ -13,9 +13,9 @@ from core.config import get_public_config_data, reset_config_data, save_config_d
 from core.storage import save_temp_file
 from core.tasks import load_tasks, save_tasks, create_task
 from services.llm import process_image, process_word_definition, process_context_analysis, recommend_task_name
+from core.review_vocabulary import list_categories as list_vocab_categories
 from core.vocabulary import (
     merge_or_create_vocab,
-    VOCAB_DIR,
     list_vocab_filenames,
     list_vocab_source_names,
     load_vocab,
@@ -536,12 +536,7 @@ def parse_vocabulary(req: VocabAddRequest):
 
 @router.get("/api/vocabulary/categories")
 def list_categories():
-    categories = []
-    if os.path.exists(VOCAB_DIR):
-        categories = sorted(
-            d for d in os.listdir(VOCAB_DIR)
-            if os.path.isdir(os.path.join(VOCAB_DIR, d))
-        )
+    categories = list_vocab_categories()
     return {"status": "success", "categories": categories}
 
 @router.post("/api/vocabulary/add")
