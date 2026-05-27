@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
+import { GM_getValue, GM_setValue } from '$';
 import { ConfigService } from '../services/configService';
 import { fetchLlmStream } from '../services/llmApi';
 import { requestJson } from '../services/jsonApi';
@@ -8,6 +9,7 @@ export interface VocabTask {
   word: string;
   context: string;
   source: string;
+  source_url?: string;
   youtube?: { url: string; timestamp: number };
   date: string; 
   category: string;
@@ -50,6 +52,12 @@ JSON 格式：
     }
   ]
 }`;
+
+const QUEUE_STORAGE_KEY = 'linkual_vocab_queue';
+export const QUEUE_COUNT_EVENT = 'linkual_vocab_queue_count';
+export const QUEUE_TOGGLE_EVENT = 'linkual_vocab_queue_toggle';
+export const QUEUE_REQUEST_COUNT_EVENT = 'linkual_vocab_queue_request_count';
+const QUEUE_SYNC_INTERVAL_MS = 1800;
 
 const parseLlmJson = (rawText: string): unknown => {
   const trimmed = rawText.trim();
@@ -140,8 +148,48 @@ const sanitizeTask = (task: VocabTask): VocabTask => {
   const sanitizedResult = sanitizeLlmResult(task.llmResult);
   return {
     ...task,
+    source_url: typeof task.source_url === 'string' ? task.source_url : '',
     llmResult: hasUsableLlmResult(sanitizedResult) ? sanitizedResult : undefined,
   };
+};
+
+const readStoredQueue = (): VocabTask[] => {
+  try {
+    if (typeof GM_getValue !== 'undefined') {
+      const saved = GM_getValue(QUEUE_STORAGE_KEY);
+      if (typeof saved === 'string' && saved) return JSON.parse(saved).map(sanitizeTask);
+      if (Array.isArray(saved)) return saved.map(sanitizeTask);
+    }
+  } catch (e) {}
+
+  try {
+    const saved = localStorage.getItem(QUEUE_STORAGE_KEY);
+    if (saved) return JSON.parse(saved).map(sanitizeTask);
+  } catch (e) {}
+
+  return [];
+};
+
+const writeStoredQueue = (tasks: VocabTask[]) => {
+  const serialized = JSON.stringify(tasks);
+
+  try {
+    if (typeof GM_setValue !== 'undefined') {
+      GM_setValue(QUEUE_STORAGE_KEY, serialized);
+    }
+  } catch (e) {}
+
+  try {
+    localStorage.setItem(QUEUE_STORAGE_KEY, serialized);
+  } catch (e) {}
+};
+
+const clearStoredQueue = () => writeStoredQueue([]);
+
+const emitQueueCount = (tasks: VocabTask[]) => {
+  window.dispatchEvent(new CustomEvent(QUEUE_COUNT_EVENT, {
+    detail: { pendingCount: tasks.filter(t => t.status !== 'success').length },
+  }));
 };
 
 const VocabQueue: React.FC = () => {
@@ -150,34 +198,35 @@ const VocabQueue: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState(ConfigService.get('lan_action') as string || 'Video_Sync');
   const [themeColor, setThemeColor] = useState(ConfigService.get('theme_color') as string || '#6a1b9a');
 
-  const [tasks, setTasks] = useState<VocabTask[]>(() => {
-    try {
-      const saved = localStorage.getItem('linkual_vocab_queue');
-      if (saved) return JSON.parse(saved).map(sanitizeTask);
-    } catch(e) {}
-    return [];
-  });
+  const [tasks, setTasks] = useState<VocabTask[]>(readStoredQueue);
 
   useEffect(() => {
-    localStorage.setItem('linkual_vocab_queue', JSON.stringify(tasks));
+    writeStoredQueue(tasks);
+    emitQueueCount(tasks);
   }, [tasks]);
 
   useEffect(() => {
+    const syncQueue = () => setTasks(readStoredQueue());
     const syncAcrossTabs = (e: StorageEvent) => {
-      if (e.key === 'linkual_vocab_queue' && e.newValue) {
-        try {
-          setTasks(JSON.parse(e.newValue).map(sanitizeTask));
-        } catch(err) {}
-      }
+      if (e.key === QUEUE_STORAGE_KEY) syncQueue();
     };
-    window.addEventListener('storage', syncAcrossTabs);
-    return () => window.removeEventListener('storage', syncAcrossTabs);
-  }, []);
+    const toggleQueue = () => setIsOpen(prev => !prev);
+    const reportCount = () => emitQueueCount(readStoredQueue());
 
-  const [position, setPosition] = useState({ left: 24, bottom: 24 });
-  const [isDragging, setIsDragging] = useState(false);
-  const offset = useRef({ x: 0, y: 0 });
-  const hasMoved = useRef(false);
+    window.addEventListener('storage', syncAcrossTabs);
+    window.addEventListener(QUEUE_TOGGLE_EVENT, toggleQueue);
+    window.addEventListener(QUEUE_REQUEST_COUNT_EVENT, reportCount);
+    const interval = window.setInterval(syncQueue, QUEUE_SYNC_INTERVAL_MS);
+
+    reportCount();
+
+    return () => {
+      window.removeEventListener('storage', syncAcrossTabs);
+      window.removeEventListener(QUEUE_TOGGLE_EVENT, toggleQueue);
+      window.removeEventListener(QUEUE_REQUEST_COUNT_EVENT, reportCount);
+      window.clearInterval(interval);
+    };
+  }, []);
 
   useEffect(() => {
     const handleConfigUpdate = () => {
@@ -188,55 +237,16 @@ const VocabQueue: React.FC = () => {
     return () => window.removeEventListener('linkual_settings_updated', handleConfigUpdate);
   }, []);
 
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (e.button !== 0) return;
-    setIsDragging(true);
-    hasMoved.current = false;
-    offset.current = {
-      x: e.clientX - position.left,
-      y: window.innerHeight - e.clientY - position.bottom
-    };
-  };
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (isDragging) {
-        e.preventDefault();
-        hasMoved.current = true;
-        let newLeft = e.clientX - offset.current.x;
-        let newBottom = window.innerHeight - e.clientY - offset.current.y;
-        newLeft = Math.max(0, Math.min(newLeft, window.innerWidth - 60));
-        newBottom = Math.max(0, Math.min(newBottom, window.innerHeight - 60));
-        setPosition({ left: newLeft, bottom: newBottom });
-      }
-    };
-    const handleMouseUp = () => setIsDragging(false);
-
-    if (isDragging) {
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
-    }
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [isDragging, position]);
-
-  const handleButtonClick = (e: React.MouseEvent) => {
-    if (hasMoved.current) { e.preventDefault(); return; }
-    setIsOpen(!isOpen);
-  };
-
   useEffect(() => {
     const handleEvent = (e: any) => {
-      const { word, context, source, youtube } = e.detail;
+      const { word, context, source, source_url, youtube } = e.detail;
       
       const dateObj = new Date();
       const systemDate = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
       
       const newTask: VocabTask = {
         id: Date.now() + Math.random().toString(36).substring(2, 9),
-        word, context, source, youtube, date: systemDate,
+        word, context, source, source_url: source_url || youtube?.url || window.location.href, youtube, date: systemDate,
         category: selectedCategory, 
         status: 'idle', error: null
       };
@@ -301,6 +311,7 @@ const VocabQueue: React.FC = () => {
       word: sendingTask.word,
       context: sendingTask.context,
       source: sendingTask.source,
+      source_url: sendingTask.source_url || sendingTask.youtube?.url || '',
       youtube: sendingTask.youtube,
       date: sendingTask.date,
       llm_result: sanitizeLlmResult(sendingTask.llmResult),
@@ -372,7 +383,7 @@ const VocabQueue: React.FC = () => {
   const handleClearAll = () => {
     if (window.confirm("确定清空当前队列中所有的缓存词卡吗？")) {
       setTasks([]);
-      localStorage.removeItem('linkual_vocab_queue');
+      clearStoredQueue();
     }
   };
 
@@ -380,19 +391,22 @@ const VocabQueue: React.FC = () => {
   const sendableCount = tasks.filter(canSendTask).length;
   const bulkSendDisabled = isBulkSending || sendableCount === 0;
 
+  if (!isOpen) return null;
+
   return (
-    <div style={{ position: 'fixed', left: `${position.left}px`, bottom: `${position.bottom}px`, zIndex: 2147483647, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', fontFamily: 'sans-serif', pointerEvents: 'auto' }}>
-      {isOpen && (
-        <div style={{ width: '400px', height: '580px', background: '#fff', borderRadius: '8px', boxShadow: '0 10px 30px rgba(0,0,0,0.2)', border: '1px solid #e4e4e7', display: 'flex', flexDirection: 'column', marginBottom: '12px', overflow: 'hidden' }}>
+    <div className="linkual-vocab-queue-panel-wrap">
+      <div style={{ width: '400px', height: '580px', background: '#fff', borderRadius: '8px', boxShadow: '0 10px 30px rgba(0,0,0,0.2)', border: '1px solid #e4e4e7', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           
           <div style={{ padding: '12px', borderBottom: '1px solid #e4e4e7', background: '#fafafa', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <label style={{ fontSize: '13px', fontWeight: 'bold', color: '#333' }}>生词本目录:</label>
-                <input 
-                  value={selectedCategory} 
-                  onChange={e => setSelectedCategory(e.target.value)} 
-                  style={{ width: '120px', padding: '4px 8px', border: '1px solid #ddd', borderRadius: '4px', fontSize: '12px', outline: 'none' }}
-                />
+             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                <strong style={{ fontSize: '14px', color: '#333' }}>制卡队列</strong>
+                <button
+                  type="button"
+                  onClick={() => setIsOpen(false)}
+                  style={{ border: 'none', background: '#eee', color: '#333', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold', borderRadius: '4px', padding: '4px 8px' }}
+                >
+                  x
+                </button>
              </div>
              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px', flexWrap: 'wrap' }}>
                <button
@@ -465,16 +479,6 @@ const VocabQueue: React.FC = () => {
             ))}
           </div>
         </div>
-      )}
-
-      <button 
-        onMouseDown={handleMouseDown}
-        onClick={handleButtonClick}
-        title="按住即可拖动面板位置"
-        style={{ padding: '12px 20px', background: themeColor, color: '#fff', border: 'none', borderRadius: '30px', boxShadow: '0 6px 16px rgba(0,0,0,0.25)', cursor: isDragging ? 'grabbing' : 'grab', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold', fontSize: '14px', userSelect: 'none' }}
-      >
-        <span>制卡队列 {pendingCount > 0 && <span style={{ background: '#f44336', padding: '2px 8px', borderRadius: '12px', fontSize: '12px', marginLeft: '6px' }}>{pendingCount}</span>}</span>
-      </button>
     </div>
   );
 };

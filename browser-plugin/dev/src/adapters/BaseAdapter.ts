@@ -8,6 +8,9 @@ export interface IVideoAdapter {
   seekTo(time: number): void;
   play(): void;
   pause(): void;
+  getDuration?(): number;
+  isPaused?(): boolean;
   resizeHost?(width: number, height: number, layout: string): void;
+  setCustomFullscreen?(enabled: boolean): void;
   isVideoPage(): boolean;
 }

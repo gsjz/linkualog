@@ -4,6 +4,7 @@ import SubtitleItem from '../components/SubtitleItem';
 import Settings from '../components/Settings';
 import VocabQueue from '../components/VocabQueue';
 import MobileFullscreenButton from '../components/MobileFullscreenButton';
+import UniversalVocabWidget from '../components/UniversalVocabWidget';
 import { Subtitle } from '../types';
 import { IVideoAdapter } from '../adapters/BaseAdapter';
 import { ConfigService } from '../services/configService';
@@ -13,10 +14,40 @@ import './App.css';
 interface AppProps { adapter: IVideoAdapter; }
 
 type CfgKey = keyof typeof DEFAULTS;
+type BrowserFullscreenDocument = Document & {
+  webkitFullscreenElement?: Element | null;
+  mozFullScreenElement?: Element | null;
+  msFullscreenElement?: Element | null;
+  webkitExitFullscreen?: () => Promise<void> | void;
+  mozCancelFullScreen?: () => Promise<void> | void;
+  msExitFullscreen?: () => Promise<void> | void;
+};
 
 const INITIAL_RENDER_LIMIT = 80;
 const RENDER_BATCH_SIZE = 80;
 const ACTIVE_RENDER_BUFFER = 20;
+
+function getBrowserFullscreenElement() {
+  const doc = document as BrowserFullscreenDocument;
+  return document.fullscreenElement ||
+    doc.webkitFullscreenElement ||
+    doc.mozFullScreenElement ||
+    doc.msFullscreenElement ||
+    null;
+}
+
+function exitBrowserFullscreen() {
+  const doc = document as BrowserFullscreenDocument;
+
+  if (document.exitFullscreen) return document.exitFullscreen();
+  if (doc.webkitExitFullscreen) return doc.webkitExitFullscreen();
+  if (doc.mozCancelFullScreen) return doc.mozCancelFullScreen();
+  if (doc.msExitFullscreen) return doc.msExitFullscreen();
+}
+
+function isPromiseLike(value: unknown): value is Promise<void> {
+  return Boolean(value && typeof (value as Promise<void>).then === 'function');
+}
 
 const App: React.FC<AppProps> = ({ adapter }) => {
   const [subs, setSubs] = useState<Subtitle[]>([]);
@@ -88,6 +119,29 @@ const App: React.FC<AppProps> = ({ adapter }) => {
   }, [activeIndex, renderLimit, subs.length]);
 
   useEffect(() => {
+    const clearCustomFullscreenIfNeeded = () => {
+      if (inVideo || !document.documentElement.classList.contains('linkual-custom-fullscreen')) return;
+
+      document.documentElement.classList.remove('linkual-custom-fullscreen');
+      adapter.setCustomFullscreen?.(false);
+      window.dispatchEvent(new Event('linkual_custom_fullscreen_changed'));
+      window.dispatchEvent(new Event('linkual_custom_layout_refresh'));
+      window.dispatchEvent(new Event('resize'));
+
+      if (getBrowserFullscreenElement() === document.documentElement) {
+        const browserFullscreenAction = exitBrowserFullscreen();
+        if (isPromiseLike(browserFullscreenAction)) {
+          browserFullscreenAction.catch((error) => console.warn('[Linkual] 浏览器全屏退出失败', error));
+        }
+      }
+    };
+
+    clearCustomFullscreenIfNeeded();
+    window.addEventListener('linkual_custom_fullscreen_changed', clearCustomFullscreenIfNeeded);
+    return () => window.removeEventListener('linkual_custom_fullscreen_changed', clearCustomFullscreenIfNeeded);
+  }, [adapter, inVideo]);
+
+  useEffect(() => {
     if (adapter.resizeHost) {
       if (inVideo) {
         adapter.resizeHost(sidebarWidth, sidebarHeight, layout);
@@ -96,6 +150,17 @@ const App: React.FC<AppProps> = ({ adapter }) => {
       }
     }
   }, [sidebarWidth, sidebarHeight, layout, adapter, inVideo]);
+
+  useEffect(() => {
+    const refreshCustomLayout = () => {
+      if (adapter.resizeHost && inVideo) {
+        adapter.resizeHost(sidebarWidth, sidebarHeight, layout);
+      }
+    };
+
+    window.addEventListener('linkual_custom_layout_refresh', refreshCustomLayout);
+    return () => window.removeEventListener('linkual_custom_layout_refresh', refreshCustomLayout);
+  }, [adapter, inVideo, layout, sidebarHeight, sidebarWidth]);
 
   const startResize = (e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -143,7 +208,9 @@ const App: React.FC<AppProps> = ({ adapter }) => {
   const wrapStyle: React.CSSProperties = {
     display: inVideo ? 'flex' : 'none',
     width: layout === 'right' ? sidebarWidth : '100%',
-    height: layout === 'bottom' ? sidebarHeight : '100vh',
+    height: layout === 'bottom'
+      ? sidebarHeight
+      : 'calc(100vh - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom, 0px))',
     pointerEvents: inVideo ? 'auto' : 'none',
     '--linkual-theme': themeColor,
     '--linkual-done': doneColor,
@@ -188,10 +255,11 @@ const App: React.FC<AppProps> = ({ adapter }) => {
             </>
           )}
         </div>
-        {isSettingsOpen && <Settings adapter={adapter} onClose={() => setIsSettingsOpen(false)} />}
       </div>
-      {showMobileFullscreenButton && <MobileFullscreenButton />}
-      {inVideo && <VocabQueue />}
+      <UniversalVocabWidget onOpenSettings={() => setIsSettingsOpen(true)} />
+      {showMobileFullscreenButton && <MobileFullscreenButton adapter={adapter} />}
+      <VocabQueue />
+      {isSettingsOpen && <Settings adapter={adapter} onClose={() => setIsSettingsOpen(false)} />}
     </>
   );
 };

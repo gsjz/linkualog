@@ -23,7 +23,7 @@
 }
 
 #linkual-root .linkual-wrap.layout-bottom {
-  bottom: 0;
+  bottom: calc(var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom, 0px));
   left: 0;
   width: 100vw !important;
   box-shadow: 0 -5px 15px rgba(0,0,0,0.1);
@@ -75,7 +75,7 @@
 #linkual-root .linkual-mobile-fullscreen {
   position: fixed;
   right: 20px;
-  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  bottom: calc(20px + var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom, 0px));
   z-index: 2147483647;
   min-width: 78px;
   min-height: 40px;
@@ -98,6 +98,132 @@
 
 #linkual-root .linkual-mobile-fullscreen.is-dragging {
   cursor: grabbing;
+}
+
+#linkual-root .linkual-player-controls {
+  position: fixed;
+  left: 12px;
+  bottom: calc(var(--linkual-sidebar-height, 0px) + var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom, 0px) + 14px);
+  z-index: 2147483647;
+  width: calc(100vw - var(--linkual-sidebar-width, 0px) - 24px);
+  max-width: calc(100vw - var(--linkual-sidebar-width, 0px) - 24px);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.72);
+  color: #fff;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.24);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  pointer-events: auto;
+  backdrop-filter: blur(8px);
+}
+
+#linkual-root .linkual-player-progress-row {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) 52px;
+  align-items: center;
+  gap: 10px;
+}
+
+#linkual-root .linkual-player-time {
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+}
+
+#linkual-root .linkual-player-progress {
+  width: 100%;
+  height: 18px;
+  margin: 0;
+  padding: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+#linkual-root .linkual-player-progress::-webkit-slider-runnable-track {
+  height: 5px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    var(--linkual-theme, #6a1b9a) 0%,
+    var(--linkual-theme, #6a1b9a) var(--linkual-progress, 0%),
+    rgba(255,255,255,0.32) var(--linkual-progress, 0%),
+    rgba(255,255,255,0.32) 100%
+  );
+}
+
+#linkual-root .linkual-player-progress::-moz-range-track {
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.32);
+}
+
+#linkual-root .linkual-player-progress::-moz-range-progress {
+  height: 5px;
+  border-radius: 999px;
+  background: var(--linkual-theme, #6a1b9a);
+}
+
+#linkual-root .linkual-player-progress::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 15px;
+  height: 15px;
+  margin-top: -5px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  background: var(--linkual-theme, #6a1b9a);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.32);
+}
+
+#linkual-root .linkual-player-progress::-moz-range-thumb {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  background: var(--linkual-theme, #6a1b9a);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.32);
+}
+
+#linkual-root .linkual-player-button-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+#linkual-root .linkual-player-btn {
+  height: 31px;
+  min-width: 44px;
+  padding: 0 12px;
+  border: 1px solid rgba(255,255,255,0.16);
+  border-radius: 6px;
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+  cursor: pointer;
+  font: 700 12px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+#linkual-root .linkual-player-btn.primary {
+  min-width: 58px;
+  background: var(--linkual-theme, #6a1b9a);
+  border-color: transparent;
+}
+
+#linkual-root .linkual-player-btn:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+#linkual-root .linkual-player-btn.primary:hover {
+  filter: brightness(1.08);
 }
 
 #linkual-root .list { 
@@ -351,4 +477,522 @@
 
 #linkual-root .sync-btn.error {
   background-color: #f44336;
+}
+
+#linkual-root .linkual-universal-widget {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2147483647;
+  min-height: calc(var(--linkual-universal-widget-height, 58px) + env(safe-area-inset-bottom, 0px));
+  padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fff;
+  color: #222;
+  border-top: 1px solid rgba(0, 0, 0, 0.12);
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.14);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  pointer-events: auto;
+}
+
+#linkual-root .linkual-universal-widget ~ .linkual-mobile-fullscreen {
+  bottom: calc(20px + var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom, 0px));
+}
+
+#linkual-root .linkual-universal-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: min(390px, 32vw);
+  min-width: 260px;
+  height: 34px;
+}
+
+#linkual-root .linkual-universal-selection {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #444;
+  font-size: 13px;
+}
+
+#linkual-root .linkual-universal-selection-label {
+  flex: 0 0 auto;
+  color: #666;
+  font-weight: 700;
+}
+
+#linkual-root .linkual-universal-selection-text {
+  min-width: 0;
+  max-width: min(180px, 14vw);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #111;
+  font-weight: 700;
+}
+
+#linkual-root .linkual-universal-muted {
+  color: #888;
+}
+
+#linkual-root .linkual-universal-actions {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
+}
+
+#linkual-root .linkual-universal-status {
+  max-width: 130px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  color: #666;
+}
+
+#linkual-root .linkual-universal-status.status-success {
+  color: #17803d;
+}
+
+#linkual-root .linkual-universal-status.status-error {
+  color: #c62828;
+}
+
+#linkual-root .linkual-universal-add-btn,
+#linkual-root .linkual-universal-icon-btn,
+#linkual-root .linkual-universal-clear,
+#linkual-root .linkual-universal-send {
+  border: 0;
+  border-radius: 6px;
+  min-height: 30px;
+  padding: 0 12px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: inherit;
+}
+
+#linkual-root .linkual-universal-icon-btn,
+#linkual-root .linkual-universal-send {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+#linkual-root .linkual-universal-add-btn,
+#linkual-root .linkual-universal-send {
+  background: var(--linkual-theme, #000);
+  color: #fff;
+}
+
+#linkual-root .linkual-universal-icon-btn {
+  background: #f1f1f1;
+  color: #333;
+}
+
+#linkual-root .linkual-universal-queue-btn {
+  position: relative;
+  background: var(--linkual-theme, #000);
+  color: #fff;
+}
+
+#linkual-root .linkual-universal-button-icon {
+  display: none;
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+#linkual-root .linkual-universal-button-text {
+  min-width: 0;
+}
+
+#linkual-root .linkual-universal-queue-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #f44336;
+  color: #fff;
+  font-size: 10px;
+  line-height: 1;
+}
+
+#linkual-root .linkual-universal-clear {
+  width: 34px;
+  padding: 0;
+  background: #f3f3f3;
+  color: #555;
+}
+
+#linkual-root .linkual-universal-form {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(120px, 190px) minmax(220px, 1fr) 34px auto auto;
+  align-items: stretch;
+  gap: 8px;
+}
+
+#linkual-root .linkual-universal-inline-actions {
+  align-self: center;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  min-width: 0;
+}
+
+#linkual-root .linkual-universal-field {
+  min-width: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+}
+
+#linkual-root .linkual-universal-mode-tab {
+  flex: 0 0 auto;
+  min-width: 48px;
+  height: 34px;
+  padding: 0 8px;
+  border: 1px solid #d7d7d7;
+  border-radius: 6px;
+  background: #f6f6f6;
+  color: #555;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+#linkual-root .linkual-universal-mode-tab.active {
+  border-color: var(--linkual-theme, #000);
+  background: var(--linkual-theme, #000);
+  color: #fff;
+}
+
+#linkual-root .linkual-universal-field input {
+  min-width: 0;
+  width: 100%;
+  height: 34px;
+  box-sizing: border-box;
+  border: 1px solid #d7d7d7;
+  border-radius: 6px;
+  padding: 7px 9px;
+  color: #222;
+  background: #fff;
+  outline: none;
+  font: 13px/1.35 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  letter-spacing: 0;
+}
+
+#linkual-root .linkual-universal-field input:focus {
+  border-color: var(--linkual-theme, #000);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.08);
+}
+
+#linkual-root .linkual-universal-field.field-context input {
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+#linkual-root .linkual-universal-field.field-context input::-webkit-scrollbar {
+  display: none;
+}
+
+#linkual-root .linkual-universal-clear,
+#linkual-root .linkual-universal-send {
+  align-self: center;
+  height: 34px;
+}
+
+#linkual-root .linkual-universal-send:disabled,
+#linkual-root .linkual-universal-clear:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+#linkual-root .linkual-universal-expand-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2147483647;
+  width: 100vw;
+  height: calc(28px + env(safe-area-inset-bottom, 0px));
+  padding: 0 12px env(safe-area-inset-bottom, 0px);
+  border: 0;
+  border-radius: 0;
+  background: var(--linkual-theme, #000);
+  color: #fff;
+  box-shadow: 0 -4px 14px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  user-select: none;
+  pointer-events: auto;
+}
+
+#linkual-root .linkual-universal-expand-bar:hover {
+  filter: brightness(1.08);
+}
+
+#linkual-root .linkual-universal-floating-add {
+  position: fixed;
+  z-index: 2147483647;
+  transform: translateX(-50%);
+  min-height: 30px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--linkual-theme, #000);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  pointer-events: auto;
+}
+
+#linkual-root .linkual-vocab-queue-panel-wrap {
+  position: fixed;
+  right: 12px;
+  bottom: calc(var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom, 0px) + 12px);
+  z-index: 2147483647;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  pointer-events: auto;
+}
+
+@media (max-width: 720px) {
+  #linkual-root .linkual-universal-widget {
+    width: 100vw;
+    max-width: 100vw;
+    overflow: visible;
+    padding: 8px 8px calc(8px + env(safe-area-inset-bottom, 0px));
+    flex-direction: column;
+    align-items: stretch;
+    gap: 7px;
+  }
+
+  #linkual-root .linkual-universal-top {
+    width: 100%;
+    min-width: 0;
+    gap: 8px;
+  }
+
+  #linkual-root .linkual-universal-selection {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  #linkual-root .linkual-universal-selection-text {
+    max-width: calc(100vw - 190px);
+  }
+
+  #linkual-root .linkual-universal-actions {
+    gap: 5px;
+  }
+
+  #linkual-root .linkual-universal-inline-actions .linkual-universal-icon-btn {
+    width: 31px;
+    min-width: 31px;
+    min-height: 30px;
+    padding: 0;
+    font-size: 12px;
+  }
+
+  #linkual-root .linkual-universal-status {
+    display: none;
+  }
+
+  #linkual-root .linkual-universal-form {
+    grid-template-columns: minmax(0, 1fr) 32px 36px 97px;
+    gap: 4px;
+  }
+
+  #linkual-root .linkual-universal-field {
+    flex-direction: row;
+  }
+
+  #linkual-root .linkual-universal-field.field-context {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  #linkual-root .linkual-universal-clear {
+    grid-column: 2;
+    grid-row: 1;
+    width: 32px;
+    min-width: 32px;
+  }
+
+  #linkual-root .linkual-universal-send {
+    grid-column: 3;
+    grid-row: 1;
+    width: 36px;
+    min-width: 36px;
+    padding: 0;
+  }
+
+  #linkual-root .linkual-universal-inline-actions {
+    grid-column: 4;
+    grid-row: 1;
+    gap: 3px;
+    overflow: hidden;
+  }
+
+  #linkual-root .linkual-universal-button-icon {
+    display: block;
+  }
+
+  #linkual-root .linkual-universal-button-text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  #linkual-root .linkual-universal-queue-count {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 14px;
+    height: 14px;
+    padding: 0 3px;
+    font-size: 9px;
+  }
+
+  #linkual-root .linkual-universal-floating-add {
+    display: none;
+  }
+
+  #linkual-root .linkual-vocab-queue-panel-wrap {
+    left: 8px;
+    right: 8px;
+    bottom: calc(var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom, 0px) + 8px);
+  }
+
+  #linkual-root .linkual-vocab-queue-panel-wrap > div {
+    width: 100% !important;
+    max-width: none !important;
+    height: min(520px, calc(100vh - var(--linkual-universal-widget-height, 0px) - 24px)) !important;
+  }
+
+  #linkual-root .linkual-player-controls {
+    left: 8px;
+    width: calc(100vw - var(--linkual-sidebar-width, 0px) - 16px);
+    max-width: calc(100vw - var(--linkual-sidebar-width, 0px) - 16px);
+    padding: 8px;
+    gap: 7px;
+  }
+
+  #linkual-root .linkual-player-progress-row {
+    grid-template-columns: 42px minmax(0, 1fr) 42px;
+    gap: 6px;
+  }
+
+  #linkual-root .linkual-player-time {
+    font-size: 11px;
+  }
+
+  #linkual-root .linkual-player-button-row {
+    gap: 5px;
+  }
+
+  #linkual-root .linkual-player-btn {
+    min-width: 34px;
+    padding: 0 8px;
+  }
+
+  #linkual-root .linkual-player-btn.primary {
+    min-width: 48px;
+  }
+}
+
+@media (max-width: 360px) {
+  #linkual-root .linkual-universal-widget {
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+
+  #linkual-root .linkual-universal-form {
+    grid-template-columns: minmax(0, 1fr) 28px 32px 85px;
+    gap: 3px;
+  }
+
+  #linkual-root .linkual-universal-mode-tab {
+    min-width: 42px;
+    padding: 0 5px;
+  }
+
+  #linkual-root .linkual-universal-field {
+    gap: 4px;
+  }
+
+  #linkual-root .linkual-universal-clear {
+    width: 28px;
+    min-width: 28px;
+  }
+
+  #linkual-root .linkual-universal-send {
+    width: 32px;
+    min-width: 32px;
+  }
+
+  #linkual-root .linkual-universal-inline-actions {
+    gap: 2px;
+  }
+
+  #linkual-root .linkual-universal-inline-actions .linkual-universal-icon-btn {
+    width: 27px;
+    min-width: 27px;
+  }
+
+  #linkual-root .linkual-player-controls {
+    padding: 7px 6px;
+  }
+
+  #linkual-root .linkual-player-progress-row {
+    grid-template-columns: 38px minmax(0, 1fr) 38px;
+  }
+
+  #linkual-root .linkual-player-btn {
+    min-width: 30px;
+    padding: 0 6px;
+  }
 }
