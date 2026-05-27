@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Linkual Log
 // @namespace    npm/vite-plugin-monkey
-// @version      0.0.14
+// @version      0.0.15
 // @author       Sergio Gao
 // @icon         https://vitejs.dev/logo.svg
 // @downloadURL  https://raw.githubusercontent.com/gsjz/linkualog/main/browser-plugin/user/linkualog.user.js
@@ -16,7 +16,7 @@
 // @grant        unsafeWindow
 // ==/UserScript==
 
-(o=>{if(typeof GM_addStyle=="function"){GM_addStyle(o);return}const e=document.createElement("style");e.textContent=o,document.head.append(e)})(" #linkual-root .modal{position:fixed;top:0;left:0;width:100%;height:100%;background:#00000080;display:flex;justify-content:center;align-items:center;z-index:10000;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);pointer-events:auto}#linkual-root .modal-box{background:#fff;border-radius:12px;width:380px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 10px 30px #0003;animation:linkualSlideIn .2s ease-out}@keyframes linkualSlideIn{0%{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}#linkual-root .modal-header{padding:16px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #eee}#linkual-root .modal-header h3{margin:0;font-size:16px;color:#333}#linkual-root .close-btn{font-size:24px;line-height:1;color:#999;cursor:pointer;transition:color .2s}#linkual-root .close-btn:hover{color:#333}#linkual-root .tabs{display:flex;background:#fafafa;border-bottom:1px solid #eee}#linkual-root .tab{flex:1;text-align:center;padding:12px 0;font-size:14px;color:#666;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;-webkit-user-select:none;user-select:none}#linkual-root .tab:hover{color:#333;background:#00000005}#linkual-root .tab.active{color:var(--linkual-theme, #6a1b9a);font-weight:700;border-bottom:2px solid var(--linkual-theme, #6a1b9a);background:#fff}#linkual-root .tab-content{padding:20px;overflow-y:auto;flex:1}#linkual-root .fade-in{animation:linkualFadeIn .3s ease}@keyframes linkualFadeIn{0%{opacity:0}to{opacity:1}}#linkual-root .setting-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}#linkual-root .setting-row label{font-size:13px;font-weight:700;flex:1;color:#444}#linkual-root .setting-row input[type=color]{width:50px;height:32px;padding:0;cursor:pointer;border:1px solid #ddd;border-radius:4px}#linkual-root .setting-col{margin-bottom:16px}#linkual-root .setting-col label{font-size:13px;font-weight:700;display:block;margin-bottom:6px;color:#444}#linkual-root .setting-col input,#linkual-root .setting-col textarea,#linkual-root .setting-col select{width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box;font-family:inherit;font-size:13px;transition:border-color .2s}#linkual-root .setting-col input:focus,#linkual-root .setting-col textarea:focus,#linkual-root .setting-col select:focus{outline:none;border-color:var(--linkual-theme, #6a1b9a)}#linkual-root .setting-col textarea{resize:vertical;min-height:80px;line-height:1.5}#linkual-root .url-prefix-row{display:flex;align-items:stretch}#linkual-root .url-prefix-row input{border-radius:0;min-width:0}#linkual-root .url-fixed-prefix,#linkual-root .url-fixed-suffix{display:inline-flex;align-items:center;padding:0 10px;border:1px solid #ddd;background:#f7f7f7;color:#666;font-size:12px;white-space:nowrap}#linkual-root .url-fixed-prefix{border-right:0;border-radius:6px 0 0 6px}#linkual-root .url-fixed-suffix{border-left:0;border-radius:0 6px 6px 0}#linkual-root .url-prefix-row:focus-within .url-fixed-prefix{border-color:var(--linkual-theme, #6a1b9a);border-right:0}#linkual-root .url-prefix-row:focus-within .url-fixed-suffix{border-color:var(--linkual-theme, #6a1b9a);border-left:0}#linkual-root .setting-help{margin-top:6px;color:#888;font-size:12px;line-height:1.4}#linkual-root .modal-footer{padding:16px 20px;display:flex;gap:12px;border-top:1px solid #eee;background:#fafafa}#linkual-root .btn{flex:1;padding:10px;border:none;border-radius:6px;cursor:pointer;font-weight:700;font-size:14px;transition:opacity .2s}#linkual-root .btn:hover{opacity:.9}#linkual-root .reset-btn{background:#e0e0e0;color:#555}#linkual-root .save-btn{box-shadow:0 2px 6px #0000001a}#linkual-root{--linkual-theme: #6a1b9a;--linkual-done: #e8f5e9;--linkual-error: #ffebee}#linkual-root .linkual-wrap{position:fixed;z-index:2147483647;background:#fff;display:flex;flex-direction:column;font-family:sans-serif;color:#333;pointer-events:auto}#linkual-root .linkual-wrap.layout-right{top:0;right:0;height:100vh;box-shadow:-5px 0 15px #0000001a}#linkual-root .linkual-wrap.layout-bottom{bottom:0;left:0;width:100vw!important;box-shadow:0 -5px 15px #0000001a}#linkual-root .resizer{position:absolute;background:transparent;z-index:999;transition:background .2s}#linkual-root .linkual-wrap.layout-right .resizer{left:0;top:0;bottom:0;width:5px;cursor:ew-resize}#linkual-root .linkual-wrap.layout-bottom .resizer{top:0;left:0;right:0;height:5px;cursor:ns-resize}#linkual-root .resizer:hover,#linkual-root .resizer:active{background:var(--linkual-theme)}#linkual-root .header{background:var(--linkual-theme);color:#fff;padding:16px;font-weight:700;display:flex;justify-content:space-between;align-items:center}#linkual-root .settings-icon{cursor:pointer;-webkit-user-select:none;user-select:none}#linkual-root .linkual-mobile-fullscreen{position:fixed;right:20px;bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:2147483647;min-width:78px;min-height:40px;padding:10px 15px;background:#000;color:#fff;border:0;border-radius:5px;box-shadow:0 2px 8px #00000040;cursor:grab;font-size:14px;font-weight:700;line-height:1.2;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;-webkit-user-select:none;user-select:none;touch-action:none;-webkit-tap-highlight-color:transparent;pointer-events:auto}#linkual-root .linkual-mobile-fullscreen.is-dragging{cursor:grabbing}#linkual-root .list{flex:1;overflow-y:auto;padding:12px;scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch}#linkual-root .list::-webkit-scrollbar{display:none}#linkual-root .empty-tip{padding:50px 20px;text-align:center;color:#999;font-style:italic}#linkual-root .load-more-tip{padding:16px 12px 22px;text-align:center;color:#999;font-size:12px}#linkual-root .item{padding:12px;margin-bottom:10px;border-radius:8px;border:1px solid #f0f0f0;transition:.2s}#linkual-root .item.active{border-left:5px solid var(--linkual-theme);background:#6a1b9a0d}#linkual-root .ctrl-bar{display:flex;gap:8px;margin-bottom:8px;align-items:center;padding:4px;border-radius:4px;background:transparent;transition:background .2s}#linkual-root .ctrl-bar.done{background-color:var(--linkual-done, #e8f5e9)}#linkual-root .ctrl-bar.error{background-color:var(--linkual-error, #ffebee);border:1px solid rgba(255,0,0,.1)}#linkual-root .tag-btn{font-size:11px;padding:3px 8px;border-radius:12px;display:inline-flex;align-items:center;cursor:pointer;transition:.2s;-webkit-user-select:none;user-select:none}#linkual-root .tag-play{background:#eee;color:#666}#linkual-root .tag-play:hover{background:var(--linkual-theme);color:#fff}#linkual-root .tag-pin{background:#e3f2fd;color:#1976d2}#linkual-root .tag-pin:hover{background:#1976d2;color:#fff}#linkual-root .btn-parse{flex:0 0 auto;margin-left:auto;display:inline-flex;align-items:center;justify-content:center;font-size:11px;color:#aaa;background:transparent;border:1px solid transparent;border-radius:4px;cursor:pointer;-webkit-user-select:none;user-select:none;padding:4px 7px;line-height:1.2;transition:.2s}#linkual-root .btn-parse:hover{color:#333;background:#0000000d;border-color:#00000014}#linkual-root .btn-chevron{font-size:12px;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:4px;cursor:pointer;transition:.2s;-webkit-user-select:none;user-select:none;color:#666}#linkual-root .btn-chevron:hover{background:#0000001a}#linkual-root .text-content{font-size:14px;line-height:1.5;padding:2px 0;color:#333;cursor:text;-webkit-user-select:text;user-select:text;overflow-wrap:anywhere;-webkit-touch-callout:default}#linkual-root .linkual-selection-add{position:fixed;z-index:999999;min-height:38px;max-width:min(320px,calc(100vw - 24px));padding:8px 12px;background:var(--linkual-theme, #6a1b9a);color:#fff;border:none;border-radius:6px;box-shadow:0 4px 12px #0003;cursor:pointer;font-size:13px;font-weight:700;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;-webkit-tap-highlight-color:transparent;touch-action:manipulation;pointer-events:auto}#linkual-root .linkual-selection-add-floating{transform:translate(-50%)}#linkual-root .linkual-selection-add-dock{left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));width:calc(100vw - 24px);max-width:none;min-height:46px;justify-content:center;font-size:14px}#linkual-root .linkual-selection-add-text{overflow:hidden;text-overflow:ellipsis}#linkual-root .ai-box{border-top:1px dashed #ccc;margin-top:8px;padding-top:8px;font-size:13px;white-space:pre-wrap;line-height:1.6;cursor:text}#linkual-root .lan-sync-module{border-top:1px solid #eee;padding:12px 16px;background:#fafafa;display:flex;flex-direction:column;gap:10px;margin-top:auto}#linkual-root .sync-input{width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;font-size:12px;box-sizing:border-box;outline:none;transition:border-color .2s}#linkual-root .sync-input:focus{border-color:var(--linkual-theme)}#linkual-root .sync-btn{width:100%;padding:10px;border:none;border-radius:6px;font-size:13px;font-weight:700;color:#fff;background-color:var(--linkual-theme);cursor:pointer;transition:all .2s}#linkual-root .sync-btn:hover{opacity:.9}#linkual-root .sync-btn:disabled{opacity:.6;cursor:not-allowed}#linkual-root .sync-btn.success{background-color:#4caf50}#linkual-root .sync-btn.error{background-color:#f44336} ");
+(i=>{if(typeof GM_addStyle=="function"){GM_addStyle(i);return}const l=document.createElement("style");l.textContent=i,document.head.append(l)})(" #linkual-root .modal{position:fixed;top:0;left:0;width:100%;height:100%;background:#00000080;display:flex;justify-content:center;align-items:center;z-index:2147483647;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);pointer-events:auto}#linkual-root .modal-box{background:#fff;border-radius:12px;width:380px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 10px 30px #0003;animation:linkualSlideIn .2s ease-out}@keyframes linkualSlideIn{0%{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}#linkual-root .modal-header{padding:16px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #eee}#linkual-root .modal-header h3{margin:0;font-size:16px;color:#333}#linkual-root .close-btn{font-size:24px;line-height:1;color:#999;cursor:pointer;transition:color .2s}#linkual-root .close-btn:hover{color:#333}#linkual-root .tabs{display:flex;background:#fafafa;border-bottom:1px solid #eee}#linkual-root .tab{flex:1;text-align:center;padding:12px 0;font-size:14px;color:#666;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;-webkit-user-select:none;user-select:none}#linkual-root .tab:hover{color:#333;background:#00000005}#linkual-root .tab.active{color:var(--linkual-theme, #6a1b9a);font-weight:700;border-bottom:2px solid var(--linkual-theme, #6a1b9a);background:#fff}#linkual-root .tab-content{padding:20px;overflow-y:auto;flex:1}#linkual-root .fade-in{animation:linkualFadeIn .3s ease}@keyframes linkualFadeIn{0%{opacity:0}to{opacity:1}}#linkual-root .setting-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}#linkual-root .setting-row label{font-size:13px;font-weight:700;flex:1;color:#444}#linkual-root .setting-row input[type=color]{width:50px;height:32px;padding:0;cursor:pointer;border:1px solid #ddd;border-radius:4px}#linkual-root .setting-col{margin-bottom:16px}#linkual-root .setting-col label{font-size:13px;font-weight:700;display:block;margin-bottom:6px;color:#444}#linkual-root .setting-col input,#linkual-root .setting-col textarea,#linkual-root .setting-col select{width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box;font-family:inherit;font-size:13px;transition:border-color .2s}#linkual-root .setting-col input:focus,#linkual-root .setting-col textarea:focus,#linkual-root .setting-col select:focus{outline:none;border-color:var(--linkual-theme, #6a1b9a)}#linkual-root .setting-col textarea{resize:vertical;min-height:80px;line-height:1.5}#linkual-root .url-prefix-row{display:flex;align-items:stretch}#linkual-root .url-prefix-row input{border-radius:0;min-width:0}#linkual-root .url-fixed-prefix,#linkual-root .url-fixed-suffix{display:inline-flex;align-items:center;padding:0 10px;border:1px solid #ddd;background:#f7f7f7;color:#666;font-size:12px;white-space:nowrap}#linkual-root .url-fixed-prefix{border-right:0;border-radius:6px 0 0 6px}#linkual-root .url-fixed-suffix{border-left:0;border-radius:0 6px 6px 0}#linkual-root .url-prefix-row:focus-within .url-fixed-prefix{border-color:var(--linkual-theme, #6a1b9a);border-right:0}#linkual-root .url-prefix-row:focus-within .url-fixed-suffix{border-color:var(--linkual-theme, #6a1b9a);border-left:0}#linkual-root .setting-help{margin-top:6px;color:#888;font-size:12px;line-height:1.4}#linkual-root .modal-footer{padding:16px 20px;display:flex;gap:12px;border-top:1px solid #eee;background:#fafafa}#linkual-root .btn{flex:1;padding:10px;border:none;border-radius:6px;cursor:pointer;font-weight:700;font-size:14px;transition:opacity .2s}#linkual-root .btn:hover{opacity:.9}#linkual-root .reset-btn{background:#e0e0e0;color:#555}#linkual-root .save-btn{box-shadow:0 2px 6px #0000001a}#linkual-root{--linkual-theme: #6a1b9a;--linkual-done: #e8f5e9;--linkual-error: #ffebee}#linkual-root .linkual-wrap{position:fixed;z-index:2147483647;background:#fff;display:flex;flex-direction:column;font-family:sans-serif;color:#333;pointer-events:auto}#linkual-root .linkual-wrap.layout-right{top:0;right:0;height:100vh;box-shadow:-5px 0 15px #0000001a}#linkual-root .linkual-wrap.layout-bottom{bottom:calc(var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom,0px));left:0;width:100vw!important;box-shadow:0 -5px 15px #0000001a}#linkual-root .resizer{position:absolute;background:transparent;z-index:999;transition:background .2s}#linkual-root .linkual-wrap.layout-right .resizer{left:0;top:0;bottom:0;width:5px;cursor:ew-resize}#linkual-root .linkual-wrap.layout-bottom .resizer{top:0;left:0;right:0;height:5px;cursor:ns-resize}#linkual-root .resizer:hover,#linkual-root .resizer:active{background:var(--linkual-theme)}#linkual-root .header{background:var(--linkual-theme);color:#fff;padding:16px;font-weight:700;display:flex;justify-content:space-between;align-items:center}#linkual-root .settings-icon{cursor:pointer;-webkit-user-select:none;user-select:none}#linkual-root .linkual-mobile-fullscreen{position:fixed;right:20px;bottom:calc(20px + var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom,0px));z-index:2147483647;min-width:78px;min-height:40px;padding:10px 15px;background:#000;color:#fff;border:0;border-radius:5px;box-shadow:0 2px 8px #00000040;cursor:grab;font-size:14px;font-weight:700;line-height:1.2;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;-webkit-user-select:none;user-select:none;touch-action:none;-webkit-tap-highlight-color:transparent;pointer-events:auto}#linkual-root .linkual-mobile-fullscreen.is-dragging{cursor:grabbing}#linkual-root .linkual-player-controls{position:fixed;left:12px;bottom:calc(var(--linkual-sidebar-height, 0px) + var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom,0px) + 14px);z-index:2147483647;width:calc(100vw - var(--linkual-sidebar-width, 0px) - 24px);max-width:calc(100vw - var(--linkual-sidebar-width, 0px) - 24px);box-sizing:border-box;display:flex;flex-direction:column;gap:9px;padding:10px 12px;border-radius:8px;background:#000000b8;color:#fff;box-shadow:0 6px 20px #0000003d;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;pointer-events:auto;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}#linkual-root .linkual-player-progress-row{display:grid;grid-template-columns:52px minmax(0,1fr) 52px;align-items:center;gap:10px}#linkual-root .linkual-player-time{color:#ffffffe0;font-size:12px;font-variant-numeric:tabular-nums;line-height:1;text-align:center;white-space:nowrap}#linkual-root .linkual-player-progress{width:100%;height:18px;margin:0;padding:0;-moz-appearance:none;appearance:none;-webkit-appearance:none;background:transparent;cursor:pointer}#linkual-root .linkual-player-progress::-webkit-slider-runnable-track{height:5px;border-radius:999px;background:linear-gradient(to right,var(--linkual-theme, #6a1b9a) 0%,var(--linkual-theme, #6a1b9a) var(--linkual-progress, 0%),rgba(255,255,255,.32) var(--linkual-progress, 0%),rgba(255,255,255,.32) 100%)}#linkual-root .linkual-player-progress::-moz-range-track{height:5px;border-radius:999px;background:#ffffff52}#linkual-root .linkual-player-progress::-moz-range-progress{height:5px;border-radius:999px;background:var(--linkual-theme, #6a1b9a)}#linkual-root .linkual-player-progress::-webkit-slider-thumb{-moz-appearance:none;appearance:none;-webkit-appearance:none;width:15px;height:15px;margin-top:-5px;border-radius:50%;border:2px solid #fff;background:var(--linkual-theme, #6a1b9a);box-shadow:0 2px 8px #00000052}#linkual-root .linkual-player-progress::-moz-range-thumb{width:15px;height:15px;border-radius:50%;border:2px solid #fff;background:var(--linkual-theme, #6a1b9a);box-shadow:0 2px 8px #00000052}#linkual-root .linkual-player-button-row{display:flex;align-items:center;justify-content:center;gap:8px}#linkual-root .linkual-player-btn{height:31px;min-width:44px;padding:0 12px;border:1px solid rgba(255,255,255,.16);border-radius:6px;background:#ffffff1f;color:#fff;cursor:pointer;font:700 12px/1 system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif}#linkual-root .linkual-player-btn.primary{min-width:58px;background:var(--linkual-theme, #6a1b9a);border-color:transparent}#linkual-root .linkual-player-btn:hover{background:#fff3}#linkual-root .linkual-player-btn.primary:hover{filter:brightness(1.08)}#linkual-root .list{flex:1;overflow-y:auto;padding:12px;scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch}#linkual-root .list::-webkit-scrollbar{display:none}#linkual-root .empty-tip{padding:50px 20px;text-align:center;color:#999;font-style:italic}#linkual-root .load-more-tip{padding:16px 12px 22px;text-align:center;color:#999;font-size:12px}#linkual-root .item{padding:12px;margin-bottom:10px;border-radius:8px;border:1px solid #f0f0f0;transition:.2s}#linkual-root .item.active{border-left:5px solid var(--linkual-theme);background:#6a1b9a0d}#linkual-root .ctrl-bar{display:flex;gap:8px;margin-bottom:8px;align-items:center;padding:4px;border-radius:4px;background:transparent;transition:background .2s}#linkual-root .ctrl-bar.done{background-color:var(--linkual-done, #e8f5e9)}#linkual-root .ctrl-bar.error{background-color:var(--linkual-error, #ffebee);border:1px solid rgba(255,0,0,.1)}#linkual-root .tag-btn{font-size:11px;padding:3px 8px;border-radius:12px;display:inline-flex;align-items:center;cursor:pointer;transition:.2s;-webkit-user-select:none;user-select:none}#linkual-root .tag-play{background:#eee;color:#666}#linkual-root .tag-play:hover{background:var(--linkual-theme);color:#fff}#linkual-root .tag-pin{background:#e3f2fd;color:#1976d2}#linkual-root .tag-pin:hover{background:#1976d2;color:#fff}#linkual-root .btn-parse{flex:0 0 auto;margin-left:auto;display:inline-flex;align-items:center;justify-content:center;font-size:11px;color:#aaa;background:transparent;border:1px solid transparent;border-radius:4px;cursor:pointer;-webkit-user-select:none;user-select:none;padding:4px 7px;line-height:1.2;transition:.2s}#linkual-root .btn-parse:hover{color:#333;background:#0000000d;border-color:#00000014}#linkual-root .btn-chevron{font-size:12px;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:4px;cursor:pointer;transition:.2s;-webkit-user-select:none;user-select:none;color:#666}#linkual-root .btn-chevron:hover{background:#0000001a}#linkual-root .text-content{font-size:14px;line-height:1.5;padding:2px 0;color:#333;cursor:text;-webkit-user-select:text;user-select:text;overflow-wrap:anywhere;-webkit-touch-callout:default}#linkual-root .linkual-selection-add{position:fixed;z-index:999999;min-height:38px;max-width:min(320px,calc(100vw - 24px));padding:8px 12px;background:var(--linkual-theme, #6a1b9a);color:#fff;border:none;border-radius:6px;box-shadow:0 4px 12px #0003;cursor:pointer;font-size:13px;font-weight:700;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;-webkit-tap-highlight-color:transparent;touch-action:manipulation;pointer-events:auto}#linkual-root .linkual-selection-add-floating{transform:translate(-50%)}#linkual-root .linkual-selection-add-dock{left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));width:calc(100vw - 24px);max-width:none;min-height:46px;justify-content:center;font-size:14px}#linkual-root .linkual-selection-add-text{overflow:hidden;text-overflow:ellipsis}#linkual-root .ai-box{border-top:1px dashed #ccc;margin-top:8px;padding-top:8px;font-size:13px;white-space:pre-wrap;line-height:1.6;cursor:text}#linkual-root .lan-sync-module{border-top:1px solid #eee;padding:12px 16px;background:#fafafa;display:flex;flex-direction:column;gap:10px;margin-top:auto}#linkual-root .sync-input{width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;font-size:12px;box-sizing:border-box;outline:none;transition:border-color .2s}#linkual-root .sync-input:focus{border-color:var(--linkual-theme)}#linkual-root .sync-btn{width:100%;padding:10px;border:none;border-radius:6px;font-size:13px;font-weight:700;color:#fff;background-color:var(--linkual-theme);cursor:pointer;transition:all .2s}#linkual-root .sync-btn:hover{opacity:.9}#linkual-root .sync-btn:disabled{opacity:.6;cursor:not-allowed}#linkual-root .sync-btn.success{background-color:#4caf50}#linkual-root .sync-btn.error{background-color:#f44336}#linkual-root .linkual-universal-widget{position:fixed;left:0;right:0;bottom:0;z-index:2147483647;min-height:calc(var(--linkual-universal-widget-height, 58px) + env(safe-area-inset-bottom,0px));padding:8px 12px calc(8px + env(safe-area-inset-bottom,0px));box-sizing:border-box;display:flex;align-items:center;gap:10px;background:#fff;color:#222;border-top:1px solid rgba(0,0,0,.12);box-shadow:0 -8px 24px #00000024;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;pointer-events:auto}#linkual-root .linkual-universal-widget~.linkual-mobile-fullscreen{bottom:calc(20px + var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom,0px))}#linkual-root .linkual-universal-top{display:flex;align-items:center;justify-content:space-between;gap:10px;width:min(390px,32vw);min-width:260px;height:34px}#linkual-root .linkual-universal-selection{min-width:0;flex:1;display:flex;align-items:center;gap:8px;color:#444;font-size:13px}#linkual-root .linkual-universal-selection-label{flex:0 0 auto;color:#666;font-weight:700}#linkual-root .linkual-universal-selection-text{min-width:0;max-width:min(180px,14vw);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#111;font-weight:700}#linkual-root .linkual-universal-muted{color:#888}#linkual-root .linkual-universal-actions{flex:0 0 auto;display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0}#linkual-root .linkual-universal-status{max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;color:#666}#linkual-root .linkual-universal-status.status-success{color:#17803d}#linkual-root .linkual-universal-status.status-error{color:#c62828}#linkual-root .linkual-universal-add-btn,#linkual-root .linkual-universal-icon-btn,#linkual-root .linkual-universal-clear,#linkual-root .linkual-universal-send{border:0;border-radius:6px;min-height:30px;padding:0 12px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit}#linkual-root .linkual-universal-icon-btn,#linkual-root .linkual-universal-send{display:inline-flex;align-items:center;justify-content:center;gap:6px}#linkual-root .linkual-universal-add-btn,#linkual-root .linkual-universal-send{background:var(--linkual-theme, #000);color:#fff}#linkual-root .linkual-universal-icon-btn{background:#f1f1f1;color:#333}#linkual-root .linkual-universal-queue-btn{position:relative;background:var(--linkual-theme, #000);color:#fff}#linkual-root .linkual-universal-button-icon{display:none;flex:0 0 auto;width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}#linkual-root .linkual-universal-button-text{min-width:0}#linkual-root .linkual-universal-queue-count{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:#f44336;color:#fff;font-size:10px;line-height:1}#linkual-root .linkual-universal-clear{width:34px;padding:0;background:#f3f3f3;color:#555}#linkual-root .linkual-universal-form{flex:1;display:grid;grid-template-columns:minmax(120px,190px) minmax(220px,1fr) 34px auto auto;align-items:stretch;gap:8px}#linkual-root .linkual-universal-inline-actions{align-self:center;display:flex;align-items:center;gap:6px;height:34px;min-width:0}#linkual-root .linkual-universal-field{min-width:0;display:flex;flex-direction:row;align-items:center;gap:6px}#linkual-root .linkual-universal-mode-tab{flex:0 0 auto;min-width:48px;height:34px;padding:0 8px;border:1px solid #d7d7d7;border-radius:6px;background:#f6f6f6;color:#555;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit}#linkual-root .linkual-universal-mode-tab.active{border-color:var(--linkual-theme, #000);background:var(--linkual-theme, #000);color:#fff}#linkual-root .linkual-universal-field input{min-width:0;width:100%;height:34px;box-sizing:border-box;border:1px solid #d7d7d7;border-radius:6px;padding:7px 9px;color:#222;background:#fff;outline:none;font:13px/1.35 system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;letter-spacing:0}#linkual-root .linkual-universal-field input:focus{border-color:var(--linkual-theme, #000);box-shadow:0 0 0 2px #00000014}#linkual-root .linkual-universal-field.field-context input{overflow-x:auto;overflow-y:hidden;white-space:nowrap;scrollbar-width:none;-ms-overflow-style:none}#linkual-root .linkual-universal-field.field-context input::-webkit-scrollbar{display:none}#linkual-root .linkual-universal-clear,#linkual-root .linkual-universal-send{align-self:center;height:34px}#linkual-root .linkual-universal-send:disabled,#linkual-root .linkual-universal-clear:disabled{opacity:.45;cursor:not-allowed}#linkual-root .linkual-universal-expand-bar{position:fixed;left:0;right:0;bottom:0;z-index:2147483647;width:100vw;height:calc(28px + env(safe-area-inset-bottom,0px));padding:0 12px env(safe-area-inset-bottom,0px);border:0;border-radius:0;background:var(--linkual-theme, #000);color:#fff;box-shadow:0 -4px 14px #0003;cursor:pointer;font-size:12px;font-weight:800;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;-webkit-user-select:none;user-select:none;pointer-events:auto}#linkual-root .linkual-universal-expand-bar:hover{filter:brightness(1.08)}#linkual-root .linkual-universal-floating-add{position:fixed;z-index:2147483647;transform:translate(-50%);min-height:30px;padding:0 12px;border:0;border-radius:6px;background:var(--linkual-theme, #000);color:#fff;box-shadow:0 4px 12px #0003;cursor:pointer;font-size:12px;font-weight:800;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;pointer-events:auto}#linkual-root .linkual-vocab-queue-panel-wrap{position:fixed;right:12px;bottom:calc(var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom,0px) + 12px);z-index:2147483647;display:flex;flex-direction:column;align-items:flex-end;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;pointer-events:auto}@media (max-width: 720px){#linkual-root .linkual-universal-widget{width:100vw;max-width:100vw;overflow:visible;padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px));flex-direction:column;align-items:stretch;gap:7px}#linkual-root .linkual-universal-top{width:100%;min-width:0;gap:8px}#linkual-root .linkual-universal-selection{flex-wrap:wrap;gap:6px}#linkual-root .linkual-universal-selection-text{max-width:calc(100vw - 190px)}#linkual-root .linkual-universal-actions{gap:5px}#linkual-root .linkual-universal-inline-actions .linkual-universal-icon-btn{width:31px;min-width:31px;min-height:30px;padding:0;font-size:12px}#linkual-root .linkual-universal-status{display:none}#linkual-root .linkual-universal-form{grid-template-columns:minmax(0,1fr) 32px 36px 97px;gap:4px}#linkual-root .linkual-universal-field{flex-direction:row}#linkual-root .linkual-universal-field.field-context{grid-column:1 / -1;grid-row:2}#linkual-root .linkual-universal-clear{grid-column:2;grid-row:1;width:32px;min-width:32px}#linkual-root .linkual-universal-send{grid-column:3;grid-row:1;width:36px;min-width:36px;padding:0}#linkual-root .linkual-universal-inline-actions{grid-column:4;grid-row:1;gap:3px;overflow:hidden}#linkual-root .linkual-universal-button-icon{display:block}#linkual-root .linkual-universal-button-text{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}#linkual-root .linkual-universal-queue-count{position:absolute;top:-4px;right:-4px;min-width:14px;height:14px;padding:0 3px;font-size:9px}#linkual-root .linkual-universal-floating-add{display:none}#linkual-root .linkual-vocab-queue-panel-wrap{left:8px;right:8px;bottom:calc(var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom,0px) + 8px)}#linkual-root .linkual-vocab-queue-panel-wrap>div{width:100%!important;max-width:none!important;height:min(520px,calc(100vh - var(--linkual-universal-widget-height, 0px) - 24px))!important}#linkual-root .linkual-player-controls{left:8px;width:calc(100vw - var(--linkual-sidebar-width, 0px) - 16px);max-width:calc(100vw - var(--linkual-sidebar-width, 0px) - 16px);padding:8px;gap:7px}#linkual-root .linkual-player-progress-row{grid-template-columns:42px minmax(0,1fr) 42px;gap:6px}#linkual-root .linkual-player-time{font-size:11px}#linkual-root .linkual-player-button-row{gap:5px}#linkual-root .linkual-player-btn{min-width:34px;padding:0 8px}#linkual-root .linkual-player-btn.primary{min-width:48px}}@media (max-width: 360px){#linkual-root .linkual-universal-widget{padding-left:6px;padding-right:6px}#linkual-root .linkual-universal-form{grid-template-columns:minmax(0,1fr) 28px 32px 85px;gap:3px}#linkual-root .linkual-universal-mode-tab{min-width:42px;padding:0 5px}#linkual-root .linkual-universal-field{gap:4px}#linkual-root .linkual-universal-clear{width:28px;min-width:28px}#linkual-root .linkual-universal-send{width:32px;min-width:32px}#linkual-root .linkual-universal-inline-actions{gap:2px}#linkual-root .linkual-universal-inline-actions .linkual-universal-icon-btn{width:27px;min-width:27px}#linkual-root .linkual-player-controls{padding:7px 6px}#linkual-root .linkual-player-progress-row{grid-template-columns:38px minmax(0,1fr) 38px}#linkual-root .linkual-player-btn{min-width:30px;padding:0 6px}} ");
 
 (function () {
   'use strict';
@@ -12745,7 +12745,7 @@
     const target = node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
     return !!target && container.contains(target);
   };
-  const getVisibleRangeRect = (range) => {
+  const getVisibleRangeRect$1 = (range) => {
     const rects = Array.from(range.getClientRects()).filter((rect2) => rect2.width > 0 && rect2.height > 0);
     if (rects.length > 0) return rects[0];
     const rect = range.getBoundingClientRect();
@@ -12826,7 +12826,7 @@
         return;
       }
       const range = selection.getRangeAt(0);
-      const rect = getVisibleRangeRect(range);
+      const rect = getVisibleRangeRect$1(range);
       if (rect) {
         const position = getSelectionBoxPosition(rect, text);
         const placement = shouldDockSelectionBox() ? "dock" : "floating";
@@ -13361,6 +13361,11 @@ JSON 格式：
     }
   ]
 }`;
+  const QUEUE_STORAGE_KEY = "linkual_vocab_queue";
+  const QUEUE_COUNT_EVENT = "linkual_vocab_queue_count";
+  const QUEUE_TOGGLE_EVENT = "linkual_vocab_queue_toggle";
+  const QUEUE_REQUEST_COUNT_EVENT = "linkual_vocab_queue_request_count";
+  const QUEUE_SYNC_INTERVAL_MS = 1800;
   const parseLlmJson = (rawText) => {
     var _a;
     const trimmed = rawText.trim();
@@ -13426,41 +13431,74 @@ JSON 格式：
     const sanitizedResult = sanitizeLlmResult(task.llmResult);
     return {
       ...task,
+      source_url: typeof task.source_url === "string" ? task.source_url : "",
       llmResult: hasUsableLlmResult(sanitizedResult) ? sanitizedResult : void 0
     };
+  };
+  const readStoredQueue = () => {
+    try {
+      if (typeof _GM_getValue !== "undefined") {
+        const saved = _GM_getValue(QUEUE_STORAGE_KEY);
+        if (typeof saved === "string" && saved) return JSON.parse(saved).map(sanitizeTask);
+        if (Array.isArray(saved)) return saved.map(sanitizeTask);
+      }
+    } catch (e) {
+    }
+    try {
+      const saved = localStorage.getItem(QUEUE_STORAGE_KEY);
+      if (saved) return JSON.parse(saved).map(sanitizeTask);
+    } catch (e) {
+    }
+    return [];
+  };
+  const writeStoredQueue = (tasks) => {
+    const serialized = JSON.stringify(tasks);
+    try {
+      if (typeof _GM_setValue !== "undefined") {
+        _GM_setValue(QUEUE_STORAGE_KEY, serialized);
+      }
+    } catch (e) {
+    }
+    try {
+      localStorage.setItem(QUEUE_STORAGE_KEY, serialized);
+    } catch (e) {
+    }
+  };
+  const clearStoredQueue = () => writeStoredQueue([]);
+  const emitQueueCount = (tasks) => {
+    window.dispatchEvent(new CustomEvent(QUEUE_COUNT_EVENT, {
+      detail: { pendingCount: tasks.filter((t) => t.status !== "success").length }
+    }));
   };
   const VocabQueue = () => {
     const [isOpen, setIsOpen] = reactExports.useState(false);
     const [isBulkSending, setIsBulkSending] = reactExports.useState(false);
     const [selectedCategory, setSelectedCategory] = reactExports.useState(ConfigService.get("lan_action") || "Video_Sync");
     const [themeColor, setThemeColor] = reactExports.useState(ConfigService.get("theme_color") || "#6a1b9a");
-    const [tasks, setTasks] = reactExports.useState(() => {
-      try {
-        const saved = localStorage.getItem("linkual_vocab_queue");
-        if (saved) return JSON.parse(saved).map(sanitizeTask);
-      } catch (e) {
-      }
-      return [];
-    });
+    const [tasks, setTasks] = reactExports.useState(readStoredQueue);
     reactExports.useEffect(() => {
-      localStorage.setItem("linkual_vocab_queue", JSON.stringify(tasks));
+      writeStoredQueue(tasks);
+      emitQueueCount(tasks);
     }, [tasks]);
     reactExports.useEffect(() => {
+      const syncQueue = () => setTasks(readStoredQueue());
       const syncAcrossTabs = (e) => {
-        if (e.key === "linkual_vocab_queue" && e.newValue) {
-          try {
-            setTasks(JSON.parse(e.newValue).map(sanitizeTask));
-          } catch (err) {
-          }
-        }
+        if (e.key === QUEUE_STORAGE_KEY) syncQueue();
       };
+      const toggleQueue = () => setIsOpen((prev) => !prev);
+      const reportCount = () => emitQueueCount(readStoredQueue());
       window.addEventListener("storage", syncAcrossTabs);
-      return () => window.removeEventListener("storage", syncAcrossTabs);
+      window.addEventListener(QUEUE_TOGGLE_EVENT, toggleQueue);
+      window.addEventListener(QUEUE_REQUEST_COUNT_EVENT, reportCount);
+      const interval = window.setInterval(syncQueue, QUEUE_SYNC_INTERVAL_MS);
+      reportCount();
+      return () => {
+        window.removeEventListener("storage", syncAcrossTabs);
+        window.removeEventListener(QUEUE_TOGGLE_EVENT, toggleQueue);
+        window.removeEventListener(QUEUE_REQUEST_COUNT_EVENT, reportCount);
+        window.clearInterval(interval);
+      };
     }, []);
-    const [position, setPosition] = reactExports.useState({ left: 24, bottom: 24 });
-    const [isDragging, setIsDragging] = reactExports.useState(false);
-    const offset = reactExports.useRef({ x: 0, y: 0 });
-    const hasMoved = reactExports.useRef(false);
     reactExports.useEffect(() => {
       const handleConfigUpdate = () => {
         setSelectedCategory(ConfigService.get("lan_action") || "Video_Sync");
@@ -13469,47 +13507,9 @@ JSON 格式：
       window.addEventListener("linkual_settings_updated", handleConfigUpdate);
       return () => window.removeEventListener("linkual_settings_updated", handleConfigUpdate);
     }, []);
-    const handleMouseDown = (e) => {
-      if (e.button !== 0) return;
-      setIsDragging(true);
-      hasMoved.current = false;
-      offset.current = {
-        x: e.clientX - position.left,
-        y: window.innerHeight - e.clientY - position.bottom
-      };
-    };
-    reactExports.useEffect(() => {
-      const handleMouseMove = (e) => {
-        if (isDragging) {
-          e.preventDefault();
-          hasMoved.current = true;
-          let newLeft = e.clientX - offset.current.x;
-          let newBottom = window.innerHeight - e.clientY - offset.current.y;
-          newLeft = Math.max(0, Math.min(newLeft, window.innerWidth - 60));
-          newBottom = Math.max(0, Math.min(newBottom, window.innerHeight - 60));
-          setPosition({ left: newLeft, bottom: newBottom });
-        }
-      };
-      const handleMouseUp = () => setIsDragging(false);
-      if (isDragging) {
-        window.addEventListener("mousemove", handleMouseMove);
-        window.addEventListener("mouseup", handleMouseUp);
-      }
-      return () => {
-        window.removeEventListener("mousemove", handleMouseMove);
-        window.removeEventListener("mouseup", handleMouseUp);
-      };
-    }, [isDragging, position]);
-    const handleButtonClick = (e) => {
-      if (hasMoved.current) {
-        e.preventDefault();
-        return;
-      }
-      setIsOpen(!isOpen);
-    };
     reactExports.useEffect(() => {
       const handleEvent = (e) => {
-        const { word, context, source, youtube } = e.detail;
+        const { word, context, source, source_url, youtube } = e.detail;
         const dateObj = /* @__PURE__ */ new Date();
         const systemDate = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, "0")}-${String(dateObj.getDate()).padStart(2, "0")}`;
         const newTask = {
@@ -13517,6 +13517,7 @@ JSON 格式：
           word,
           context,
           source,
+          source_url: source_url || (youtube == null ? void 0 : youtube.url) || window.location.href,
           youtube,
           date: systemDate,
           category: selectedCategory,
@@ -13573,11 +13574,13 @@ JSON 格式：
       });
     };
     const sendTaskToServer = (sendingTask) => {
+      var _a;
       const serverUrl = ConfigService.get("lan_sync_url");
       const payload = {
         word: sendingTask.word,
         context: sendingTask.context,
         source: sendingTask.source,
+        source_url: sendingTask.source_url || ((_a = sendingTask.youtube) == null ? void 0 : _a.url) || "",
         youtube: sendingTask.youtube,
         date: sendingTask.date,
         llm_result: sanitizeLlmResult(sendingTask.llmResult),
@@ -13637,128 +13640,133 @@ JSON 格式：
     const handleClearAll = () => {
       if (window.confirm("确定清空当前队列中所有的缓存词卡吗？")) {
         setTasks([]);
-        localStorage.removeItem("linkual_vocab_queue");
+        clearStoredQueue();
       }
     };
-    const pendingCount = tasks.filter((t) => t.status !== "success").length;
+    tasks.filter((t) => t.status !== "success").length;
     const sendableCount = tasks.filter(canSendTask).length;
     const bulkSendDisabled = isBulkSending || sendableCount === 0;
-    return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { position: "fixed", left: `${position.left}px`, bottom: `${position.bottom}px`, zIndex: 2147483647, display: "flex", flexDirection: "column", alignItems: "flex-start", fontFamily: "sans-serif", pointerEvents: "auto" }, children: [
-      isOpen && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { width: "400px", height: "580px", background: "#fff", borderRadius: "8px", boxShadow: "0 10px 30px rgba(0,0,0,0.2)", border: "1px solid #e4e4e7", display: "flex", flexDirection: "column", marginBottom: "12px", overflow: "hidden" }, children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { padding: "12px", borderBottom: "1px solid #e4e4e7", background: "#fafafa", display: "flex", flexDirection: "column", gap: "8px" }, children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { display: "flex", alignItems: "center", gap: "8px" }, children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { style: { fontSize: "13px", fontWeight: "bold", color: "#333" }, children: "生词本目录:" }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx(
-              "input",
-              {
-                value: selectedCategory,
-                onChange: (e) => setSelectedCategory(e.target.value),
-                style: { width: "120px", padding: "4px 8px", border: "1px solid #ddd", borderRadius: "4px", fontSize: "12px", outline: "none" }
-              }
-            )
+    if (!isOpen) return null;
+    return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "linkual-vocab-queue-panel-wrap", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { width: "400px", height: "580px", background: "#fff", borderRadius: "8px", boxShadow: "0 10px 30px rgba(0,0,0,0.2)", border: "1px solid #e4e4e7", display: "flex", flexDirection: "column", overflow: "hidden" }, children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { padding: "12px", borderBottom: "1px solid #e4e4e7", background: "#fafafa", display: "flex", flexDirection: "column", gap: "8px" }, children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }, children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { style: { fontSize: "14px", color: "#333" }, children: "制卡队列" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "button",
+            {
+              type: "button",
+              onClick: () => setIsOpen(false),
+              style: { border: "none", background: "#eee", color: "#333", cursor: "pointer", fontSize: "13px", fontWeight: "bold", borderRadius: "4px", padding: "4px 8px" },
+              children: "x"
+            }
+          )
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "8px", flexWrap: "wrap" }, children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "button",
+            {
+              onClick: handleSendAllAndDelete,
+              disabled: bulkSendDisabled,
+              style: { border: "none", background: bulkSendDisabled ? "#a7f3d0" : "#10b981", color: "#fff", cursor: bulkSendDisabled ? "not-allowed" : "pointer", fontSize: "12px", fontWeight: "bold", borderRadius: "4px", padding: "5px 9px" },
+              children: isBulkSending ? "批量发送中..." : "一键发送并删除"
+            }
+          ),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("button", { onClick: handleClearAll, style: { border: "none", background: "none", color: "#f44336", cursor: "pointer", fontSize: "12px", fontWeight: "bold" }, children: "清空全部队列" })
+        ] })
+      ] }),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { flex: 1, overflowY: "auto", padding: "12px", display: "flex", flexDirection: "column", gap: "12px", background: "#f9f9f9" }, children: [
+        tasks.length === 0 && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { style: { textAlign: "center", color: "#999", marginTop: "40px", fontSize: "13px" }, children: "暂无待处理单词" }),
+        tasks.map((t) => /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { padding: "12px", border: "1px solid #eaeaea", borderRadius: "8px", background: "#fff", boxShadow: "0 2px 5px rgba(0,0,0,0.02)" }, children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }, children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { style: { fontSize: "16px", color: "#333" }, children: t.word }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { style: { fontSize: "11px", padding: "2px 6px", borderRadius: "10px", background: t.status === "success" ? "#e8f5e9" : t.status === "failed" ? "#ffebee" : "#e3f2fd", color: t.status === "success" ? "#4caf50" : t.status === "failed" ? "#f44336" : "#1976d2" }, children: [
+              t.status === "idle" && (hasUsableLlmResult(t.llmResult) ? "释义已就绪" : "等待操作"),
+              t.status === "fetching_llm" && "正在解析...",
+              t.status === "sending" && "发送中...",
+              t.status === "success" && "发送成功",
+              t.status === "failed" && "操作失败"
+            ] })
           ] }),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "8px", flexWrap: "wrap" }, children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { style: { fontSize: "12px", color: "#666", marginBottom: "8px", paddingBottom: "8px", borderBottom: "1px dashed #eee" }, children: t.context }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { fontSize: "11px", color: "#e53935", marginBottom: "8px", display: "flex", justifyContent: "space-between" }, children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: t.youtube ? `▶ YouTube 捕获: ${t.youtube.timestamp}s` : "本地字幕记录" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { style: { color: "#888", fontStyle: "italic", maxWidth: "150px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: t.source })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(LlmResultPreview, { result: t.llmResult }),
+          t.error && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { style: { color: "#f44336", fontSize: "11px", marginBottom: "8px" }, children: t.error }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "12px" }, children: [
             /* @__PURE__ */ jsxRuntimeExports.jsx(
               "button",
               {
-                onClick: handleSendAllAndDelete,
-                disabled: bulkSendDisabled,
-                style: { border: "none", background: bulkSendDisabled ? "#a7f3d0" : "#10b981", color: "#fff", cursor: bulkSendDisabled ? "not-allowed" : "pointer", fontSize: "12px", fontWeight: "bold", borderRadius: "4px", padding: "5px 9px" },
-                children: isBulkSending ? "批量发送中..." : "一键发送并删除"
+                onClick: () => handleFetchLlm(t.id),
+                disabled: t.status === "fetching_llm" || t.status === "sending",
+                style: { flex: "1 1 auto", padding: "6px 10px", background: "#f4f4f5", color: "#333", border: "1px solid #ccc", borderRadius: "4px", cursor: "pointer", fontSize: "12px", fontWeight: "bold" },
+                children: "请求释义"
               }
             ),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("button", { onClick: handleClearAll, style: { border: "none", background: "none", color: "#f44336", cursor: "pointer", fontSize: "12px", fontWeight: "bold" }, children: "清空全部队列" })
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "button",
+              {
+                onClick: () => handleSend(t.id, true),
+                disabled: !canSendTask(t),
+                style: { flex: "1 1 auto", padding: "6px 10px", background: canSendTask(t) ? "#10b981" : "#a7f3d0", color: "#fff", border: "none", borderRadius: "4px", cursor: canSendTask(t) ? "pointer" : "not-allowed", fontSize: "12px", fontWeight: "bold" },
+                children: "发送并删除"
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "button",
+              {
+                onClick: () => handleSend(t.id, false),
+                disabled: !canSendTask(t),
+                style: { flex: "1 1 auto", padding: "6px 10px", background: canSendTask(t) ? "#3b82f6" : "#bfdbfe", color: "#fff", border: "none", borderRadius: "4px", cursor: canSendTask(t) ? "pointer" : "not-allowed", fontSize: "12px", fontWeight: "bold" },
+                children: "发送并保留"
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("button", { onClick: () => handleDeleteTask(t.id), style: { padding: "6px 12px", background: "transparent", color: "#f44336", border: "1px solid #f44336", borderRadius: "4px", cursor: "pointer", fontSize: "12px" }, children: "丢弃" })
           ] })
-        ] }),
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { flex: 1, overflowY: "auto", padding: "12px", display: "flex", flexDirection: "column", gap: "12px", background: "#f9f9f9" }, children: [
-          tasks.length === 0 && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { style: { textAlign: "center", color: "#999", marginTop: "40px", fontSize: "13px" }, children: "暂无待处理单词" }),
-          tasks.map((t) => /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { padding: "12px", border: "1px solid #eaeaea", borderRadius: "8px", background: "#fff", boxShadow: "0 2px 5px rgba(0,0,0,0.02)" }, children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }, children: [
-              /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { style: { fontSize: "16px", color: "#333" }, children: t.word }),
-              /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { style: { fontSize: "11px", padding: "2px 6px", borderRadius: "10px", background: t.status === "success" ? "#e8f5e9" : t.status === "failed" ? "#ffebee" : "#e3f2fd", color: t.status === "success" ? "#4caf50" : t.status === "failed" ? "#f44336" : "#1976d2" }, children: [
-                t.status === "idle" && (hasUsableLlmResult(t.llmResult) ? "释义已就绪" : "等待操作"),
-                t.status === "fetching_llm" && "正在解析...",
-                t.status === "sending" && "发送中...",
-                t.status === "success" && "发送成功",
-                t.status === "failed" && "操作失败"
-              ] })
-            ] }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("div", { style: { fontSize: "12px", color: "#666", marginBottom: "8px", paddingBottom: "8px", borderBottom: "1px dashed #eee" }, children: t.context }),
-            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { fontSize: "11px", color: "#e53935", marginBottom: "8px", display: "flex", justifyContent: "space-between" }, children: [
-              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: t.youtube ? `▶ YouTube 捕获: ${t.youtube.timestamp}s` : "本地字幕记录" }),
-              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { style: { color: "#888", fontStyle: "italic", maxWidth: "150px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: t.source })
-            ] }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx(LlmResultPreview, { result: t.llmResult }),
-            t.error && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { style: { color: "#f44336", fontSize: "11px", marginBottom: "8px" }, children: t.error }),
-            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "12px" }, children: [
-              /* @__PURE__ */ jsxRuntimeExports.jsx(
-                "button",
-                {
-                  onClick: () => handleFetchLlm(t.id),
-                  disabled: t.status === "fetching_llm" || t.status === "sending",
-                  style: { flex: "1 1 auto", padding: "6px 10px", background: "#f4f4f5", color: "#333", border: "1px solid #ccc", borderRadius: "4px", cursor: "pointer", fontSize: "12px", fontWeight: "bold" },
-                  children: "请求释义"
-                }
-              ),
-              /* @__PURE__ */ jsxRuntimeExports.jsx(
-                "button",
-                {
-                  onClick: () => handleSend(t.id, true),
-                  disabled: !canSendTask(t),
-                  style: { flex: "1 1 auto", padding: "6px 10px", background: canSendTask(t) ? "#10b981" : "#a7f3d0", color: "#fff", border: "none", borderRadius: "4px", cursor: canSendTask(t) ? "pointer" : "not-allowed", fontSize: "12px", fontWeight: "bold" },
-                  children: "发送并删除"
-                }
-              ),
-              /* @__PURE__ */ jsxRuntimeExports.jsx(
-                "button",
-                {
-                  onClick: () => handleSend(t.id, false),
-                  disabled: !canSendTask(t),
-                  style: { flex: "1 1 auto", padding: "6px 10px", background: canSendTask(t) ? "#3b82f6" : "#bfdbfe", color: "#fff", border: "none", borderRadius: "4px", cursor: canSendTask(t) ? "pointer" : "not-allowed", fontSize: "12px", fontWeight: "bold" },
-                  children: "发送并保留"
-                }
-              ),
-              /* @__PURE__ */ jsxRuntimeExports.jsx("button", { onClick: () => handleDeleteTask(t.id), style: { padding: "6px 12px", background: "transparent", color: "#f44336", border: "1px solid #f44336", borderRadius: "4px", cursor: "pointer", fontSize: "12px" }, children: "丢弃" })
-            ] })
-          ] }, t.id))
-        ] })
-      ] }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx(
-        "button",
-        {
-          onMouseDown: handleMouseDown,
-          onClick: handleButtonClick,
-          title: "按住即可拖动面板位置",
-          style: { padding: "12px 20px", background: themeColor, color: "#fff", border: "none", borderRadius: "30px", boxShadow: "0 6px 16px rgba(0,0,0,0.25)", cursor: isDragging ? "grabbing" : "grab", display: "flex", alignItems: "center", gap: "8px", fontWeight: "bold", fontSize: "14px", userSelect: "none" },
-          children: /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
-            "制卡队列 ",
-            pendingCount > 0 && /* @__PURE__ */ jsxRuntimeExports.jsx("span", { style: { background: "#f44336", padding: "2px 8px", borderRadius: "12px", fontSize: "12px", marginLeft: "6px" }, children: pendingCount })
-          ] })
-        }
-      )
-    ] });
+        ] }, t.id))
+      ] })
+    ] }) });
   };
   const DRAG_THRESHOLD = 5;
-  function getFullscreenElement() {
+  const FULLSCREEN_SETTLE_DELAY = 120;
+  const SEEK_STEP_SECONDS = 5;
+  function getBrowserFullscreenElement$1() {
     const doc = document;
     return document.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement || doc.msFullscreenElement || null;
   }
-  function isFullscreen() {
-    return getFullscreenElement() !== null;
-  }
-  function requestFullscreen() {
+  function requestBrowserFullscreen() {
     const target = document.documentElement;
     if (target.requestFullscreen) return target.requestFullscreen();
     if (target.webkitRequestFullscreen) return target.webkitRequestFullscreen();
     if (target.mozRequestFullScreen) return target.mozRequestFullScreen();
     if (target.msRequestFullscreen) return target.msRequestFullscreen();
   }
-  function exitFullscreen() {
+  function exitBrowserFullscreen$1() {
     const doc = document;
     if (document.exitFullscreen) return document.exitFullscreen();
     if (doc.webkitExitFullscreen) return doc.webkitExitFullscreen();
     if (doc.mozCancelFullScreen) return doc.mozCancelFullScreen();
     if (doc.msExitFullscreen) return doc.msExitFullscreen();
+  }
+  function isPromiseLike$1(value) {
+    return Boolean(value && typeof value.then === "function");
+  }
+  function emitCustomLayoutChange() {
+    window.dispatchEvent(new Event("linkual_custom_layout_refresh"));
+    window.dispatchEvent(new Event("linkual_custom_fullscreen_changed"));
+    window.dispatchEvent(new Event("resize"));
+  }
+  function formatTime(seconds) {
+    if (!Number.isFinite(seconds) || seconds <= 0) return "0:00";
+    const totalSeconds = Math.floor(seconds);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor(totalSeconds % 3600 / 60);
+    const secs = totalSeconds % 60;
+    if (hours > 0) {
+      return `${hours}:${String(minutes).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+    }
+    return `${minutes}:${String(secs).padStart(2, "0")}`;
   }
   function clampPosition(left, top, element) {
     const maxLeft = Math.max(0, window.innerWidth - element.offsetWidth);
@@ -13768,11 +13776,34 @@ JSON 格式：
       top: Math.min(Math.max(0, top), maxTop)
     };
   }
-  const MobileFullscreenButton = () => {
-    const [fullscreen, setFullscreen] = reactExports.useState(isFullscreen);
+  function getPositionRatios(left, top, element) {
+    const maxLeft = Math.max(0, window.innerWidth - element.offsetWidth);
+    const maxTop = Math.max(0, window.innerHeight - element.offsetHeight);
+    return {
+      ratioX: maxLeft > 0 ? left / maxLeft : 0,
+      ratioY: maxTop > 0 ? top / maxTop : 0
+    };
+  }
+  function createPosition(left, top, element) {
+    const clamped = clampPosition(left, top, element);
+    const ratios = getPositionRatios(clamped.left, clamped.top, element);
+    return { ...clamped, ...ratios };
+  }
+  function createPositionFromRatios(ratioX, ratioY, element) {
+    const maxLeft = Math.max(0, window.innerWidth - element.offsetWidth);
+    const maxTop = Math.max(0, window.innerHeight - element.offsetHeight);
+    return createPosition(ratioX * maxLeft, ratioY * maxTop, element);
+  }
+  const MobileFullscreenButton = ({ adapter }) => {
+    const [fullscreen, setFullscreen] = reactExports.useState(() => document.documentElement.classList.contains("linkual-custom-fullscreen"));
     const [position, setPosition] = reactExports.useState(null);
     const [dragging, setDragging] = reactExports.useState(false);
+    const [currentTime, setCurrentTime] = reactExports.useState(0);
+    const [duration, setDuration] = reactExports.useState(0);
+    const [paused, setPaused] = reactExports.useState(true);
     const buttonRef = reactExports.useRef(null);
+    const progressRef = reactExports.useRef(null);
+    const fullscreenRequestPendingRef = reactExports.useRef(false);
     const dragRef = reactExports.useRef({
       pointerId: -1,
       offsetX: 0,
@@ -13781,33 +13812,93 @@ JSON 格式：
       startY: 0,
       moved: false
     });
+    const applyCustomFullscreenState = (enabled) => {
+      var _a;
+      document.documentElement.classList.toggle("linkual-custom-fullscreen", enabled);
+      (_a = adapter.setCustomFullscreen) == null ? void 0 : _a.call(adapter, enabled);
+      setFullscreen(enabled);
+      emitCustomLayoutChange();
+    };
     reactExports.useEffect(() => {
-      const syncFullscreenState = () => setFullscreen(isFullscreen());
+      const syncFullscreenState = () => {
+        var _a;
+        const customFullscreen = document.documentElement.classList.contains("linkual-custom-fullscreen");
+        if (customFullscreen && !getBrowserFullscreenElement$1() && !fullscreenRequestPendingRef.current) {
+          document.documentElement.classList.remove("linkual-custom-fullscreen");
+          (_a = adapter.setCustomFullscreen) == null ? void 0 : _a.call(adapter, false);
+          emitCustomLayoutChange();
+          setFullscreen(false);
+          return;
+        }
+        setFullscreen(customFullscreen);
+      };
+      window.addEventListener("linkual_custom_fullscreen_changed", syncFullscreenState);
       document.addEventListener("fullscreenchange", syncFullscreenState);
       document.addEventListener("webkitfullscreenchange", syncFullscreenState);
       document.addEventListener("mozfullscreenchange", syncFullscreenState);
       document.addEventListener("MSFullscreenChange", syncFullscreenState);
       return () => {
+        window.removeEventListener("linkual_custom_fullscreen_changed", syncFullscreenState);
         document.removeEventListener("fullscreenchange", syncFullscreenState);
         document.removeEventListener("webkitfullscreenchange", syncFullscreenState);
         document.removeEventListener("mozfullscreenchange", syncFullscreenState);
         document.removeEventListener("MSFullscreenChange", syncFullscreenState);
       };
-    }, []);
+    }, [adapter]);
     reactExports.useEffect(() => {
+      var _a;
+      (_a = adapter.setCustomFullscreen) == null ? void 0 : _a.call(adapter, fullscreen);
+      window.dispatchEvent(new Event("linkual_custom_layout_refresh"));
+      window.dispatchEvent(new Event("resize"));
+    }, [adapter, fullscreen]);
+    reactExports.useEffect(() => () => {
+      var _a;
+      const hadCustomFullscreen = document.documentElement.classList.contains("linkual-custom-fullscreen");
+      fullscreenRequestPendingRef.current = false;
+      if (!hadCustomFullscreen) return;
+      document.documentElement.classList.remove("linkual-custom-fullscreen");
+      (_a = adapter.setCustomFullscreen) == null ? void 0 : _a.call(adapter, false);
+      emitCustomLayoutChange();
+      if (getBrowserFullscreenElement$1() === document.documentElement) {
+        const browserFullscreenAction = exitBrowserFullscreen$1();
+        if (isPromiseLike$1(browserFullscreenAction)) {
+          browserFullscreenAction.catch((error) => console.warn("[Linkual] 浏览器全屏退出失败", error));
+        }
+      }
+    }, [adapter]);
+    reactExports.useEffect(() => {
+      var _a;
       if (!position) return;
       const keepButtonInView = () => {
         const button = buttonRef.current;
         if (!button) return;
-        setPosition((current) => current ? clampPosition(current.left, current.top, button) : current);
+        setPosition((current) => current ? createPositionFromRatios(current.ratioX, current.ratioY, button) : current);
       };
       window.addEventListener("resize", keepButtonInView);
       window.addEventListener("orientationchange", keepButtonInView);
+      (_a = window.visualViewport) == null ? void 0 : _a.addEventListener("resize", keepButtonInView);
       return () => {
+        var _a2;
         window.removeEventListener("resize", keepButtonInView);
         window.removeEventListener("orientationchange", keepButtonInView);
+        (_a2 = window.visualViewport) == null ? void 0 : _a2.removeEventListener("resize", keepButtonInView);
       };
     }, [position]);
+    reactExports.useEffect(() => {
+      if (!fullscreen) return void 0;
+      let frameId = 0;
+      const syncPlaybackState = () => {
+        var _a, _b;
+        const nextCurrentTime = adapter.getCurrentTime();
+        const nextDuration = ((_a = adapter.getDuration) == null ? void 0 : _a.call(adapter)) || 0;
+        setCurrentTime(Number.isFinite(nextCurrentTime) ? nextCurrentTime : 0);
+        setDuration(Number.isFinite(nextDuration) ? nextDuration : 0);
+        setPaused(((_b = adapter.isPaused) == null ? void 0 : _b.call(adapter)) ?? false);
+        frameId = window.requestAnimationFrame(syncPlaybackState);
+      };
+      syncPlaybackState();
+      return () => window.cancelAnimationFrame(frameId);
+    }, [adapter, fullscreen]);
     const handlePointerDown = (event) => {
       const button = event.currentTarget;
       const rect = button.getBoundingClientRect();
@@ -13820,7 +13911,7 @@ JSON 格式：
         moved: false
       };
       button.setPointerCapture(event.pointerId);
-      setPosition({ left: rect.left, top: rect.top });
+      setPosition(createPosition(rect.left, rect.top, button));
       setDragging(true);
     };
     const handlePointerMove = (event) => {
@@ -13832,7 +13923,7 @@ JSON 格式：
       if (dx > DRAG_THRESHOLD || dy > DRAG_THRESHOLD) {
         drag.moved = true;
       }
-      setPosition(clampPosition(event.clientX - drag.offsetX, event.clientY - drag.offsetY, button));
+      setPosition(createPosition(event.clientX - drag.offsetX, event.clientY - drag.offsetY, button));
     };
     const handlePointerUp = (event) => {
       const button = event.currentTarget;
@@ -13842,6 +13933,13 @@ JSON 格式：
       }
       setDragging(false);
     };
+    const exitCustomFullscreen = () => {
+      applyCustomFullscreenState(false);
+      const browserFullscreenAction = getBrowserFullscreenElement$1() ? exitBrowserFullscreen$1() : void 0;
+      if (isPromiseLike$1(browserFullscreenAction)) {
+        browserFullscreenAction.catch((error) => console.warn("[Linkual] 浏览器全屏切换失败", error));
+      }
+    };
     const handleClick = (event) => {
       if (dragRef.current.moved) {
         event.preventDefault();
@@ -13849,36 +13947,704 @@ JSON 格式：
         dragRef.current.moved = false;
         return;
       }
-      const result = fullscreen ? exitFullscreen() : requestFullscreen();
-      if (result instanceof Promise) {
-        result.catch((error) => console.warn("[Linkual] 全屏切换失败", error));
+      const nextFullscreen = !fullscreen;
+      fullscreenRequestPendingRef.current = nextFullscreen;
+      applyCustomFullscreenState(nextFullscreen);
+      if (nextFullscreen) {
+        const browserFullscreenAction = requestBrowserFullscreen();
+        const finishPending = () => {
+          window.setTimeout(() => {
+            fullscreenRequestPendingRef.current = false;
+            emitCustomLayoutChange();
+          }, FULLSCREEN_SETTLE_DELAY);
+        };
+        if (isPromiseLike$1(browserFullscreenAction)) {
+          browserFullscreenAction.then(finishPending).catch((error) => {
+            console.warn("[Linkual] 浏览器全屏切换失败", error);
+            fullscreenRequestPendingRef.current = false;
+            applyCustomFullscreenState(false);
+          });
+        } else {
+          finishPending();
+        }
+        return;
+      }
+      exitCustomFullscreen();
+    };
+    const togglePlayback = () => {
+      var _a;
+      if (((_a = adapter.isPaused) == null ? void 0 : _a.call(adapter)) ?? paused) {
+        adapter.play();
+      } else {
+        adapter.pause();
       }
     };
+    const seekBy = (delta) => {
+      const nextTime = Math.max(0, Math.min(duration || Number.MAX_SAFE_INTEGER, adapter.getCurrentTime() + delta));
+      adapter.seekTo(nextTime);
+    };
+    const handleProgressInput = (event) => {
+      const nextTime = Number(event.currentTarget.value);
+      if (!Number.isFinite(nextTime)) return;
+      adapter.seekTo(nextTime);
+      setCurrentTime(nextTime);
+    };
+    const handleProgressPointerDown = () => {
+      var _a;
+      (_a = progressRef.current) == null ? void 0 : _a.focus();
+    };
+    reactExports.useEffect(() => {
+      if (!fullscreen) return void 0;
+      const handleKeyDown = (event) => {
+        const target = event.target;
+        const isEditing = Boolean(target == null ? void 0 : target.closest("input, textarea, select, [contenteditable]"));
+        if (isEditing) return;
+        if (event.key === " " || event.key === "Spacebar") {
+          event.preventDefault();
+          togglePlayback();
+        } else if (event.key === "ArrowLeft") {
+          event.preventDefault();
+          seekBy(-SEEK_STEP_SECONDS);
+        } else if (event.key === "ArrowRight") {
+          event.preventDefault();
+          seekBy(SEEK_STEP_SECONDS);
+        } else if (event.key === "Escape") {
+          event.preventDefault();
+          exitCustomFullscreen();
+        }
+      };
+      window.addEventListener("keydown", handleKeyDown, true);
+      return () => window.removeEventListener("keydown", handleKeyDown, true);
+    }, [adapter, duration, fullscreen, paused]);
     const style2 = position ? {
       left: position.left,
       top: position.top,
       right: "auto",
       bottom: "auto"
     } : {};
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(
-      "button",
+    const progressPercent = duration > 0 ? Math.max(0, Math.min(100, currentTime / duration * 100)) : 0;
+    return /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+      !fullscreen && /* @__PURE__ */ jsxRuntimeExports.jsx(
+        "button",
+        {
+          ref: buttonRef,
+          type: "button",
+          className: `linkual-mobile-fullscreen ${dragging ? "is-dragging" : ""}`,
+          style: style2,
+          onPointerDown: handlePointerDown,
+          onPointerMove: handlePointerMove,
+          onPointerUp: handlePointerUp,
+          onPointerCancel: handlePointerUp,
+          onClick: handleClick,
+          children: "进入全屏"
+        }
+      ),
+      fullscreen && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-player-controls", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-player-progress-row", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "linkual-player-time", children: formatTime(currentTime) }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "input",
+            {
+              ref: progressRef,
+              className: "linkual-player-progress",
+              type: "range",
+              min: "0",
+              max: Math.max(1, duration),
+              step: "0.1",
+              value: Math.min(currentTime, Math.max(1, duration)),
+              onChange: handleProgressInput,
+              onPointerDown: handleProgressPointerDown,
+              style: {
+                "--linkual-progress": `${progressPercent}%`
+              },
+              "aria-label": "播放进度"
+            }
+          ),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "linkual-player-time", children: formatTime(duration) })
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-player-button-row", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", className: "linkual-player-btn", onClick: () => seekBy(-SEEK_STEP_SECONDS), title: "后退 5 秒", children: "-5" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", className: "linkual-player-btn primary", onClick: togglePlayback, title: paused ? "播放" : "暂停", children: paused ? "播放" : "暂停" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", className: "linkual-player-btn", onClick: () => seekBy(SEEK_STEP_SECONDS), title: "前进 5 秒", children: "+5" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", className: "linkual-player-btn", onClick: exitCustomFullscreen, title: "退出全屏", children: "退出" })
+        ] })
+      ] })
+    ] });
+  };
+  const DESKTOP_WIDGET_HEIGHT = 58;
+  const MOBILE_WIDGET_HEIGHT = 132;
+  const COLLAPSED_WIDGET_HEIGHT = 28;
+  const MAX_WORD_SELECTION_LENGTH = 180;
+  const MAX_CONTEXT_SELECTION_LENGTH = 4e3;
+  const CONTEXT_SENTENCE_RADIUS = 2;
+  const SENTENCE_PATTERN = /[^.!?。！？]+[.!?。！？]+["'”’）)]*|[^.!?。！？]+$/g;
+  const VIEWPORT_PATCH_MARKER = "__linkualUniversalViewportPatchInstalled";
+  const VIEWPORT_OFFSET_KEY = "__linkualUniversalWidgetHeight";
+  const FLOATING_BUTTON_MARGIN = 10;
+  const getDefaultExpandedHeight = () => window.matchMedia("(max-width: 720px)").matches ? MOBILE_WIDGET_HEIGHT : DESKTOP_WIDGET_HEIGHT;
+  const ActionIcon = ({ name }) => {
+    const paths = {
+      add: /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M4 7.5h5l2 2h9v8.5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z" }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M12 12v5" }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M9.5 14.5h5" })
+      ] }),
+      queue: /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M8 6h12" }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M8 12h12" }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M8 18h12" }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M4 6h.01" }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M4 12h.01" }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M4 18h.01" })
+      ] }),
+      settings: /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx("circle", { cx: "12", cy: "12", r: "3" }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M19.4 15a1.7 1.7 0 0 0 .34 1.88l.04.04a2 2 0 1 1-2.83 2.83l-.04-.04a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.07a1.7 1.7 0 0 0-1.03-1.56 1.7 1.7 0 0 0-1.88.34l-.04.04a2 2 0 1 1-2.83-2.83l.04-.04A1.7 1.7 0 0 0 4.6 15 1.7 1.7 0 0 0 3 14H3a2 2 0 1 1 0-4h.07A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.88l-.04-.04a2 2 0 1 1 2.83-2.83l.04.04A1.7 1.7 0 0 0 9 4.6 1.7 1.7 0 0 0 10 3V3a2 2 0 1 1 4 0v.07A1.7 1.7 0 0 0 15 4.6a1.7 1.7 0 0 0 1.88-.34l.04-.04a2 2 0 1 1 2.83 2.83l-.04.04A1.7 1.7 0 0 0 19.4 9c.17.62.7 1 1.6 1H21a2 2 0 1 1 0 4h-.07a1.7 1.7 0 0 0-1.53 1Z" })
+      ] }),
+      collapse: /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "m6 9 6 6 6-6" })
+    };
+    return /* @__PURE__ */ jsxRuntimeExports.jsx("svg", { className: "linkual-universal-button-icon", viewBox: "0 0 24 24", "aria-hidden": "true", children: paths[name] });
+  };
+  const normalizeText = (value) => value.replace(/\s+/g, " ").trim();
+  const getSourceTitle = () => {
+    const title = normalizeText(document.title.replace(/^\(\d+\)\s+/, ""));
+    return title || window.location.hostname || window.location.href;
+  };
+  const getPageUrl = () => window.location.href;
+  const getElementFromNode = (node) => {
+    if (!node) return null;
+    if (node instanceof Element) return node;
+    return node.parentElement;
+  };
+  const isInsideLinkualRoot = (node) => {
+    const element = getElementFromNode(node);
+    return Boolean(element == null ? void 0 : element.closest("#linkual-root"));
+  };
+  const isInsideEditableElement = (node) => {
+    const element = getElementFromNode(node);
+    if (!element) return false;
+    return Boolean(element.closest("input, textarea, select, [contenteditable]"));
+  };
+  const getSelectionScope = (range) => {
+    let element = getElementFromNode(range.commonAncestorContainer);
+    let fallback = null;
+    while (element && element !== document.body && element instanceof HTMLElement) {
+      if (element.id === "linkual-root") return null;
+      const tagName = element.tagName.toLowerCase();
+      const textLength = normalizeText(element.textContent || "").length;
+      if (["article", "main", "section"].includes(tagName) || element.getAttribute("role") === "main") {
+        return element;
+      }
+      if (["p", "li", "blockquote", "td", "th"].includes(tagName)) {
+        fallback = element;
+      } else if (tagName === "div" && textLength > 220 && textLength < 8e3) {
+        return element;
+      }
+      element = element.parentElement;
+    }
+    return fallback || document.body;
+  };
+  const getRangeText = (scope, range, side) => {
+    const scopedRange = document.createRange();
+    scopedRange.selectNodeContents(scope);
+    try {
+      if (side === "before") {
+        scopedRange.setEnd(range.startContainer, range.startOffset);
+      } else {
+        scopedRange.setStart(range.endContainer, range.endOffset);
+      }
+      return scopedRange.toString();
+    } catch (err) {
+      return "";
+    } finally {
+      scopedRange.detach();
+    }
+  };
+  const extractSentenceContext = (beforeText, selectedText, afterText) => {
+    const normalizedBefore = normalizeText(beforeText);
+    const normalizedSelected = normalizeText(selectedText);
+    const normalizedAfter = normalizeText(afterText);
+    const fullText = normalizeText([normalizedBefore, normalizedSelected, normalizedAfter].filter(Boolean).join(" "));
+    if (!fullText) return normalizedSelected;
+    const targetStart = normalizedBefore.length + (normalizedBefore ? 1 : 0);
+    const targetEnd = targetStart + normalizedSelected.length;
+    const sentences = Array.from(fullText.matchAll(SENTENCE_PATTERN)).map((match) => ({
+      text: normalizeText(match[0] || ""),
+      start: match.index ?? 0,
+      end: (match.index ?? 0) + (match[0] || "").length
+    })).filter((sentence) => sentence.text);
+    if (sentences.length === 0) {
+      const sliceStart = Math.max(0, targetStart - 360);
+      const sliceEnd = Math.min(fullText.length, targetEnd + 360);
+      return normalizeText(fullText.slice(sliceStart, sliceEnd));
+    }
+    const targetSentenceIndex = sentences.findIndex((sentence) => sentence.start <= targetEnd && sentence.end >= targetStart);
+    if (targetSentenceIndex < 0) {
+      return normalizeText(fullText.slice(Math.max(0, targetStart - 360), Math.min(fullText.length, targetEnd + 360)));
+    }
+    const startIndex = Math.max(0, targetSentenceIndex - CONTEXT_SENTENCE_RADIUS);
+    const endIndex = Math.min(sentences.length, targetSentenceIndex + CONTEXT_SENTENCE_RADIUS + 1);
+    return normalizeText(sentences.slice(startIndex, endIndex).map((sentence) => sentence.text).join(" "));
+  };
+  const getVisibleRangeRect = (range) => {
+    const rects = Array.from(range.getClientRects()).filter((rect2) => rect2.width > 0 && rect2.height > 0);
+    if (rects.length > 0) return rects[0];
+    const rect = range.getBoundingClientRect();
+    return rect.width > 0 && rect.height > 0 ? rect : null;
+  };
+  const getFloatingButtonPosition = (rect) => {
+    var _a, _b, _c, _d;
+    const viewportWidth = ((_a = window.visualViewport) == null ? void 0 : _a.width) ?? window.innerWidth;
+    const viewportHeight = ((_b = window.visualViewport) == null ? void 0 : _b.height) ?? window.innerHeight;
+    const viewportLeft = ((_c = window.visualViewport) == null ? void 0 : _c.offsetLeft) ?? 0;
+    const viewportTop = ((_d = window.visualViewport) == null ? void 0 : _d.offsetTop) ?? 0;
+    const left = Math.min(
+      viewportLeft + viewportWidth - 44,
+      Math.max(viewportLeft + 44, rect.left + rect.width / 2)
+    );
+    let top = rect.top - 38;
+    if (top < viewportTop + FLOATING_BUTTON_MARGIN) {
+      top = rect.bottom + 8;
+    }
+    return {
+      left,
+      top: Math.min(
+        viewportTop + viewportHeight - 38,
+        Math.max(viewportTop + FLOATING_BUTTON_MARGIN, top)
+      )
+    };
+  };
+  const captureSelection = (mode) => {
+    const selection = window.getSelection();
+    const selectedText = normalizeText((selection == null ? void 0 : selection.toString()) || "");
+    if (!selection || selection.rangeCount === 0 || selection.isCollapsed || !selectedText) {
+      return null;
+    }
+    const maxSelectionLength = mode === "word" ? MAX_WORD_SELECTION_LENGTH : MAX_CONTEXT_SELECTION_LENGTH;
+    if (selectedText.length > maxSelectionLength) {
+      return null;
+    }
+    if (isInsideLinkualRoot(selection.anchorNode) || isInsideLinkualRoot(selection.focusNode) || isInsideEditableElement(selection.anchorNode) || isInsideEditableElement(selection.focusNode)) {
+      return null;
+    }
+    const range = selection.getRangeAt(0);
+    const scope = getSelectionScope(range);
+    if (!scope) return null;
+    const rect = getVisibleRangeRect(range);
+    if (!rect) return null;
+    const beforeText = getRangeText(scope, range, "before");
+    const afterText = getRangeText(scope, range, "after");
+    const position = getFloatingButtonPosition(rect);
+    return {
+      text: selectedText,
+      context: mode === "word" ? extractSentenceContext(beforeText, selectedText, afterText) : selectedText,
+      source: getSourceTitle(),
+      url: getPageUrl(),
+      top: position.top,
+      left: position.left
+    };
+  };
+  const getPageWindow = () => {
+    try {
+      return typeof unsafeWindow !== "undefined" ? unsafeWindow : window;
+    } catch {
+      return window;
+    }
+  };
+  const findPropertyDescriptor = (target, property) => {
+    let cursor = target;
+    while (cursor) {
+      const descriptor = Object.getOwnPropertyDescriptor(cursor, property);
+      if (descriptor) return descriptor;
+      cursor = Object.getPrototypeOf(cursor);
+    }
+    return void 0;
+  };
+  const installViewportHeightPatch = () => {
+    const pageWindow = getPageWindow();
+    if (pageWindow[VIEWPORT_PATCH_MARKER]) return;
+    const getOffset = () => {
+      const raw = Number(pageWindow[VIEWPORT_OFFSET_KEY] || 0);
+      return Number.isFinite(raw) ? raw : 0;
+    };
+    try {
+      const descriptor = findPropertyDescriptor(pageWindow, "innerHeight");
+      if (descriptor == null ? void 0 : descriptor.get) {
+        Object.defineProperty(pageWindow, "innerHeight", {
+          configurable: true,
+          get() {
+            var _a;
+            const value = Number(((_a = descriptor.get) == null ? void 0 : _a.call(pageWindow)) || 0);
+            return Math.max(0, value - getOffset());
+          }
+        });
+      }
+    } catch {
+    }
+    try {
+      const viewport = pageWindow.visualViewport;
+      const descriptor = viewport ? findPropertyDescriptor(viewport, "height") : void 0;
+      if (viewport && (descriptor == null ? void 0 : descriptor.get)) {
+        Object.defineProperty(viewport, "height", {
+          configurable: true,
+          get() {
+            var _a;
+            const value = Number(((_a = descriptor.get) == null ? void 0 : _a.call(viewport)) || 0);
+            return Math.max(0, value - getOffset());
+          }
+        });
+      }
+    } catch {
+    }
+    pageWindow[VIEWPORT_PATCH_MARKER] = true;
+  };
+  const UniversalVocabWidget = ({ onOpenSettings }) => {
+    const [isExpanded, setIsExpanded] = reactExports.useState(true);
+    const [selection, setSelection] = reactExports.useState(null);
+    const [word, setWord] = reactExports.useState("");
+    const [context, setContext] = reactExports.useState("");
+    const [source, setSource] = reactExports.useState("");
+    const [sourceUrl, setSourceUrl] = reactExports.useState(getPageUrl);
+    const [selectionMode, setSelectionMode] = reactExports.useState("word");
+    const [themeColor, setThemeColor] = reactExports.useState(ConfigService.get("theme_color") || "#000000");
+    const [status, setStatus] = reactExports.useState("idle");
+    const [message, setMessage] = reactExports.useState("");
+    const [reservedHeight, setReservedHeight] = reactExports.useState(getDefaultExpandedHeight);
+    const [queueCount, setQueueCount] = reactExports.useState(0);
+    const widgetRef = reactExports.useRef(null);
+    const selectionTimerRef = reactExports.useRef(null);
+    const activeWidgetHeight = isExpanded ? reservedHeight : COLLAPSED_WIDGET_HEIGHT;
+    const hasPayload = Boolean(word.trim());
+    const canSend = hasPayload;
+    const statusText = reactExports.useMemo(() => {
+      if (status === "success") return message || "已加入队列";
+      if (status === "error") return message || "加入失败";
+      if (status === "filled") return "已填入";
+      return "";
+    }, [message, status]);
+    const measureWidgetHeight = reactExports.useCallback(() => {
+      const baseHeight = getDefaultExpandedHeight();
+      const measuredHeight = widgetRef.current ? Math.ceil(widgetRef.current.scrollHeight) : 0;
+      const nextHeight = Math.max(baseHeight, measuredHeight);
+      setReservedHeight((currentHeight) => Math.abs(currentHeight - nextHeight) > 1 ? nextHeight : currentHeight);
+    }, []);
+    reactExports.useEffect(() => {
+      const updateReservedHeight = () => {
+        setReservedHeight(getDefaultExpandedHeight());
+        window.requestAnimationFrame(measureWidgetHeight);
+      };
+      updateReservedHeight();
+      window.addEventListener("resize", updateReservedHeight);
+      return () => window.removeEventListener("resize", updateReservedHeight);
+    }, [measureWidgetHeight]);
+    reactExports.useEffect(() => {
+      if (!isExpanded) return void 0;
+      const frameId = window.requestAnimationFrame(measureWidgetHeight);
+      return () => window.cancelAnimationFrame(frameId);
+    });
+    reactExports.useEffect(() => {
+      const handleConfigUpdate = () => {
+        setThemeColor(ConfigService.get("theme_color") || "#000000");
+      };
+      window.addEventListener("linkual_settings_updated", handleConfigUpdate);
+      return () => window.removeEventListener("linkual_settings_updated", handleConfigUpdate);
+    }, []);
+    reactExports.useEffect(() => {
+      const updateQueueCount = (event) => {
+        const detail = event.detail;
+        const nextCount = Number((detail == null ? void 0 : detail.pendingCount) || 0);
+        setQueueCount(Number.isFinite(nextCount) ? nextCount : 0);
+      };
+      window.addEventListener(QUEUE_COUNT_EVENT, updateQueueCount);
+      window.dispatchEvent(new Event(QUEUE_REQUEST_COUNT_EVENT));
+      return () => window.removeEventListener(QUEUE_COUNT_EVENT, updateQueueCount);
+    }, []);
+    reactExports.useEffect(() => {
+      installViewportHeightPatch();
+      let styleEl = document.getElementById("linkual-universal-page-reserve");
+      if (!styleEl) {
+        styleEl = document.createElement("style");
+        styleEl.id = "linkual-universal-page-reserve";
+        document.head.appendChild(styleEl);
+      }
+      styleEl.textContent = `
+      html.linkual-universal-widget-open {
+        --linkual-page-height: calc(100vh - var(--linkual-universal-widget-height, ${DESKTOP_WIDGET_HEIGHT}px) - env(safe-area-inset-bottom, 0px));
+        scroll-padding-bottom: calc(var(--linkual-universal-widget-height, ${DESKTOP_WIDGET_HEIGHT}px) + env(safe-area-inset-bottom, 0px)) !important;
+      }
+      html.linkual-universal-widget-open body {
+        padding-bottom: calc(var(--linkual-universal-widget-height, ${DESKTOP_WIDGET_HEIGHT}px) + env(safe-area-inset-bottom, 0px)) !important;
+        box-sizing: border-box !important;
+      }
+    `;
+      const pageWindow = getPageWindow();
+      pageWindow[VIEWPORT_OFFSET_KEY] = activeWidgetHeight;
+      document.documentElement.style.setProperty("--linkual-universal-widget-height", `${activeWidgetHeight}px`);
+      document.documentElement.classList.add("linkual-universal-widget-open");
+      window.dispatchEvent(new Event("resize"));
+      return () => {
+        document.documentElement.classList.remove("linkual-universal-widget-open");
+        document.documentElement.style.removeProperty("--linkual-universal-widget-height");
+        const cleanupWindow = getPageWindow();
+        cleanupWindow[VIEWPORT_OFFSET_KEY] = 0;
+        window.dispatchEvent(new Event("resize"));
+      };
+    }, [activeWidgetHeight]);
+    const refreshSelection = reactExports.useCallback(() => {
+      if (!isExpanded) return;
+      setSelection(captureSelection(selectionMode));
+    }, [isExpanded, selectionMode]);
+    const scheduleSelectionRefresh = reactExports.useCallback((delay = 80) => {
+      if (!isExpanded) return;
+      if (selectionTimerRef.current !== null) {
+        window.clearTimeout(selectionTimerRef.current);
+      }
+      selectionTimerRef.current = window.setTimeout(() => {
+        selectionTimerRef.current = null;
+        refreshSelection();
+      }, delay);
+    }, [isExpanded, refreshSelection]);
+    reactExports.useEffect(() => {
+      if (!isExpanded) return void 0;
+      const handleSelectionChange = () => scheduleSelectionRefresh(90);
+      const handlePointerUp = () => scheduleSelectionRefresh(20);
+      const handleKeyUp = () => scheduleSelectionRefresh(20);
+      document.addEventListener("selectionchange", handleSelectionChange);
+      window.addEventListener("pointerup", handlePointerUp, true);
+      window.addEventListener("keyup", handleKeyUp, true);
+      return () => {
+        document.removeEventListener("selectionchange", handleSelectionChange);
+        window.removeEventListener("pointerup", handlePointerUp, true);
+        window.removeEventListener("keyup", handleKeyUp, true);
+        if (selectionTimerRef.current !== null) {
+          window.clearTimeout(selectionTimerRef.current);
+          selectionTimerRef.current = null;
+        }
+      };
+    }, [isExpanded, scheduleSelectionRefresh]);
+    const handleAddSelection = () => {
+      var _a;
+      if (!selection) return;
+      if (selectionMode === "word") {
+        setWord(selection.text);
+        setContext(selection.context);
+        setSelectionMode("context");
+      } else {
+        setContext(selection.text);
+      }
+      setSource(selection.source);
+      setSourceUrl(selection.url);
+      setStatus("filled");
+      setMessage("");
+      setSelection(null);
+      (_a = window.getSelection()) == null ? void 0 : _a.removeAllRanges();
+    };
+    const handleClear = () => {
+      setWord("");
+      setContext("");
+      setSource("");
+      setSourceUrl(getPageUrl());
+      setStatus("idle");
+      setMessage("");
+      setSelection(null);
+      setSelectionMode("word");
+    };
+    const handleAddToQueue = () => {
+      var _a;
+      const finalWord = word.trim();
+      const finalContext = context.trim();
+      if (!finalWord) {
+        setStatus("error");
+        setMessage("词块不能为空");
+        return;
+      }
+      window.dispatchEvent(new CustomEvent("linkual-add-vocab", {
+        detail: {
+          word: finalWord,
+          context: finalContext,
+          source: source || getSourceTitle(),
+          source_url: sourceUrl || getPageUrl()
+        }
+      }));
+      window.dispatchEvent(new Event(QUEUE_REQUEST_COUNT_EVENT));
+      setStatus("success");
+      setMessage("已加入队列");
+      setSelectionMode("word");
+      setSelection(null);
+      (_a = window.getSelection()) == null ? void 0 : _a.removeAllRanges();
+    };
+    const handleModeChange = (mode) => {
+      setSelectionMode(mode);
+      setMessage("");
+      window.setTimeout(() => setSelection(captureSelection(mode)), 0);
+    };
+    const handleContextWheel = (event) => {
+      const input = event.currentTarget;
+      const maxScroll = input.scrollWidth - input.clientWidth;
+      if (maxScroll <= 0) return;
+      const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
+      if (!delta) return;
+      const nextScroll = Math.max(0, Math.min(maxScroll, input.scrollLeft + delta));
+      if (nextScroll !== input.scrollLeft) {
+        event.preventDefault();
+        input.scrollLeft = nextScroll;
+      }
+    };
+    const handleQueueToggle = () => {
+      window.dispatchEvent(new Event(QUEUE_TOGGLE_EVENT));
+      window.dispatchEvent(new Event(QUEUE_REQUEST_COUNT_EVENT));
+    };
+    if (!isExpanded) {
+      return /* @__PURE__ */ jsxRuntimeExports.jsx(
+        "button",
+        {
+          type: "button",
+          className: "linkual-universal-expand-bar",
+          onClick: () => setIsExpanded(true),
+          style: {
+            "--linkual-theme": themeColor
+          },
+          title: "Linkual",
+          children: "展开选词栏"
+        }
+      );
+    }
+    return /* @__PURE__ */ jsxRuntimeExports.jsxs(
+      "div",
       {
-        ref: buttonRef,
-        type: "button",
-        className: `linkual-mobile-fullscreen ${dragging ? "is-dragging" : ""}`,
-        style: style2,
-        onPointerDown: handlePointerDown,
-        onPointerMove: handlePointerMove,
-        onPointerUp: handlePointerUp,
-        onPointerCancel: handlePointerUp,
-        onClick: handleClick,
-        children: fullscreen ? "退出全屏" : "进入全屏"
+        ref: widgetRef,
+        className: "linkual-universal-widget",
+        style: {
+          "--linkual-theme": themeColor,
+          "--linkual-universal-widget-height": `${reservedHeight}px`
+        },
+        children: [
+          selection && /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "button",
+            {
+              type: "button",
+              className: "linkual-universal-floating-add",
+              onMouseDown: (event) => event.preventDefault(),
+              onPointerDown: (event) => event.preventDefault(),
+              onClick: handleAddSelection,
+              style: {
+                top: selection.top,
+                left: selection.left,
+                "--linkual-theme": themeColor
+              },
+              children: "加入"
+            }
+          ),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-universal-top", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "linkual-universal-selection", children: selection ? /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "linkual-universal-selection-label", children: "已选" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "linkual-universal-selection-text", children: selection.text }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "button",
+                {
+                  type: "button",
+                  className: "linkual-universal-add-btn",
+                  onMouseDown: (event) => event.preventDefault(),
+                  onPointerDown: (event) => event.preventDefault(),
+                  onClick: handleAddSelection,
+                  children: "加入"
+                }
+              )
+            ] }) : /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "linkual-universal-muted", children: "未选中文本" }) }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "linkual-universal-actions", children: statusText && /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: `linkual-universal-status status-${status}`, children: statusText }) })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-universal-form", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("label", { className: "linkual-universal-field field-word", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "button",
+                {
+                  type: "button",
+                  className: `linkual-universal-mode-tab ${selectionMode === "word" ? "active" : ""}`,
+                  onMouseDown: (event) => event.preventDefault(),
+                  onClick: () => handleModeChange("word"),
+                  children: "词块"
+                }
+              ),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "input",
+                {
+                  value: word,
+                  onChange: (event) => {
+                    setWord(event.target.value);
+                    setStatus(event.target.value.trim() ? "filled" : "idle");
+                    setMessage("");
+                  },
+                  placeholder: "word or phrase"
+                }
+              )
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("label", { className: "linkual-universal-field field-context", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "button",
+                {
+                  type: "button",
+                  className: `linkual-universal-mode-tab ${selectionMode === "context" ? "active" : ""}`,
+                  onMouseDown: (event) => event.preventDefault(),
+                  onClick: () => handleModeChange("context"),
+                  children: "上下文"
+                }
+              ),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "input",
+                {
+                  value: context,
+                  onChange: (event) => {
+                    setContext(event.target.value);
+                    if (word.trim()) setStatus("filled");
+                    setMessage("");
+                  },
+                  onWheel: handleContextWheel,
+                  placeholder: "context"
+                }
+              )
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", className: "linkual-universal-clear", onClick: handleClear, disabled: !hasPayload && !context, children: "x" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("button", { type: "button", className: "linkual-universal-send", onClick: handleAddToQueue, disabled: !canSend, title: "加入队列", "aria-label": "加入队列", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx(ActionIcon, { name: "add" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "linkual-universal-button-text", children: "加入队列" })
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-universal-inline-actions", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsxs("button", { type: "button", className: "linkual-universal-icon-btn linkual-universal-queue-btn", onClick: handleQueueToggle, title: "制卡队列", "aria-label": `制卡队列${queueCount > 0 ? ` ${queueCount}` : ""}`, children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx(ActionIcon, { name: "queue" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "linkual-universal-button-text", children: "制卡队列" }),
+                queueCount > 0 && /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "linkual-universal-queue-count", children: queueCount })
+              ] }),
+              /* @__PURE__ */ jsxRuntimeExports.jsxs("button", { type: "button", className: "linkual-universal-icon-btn", onClick: onOpenSettings, title: "设置", "aria-label": "设置", children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx(ActionIcon, { name: "settings" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "linkual-universal-button-text", children: "设置" })
+              ] }),
+              /* @__PURE__ */ jsxRuntimeExports.jsxs("button", { type: "button", className: "linkual-universal-icon-btn", onClick: () => setIsExpanded(false), title: "折叠", "aria-label": "收起", children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx(ActionIcon, { name: "collapse" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "linkual-universal-button-text", children: "收起" })
+              ] })
+            ] })
+          ] })
+        ]
       }
     );
   };
   const INITIAL_RENDER_LIMIT = 80;
   const RENDER_BATCH_SIZE = 80;
   const ACTIVE_RENDER_BUFFER = 20;
+  function getBrowserFullscreenElement() {
+    const doc = document;
+    return document.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement || doc.msFullscreenElement || null;
+  }
+  function exitBrowserFullscreen() {
+    const doc = document;
+    if (document.exitFullscreen) return document.exitFullscreen();
+    if (doc.webkitExitFullscreen) return doc.webkitExitFullscreen();
+    if (doc.mozCancelFullScreen) return doc.mozCancelFullScreen();
+    if (doc.msExitFullscreen) return doc.msExitFullscreen();
+  }
+  function isPromiseLike(value) {
+    return Boolean(value && typeof value.then === "function");
+  }
   const App = ({ adapter }) => {
     const [subs, setSubs] = reactExports.useState([]);
     const [inVideo, setInVideo] = reactExports.useState(adapter.isVideoPage());
@@ -13935,6 +14701,26 @@ JSON 格式：
       }
     }, [activeIndex, renderLimit, subs.length]);
     reactExports.useEffect(() => {
+      const clearCustomFullscreenIfNeeded = () => {
+        var _a;
+        if (inVideo || !document.documentElement.classList.contains("linkual-custom-fullscreen")) return;
+        document.documentElement.classList.remove("linkual-custom-fullscreen");
+        (_a = adapter.setCustomFullscreen) == null ? void 0 : _a.call(adapter, false);
+        window.dispatchEvent(new Event("linkual_custom_fullscreen_changed"));
+        window.dispatchEvent(new Event("linkual_custom_layout_refresh"));
+        window.dispatchEvent(new Event("resize"));
+        if (getBrowserFullscreenElement() === document.documentElement) {
+          const browserFullscreenAction = exitBrowserFullscreen();
+          if (isPromiseLike(browserFullscreenAction)) {
+            browserFullscreenAction.catch((error) => console.warn("[Linkual] 浏览器全屏退出失败", error));
+          }
+        }
+      };
+      clearCustomFullscreenIfNeeded();
+      window.addEventListener("linkual_custom_fullscreen_changed", clearCustomFullscreenIfNeeded);
+      return () => window.removeEventListener("linkual_custom_fullscreen_changed", clearCustomFullscreenIfNeeded);
+    }, [adapter, inVideo]);
+    reactExports.useEffect(() => {
       if (adapter.resizeHost) {
         if (inVideo) {
           adapter.resizeHost(sidebarWidth, sidebarHeight, layout);
@@ -13943,6 +14729,15 @@ JSON 格式：
         }
       }
     }, [sidebarWidth, sidebarHeight, layout, adapter, inVideo]);
+    reactExports.useEffect(() => {
+      const refreshCustomLayout = () => {
+        if (adapter.resizeHost && inVideo) {
+          adapter.resizeHost(sidebarWidth, sidebarHeight, layout);
+        }
+      };
+      window.addEventListener("linkual_custom_layout_refresh", refreshCustomLayout);
+      return () => window.removeEventListener("linkual_custom_layout_refresh", refreshCustomLayout);
+    }, [adapter, inVideo, layout, sidebarHeight, sidebarWidth]);
     const startResize = (e) => {
       e.preventDefault();
       if (layout === "bottom") {
@@ -13988,7 +14783,7 @@ JSON 格式：
     const wrapStyle = {
       display: inVideo ? "flex" : "none",
       width: layout === "right" ? sidebarWidth : "100%",
-      height: layout === "bottom" ? sidebarHeight : "100vh",
+      height: layout === "bottom" ? sidebarHeight : "calc(100vh - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom, 0px))",
       pointerEvents: inVideo ? "auto" : "none",
       "--linkual-theme": themeColor,
       "--linkual-done": doneColor,
@@ -14025,13 +14820,403 @@ JSON 格式：
             subs.length,
             "）"
           ] })
-        ] }) }),
-        isSettingsOpen && /* @__PURE__ */ jsxRuntimeExports.jsx(Settings, { adapter, onClose: () => setIsSettingsOpen(false) })
+        ] }) })
       ] }),
-      showMobileFullscreenButton && /* @__PURE__ */ jsxRuntimeExports.jsx(MobileFullscreenButton, {}),
-      inVideo && /* @__PURE__ */ jsxRuntimeExports.jsx(VocabQueue, {})
+      /* @__PURE__ */ jsxRuntimeExports.jsx(UniversalVocabWidget, { onOpenSettings: () => setIsSettingsOpen(true) }),
+      showMobileFullscreenButton && /* @__PURE__ */ jsxRuntimeExports.jsx(MobileFullscreenButton, { adapter }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx(VocabQueue, {}),
+      isSettingsOpen && /* @__PURE__ */ jsxRuntimeExports.jsx(Settings, { adapter, onClose: () => setIsSettingsOpen(false) })
     ] });
   };
+  const PLAYER_RESPONSE_KEYS = [
+    "playerResponse",
+    "player_response",
+    "captions",
+    "playerCaptionsTracklistRenderer",
+    "args",
+    "data",
+    "playerData",
+    "response"
+  ];
+  const TARGET_CAPTION_LANGUAGE = "en";
+  function cleanCaptionText(text) {
+    return text.replace(/\u00a0/g, " ").replace(/\s+/g, " ").trim();
+  }
+  function toNumber(value, fallback = 0) {
+    const num = Number(value);
+    return Number.isFinite(num) ? num : fallback;
+  }
+  function safeJsonParse(value) {
+    if (typeof value !== "string") return value;
+    try {
+      return JSON.parse(value);
+    } catch (error) {
+      return null;
+    }
+  }
+  function parseScriptString(value) {
+    try {
+      return JSON.parse(`"${value}"`);
+    } catch (error) {
+      return value;
+    }
+  }
+  function getScriptConfigValue(key) {
+    var _a;
+    const pattern = new RegExp(`"${key}"\\s*:\\s*"((?:\\\\.|[^"\\\\])*)"`);
+    const scripts = Array.from(document.scripts).reverse().slice(0, 60);
+    for (const script of scripts) {
+      const match = (_a = script.textContent) == null ? void 0 : _a.match(pattern);
+      if (match) return parseScriptString(match[1]);
+    }
+    return null;
+  }
+  function getYtcfgValue(win, key) {
+    var _a, _b, _c, _d;
+    try {
+      const fromGetter = (_b = (_a = win == null ? void 0 : win.ytcfg) == null ? void 0 : _a.get) == null ? void 0 : _b.call(_a, key);
+      if (fromGetter !== void 0 && fromGetter !== null) return fromGetter;
+    } catch (error) {
+    }
+    try {
+      const fromData = (_d = (_c = win == null ? void 0 : win.ytcfg) == null ? void 0 : _c.data_) == null ? void 0 : _d[key];
+      if (fromData !== void 0 && fromData !== null) return fromData;
+    } catch (error) {
+    }
+    return getScriptConfigValue(key);
+  }
+  function parseJsonTimedText(data) {
+    const events = Array.isArray(data == null ? void 0 : data.events) ? data.events : [];
+    const subtitles = [];
+    events.forEach((event, index2) => {
+      var _a;
+      if (!(event == null ? void 0 : event.segs)) return;
+      const text = cleanCaptionText(event.segs.map((seg) => (seg == null ? void 0 : seg.utf8) || "").join(""));
+      if (!text) return;
+      const start = toNumber(event.tStartMs) / 1e3;
+      const durationMs = toNumber(event.dDurationMs);
+      const nextStartMs = toNumber((_a = events[index2 + 1]) == null ? void 0 : _a.tStartMs, NaN);
+      const end = durationMs > 0 ? (toNumber(event.tStartMs) + durationMs) / 1e3 : Number.isFinite(nextStartMs) ? nextStartMs / 1e3 : start;
+      subtitles.push({ text, start, end: Math.max(start, end) });
+    });
+    return subtitles;
+  }
+  function parseXmlTimedText(xmlText) {
+    const doc = new DOMParser().parseFromString(xmlText, "text/xml");
+    if (doc.querySelector("parsererror")) return [];
+    const transcriptNodes = Array.from(doc.querySelectorAll("transcript text"));
+    if (transcriptNodes.length > 0) {
+      return transcriptNodes.map((node) => {
+        const start = toNumber(node.getAttribute("start"));
+        const duration = toNumber(node.getAttribute("dur"));
+        return {
+          text: cleanCaptionText(node.textContent || ""),
+          start,
+          end: start + duration
+        };
+      }).filter((sub) => sub.text);
+    }
+    return Array.from(doc.querySelectorAll("p")).map((node) => {
+      const start = toNumber(node.getAttribute("t")) / 1e3;
+      const duration = toNumber(node.getAttribute("d")) / 1e3;
+      const segTexts = Array.from(node.querySelectorAll("s")).map((seg) => seg.textContent || "");
+      const text = cleanCaptionText(segTexts.length > 0 ? segTexts.join("") : node.textContent || "");
+      return { text, start, end: start + duration };
+    }).filter((sub) => sub.text);
+  }
+  function parseYouTubeTimedTextPayload(payload) {
+    if (!payload) return [];
+    if (typeof payload === "string") {
+      const text = payload.trim();
+      if (!text) return [];
+      if (text.startsWith("{") || text.startsWith("[")) {
+        const parsed = safeJsonParse(text);
+        return parsed ? parseJsonTimedText(parsed) : [];
+      }
+      return parseXmlTimedText(text);
+    }
+    if (typeof payload === "object") {
+      return parseJsonTimedText(payload);
+    }
+    return [];
+  }
+  function getTimedTextVideoId(url) {
+    try {
+      return new URL(url, window.location.href).searchParams.get("v");
+    } catch (error) {
+      const match = url.match(/[?&]v=([^&]+)/);
+      return match ? decodeURIComponent(match[1]) : null;
+    }
+  }
+  function isTargetLanguage(value) {
+    if (!value) return false;
+    const language = String(value).toLowerCase().replace("_", "-");
+    return language === TARGET_CAPTION_LANGUAGE || language.startsWith(`${TARGET_CAPTION_LANGUAGE}-`);
+  }
+  function getTimedTextLanguage(url, key) {
+    try {
+      return new URL(url, window.location.href).searchParams.get(key);
+    } catch (error) {
+      const match = url.match(new RegExp(`[?&]${key}=([^&]+)`));
+      return match ? decodeURIComponent(match[1]) : null;
+    }
+  }
+  function isEnglishTimedTextUrl(url) {
+    const translatedLanguage = getTimedTextLanguage(url, "tlang");
+    if (translatedLanguage) return isTargetLanguage(translatedLanguage);
+    return isTargetLanguage(getTimedTextLanguage(url, "lang"));
+  }
+  function isCaptionTrack(value) {
+    return Boolean(
+      value && typeof value === "object" && typeof value.baseUrl === "string" && value.baseUrl.includes("timedtext")
+    );
+  }
+  function addTracks(target, tracks) {
+    if (!Array.isArray(tracks)) return;
+    tracks.forEach((track2) => {
+      if (!isCaptionTrack(track2)) return;
+      const exists = target.some((item) => item.baseUrl === track2.baseUrl);
+      if (!exists) target.push(track2);
+    });
+  }
+  function collectCaptionTracks(value, target, seen = /* @__PURE__ */ new WeakSet(), depth = 0) {
+    var _a, _b, _c;
+    const data = safeJsonParse(value);
+    if (!data || typeof data !== "object") return;
+    if (depth > 6) return;
+    if (seen.has(data)) return;
+    seen.add(data);
+    addTracks(target, data.captionTracks);
+    addTracks(target, (_b = (_a = data == null ? void 0 : data.captions) == null ? void 0 : _a.playerCaptionsTracklistRenderer) == null ? void 0 : _b.captionTracks);
+    addTracks(target, (_c = data == null ? void 0 : data.playerCaptionsTracklistRenderer) == null ? void 0 : _c.captionTracks);
+    if (Array.isArray(data)) {
+      data.forEach((item) => collectCaptionTracks(item, target, seen, depth + 1));
+      return;
+    }
+    PLAYER_RESPONSE_KEYS.forEach((key) => {
+      if (key in data) collectCaptionTracks(data[key], target, seen, depth + 1);
+    });
+  }
+  function extractJsonObjectAfterMarker(text, marker) {
+    const markerIndex = text.indexOf(marker);
+    if (markerIndex < 0) return null;
+    const start = text.indexOf("{", markerIndex);
+    if (start < 0) return null;
+    let depth = 0;
+    let inString = false;
+    let escaped = false;
+    for (let index2 = start; index2 < text.length; index2++) {
+      const char = text[index2];
+      if (inString) {
+        if (escaped) {
+          escaped = false;
+        } else if (char === "\\") {
+          escaped = true;
+        } else if (char === '"') {
+          inString = false;
+        }
+        continue;
+      }
+      if (char === '"') inString = true;
+      else if (char === "{") depth++;
+      else if (char === "}") {
+        depth--;
+        if (depth === 0) return text.slice(start, index2 + 1);
+      }
+    }
+    return null;
+  }
+  function collectScriptCaptionTracks(target) {
+    const scripts = Array.from(document.scripts).reverse().slice(0, 40);
+    scripts.forEach((script) => {
+      const text = script.textContent || "";
+      if (!text.includes("captionTracks") && !text.includes("ytInitialPlayerResponse")) return;
+      const responseJson = extractJsonObjectAfterMarker(text, "ytInitialPlayerResponse");
+      if (responseJson) collectCaptionTracks(responseJson, target);
+    });
+  }
+  function getActiveCaptionTrack(playerEl) {
+    const player = playerEl;
+    if (!player || typeof player.getOption !== "function") return null;
+    try {
+      return player.getOption("captions", "track");
+    } catch (error) {
+      return null;
+    }
+  }
+  function trackMatches(track2, activeTrack) {
+    if (!activeTrack) return false;
+    return Boolean(
+      track2.vssId && track2.vssId === activeTrack.vssId || track2.languageCode && track2.languageCode === activeTrack.languageCode
+    );
+  }
+  function selectCaptionTrack(tracks, playerEl) {
+    var _a;
+    const activeTrack = getActiveCaptionTrack(playerEl);
+    const activeMatch = tracks.find((track2) => trackMatches(track2, activeTrack));
+    if (activeMatch) return activeMatch;
+    return ((_a = tracks.map((track2, index2) => ({
+      track: track2,
+      score: (track2.kind === "asr" ? 0 : 10) + (track2.isTranslatable ? 0 : 1) - index2 / 100
+    })).sort((a, b) => b.score - a.score)[0]) == null ? void 0 : _a.track) || null;
+  }
+  function rankCaptionTracks(tracks, playerEl) {
+    const activeTrack = getActiveCaptionTrack(playerEl);
+    return tracks.map((track2, index2) => ({
+      track: track2,
+      score: (trackMatches(track2, activeTrack) ? 100 : 0) + (track2.kind === "asr" ? 0 : 10) + (track2.isTranslatable ? 0 : 1) - index2 / 100
+    })).sort((a, b) => b.score - a.score).map((item) => item.track);
+  }
+  function isEnglishOutputTrack(track2) {
+    if (track2.baseUrl && isEnglishTimedTextUrl(track2.baseUrl)) return true;
+    return isTargetLanguage(track2.languageCode);
+  }
+  function canTranslateTrackToEnglish(track2) {
+    return Boolean(track2.baseUrl && track2.isTranslatable && !isEnglishOutputTrack(track2));
+  }
+  function filterTracksForEnglish(tracks) {
+    const englishTracks = tracks.filter(isEnglishOutputTrack);
+    if (englishTracks.length > 0) return englishTracks;
+    return tracks.filter(canTranslateTrackToEnglish);
+  }
+  function buildTimedTextUrl(track2, videoId) {
+    const url = new URL(track2.baseUrl, window.location.href);
+    url.searchParams.set("fmt", "json3");
+    if (videoId && !url.searchParams.get("v")) url.searchParams.set("v", videoId);
+    if (!isEnglishOutputTrack(track2) && track2.isTranslatable) {
+      url.searchParams.set("tlang", TARGET_CAPTION_LANGUAGE);
+    }
+    return url.toString();
+  }
+  function filterTracksForVideo(tracks, videoId) {
+    if (!videoId) return tracks;
+    return tracks.filter((track2) => {
+      if (!track2.baseUrl) return false;
+      const trackVideoId = getTimedTextVideoId(track2.baseUrl);
+      return !trackVideoId || trackVideoId === videoId;
+    });
+  }
+  function extractYouTubeCaptionTracks(options = {}) {
+    var _a, _b, _c;
+    const win = options.win || window;
+    const tracks = [];
+    const playerEl = options.playerEl || document.querySelector(".html5-video-player");
+    const player = playerEl;
+    try {
+      if (player && typeof player.getPlayerResponse === "function") {
+        collectCaptionTracks(player.getPlayerResponse(), tracks);
+      }
+    } catch (error) {
+    }
+    try {
+      if (player && typeof player.getOption === "function") {
+        collectCaptionTracks(player.getOption("captions", "tracklist"), tracks);
+      }
+    } catch (error) {
+    }
+    collectCaptionTracks(win == null ? void 0 : win.ytInitialPlayerResponse, tracks);
+    collectCaptionTracks((_c = (_b = (_a = win == null ? void 0 : win.ytplayer) == null ? void 0 : _a.config) == null ? void 0 : _b.args) == null ? void 0 : _c.player_response, tracks);
+    [
+      options.playerEl,
+      document.querySelector("ytd-reel-video-renderer[is-active]"),
+      document.querySelector("ytd-watch-flexy"),
+      document.querySelector("ytd-player")
+    ].forEach((element) => {
+      if (!element) return;
+      ["data", "playerData", "playerResponse", "__data"].forEach((key) => {
+        collectCaptionTracks(element[key], tracks);
+      });
+    });
+    if (tracks.length === 0) collectScriptCaptionTracks(tracks);
+    return tracks;
+  }
+  function getInnertubeContext(win) {
+    const configuredContext = getYtcfgValue(win, "INNERTUBE_CONTEXT");
+    if (configuredContext && typeof configuredContext === "object") return configuredContext;
+    return {
+      client: {
+        clientName: getYtcfgValue(win, "INNERTUBE_CLIENT_NAME") || "WEB",
+        clientVersion: getYtcfgValue(win, "INNERTUBE_CLIENT_VERSION") || "2.20240101.00.00",
+        hl: getYtcfgValue(win, "HL") || document.documentElement.lang || "en",
+        gl: getYtcfgValue(win, "GL") || "US",
+        utcOffsetMinutes: -(/* @__PURE__ */ new Date()).getTimezoneOffset()
+      }
+    };
+  }
+  function getInnertubeEndpoint(win) {
+    const apiKey = getYtcfgValue(win, "INNERTUBE_API_KEY");
+    if (!apiKey) return null;
+    const endpoint = getYtcfgValue(win, "INNERTUBE_API_ENDPOINT") || "/youtubei/v1";
+    const url = new URL(`${String(endpoint).replace(/\/$/, "")}/player`, window.location.origin);
+    url.searchParams.set("key", String(apiKey));
+    url.searchParams.set("prettyPrint", "false");
+    return url.toString();
+  }
+  async function fetchInnertubeCaptionTracks(videoId, options = {}) {
+    const win = options.win || window;
+    const endpoint = getInnertubeEndpoint(win);
+    if (!endpoint) return [];
+    const context = getInnertubeContext(win);
+    const client2 = (context == null ? void 0 : context.client) || {};
+    const headers = {
+      "Content-Type": "application/json"
+    };
+    const headerClientName = getYtcfgValue(win, "INNERTUBE_CONTEXT_CLIENT_NAME");
+    const headerClientVersion = client2.clientVersion || getYtcfgValue(win, "INNERTUBE_CLIENT_VERSION");
+    const visitorId = getYtcfgValue(win, "VISITOR_DATA");
+    if (headerClientName) headers["X-YouTube-Client-Name"] = String(headerClientName);
+    if (headerClientVersion) headers["X-YouTube-Client-Version"] = String(headerClientVersion);
+    if (visitorId) headers["X-Goog-Visitor-Id"] = String(visitorId);
+    const response = await fetch(endpoint, {
+      method: "POST",
+      credentials: "include",
+      headers,
+      body: JSON.stringify({
+        context,
+        videoId,
+        contentCheckOk: true,
+        racyCheckOk: true,
+        playbackContext: {
+          contentPlaybackContext: {
+            html5Preference: "HTML5_PREF_WANTS"
+          }
+        }
+      })
+    });
+    if (!response.ok) return [];
+    const tracks = [];
+    collectCaptionTracks(await response.json(), tracks);
+    return tracks;
+  }
+  async function fetchYouTubeCaptionsFromPlayer(videoId, options = {}) {
+    const playerEl = options.playerEl || document.querySelector(".html5-video-player");
+    let tracks = filterTracksForEnglish(filterTracksForVideo(extractYouTubeCaptionTracks({ ...options, playerEl }), videoId));
+    if (tracks.length === 0 && videoId) {
+      tracks = filterTracksForEnglish(filterTracksForVideo(await fetchInnertubeCaptionTracks(videoId, { ...options }), videoId));
+    }
+    const selectedTrack = selectCaptionTrack(tracks, playerEl);
+    const rankedTracks = rankCaptionTracks(
+      selectedTrack ? [selectedTrack, ...tracks.filter((track2) => track2.baseUrl !== selectedTrack.baseUrl)] : tracks,
+      playerEl
+    );
+    for (const track2 of rankedTracks) {
+      if (!(track2 == null ? void 0 : track2.baseUrl)) continue;
+      const url = buildTimedTextUrl(track2, videoId);
+      if (!isEnglishTimedTextUrl(url)) continue;
+      const response = await fetch(url, { credentials: "include" });
+      if (!response.ok) continue;
+      const subtitles = parseYouTubeTimedTextPayload(await response.text());
+      if (subtitles.length === 0) continue;
+      const resultVideoId = getTimedTextVideoId(url) || videoId;
+      if (videoId && resultVideoId && resultVideoId !== videoId) continue;
+      return {
+        videoId: resultVideoId,
+        subtitles,
+        url
+      };
+    }
+    return null;
+  }
   class YouTubeShortsAdapter {
     constructor() {
       __publicField(this, "platformName", "YouTube Shorts (Manual CC)");
@@ -14039,13 +15224,19 @@ JSON 格式：
       __publicField(this, "listeners", []);
       __publicField(this, "subsMap", /* @__PURE__ */ new Map());
       __publicField(this, "resizeTimeout", null);
+      __publicField(this, "captionFetchTimeout", null);
+      __publicField(this, "captionFetchInFlight", null);
+      __publicField(this, "customFullscreenEnabled", false);
+      __publicField(this, "resumeOnCustomFullscreen", false);
       this.initNetworkHook();
       setInterval(() => this.syncSubsToCurrentVideo(), 500);
+      setInterval(() => this.requestCurrentCaptions(), 2e3);
       window.addEventListener("yt-navigate-finish", () => {
         if (this.match(window.location.href)) {
           this.cachedSubs = [];
           this.listeners.forEach((cb) => cb([]));
           this.syncSubsToCurrentVideo();
+          this.requestCurrentCaptions(300);
         }
       });
     }
@@ -14064,14 +15255,14 @@ JSON 格式：
       return match ? match[1] : null;
     }
     getVideoEl() {
-      const videos = Array.from(document.querySelectorAll("video"));
-      const playingVideo = videos.find((v) => !v.paused && v.readyState > 0 && v.getBoundingClientRect().height > 0);
-      if (playingVideo) return playingVideo;
       const activeRenderer = document.querySelector("ytd-reel-video-renderer[is-active]");
       if (activeRenderer) {
         const v = activeRenderer.querySelector("video");
         if (v) return v;
       }
+      const videos = Array.from(document.querySelectorAll("video"));
+      const playingVideo = videos.find((v) => !v.paused && v.readyState > 0 && v.getBoundingClientRect().height > 0);
+      if (playingVideo) return playingVideo;
       let bestVideo = null;
       let minDiff = Infinity;
       const centerY = window.innerHeight / 2;
@@ -14087,6 +15278,40 @@ JSON 格式：
       }
       return bestVideo;
     }
+    getPlayerEl() {
+      const activeRenderer = document.querySelector("ytd-reel-video-renderer[is-active]");
+      const activePlayer = activeRenderer == null ? void 0 : activeRenderer.querySelector(".html5-video-player");
+      if (activePlayer) return activePlayer;
+      return document.querySelector(".html5-video-player");
+    }
+    callPlayerMethod(methodName, ...args) {
+      const player = this.getPlayerEl();
+      if (player && typeof player[methodName] === "function") {
+        try {
+          player[methodName](...args);
+        } catch (error) {
+        }
+      }
+    }
+    playActiveVideo() {
+      var _a;
+      this.callPlayerMethod("playVideo");
+      const playResult = (_a = this.getVideoEl()) == null ? void 0 : _a.play();
+      if (playResult && typeof playResult.catch === "function") {
+        playResult.catch(() => {
+        });
+      }
+    }
+    resumeActiveVideoSoon() {
+      const resume = () => {
+        if (this.customFullscreenEnabled && this.resumeOnCustomFullscreen) {
+          this.playActiveVideo();
+        }
+      };
+      resume();
+      window.setTimeout(resume, 80);
+      window.setTimeout(resume, 250);
+    }
     syncSubsToCurrentVideo() {
       if (!this.match(window.location.href)) return;
       const currentVid = this.getCurrentVideoId();
@@ -14097,6 +15322,40 @@ JSON 格式：
         this.listeners.forEach((cb) => cb(targetSubs));
       }
     }
+    mergeSubs(vid, newSubs) {
+      if (!vid || newSubs.length === 0) return false;
+      const existing = this.subsMap.get(vid) || [];
+      const existingKeys = new Set(existing.map((s) => `${Math.round(s.start * 1e3)}:${s.text}`));
+      const toAdd = newSubs.filter((s) => !existingKeys.has(`${Math.round(s.start * 1e3)}:${s.text}`));
+      if (toAdd.length === 0) return false;
+      const updated = [...existing, ...toAdd].sort((a, b) => a.start - b.start);
+      this.subsMap.set(vid, updated);
+      this.syncSubsToCurrentVideo();
+      return true;
+    }
+    requestCurrentCaptions(delay = 0) {
+      var _a;
+      if (!this.match(window.location.href)) return;
+      const vid = this.getCurrentVideoId();
+      if (!vid || (((_a = this.subsMap.get(vid)) == null ? void 0 : _a.length) || 0) > 0) return;
+      if (this.captionFetchTimeout !== null) clearTimeout(this.captionFetchTimeout);
+      this.captionFetchTimeout = window.setTimeout(() => {
+        var _a2;
+        if (!this.match(window.location.href)) return;
+        const currentVid = this.getCurrentVideoId();
+        if (!currentVid || (((_a2 = this.subsMap.get(currentVid)) == null ? void 0 : _a2.length) || 0) > 0) return;
+        if (this.captionFetchInFlight === currentVid) return;
+        this.captionFetchInFlight = currentVid;
+        fetchYouTubeCaptionsFromPlayer(currentVid, { playerEl: this.getPlayerEl(), win: typeof unsafeWindow !== "undefined" ? unsafeWindow : window }).then((result) => {
+          if (result == null ? void 0 : result.subtitles.length) {
+            this.mergeSubs(result.videoId || currentVid, result.subtitles);
+          }
+        }).catch(() => {
+        }).finally(() => {
+          if (this.captionFetchInFlight === currentVid) this.captionFetchInFlight = null;
+        });
+      }, delay);
+    }
     initNetworkHook() {
       try {
         const win = typeof unsafeWindow !== "undefined" ? unsafeWindow : window;
@@ -14105,11 +15364,12 @@ JSON 格式：
           win.fetch = async (...args) => {
             const urlStr = args[0] instanceof Request ? args[0].url : args[0];
             if (typeof urlStr !== "string" || !urlStr.includes("/api/timedtext")) return rawFetch.apply(win, args);
-            const match = urlStr.match(/[?&]v=([^&]+)/);
-            const vid = match ? match[1] : null;
+            const vid = getTimedTextVideoId(urlStr);
             const response = await rawFetch.apply(win, args);
-            response.clone().json().then((data) => this.processSubs(data, vid)).catch(() => {
-            });
+            if (isEnglishTimedTextUrl(urlStr)) {
+              response.clone().text().then((text) => this.processSubs(text, vid)).catch(() => {
+              });
+            }
             return response;
           };
         }
@@ -14118,14 +15378,15 @@ JSON 格式：
           const self = this;
           win.XMLHttpRequest.prototype.open = function(m, urlStr) {
             if (typeof urlStr === "string" && urlStr.includes("/api/timedtext")) {
-              const match = urlStr.match(/[?&]v=([^&]+)/);
-              const vid = match ? match[1] : null;
-              this.addEventListener("load", () => {
-                try {
-                  self.processSubs(JSON.parse(this.responseText), vid);
-                } catch (e) {
-                }
-              });
+              const vid = getTimedTextVideoId(urlStr);
+              if (isEnglishTimedTextUrl(urlStr)) {
+                this.addEventListener("load", () => {
+                  try {
+                    self.processSubs(this.responseText, vid);
+                  } catch (e) {
+                  }
+                });
+              }
             }
             return rawXHR.apply(this, arguments);
           };
@@ -14134,27 +15395,31 @@ JSON 格式：
       }
     }
     processSubs(data, vid) {
-      if (!data || !data.events || !vid) return;
-      const newSubs = [];
-      data.events.forEach((ev) => {
-        if (!ev.segs) return;
-        const text = ev.segs.map((s) => s.utf8).join("").trim();
-        if (text && text !== "\n") newSubs.push({ text, start: ev.tStartMs / 1e3, end: (ev.tStartMs + (ev.dDurationMs || 0)) / 1e3 });
-      });
-      if (newSubs.length > 0) {
-        const existing = this.subsMap.get(vid) || [];
-        const existingStarts = new Set(existing.map((s) => s.start));
-        const toAdd = newSubs.filter((s) => !existingStarts.has(s.start));
-        if (toAdd.length > 0) {
-          const updated = [...existing, ...toAdd].sort((a, b) => a.start - b.start);
-          this.subsMap.set(vid, updated);
-          this.syncSubsToCurrentVideo();
-        }
-      }
+      this.mergeSubs(vid, parseYouTubeTimedTextPayload(data));
+    }
+    refreshCustomFullscreenLayout() {
+      const dispatchResize = () => {
+        var _a;
+        const player = this.getPlayerEl();
+        window.dispatchEvent(new Event("resize"));
+        player == null ? void 0 : player.dispatchEvent(new Event("resize"));
+        (_a = this.getVideoEl()) == null ? void 0 : _a.dispatchEvent(new Event("resize"));
+      };
+      dispatchResize();
+      window.setTimeout(dispatchResize, 80);
+      window.setTimeout(dispatchResize, 250);
+    }
+    restoreRegularPlayerLayout() {
+      var _a;
+      const player = this.getPlayerEl();
+      window.dispatchEvent(new Event("resize"));
+      player == null ? void 0 : player.dispatchEvent(new Event("resize"));
+      (_a = this.getVideoEl()) == null ? void 0 : _a.dispatchEvent(new Event("resize"));
+      window.setTimeout(() => window.dispatchEvent(new Event("resize")), 120);
     }
     resizeHost(width, height, layout) {
       let styleEl = document.getElementById("linkual-style-patch-shorts");
-      if (width === 0 && height === 0) {
+      if (width === 0 && height === 0 && !this.customFullscreenEnabled) {
         document.documentElement.style.removeProperty("--linkual-sidebar-width");
         document.documentElement.style.removeProperty("--linkual-sidebar-height");
         if (styleEl) styleEl.textContent = "";
@@ -14169,38 +15434,158 @@ JSON 格式：
         styleEl.id = "linkual-style-patch-shorts";
         document.head.appendChild(styleEl);
       }
+      const customFullscreenCss = `
+      html.linkual-custom-fullscreen,
+      html.linkual-custom-fullscreen body {
+        overflow: hidden !important;
+        background: #000 !important;
+      }
+      html.linkual-custom-fullscreen #masthead-container,
+      html.linkual-custom-fullscreen ytd-guide-renderer,
+      html.linkual-custom-fullscreen ytd-mini-guide-renderer,
+      html.linkual-custom-fullscreen tp-yt-app-drawer {
+        display: none !important;
+      }
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active],
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] #player-container,
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] ytd-player,
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .html5-video-player {
+        position: fixed !important;
+        inset: 0 auto auto 0 !important;
+        width: calc(100vw - var(--linkual-sidebar-width, 0px)) !important;
+        max-width: calc(100vw - var(--linkual-sidebar-width, 0px)) !important;
+        height: calc(100vh - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px)) !important;
+        max-height: calc(100vh - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px)) !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        transform: none !important;
+        background: #000 !important;
+      }
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] {
+        overflow: hidden !important;
+        z-index: 2147483001 !important;
+      }
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] #player-container,
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] ytd-player,
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .html5-video-player,
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .html5-video-container,
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .html5-video-player video {
+        opacity: 1 !important;
+        visibility: visible !important;
+        z-index: 2147483002 !important;
+      }
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .html5-video-container {
+        position: absolute !important;
+        inset: 0 !important;
+        background: #000 !important;
+      }
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .html5-video-player video {
+        display: block !important;
+        position: absolute !important;
+      }
+      html.linkual-custom-fullscreen ytd-reel-player-header-renderer,
+      html.linkual-custom-fullscreen ytd-shorts-engagement-panel,
+      html.linkual-custom-fullscreen ytd-engagement-panel-section-list-renderer,
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] #scrubber,
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] #actions,
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] #menu,
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .metadata-container,
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .actions,
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .pivot-button,
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .ytp-chrome-top,
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .ytp-chrome-bottom,
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .ytp-gradient-top,
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .ytp-gradient-bottom,
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .ytp-pause-overlay,
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .ytp-cards-teaser,
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .ytp-ce-element,
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .ytp-iv-player-content,
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .ytp-player-content,
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .ytp-caption-window-container {
+        pointer-events: none !important;
+        visibility: hidden !important;
+      }
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .html5-video-container,
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .html5-video-player video {
+        width: 100% !important;
+        height: 100% !important;
+        left: 0 !important;
+        top: 0 !important;
+        margin: 0 !important;
+        object-fit: contain !important;
+      }
+    `;
       if (layout === "right") {
         styleEl.textContent = `
         html, body { overflow-x: hidden !important; }
-        ytd-app, #masthead-container { width: calc(100vw - var(--linkual-sidebar-width)) !important; max-width: calc(100vw - var(--linkual-sidebar-width)) !important; left: 0 !important; right: auto !important; margin-bottom: 0 !important; }
+        ytd-app, #masthead-container { width: calc(100vw - var(--linkual-sidebar-width)) !important; max-width: calc(100vw - var(--linkual-sidebar-width)) !important; left: 0 !important; right: auto !important; margin-bottom: var(--linkual-universal-widget-height, 0px) !important; }
         ytd-shorts { width: calc(100vw - var(--linkual-sidebar-width)) !important; position: relative !important; }
         #shorts-container, #shorts-inner-container, ytd-reel-video-renderer { width: 100% !important; max-width: 100% !important; }
+        ${customFullscreenCss}
       `;
       } else {
         styleEl.textContent = `
         html, body { overflow-x: hidden !important; }
-        ytd-app, #masthead-container { width: 100vw !important; max-width: 100vw !important; left: 0 !important; right: auto !important; margin-bottom: var(--linkual-sidebar-height) !important; }
-        ytd-shorts { height: calc(100vh - var(--linkual-sidebar-height)) !important; width: 100% !important; position: relative !important; }
+        ytd-app, #masthead-container { width: 100vw !important; max-width: 100vw !important; left: 0 !important; right: auto !important; margin-bottom: calc(var(--linkual-sidebar-height) + var(--linkual-universal-widget-height, 0px)) !important; }
+        ytd-shorts { height: calc(100vh - var(--linkual-sidebar-height) - var(--linkual-universal-widget-height, 0px)) !important; width: 100% !important; position: relative !important; }
         #shorts-container, #shorts-inner-container, ytd-reel-video-renderer { width: 100% !important; max-width: 100% !important; height: 100% !important; }
+        ${customFullscreenCss}
       `;
       }
       if (this.resizeTimeout !== null) clearTimeout(this.resizeTimeout);
-      this.resizeTimeout = window.setTimeout(() => window.dispatchEvent(new Event("resize")), 150);
+      this.resizeTimeout = window.setTimeout(() => {
+        if (this.customFullscreenEnabled) {
+          this.refreshCustomFullscreenLayout();
+          this.resumeActiveVideoSoon();
+        } else {
+          this.restoreRegularPlayerLayout();
+        }
+      }, 150);
+    }
+    setCustomFullscreen(enabled) {
+      const currentVideo = this.getVideoEl();
+      this.resumeOnCustomFullscreen = enabled ? Boolean(currentVideo && !currentVideo.paused) : false;
+      this.customFullscreenEnabled = enabled;
+      if (enabled) {
+        this.resumeActiveVideoSoon();
+      }
+      if (this.resizeTimeout !== null) clearTimeout(this.resizeTimeout);
+      this.resizeTimeout = window.setTimeout(() => {
+        if (enabled) {
+          this.refreshCustomFullscreenLayout();
+          this.resumeActiveVideoSoon();
+        } else {
+          this.restoreRegularPlayerLayout();
+        }
+      }, 150);
     }
     getCurrentTime() {
       var _a;
       return ((_a = this.getVideoEl()) == null ? void 0 : _a.currentTime) || 0;
     }
+    getDuration() {
+      var _a;
+      const duration = ((_a = this.getVideoEl()) == null ? void 0 : _a.duration) || 0;
+      return Number.isFinite(duration) ? duration : 0;
+    }
+    isPaused() {
+      var _a;
+      return ((_a = this.getVideoEl()) == null ? void 0 : _a.paused) ?? true;
+    }
     seekTo(time) {
+      this.callPlayerMethod("seekTo", time, true);
       const v = this.getVideoEl();
       if (v) v.currentTime = time;
     }
     play() {
-      var _a;
-      (_a = this.getVideoEl()) == null ? void 0 : _a.play();
+      this.resumeOnCustomFullscreen = true;
+      this.playActiveVideo();
     }
     pause() {
       var _a;
+      this.resumeOnCustomFullscreen = false;
+      this.callPlayerMethod("pauseVideo");
       (_a = this.getVideoEl()) == null ? void 0 : _a.pause();
     }
   }
@@ -14211,12 +15596,16 @@ JSON 格式：
       __publicField(this, "listeners", []);
       __publicField(this, "subsMap", /* @__PURE__ */ new Map());
       __publicField(this, "resizeTimeout", null);
+      __publicField(this, "captionFetchTimeout", null);
+      __publicField(this, "captionFetchInFlight", null);
       __publicField(this, "autoTurnedOn", false);
       __publicField(this, "forceRefreshDone", false);
+      __publicField(this, "customFullscreenEnabled", false);
       this.initNetworkHook();
       this.initFullscreenHook();
       this.initAutoHotkey();
       setInterval(() => this.syncSubsToCurrentVideo(), 500);
+      setInterval(() => this.requestCurrentCaptions(), 2e3);
     }
     match(url) {
       return url.includes("youtube.com") && !url.includes("/shorts/");
@@ -14241,6 +15630,43 @@ JSON 格式：
         this.cachedSubs = targetSubs;
         this.listeners.forEach((cb) => cb(targetSubs));
       }
+    }
+    mergeSubs(vid, newSubs) {
+      if (!vid || newSubs.length === 0) return false;
+      const existing = this.subsMap.get(vid) || [];
+      const existingKeys = new Set(existing.map((s) => `${Math.round(s.start * 1e3)}:${s.text}`));
+      const toAdd = newSubs.filter((s) => !existingKeys.has(`${Math.round(s.start * 1e3)}:${s.text}`));
+      if (toAdd.length === 0) return false;
+      const updated = [...existing, ...toAdd].sort((a, b) => a.start - b.start);
+      this.subsMap.set(vid, updated);
+      this.syncSubsToCurrentVideo();
+      return true;
+    }
+    getPlayerEl() {
+      return document.getElementById("movie_player") || document.querySelector(".html5-video-player");
+    }
+    requestCurrentCaptions(delay = 0) {
+      var _a;
+      if (!this.match(window.location.href)) return;
+      const vid = this.getCurrentVideoId();
+      if (!vid || (((_a = this.subsMap.get(vid)) == null ? void 0 : _a.length) || 0) > 0) return;
+      if (this.captionFetchTimeout !== null) clearTimeout(this.captionFetchTimeout);
+      this.captionFetchTimeout = window.setTimeout(() => {
+        var _a2;
+        if (!this.match(window.location.href)) return;
+        const currentVid = this.getCurrentVideoId();
+        if (!currentVid || (((_a2 = this.subsMap.get(currentVid)) == null ? void 0 : _a2.length) || 0) > 0) return;
+        if (this.captionFetchInFlight === currentVid) return;
+        this.captionFetchInFlight = currentVid;
+        fetchYouTubeCaptionsFromPlayer(currentVid, { playerEl: this.getPlayerEl(), win: typeof unsafeWindow !== "undefined" ? unsafeWindow : window }).then((result) => {
+          if (result == null ? void 0 : result.subtitles.length) {
+            this.mergeSubs(result.videoId || currentVid, result.subtitles);
+          }
+        }).catch(() => {
+        }).finally(() => {
+          if (this.captionFetchInFlight === currentVid) this.captionFetchInFlight = null;
+        });
+      }, delay);
     }
     setCaptionsState(state) {
       const script = document.createElement("script");
@@ -14277,6 +15703,7 @@ JSON 格式：
           }
           const vid = this.getCurrentVideoId();
           if (!vid) return;
+          this.requestCurrentCaptions();
           attempts++;
           if (attempts > 30) {
             clearInterval(interval);
@@ -14315,6 +15742,7 @@ JSON 格式：
           this.autoTurnedOn = false;
           this.forceRefreshDone = false;
           this.syncSubsToCurrentVideo();
+          this.requestCurrentCaptions(300);
           setTimeout(tryTriggerCC, 500);
         }
       });
@@ -14327,11 +15755,12 @@ JSON 格式：
           win.fetch = async (...args) => {
             const urlStr = args[0] instanceof Request ? args[0].url : args[0];
             if (typeof urlStr !== "string" || !urlStr.includes("/api/timedtext")) return rawFetch.apply(win, args);
-            const match = urlStr.match(/[?&]v=([^&]+)/);
-            const vid = match ? match[1] : null;
+            const vid = getTimedTextVideoId(urlStr);
             const response = await rawFetch.apply(win, args);
-            response.clone().json().then((data) => this.processSubs(data, vid)).catch(() => {
-            });
+            if (isEnglishTimedTextUrl(urlStr)) {
+              response.clone().text().then((text) => this.processSubs(text, vid)).catch(() => {
+              });
+            }
             return response;
           };
         }
@@ -14340,14 +15769,15 @@ JSON 格式：
           const self = this;
           win.XMLHttpRequest.prototype.open = function(m, urlStr) {
             if (typeof urlStr === "string" && urlStr.includes("/api/timedtext")) {
-              const match = urlStr.match(/[?&]v=([^&]+)/);
-              const vid = match ? match[1] : null;
-              this.addEventListener("load", () => {
-                try {
-                  self.processSubs(JSON.parse(this.responseText), vid);
-                } catch (e) {
-                }
-              });
+              const vid = getTimedTextVideoId(urlStr);
+              if (isEnglishTimedTextUrl(urlStr)) {
+                this.addEventListener("load", () => {
+                  try {
+                    self.processSubs(this.responseText, vid);
+                  } catch (e) {
+                  }
+                });
+              }
             }
             return rawXHR.apply(this, arguments);
           };
@@ -14356,22 +15786,9 @@ JSON 格式：
       }
     }
     processSubs(data, vid) {
-      if (!data || !data.events || !vid) return;
-      const newSubs = [];
-      data.events.forEach((ev) => {
-        if (!ev.segs) return;
-        const text = ev.segs.map((s) => s.utf8).join("").trim();
-        if (text && text !== "\n") newSubs.push({ text, start: ev.tStartMs / 1e3, end: (ev.tStartMs + (ev.dDurationMs || 0)) / 1e3 });
-      });
+      const newSubs = parseYouTubeTimedTextPayload(data);
       if (newSubs.length > 0) {
-        const existing = this.subsMap.get(vid) || [];
-        const existingStarts = new Set(existing.map((s) => s.start));
-        const toAdd = newSubs.filter((s) => !existingStarts.has(s.start));
-        if (toAdd.length > 0) {
-          const updated = [...existing, ...toAdd].sort((a, b) => a.start - b.start);
-          this.subsMap.set(vid, updated);
-          this.syncSubsToCurrentVideo();
-        }
+        this.mergeSubs(vid, newSubs);
         if (this.autoTurnedOn && this.match(window.location.href) && vid === this.getCurrentVideoId()) {
           this.autoTurnedOn = false;
           let closeAttempts = 0;
@@ -14404,9 +15821,25 @@ JSON 格式：
         }
       });
     }
+    refreshCustomFullscreenLayout() {
+      const dispatchResize = () => {
+        var _a;
+        window.dispatchEvent(new Event("resize"));
+        (_a = document.getElementById("movie_player")) == null ? void 0 : _a.dispatchEvent(new Event("resize"));
+      };
+      dispatchResize();
+      window.setTimeout(dispatchResize, 80);
+      window.setTimeout(dispatchResize, 250);
+    }
+    restoreRegularPlayerLayout() {
+      var _a;
+      window.dispatchEvent(new Event("resize"));
+      (_a = document.getElementById("movie_player")) == null ? void 0 : _a.dispatchEvent(new Event("resize"));
+      window.setTimeout(() => window.dispatchEvent(new Event("resize")), 120);
+    }
     resizeHost(width, height, layout) {
       let styleEl = document.getElementById("linkual-style-patch");
-      if (width === 0 && height === 0) {
+      if (width === 0 && height === 0 && !this.customFullscreenEnabled) {
         document.documentElement.style.removeProperty("--linkual-sidebar-width");
         document.documentElement.style.removeProperty("--linkual-sidebar-height");
         if (styleEl) styleEl.textContent = "";
@@ -14421,60 +15854,157 @@ JSON 格式：
         styleEl.id = "linkual-style-patch";
         document.head.appendChild(styleEl);
       }
+      const customFullscreenCss = `
+      html.linkual-custom-fullscreen,
+      html.linkual-custom-fullscreen body {
+        overflow: hidden !important;
+      }
+      html.linkual-custom-fullscreen ytd-app {
+        position: fixed !important;
+        inset: 0 !important;
+        width: calc(100vw - var(--linkual-sidebar-width, 0px)) !important;
+        max-width: calc(100vw - var(--linkual-sidebar-width, 0px)) !important;
+        height: calc(100vh - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px)) !important;
+        max-height: calc(100vh - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px)) !important;
+        margin: 0 !important;
+        background: #000 !important;
+        z-index: 2147483000 !important;
+      }
+      html.linkual-custom-fullscreen #masthead-container,
+      html.linkual-custom-fullscreen ytd-miniplayer,
+      html.linkual-custom-fullscreen ytd-guide-renderer,
+      html.linkual-custom-fullscreen #related,
+      html.linkual-custom-fullscreen #secondary,
+      html.linkual-custom-fullscreen #below,
+      html.linkual-custom-fullscreen #comments,
+      html.linkual-custom-fullscreen ytd-watch-metadata,
+      html.linkual-custom-fullscreen ytd-merch-shelf-renderer,
+      html.linkual-custom-fullscreen ytd-engagement-panel-section-list-renderer,
+      html.linkual-custom-fullscreen ytd-live-chat-frame {
+        display: none !important;
+      }
+      html.linkual-custom-fullscreen ytd-watch-flexy,
+      html.linkual-custom-fullscreen #columns,
+      html.linkual-custom-fullscreen #primary,
+      html.linkual-custom-fullscreen #primary-inner,
+      html.linkual-custom-fullscreen #player,
+      html.linkual-custom-fullscreen #player-container,
+      html.linkual-custom-fullscreen #player-container-outer,
+      html.linkual-custom-fullscreen #player-theater-container,
+      html.linkual-custom-fullscreen #player-full-bleed-container,
+      html.linkual-custom-fullscreen #full-bleed-container,
+      html.linkual-custom-fullscreen ytd-player,
+      html.linkual-custom-fullscreen .html5-video-player {
+        position: fixed !important;
+        inset: 0 auto auto 0 !important;
+        width: calc(100vw - var(--linkual-sidebar-width, 0px)) !important;
+        max-width: calc(100vw - var(--linkual-sidebar-width, 0px)) !important;
+        height: calc(100vh - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px)) !important;
+        max-height: calc(100vh - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px)) !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        transform: none !important;
+        background: #000 !important;
+      }
+      html.linkual-custom-fullscreen .html5-video-player .ytp-chrome-top,
+      html.linkual-custom-fullscreen .html5-video-player .ytp-chrome-bottom,
+      html.linkual-custom-fullscreen .html5-video-player .ytp-gradient-top,
+      html.linkual-custom-fullscreen .html5-video-player .ytp-gradient-bottom,
+      html.linkual-custom-fullscreen .html5-video-player .ytp-pause-overlay,
+      html.linkual-custom-fullscreen .html5-video-player .ytp-cards-teaser,
+      html.linkual-custom-fullscreen .html5-video-player .ytp-ce-element,
+      html.linkual-custom-fullscreen .html5-video-player .ytp-iv-player-content,
+      html.linkual-custom-fullscreen .html5-video-player .ytp-player-content,
+      html.linkual-custom-fullscreen .html5-video-player .ytp-caption-window-container {
+        display: none !important;
+      }
+      html.linkual-custom-fullscreen .html5-video-container,
+      html.linkual-custom-fullscreen .html5-video-player video {
+        width: 100% !important;
+        height: 100% !important;
+        left: 0 !important;
+        top: 0 !important;
+        margin: 0 !important;
+        object-fit: contain !important;
+      }
+    `;
       if (layout === "right") {
         styleEl.textContent = `
         html, body { overflow-x: hidden !important; }
-        ytd-app, #masthead-container { 
-          width: calc(100vw - var(--linkual-sidebar-width)) !important; 
-          max-width: calc(100vw - var(--linkual-sidebar-width)) !important; 
-          left: 0 !important; right: auto !important; margin-bottom: 0 !important;
+        ytd-app, #masthead-container {
+          width: calc(100vw - var(--linkual-sidebar-width)) !important;
+          max-width: calc(100vw - var(--linkual-sidebar-width)) !important;
+          left: 0 !important; right: auto !important; margin-bottom: var(--linkual-universal-widget-height, 0px) !important;
         }
-        ytd-watch-flexy[theater] #player-theater-container, 
+        ytd-watch-flexy[theater] #player-theater-container,
         ytd-watch-flexy[theater] #player-full-bleed-container,
-        ytd-watch-flexy[theater] #full-bleed-container, 
-        ytd-watch-flexy[theater] #cinematics-container, 
+        ytd-watch-flexy[theater] #full-bleed-container,
+        ytd-watch-flexy[theater] #cinematics-container,
         ytd-watch-flexy[theater] #cinematics,
         ytd-watch-flexy[theater] ytd-player,
-        ytd-watch-flexy[theater] .html5-video-player { 
-          width: calc(100vw - var(--linkual-sidebar-width)) !important; 
-          max-width: calc(100vw - var(--linkual-sidebar-width)) !important; 
-          min-height: 0 !important; 
-          height: calc((100vw - var(--linkual-sidebar-width)) * 9 / 16) !important; 
-          max-height: calc(100vh - 56px) !important; 
-          margin: 0 !important; transform: none !important; 
+        ytd-watch-flexy[theater] .html5-video-player {
+          width: calc(100vw - var(--linkual-sidebar-width)) !important;
+          max-width: calc(100vw - var(--linkual-sidebar-width)) !important;
+          min-height: 0 !important;
+          height: calc((100vw - var(--linkual-sidebar-width)) * 9 / 16) !important;
+          max-height: calc(100vh - var(--linkual-universal-widget-height, 0px) - 56px) !important;
+          margin: 0 !important; transform: none !important;
         }
-        .html5-video-player .html5-video-container, .html5-video-player video { 
+        ytd-watch-flexy[theater] .html5-video-player .html5-video-container,
+        ytd-watch-flexy[theater] .html5-video-player video {
           width: 100% !important; height: 100% !important; left: 0 !important; top: 0 !important; margin: 0 !important; object-fit: contain !important;
         }
-        .html5-video-player .ytp-chrome-bottom { width: calc(100% - 24px) !important; left: 12px !important; margin: 0 !important; }
+        ${customFullscreenCss}
       `;
       } else {
         styleEl.textContent = `
         html, body { overflow-x: hidden !important; }
-        ytd-app, #masthead-container { 
-          width: 100vw !important; max-width: 100vw !important; left: 0 !important; right: auto !important; 
-          margin-bottom: var(--linkual-sidebar-height) !important; 
+        ytd-app, #masthead-container {
+          width: 100vw !important; max-width: 100vw !important; left: 0 !important; right: auto !important;
+          margin-bottom: calc(var(--linkual-sidebar-height) + var(--linkual-universal-widget-height, 0px)) !important;
         }
-        ytd-watch-flexy[theater] #player-theater-container, 
+        ytd-watch-flexy[theater] #player-theater-container,
         ytd-watch-flexy[theater] #player-full-bleed-container,
-        ytd-watch-flexy[theater] #full-bleed-container, 
-        ytd-watch-flexy[theater] #cinematics-container, 
+        ytd-watch-flexy[theater] #full-bleed-container,
+        ytd-watch-flexy[theater] #cinematics-container,
         ytd-watch-flexy[theater] #cinematics,
         ytd-watch-flexy[theater] ytd-player,
-        ytd-watch-flexy[theater] .html5-video-player { 
-          width: 100vw !important; max-width: 100vw !important; min-height: 0 !important; 
-          height: calc(100vw * 9 / 16) !important; 
-          max-height: calc(100vh - var(--linkual-sidebar-height) - 56px) !important; 
-          margin: 0 auto !important; transform: none !important; 
+        ytd-watch-flexy[theater] .html5-video-player {
+          width: 100vw !important; max-width: 100vw !important; min-height: 0 !important;
+          height: calc(100vw * 9 / 16) !important;
+          max-height: calc(100vh - var(--linkual-sidebar-height) - var(--linkual-universal-widget-height, 0px) - 56px) !important;
+          margin: 0 auto !important; transform: none !important;
         }
-        .html5-video-player .html5-video-container, .html5-video-player video { 
+        ytd-watch-flexy[theater] .html5-video-player .html5-video-container,
+        ytd-watch-flexy[theater] .html5-video-player video {
           width: 100% !important; height: 100% !important; left: 0 !important; top: 0 !important; margin: 0 !important; object-fit: contain !important;
         }
-        .html5-video-player .ytp-chrome-bottom { width: calc(100% - 24px) !important; left: 12px !important; margin: 0 !important; }
+        ${customFullscreenCss}
       `;
       }
       if (this.resizeTimeout !== null) clearTimeout(this.resizeTimeout);
-      this.resizeTimeout = window.setTimeout(() => window.dispatchEvent(new Event("resize")), 150);
+      this.resizeTimeout = window.setTimeout(() => {
+        if (this.customFullscreenEnabled) {
+          this.refreshCustomFullscreenLayout();
+        } else {
+          this.restoreRegularPlayerLayout();
+        }
+      }, 150);
+    }
+    setCustomFullscreen(enabled) {
+      this.customFullscreenEnabled = enabled;
+      if (enabled) {
+        this.setCaptionsState("off");
+      }
+      if (this.resizeTimeout !== null) clearTimeout(this.resizeTimeout);
+      this.resizeTimeout = window.setTimeout(() => {
+        if (enabled) {
+          this.refreshCustomFullscreenLayout();
+        } else {
+          this.restoreRegularPlayerLayout();
+        }
+      }, 150);
     }
     getVideoEl() {
       return document.querySelector("video");
@@ -14482,6 +16012,15 @@ JSON 格式：
     getCurrentTime() {
       var _a;
       return ((_a = this.getVideoEl()) == null ? void 0 : _a.currentTime) || 0;
+    }
+    getDuration() {
+      var _a;
+      const duration = ((_a = this.getVideoEl()) == null ? void 0 : _a.duration) || 0;
+      return Number.isFinite(duration) ? duration : 0;
+    }
+    isPaused() {
+      var _a;
+      return ((_a = this.getVideoEl()) == null ? void 0 : _a.paused) ?? true;
     }
     seekTo(time) {
       const v = this.getVideoEl();
