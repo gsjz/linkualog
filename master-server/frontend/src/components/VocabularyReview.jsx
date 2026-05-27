@@ -320,6 +320,10 @@ const normalizeVocabularyListResponse = (data, normalizedCategory) => {
   return rawEntries.map((entry) => normalizeVocabularyEntry(entry, normalizedCategory));
 };
 
+const recommendationMarkFilterFromEntryFilter = (value) => (
+  value === 'marked' || value === 'unmarked' ? value : 'all'
+);
+
 const formatYouTubeLabel = (timestamp) => {
   const totalSeconds = Math.max(0, parseInt(timestamp, 10) || 0);
   const mins = Math.floor(totalSeconds / 60);
@@ -1067,6 +1071,7 @@ export default function VocabularyReview({
         excludeKeys,
         20,
         recommendPreferences,
+        recommendationMarkFilterFromEntryFilter(entryFilter),
       );
       recommendationQueueRequestRef.current += 1;
       setLoadingRecommendationQueue(false);
@@ -1088,7 +1093,7 @@ export default function VocabularyReview({
     } finally {
       setLoadingRecommendation(false);
     }
-  }, [applyRecommendationResult, handleDrawRandomEntry, handleUseRecommendation, recommendPreferences, recommendScope, visibleEntries]);
+  }, [applyRecommendationResult, entryFilter, handleDrawRandomEntry, handleUseRecommendation, recommendPreferences, recommendScope, visibleEntries]);
 
   useEffect(() => {
     if (!randomSelectionMode || !visibleEntries.length) {
@@ -1103,7 +1108,13 @@ export default function VocabularyReview({
     const scopeCategory = recommendScope === ALL_RECOMMEND_SCOPE ? '' : recommendScope;
     setLoadingRecommendationQueue(true);
 
-    fetchRecommendedWord(scopeCategory, [], 8, recommendPreferences)
+    fetchRecommendedWord(
+      scopeCategory,
+      [],
+      8,
+      recommendPreferences,
+      recommendationMarkFilterFromEntryFilter(entryFilter),
+    )
       .then((res) => {
         if (recommendationQueueRequestRef.current !== requestId) return;
         setRecommendationQueue(buildRecommendationQueue(res, visibleEntries, 8));
@@ -1120,7 +1131,7 @@ export default function VocabularyReview({
       });
 
     return undefined;
-  }, [randomSelectionMode, recommendPreferences, recommendScope, visibleEntries]);
+  }, [entryFilter, randomSelectionMode, recommendPreferences, recommendScope, visibleEntries]);
 
   const handleRecommendationNext = useCallback((poolArg = null) => {
     const fallbackPool = Array.isArray(poolArg) ? poolArg : visibleEntries;

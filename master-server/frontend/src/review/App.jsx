@@ -37,6 +37,10 @@ const ENTRY_FILTER_OPTIONS = [
   { value: 'unmarked', label: '未标记' },
 ];
 
+const recommendationMarkFilterFromEntryFilter = (value) => (
+  value === 'marked' || value === 'unmarked' ? value : 'all'
+);
+
 const RECOMMENDATION_WEIGHT_OPTIONS = [
   { key: 'due_weight', label: '到期', description: '逾期、今天到期、新词条' },
   { key: 'created_weight', label: '创建', description: '按创建时间方向排序' },
@@ -2456,6 +2460,7 @@ export default function App({
         excludeKeys,
         6,
         normalizedRecommendPreferences,
+        recommendationMarkFilterFromEntryFilter(entryFilter),
       );
       const recommended = applyRecommendationResult(res);
       if (!recommended) {
@@ -2556,6 +2561,7 @@ export default function App({
           [],
           6,
           normalizedRecommendPreferences,
+          recommendationMarkFilterFromEntryFilter(entryFilter),
         );
         if (cancelled) return;
         const recommended = applyRecommendationResult(res);
@@ -2577,7 +2583,7 @@ export default function App({
     return () => {
       cancelled = true;
     };
-  }, [categories.length, mode, recommendScope, normalizedRecommendPreferences]);
+  }, [categories.length, entryFilter, mode, recommendScope, normalizedRecommendPreferences]);
 
   useEffect(() => {
     if (mode !== 'recommend') return;

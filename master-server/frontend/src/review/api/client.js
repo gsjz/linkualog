@@ -205,7 +205,10 @@ export const submitReviewScore = async (category, filename, score, reviewDate) =
   });
 };
 
-export const fetchRecommendedWord = async (category = '', excludeKeys = [], limit = 5, preferences = {}) => {
+export const fetchRecommendedWord = async (category = '', excludeKeys = [], limit = 5, preferences = {}, markFilter = 'all') => {
+  const normalizedMarkFilter = ['marked', 'unmarked'].includes(String(markFilter || '').trim())
+    ? String(markFilter || '').trim()
+    : 'all';
   return requestJson('/api/review/recommend', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -213,6 +216,7 @@ export const fetchRecommendedWord = async (category = '', excludeKeys = [], limi
       category: category || null,
       exclude_keys: excludeKeys,
       limit,
+      mark_filter: normalizedMarkFilter,
       ...(preferences || {}),
     }),
   });

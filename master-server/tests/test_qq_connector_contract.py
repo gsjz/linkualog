@@ -596,6 +596,58 @@ class QQConnectorContractTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(high_score_result["recommended"]["word"], "old-high")
         self.assertEqual(high_score_result["recommended"]["score_breakdown"]["last_score"], 5)
 
+    def test_review_recommend_filters_marked_entries_before_ranking(self):
+        category_dir = self.vocab_dir / "daily"
+        category_dir.mkdir(parents=True, exist_ok=True)
+        today = date.today()
+
+        review_vocabulary.save_vocab_file(
+            str(category_dir / "marked-only.json"),
+            {
+                "word": "marked-only",
+                "marked": True,
+                "createdAt": today.isoformat(),
+                "reviews": [],
+                "definitions": [],
+                "examples": [],
+            },
+        )
+        review_vocabulary.save_vocab_file(
+            str(category_dir / "unmarked-only.json"),
+            {
+                "word": "unmarked-only",
+                "marked": False,
+                "createdAt": today.isoformat(),
+                "reviews": [],
+                "definitions": [],
+                "examples": [],
+            },
+        )
+
+        marked_result = review_routes.review_recommend(
+            review_routes.ReviewRecommendRequest(
+                category="daily",
+                limit=5,
+                mark_filter="marked",
+            )
+        )
+        self.assertEqual(marked_result["recommended"]["word"], "marked-only")
+        self.assertTrue(marked_result["recommended"]["marked"])
+        self.assertEqual(marked_result["meta"]["candidate_count"], 1)
+        self.assertEqual(marked_result["meta"]["mark_filter"], "marked")
+
+        unmarked_result = review_routes.review_recommend(
+            review_routes.ReviewRecommendRequest(
+                category="daily",
+                limit=5,
+                mark_filter="unmarked",
+            )
+        )
+        self.assertEqual(unmarked_result["recommended"]["word"], "unmarked-only")
+        self.assertFalse(unmarked_result["recommended"]["marked"])
+        self.assertEqual(unmarked_result["meta"]["candidate_count"], 1)
+        self.assertEqual(unmarked_result["meta"]["mark_filter"], "unmarked")
+
     def test_review_recommend_uses_saved_server_preferences_by_default(self):
         category_dir = self.vocab_dir / "daily"
         category_dir.mkdir(parents=True, exist_ok=True)

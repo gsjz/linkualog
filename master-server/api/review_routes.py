@@ -85,6 +85,7 @@ class ReviewRecommendRequest(BaseModel):
     category: str | None = None
     exclude_keys: list[str] = []
     limit: int = 5
+    mark_filter: str | None = None
     due_weight: float | None = None
     created_weight: float | None = None
     score_weight: float | None = None
@@ -246,6 +247,13 @@ def _normalize_recommendation_preferences(req: ReviewRecommendRequest) -> dict:
             "score_order",
         ),
     }
+
+
+def _normalize_recommendation_mark_filter(value: str | None) -> str:
+    normalized = str(value or "").strip().lower()
+    if normalized in {"marked", "unmarked"}:
+        return normalized
+    return "all"
 
 
 def _created_age_days(created_at: str, today: date) -> int | None:
@@ -1441,6 +1449,7 @@ def review_recommend(req: ReviewRecommendRequest):
     try:
         limit = min(max(int(req.limit or 5), 1), 20)
         preferences = _normalize_recommendation_preferences(req)
+        mark_filter = _normalize_recommendation_mark_filter(req.mark_filter)
         excluded = {str(item or "").strip() for item in (req.exclude_keys or []) if str(item or "").strip()}
         scoped_categories = [req.category] if str(req.category or "").strip() else list_categories()
         today = date.today()
@@ -1469,6 +1478,12 @@ def review_recommend(req: ReviewRecommendRequest):
                     skipped.append({"category": category_name, "file": file_name, "reason": str(exc)})
                     continue
 
+                marked = bool(payload.get("marked", False))
+                if mark_filter == "marked" and not marked:
+                    continue
+                if mark_filter == "unmarked" and marked:
+                    continue
+
                 fallback_word = os.path.splitext(file_name)[0]
                 word = str(payload.get("word") or fallback_word).strip() or fallback_word
                 reviews = payload.get("reviews") if isinstance(payload.get("reviews"), list) else []
@@ -1482,6 +1497,7 @@ def review_recommend(req: ReviewRecommendRequest):
                         "category": category_name,
                         "file": file_name,
                         "word": word,
+                        "marked": marked,
                         "created_at": created_at,
                         "priority_score": score_result["priority_score"],
                         "score_breakdown": score_result["score_breakdown"],
@@ -1514,6 +1530,7 @@ def review_recommend(req: ReviewRecommendRequest):
                 "scanned_files": scanned_files,
                 "candidate_count": len(candidates),
                 "excluded_count": len(excluded),
+                "mark_filter": mark_filter,
                 "skipped": skipped,
                 "generated_at": format_review_date(today),
                 "preferences": preferences,
