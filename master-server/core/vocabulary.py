@@ -170,6 +170,7 @@ def merge_or_create_vocab(
     word: str,
     context: str,
     source_name: str,
+    source_url: str = "",
     llm_generated_data: dict = None,
     category: str = "",
     focus_positions: list[int] = None,
@@ -179,6 +180,7 @@ def merge_or_create_vocab(
         llm_generated_data = {}
     category = require_vocab_subdir(category)
     sanitized_focus_positions = _sanitize_focus_positions(focus_positions if focus_positions is not None else [])
+    normalized_source_url = str(source_url or "").strip()
         
     existing_data = load_vocab(word, category)
     today = datetime.now().strftime("%Y-%m-%d")
@@ -210,8 +212,11 @@ def merge_or_create_vocab(
                     matched_ex["focusWords"] = focus_words
                 if sanitized_focus_positions:
                     matched_ex["focusPositions"] = sanitized_focus_positions
-                if source_name and not matched_ex.get("source", {}).get("text"):
-                    matched_ex["source"] = {"text": source_name, "url": matched_ex.get("source", {}).get("url", "")}
+                matched_source = matched_ex.setdefault("source", {})
+                if source_name and not matched_source.get("text"):
+                    matched_source["text"] = source_name
+                if normalized_source_url and not matched_source.get("url"):
+                    matched_source["url"] = normalized_source_url
                 
                 if youtube and not matched_ex.get("youtube"):
                     matched_ex["youtube"] = youtube
@@ -222,7 +227,7 @@ def merge_or_create_vocab(
                     "focusWords": focus_words,
                     "source": {
                         "text": source_name if source_name else "",
-                        "url": ""
+                        "url": normalized_source_url
                     }
                 }
                 if sanitized_focus_positions:
@@ -247,7 +252,7 @@ def merge_or_create_vocab(
             "focusWords": focus_words,
             "source": {
                 "text": source_name if source_name else "",
-                "url": ""
+                "url": normalized_source_url
             }
         } if context else None
         if new_example and sanitized_focus_positions:

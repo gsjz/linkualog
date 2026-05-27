@@ -516,6 +516,7 @@ class VocabAddRequest(BaseModel):
     word: str
     context: str = ""
     source: str = ""
+    source_url: str = ""
     fetch_llm: bool = False
     fetch_type: str = "all" 
     category: str = ""
@@ -554,7 +555,8 @@ def add_vocabulary(req: VocabAddRequest):
         final_data = merge_or_create_vocab(
             word=req.word, 
             context=req.context, 
-            source_name=req.source, 
+            source_name=req.source,
+            source_url=req.source_url,
             llm_generated_data=llm_result, 
             category=req.category,
             focus_positions=req.focus_positions,
