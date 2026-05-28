@@ -114,6 +114,24 @@
   cursor: grabbing;
 }
 
+html.linkual-mobile-fullscreen-fallback,
+html.linkual-mobile-fullscreen-fallback body {
+  width: var(--linkual-mobile-viewport-width, 100vw) !important;
+  height: var(--linkual-mobile-viewport-height, 100vh) !important;
+  max-width: var(--linkual-mobile-viewport-width, 100vw) !important;
+  max-height: var(--linkual-mobile-viewport-height, 100vh) !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
+  touch-action: none !important;
+  background: #000 !important;
+}
+
+html.linkual-mobile-fullscreen-fallback {
+  position: fixed !important;
+  inset: 0 !important;
+}
+
 #linkual-root .linkual-player-controls {
   position: fixed;
   left: clamp(6px, 2vw, 12px);
@@ -789,10 +807,22 @@
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   user-select: none;
   pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 #linkual-root .linkual-universal-expand-bar:hover {
   filter: brightness(1.08);
+}
+
+#linkual-root .linkual-universal-expand-chevron {
+  width: 12px;
+  height: 12px;
+  border-left: 3px solid currentColor;
+  border-top: 3px solid currentColor;
+  transform: translateY(3px) rotate(45deg);
+  box-sizing: border-box;
 }
 
 #linkual-root .linkual-universal-floating-add {

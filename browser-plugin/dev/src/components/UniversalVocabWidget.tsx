@@ -650,7 +650,7 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
         } as React.CSSProperties}
         title="Linkual"
       >
-        展开选词栏
+        <span className="linkual-universal-expand-chevron" aria-hidden="true" />
       </button>
     );
   }
