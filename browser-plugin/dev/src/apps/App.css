@@ -840,6 +840,87 @@
   box-sizing: border-box;
 }
 
+@media (max-width: 1024px) {
+  #linkual-root .linkual-universal-widget {
+    align-items: stretch;
+    gap: 7px;
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  #linkual-root .linkual-universal-top {
+    flex: 1 0 100%;
+    min-width: min(240px, 100%);
+  }
+
+  #linkual-root .linkual-universal-form {
+    flex: 1 0 100%;
+    grid-template-columns: minmax(0, 1fr) 32px 36px minmax(96px, auto);
+    gap: 4px;
+    min-width: min(360px, 100%);
+  }
+
+  #linkual-root .linkual-universal-field.field-context {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  #linkual-root .linkual-universal-clear {
+    grid-column: 2;
+    grid-row: 1;
+    width: 32px;
+    min-width: 32px;
+  }
+
+  #linkual-root .linkual-universal-send {
+    grid-column: 3;
+    grid-row: 1;
+    width: 36px;
+    min-width: 36px;
+    padding: 0;
+  }
+
+  #linkual-root .linkual-universal-inline-actions {
+    grid-column: 4;
+    grid-row: 1;
+    justify-content: flex-end;
+    gap: 3px;
+  }
+
+  #linkual-root .linkual-universal-inline-actions .linkual-universal-icon-btn {
+    width: 30px;
+    min-width: 30px;
+    min-height: 30px;
+    padding: 0;
+  }
+
+  #linkual-root .linkual-universal-button-icon {
+    display: block;
+  }
+
+  #linkual-root .linkual-universal-button-text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  #linkual-root .linkual-universal-queue-count {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 14px;
+    height: 14px;
+    padding: 0 3px;
+    font-size: 9px;
+  }
+}
+
 @media (max-width: 720px) {
   #linkual-root .linkual-universal-widget {
     width: 100vw;
@@ -867,14 +948,6 @@
 
   #linkual-root .linkual-universal-actions {
     gap: 5px;
-  }
-
-  #linkual-root .linkual-universal-inline-actions .linkual-universal-icon-btn {
-    width: 31px;
-    min-width: 31px;
-    min-height: 30px;
-    padding: 0;
-    font-size: 12px;
   }
 
   #linkual-root .linkual-universal-status {
@@ -909,39 +982,6 @@
     width: 36px;
     min-width: 36px;
     padding: 0;
-  }
-
-  #linkual-root .linkual-universal-inline-actions {
-    grid-column: 4;
-    grid-row: 1;
-    gap: 3px;
-    justify-content: flex-end;
-  }
-
-  #linkual-root .linkual-universal-button-icon {
-    display: block;
-  }
-
-  #linkual-root .linkual-universal-button-text {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    margin: -1px;
-    padding: 0;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-    white-space: nowrap;
-    border: 0;
-  }
-
-  #linkual-root .linkual-universal-queue-count {
-    position: absolute;
-    top: -4px;
-    right: -4px;
-    min-width: 14px;
-    height: 14px;
-    padding: 0 3px;
-    font-size: 9px;
   }
 
   #linkual-root .linkual-universal-floating-add {
