@@ -313,8 +313,8 @@ export class YouTubeAdapter implements IVideoAdapter {
       html.linkual-custom-fullscreen ytd-app {
         position: fixed !important;
         inset: 0 !important;
-        width: calc(var(--linkual-mobile-viewport-width, 100vw) - var(--linkual-sidebar-width, 0px)) !important;
-        max-width: calc(var(--linkual-mobile-viewport-width, 100vw) - var(--linkual-sidebar-width, 0px)) !important;
+        width: calc(100vw - var(--linkual-sidebar-width, 0px)) !important;
+        max-width: calc(100vw - var(--linkual-sidebar-width, 0px)) !important;
         height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px)) !important;
         max-height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px)) !important;
         margin: 0 !important;
@@ -348,8 +348,8 @@ export class YouTubeAdapter implements IVideoAdapter {
       html.linkual-custom-fullscreen .html5-video-player {
         position: fixed !important;
         inset: 0 auto auto 0 !important;
-        width: calc(var(--linkual-mobile-viewport-width, 100vw) - var(--linkual-sidebar-width, 0px)) !important;
-        max-width: calc(var(--linkual-mobile-viewport-width, 100vw) - var(--linkual-sidebar-width, 0px)) !important;
+        width: calc(100vw - var(--linkual-sidebar-width, 0px)) !important;
+        max-width: calc(100vw - var(--linkual-sidebar-width, 0px)) !important;
         height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px)) !important;
         max-height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px)) !important;
         min-height: 0 !important;

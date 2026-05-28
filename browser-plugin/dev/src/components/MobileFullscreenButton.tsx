@@ -17,7 +17,7 @@ type FullscreenElement = HTMLElement & {
 };
 
 const DRAG_THRESHOLD = 5;
-const FULLSCREEN_SETTLE_DELAY = 180;
+const FULLSCREEN_SETTLE_DELAY = 120;
 const SEEK_STEP_SECONDS = 5;
 
 function getBrowserFullscreenElement() {
@@ -29,41 +29,13 @@ function getBrowserFullscreenElement() {
     null;
 }
 
-function getBrowserFullscreenTarget() {
-  const candidates = [
-    document.querySelector('.html5-video-player'),
-    document.getElementById('movie_player'),
-    document.querySelector('ytd-player'),
-    document.querySelector('.bpx-player-container'),
-    document.querySelector('.bilibili-player-video-wrap'),
-    document.querySelector('video')?.parentElement,
-    document.documentElement,
-  ];
-
-  return candidates.find((candidate): candidate is FullscreenElement => (
-    candidate instanceof HTMLElement &&
-    candidate.isConnected &&
-    candidate !== document.body
-  )) || document.documentElement as FullscreenElement;
-}
-
 function requestBrowserFullscreen() {
-  const target = getBrowserFullscreenTarget();
+  const target = document.documentElement as FullscreenElement;
 
   if (target.requestFullscreen) return target.requestFullscreen();
   if (target.webkitRequestFullscreen) return target.webkitRequestFullscreen();
   if (target.mozRequestFullScreen) return target.mozRequestFullScreen();
   if (target.msRequestFullscreen) return target.msRequestFullscreen();
-}
-
-function canRequestBrowserFullscreen() {
-  const target = getBrowserFullscreenTarget();
-  return Boolean(
-    target.requestFullscreen ||
-    target.webkitRequestFullscreen ||
-    target.mozRequestFullScreen ||
-    target.msRequestFullscreen
-  );
 }
 
 function exitBrowserFullscreen() {
@@ -79,25 +51,7 @@ function isPromiseLike(value: unknown): value is Promise<void> {
   return Boolean(value && typeof (value as Promise<void>).then === 'function');
 }
 
-function getViewportSize() {
-  const width = window.visualViewport?.width || window.innerWidth || document.documentElement.clientWidth;
-  const height = window.visualViewport?.height || window.innerHeight || document.documentElement.clientHeight;
-
-  return {
-    width: Number.isFinite(width) && width > 0 ? width : window.innerWidth,
-    height: Number.isFinite(height) && height > 0 ? height : window.innerHeight,
-  };
-}
-
-function syncMobileViewportVars() {
-  const viewport = getViewportSize();
-  document.documentElement.style.setProperty('--linkual-mobile-viewport-width', `${Math.ceil(viewport.width)}px`);
-  document.documentElement.style.setProperty('--linkual-mobile-viewport-height', `${Math.ceil(viewport.height)}px`);
-  document.documentElement.style.setProperty('--linkual-visual-viewport-height', `${Math.ceil(viewport.height)}px`);
-}
-
 function emitCustomLayoutChange() {
-  syncMobileViewportVars();
   window.dispatchEvent(new Event('linkual_custom_layout_refresh'));
   window.dispatchEvent(new Event('linkual_custom_fullscreen_changed'));
   window.dispatchEvent(new Event('resize'));
@@ -119,9 +73,8 @@ function formatTime(seconds: number) {
 }
 
 function clampPosition(left: number, top: number, element: HTMLElement) {
-  const viewport = getViewportSize();
-  const maxLeft = Math.max(0, viewport.width - element.offsetWidth);
-  const maxTop = Math.max(0, viewport.height - element.offsetHeight);
+  const maxLeft = Math.max(0, window.innerWidth - element.offsetWidth);
+  const maxTop = Math.max(0, window.innerHeight - element.offsetHeight);
 
   return {
     left: Math.min(Math.max(0, left), maxLeft),
@@ -130,9 +83,8 @@ function clampPosition(left: number, top: number, element: HTMLElement) {
 }
 
 function getPositionRatios(left: number, top: number, element: HTMLElement) {
-  const viewport = getViewportSize();
-  const maxLeft = Math.max(0, viewport.width - element.offsetWidth);
-  const maxTop = Math.max(0, viewport.height - element.offsetHeight);
+  const maxLeft = Math.max(0, window.innerWidth - element.offsetWidth);
+  const maxTop = Math.max(0, window.innerHeight - element.offsetHeight);
 
   return {
     ratioX: maxLeft > 0 ? left / maxLeft : 0,
@@ -147,9 +99,8 @@ function createPosition(left: number, top: number, element: HTMLElement) {
 }
 
 function createPositionFromRatios(ratioX: number, ratioY: number, element: HTMLElement) {
-  const viewport = getViewportSize();
-  const maxLeft = Math.max(0, viewport.width - element.offsetWidth);
-  const maxTop = Math.max(0, viewport.height - element.offsetHeight);
+  const maxLeft = Math.max(0, window.innerWidth - element.offsetWidth);
+  const maxTop = Math.max(0, window.innerHeight - element.offsetHeight);
   return createPosition(ratioX * maxLeft, ratioY * maxTop, element);
 }
 
@@ -174,8 +125,6 @@ const MobileFullscreenButton: React.FC<MobileFullscreenButtonProps> = ({ adapter
   const buttonRef = useRef<HTMLButtonElement | null>(null);
   const progressRef = useRef<HTMLInputElement | null>(null);
   const fullscreenRequestPendingRef = useRef(false);
-  const browserFullscreenActiveRef = useRef(false);
-  const browserFullscreenFallbackRef = useRef(false);
   const dragRef = useRef({
     pointerId: -1,
     offsetX: 0,
@@ -186,26 +135,8 @@ const MobileFullscreenButton: React.FC<MobileFullscreenButtonProps> = ({ adapter
   });
 
   const applyCustomFullscreenState = (enabled: boolean) => {
-    syncMobileViewportVars();
-    browserFullscreenActiveRef.current = false;
     document.documentElement.classList.toggle('linkual-custom-fullscreen', enabled);
-    document.documentElement.classList.toggle('linkual-mobile-fullscreen-fallback', enabled && browserFullscreenFallbackRef.current);
     adapter.setCustomFullscreen?.(enabled);
-    setFullscreen(enabled);
-    emitCustomLayoutChange();
-  };
-
-  const applyBrowserFullscreenOverlayState = (enabled: boolean) => {
-    syncMobileViewportVars();
-    browserFullscreenActiveRef.current = enabled;
-
-    if (enabled) {
-      browserFullscreenFallbackRef.current = false;
-      document.documentElement.classList.remove('linkual-custom-fullscreen');
-      document.documentElement.classList.remove('linkual-mobile-fullscreen-fallback');
-      adapter.setCustomFullscreen?.(false);
-    }
-
     setFullscreen(enabled);
     emitCustomLayoutChange();
   };
@@ -213,17 +144,9 @@ const MobileFullscreenButton: React.FC<MobileFullscreenButtonProps> = ({ adapter
   useEffect(() => {
     const syncFullscreenState = () => {
       const customFullscreen = document.documentElement.classList.contains('linkual-custom-fullscreen');
-      const browserFullscreen = Boolean(getBrowserFullscreenElement());
-
-      if (browserFullscreenActiveRef.current && !browserFullscreen && !customFullscreen) {
-        applyBrowserFullscreenOverlayState(false);
-        return;
-      }
-
       if (
         customFullscreen &&
-        !browserFullscreen &&
-        !browserFullscreenFallbackRef.current &&
+        !getBrowserFullscreenElement() &&
         !fullscreenRequestPendingRef.current
       ) {
         document.documentElement.classList.remove('linkual-custom-fullscreen');
@@ -233,7 +156,7 @@ const MobileFullscreenButton: React.FC<MobileFullscreenButtonProps> = ({ adapter
         return;
       }
 
-      setFullscreen(customFullscreen || (browserFullscreenActiveRef.current && browserFullscreen));
+      setFullscreen(customFullscreen);
     };
 
     window.addEventListener('linkual_custom_fullscreen_changed', syncFullscreenState);
@@ -258,14 +181,12 @@ const MobileFullscreenButton: React.FC<MobileFullscreenButtonProps> = ({ adapter
   }, [adapter, fullscreen]);
 
   useEffect(() => () => {
-    const hadCustomFullscreen = document.documentElement.classList.contains('linkual-custom-fullscreen') || browserFullscreenActiveRef.current;
+    const hadCustomFullscreen = document.documentElement.classList.contains('linkual-custom-fullscreen');
     fullscreenRequestPendingRef.current = false;
-    browserFullscreenActiveRef.current = false;
 
     if (!hadCustomFullscreen) return;
 
     document.documentElement.classList.remove('linkual-custom-fullscreen');
-    document.documentElement.classList.remove('linkual-mobile-fullscreen-fallback');
     adapter.setCustomFullscreen?.(false);
     emitCustomLayoutChange();
 
@@ -276,26 +197,6 @@ const MobileFullscreenButton: React.FC<MobileFullscreenButtonProps> = ({ adapter
       }
     }
   }, [adapter]);
-
-  useEffect(() => {
-    const syncViewport = () => {
-      if (fullscreen) emitCustomLayoutChange();
-      else syncMobileViewportVars();
-    };
-
-    syncViewport();
-    window.addEventListener('resize', syncViewport);
-    window.addEventListener('orientationchange', syncViewport);
-    window.visualViewport?.addEventListener('resize', syncViewport);
-    window.visualViewport?.addEventListener('scroll', syncViewport);
-
-    return () => {
-      window.removeEventListener('resize', syncViewport);
-      window.removeEventListener('orientationchange', syncViewport);
-      window.visualViewport?.removeEventListener('resize', syncViewport);
-      window.visualViewport?.removeEventListener('scroll', syncViewport);
-    };
-  }, [fullscreen]);
 
   useEffect(() => {
     if (!position) return;
@@ -380,10 +281,7 @@ const MobileFullscreenButton: React.FC<MobileFullscreenButtonProps> = ({ adapter
   };
 
   const exitCustomFullscreen = () => {
-    browserFullscreenActiveRef.current = false;
-    browserFullscreenFallbackRef.current = false;
     applyCustomFullscreenState(false);
-    document.documentElement.classList.remove('linkual-mobile-fullscreen-fallback');
     const browserFullscreenAction = getBrowserFullscreenElement() ? exitBrowserFullscreen() : undefined;
     if (isPromiseLike(browserFullscreenAction)) {
       browserFullscreenAction.catch((error) => console.warn('[Linkual] 浏览器全屏切换失败', error));
@@ -400,24 +298,13 @@ const MobileFullscreenButton: React.FC<MobileFullscreenButtonProps> = ({ adapter
 
     const nextFullscreen = !fullscreen;
     fullscreenRequestPendingRef.current = nextFullscreen;
-    browserFullscreenFallbackRef.current = false;
+    applyCustomFullscreenState(nextFullscreen);
 
     if (nextFullscreen) {
-      const enterFallback = () => {
-        browserFullscreenFallbackRef.current = true;
-        applyCustomFullscreenState(true);
-      };
-      const enterBrowserOverlay = () => {
-        applyBrowserFullscreenOverlayState(true);
-      };
-      const browserFullscreenAction = canRequestBrowserFullscreen() ? requestBrowserFullscreen() : undefined;
+      const browserFullscreenAction = requestBrowserFullscreen();
       const finishPending = () => {
         window.setTimeout(() => {
-          if (getBrowserFullscreenElement()) enterBrowserOverlay();
-          else if (!browserFullscreenFallbackRef.current) enterFallback();
-
           fullscreenRequestPendingRef.current = false;
-          document.documentElement.classList.toggle('linkual-mobile-fullscreen-fallback', browserFullscreenFallbackRef.current);
           emitCustomLayoutChange();
         }, FULLSCREEN_SETTLE_DELAY);
       };
@@ -425,14 +312,10 @@ const MobileFullscreenButton: React.FC<MobileFullscreenButtonProps> = ({ adapter
       if (isPromiseLike(browserFullscreenAction)) {
         browserFullscreenAction.then(finishPending).catch((error) => {
           console.warn('[Linkual] 浏览器全屏切换失败', error);
-          enterFallback();
-          window.setTimeout(() => {
-            fullscreenRequestPendingRef.current = false;
-            emitCustomLayoutChange();
-          }, FULLSCREEN_SETTLE_DELAY);
+          fullscreenRequestPendingRef.current = false;
+          applyCustomFullscreenState(false);
         });
       } else {
-        if (!canRequestBrowserFullscreen()) enterFallback();
         finishPending();
       }
       return;

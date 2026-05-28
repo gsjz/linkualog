@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Linkual Log
 // @namespace    npm/vite-plugin-monkey
-// @version      0.0.21
+// @version      0.0.22
 // @author       Sergio Gao
 // @icon         https://vitejs.dev/logo.svg
 // @downloadURL  https://raw.githubusercontent.com/gsjz/linkualog/main/browser-plugin/user/linkualog.user.js
@@ -13729,37 +13729,18 @@ JSON 格式：
     ] }) });
   };
   const DRAG_THRESHOLD = 5;
-  const FULLSCREEN_SETTLE_DELAY = 180;
+  const FULLSCREEN_SETTLE_DELAY = 120;
   const SEEK_STEP_SECONDS = 5;
   function getBrowserFullscreenElement$1() {
     const doc = document;
     return document.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement || doc.msFullscreenElement || null;
   }
-  function getBrowserFullscreenTarget() {
-    var _a;
-    const candidates = [
-      document.querySelector(".html5-video-player"),
-      document.getElementById("movie_player"),
-      document.querySelector("ytd-player"),
-      document.querySelector(".bpx-player-container"),
-      document.querySelector(".bilibili-player-video-wrap"),
-      (_a = document.querySelector("video")) == null ? void 0 : _a.parentElement,
-      document.documentElement
-    ];
-    return candidates.find((candidate) => candidate instanceof HTMLElement && candidate.isConnected && candidate !== document.body) || document.documentElement;
-  }
   function requestBrowserFullscreen() {
-    const target = getBrowserFullscreenTarget();
+    const target = document.documentElement;
     if (target.requestFullscreen) return target.requestFullscreen();
     if (target.webkitRequestFullscreen) return target.webkitRequestFullscreen();
     if (target.mozRequestFullScreen) return target.mozRequestFullScreen();
     if (target.msRequestFullscreen) return target.msRequestFullscreen();
-  }
-  function canRequestBrowserFullscreen() {
-    const target = getBrowserFullscreenTarget();
-    return Boolean(
-      target.requestFullscreen || target.webkitRequestFullscreen || target.mozRequestFullScreen || target.msRequestFullscreen
-    );
   }
   function exitBrowserFullscreen$1() {
     const doc = document;
@@ -13771,23 +13752,7 @@ JSON 格式：
   function isPromiseLike$1(value) {
     return Boolean(value && typeof value.then === "function");
   }
-  function getViewportSize() {
-    var _a, _b;
-    const width = ((_a = window.visualViewport) == null ? void 0 : _a.width) || window.innerWidth || document.documentElement.clientWidth;
-    const height = ((_b = window.visualViewport) == null ? void 0 : _b.height) || window.innerHeight || document.documentElement.clientHeight;
-    return {
-      width: Number.isFinite(width) && width > 0 ? width : window.innerWidth,
-      height: Number.isFinite(height) && height > 0 ? height : window.innerHeight
-    };
-  }
-  function syncMobileViewportVars() {
-    const viewport = getViewportSize();
-    document.documentElement.style.setProperty("--linkual-mobile-viewport-width", `${Math.ceil(viewport.width)}px`);
-    document.documentElement.style.setProperty("--linkual-mobile-viewport-height", `${Math.ceil(viewport.height)}px`);
-    document.documentElement.style.setProperty("--linkual-visual-viewport-height", `${Math.ceil(viewport.height)}px`);
-  }
   function emitCustomLayoutChange() {
-    syncMobileViewportVars();
     window.dispatchEvent(new Event("linkual_custom_layout_refresh"));
     window.dispatchEvent(new Event("linkual_custom_fullscreen_changed"));
     window.dispatchEvent(new Event("resize"));
@@ -13804,18 +13769,16 @@ JSON 格式：
     return `${minutes}:${String(secs).padStart(2, "0")}`;
   }
   function clampPosition(left, top, element) {
-    const viewport = getViewportSize();
-    const maxLeft = Math.max(0, viewport.width - element.offsetWidth);
-    const maxTop = Math.max(0, viewport.height - element.offsetHeight);
+    const maxLeft = Math.max(0, window.innerWidth - element.offsetWidth);
+    const maxTop = Math.max(0, window.innerHeight - element.offsetHeight);
     return {
       left: Math.min(Math.max(0, left), maxLeft),
       top: Math.min(Math.max(0, top), maxTop)
     };
   }
   function getPositionRatios(left, top, element) {
-    const viewport = getViewportSize();
-    const maxLeft = Math.max(0, viewport.width - element.offsetWidth);
-    const maxTop = Math.max(0, viewport.height - element.offsetHeight);
+    const maxLeft = Math.max(0, window.innerWidth - element.offsetWidth);
+    const maxTop = Math.max(0, window.innerHeight - element.offsetHeight);
     return {
       ratioX: maxLeft > 0 ? left / maxLeft : 0,
       ratioY: maxTop > 0 ? top / maxTop : 0
@@ -13827,9 +13790,8 @@ JSON 格式：
     return { ...clamped, ...ratios };
   }
   function createPositionFromRatios(ratioX, ratioY, element) {
-    const viewport = getViewportSize();
-    const maxLeft = Math.max(0, viewport.width - element.offsetWidth);
-    const maxTop = Math.max(0, viewport.height - element.offsetHeight);
+    const maxLeft = Math.max(0, window.innerWidth - element.offsetWidth);
+    const maxTop = Math.max(0, window.innerHeight - element.offsetHeight);
     return createPosition(ratioX * maxLeft, ratioY * maxTop, element);
   }
   const MobileFullscreenButton = ({ adapter }) => {
@@ -13842,8 +13804,6 @@ JSON 格式：
     const buttonRef = reactExports.useRef(null);
     const progressRef = reactExports.useRef(null);
     const fullscreenRequestPendingRef = reactExports.useRef(false);
-    const browserFullscreenActiveRef = reactExports.useRef(false);
-    const browserFullscreenFallbackRef = reactExports.useRef(false);
     const dragRef = reactExports.useRef({
       pointerId: -1,
       offsetX: 0,
@@ -13854,24 +13814,8 @@ JSON 格式：
     });
     const applyCustomFullscreenState = (enabled) => {
       var _a;
-      syncMobileViewportVars();
-      browserFullscreenActiveRef.current = false;
       document.documentElement.classList.toggle("linkual-custom-fullscreen", enabled);
-      document.documentElement.classList.toggle("linkual-mobile-fullscreen-fallback", enabled && browserFullscreenFallbackRef.current);
       (_a = adapter.setCustomFullscreen) == null ? void 0 : _a.call(adapter, enabled);
-      setFullscreen(enabled);
-      emitCustomLayoutChange();
-    };
-    const applyBrowserFullscreenOverlayState = (enabled) => {
-      var _a;
-      syncMobileViewportVars();
-      browserFullscreenActiveRef.current = enabled;
-      if (enabled) {
-        browserFullscreenFallbackRef.current = false;
-        document.documentElement.classList.remove("linkual-custom-fullscreen");
-        document.documentElement.classList.remove("linkual-mobile-fullscreen-fallback");
-        (_a = adapter.setCustomFullscreen) == null ? void 0 : _a.call(adapter, false);
-      }
       setFullscreen(enabled);
       emitCustomLayoutChange();
     };
@@ -13879,19 +13823,14 @@ JSON 格式：
       const syncFullscreenState = () => {
         var _a;
         const customFullscreen = document.documentElement.classList.contains("linkual-custom-fullscreen");
-        const browserFullscreen = Boolean(getBrowserFullscreenElement$1());
-        if (browserFullscreenActiveRef.current && !browserFullscreen && !customFullscreen) {
-          applyBrowserFullscreenOverlayState(false);
-          return;
-        }
-        if (customFullscreen && !browserFullscreen && !browserFullscreenFallbackRef.current && !fullscreenRequestPendingRef.current) {
+        if (customFullscreen && !getBrowserFullscreenElement$1() && !fullscreenRequestPendingRef.current) {
           document.documentElement.classList.remove("linkual-custom-fullscreen");
           (_a = adapter.setCustomFullscreen) == null ? void 0 : _a.call(adapter, false);
           emitCustomLayoutChange();
           setFullscreen(false);
           return;
         }
-        setFullscreen(customFullscreen || browserFullscreenActiveRef.current && browserFullscreen);
+        setFullscreen(customFullscreen);
       };
       window.addEventListener("linkual_custom_fullscreen_changed", syncFullscreenState);
       document.addEventListener("fullscreenchange", syncFullscreenState);
@@ -13914,12 +13853,10 @@ JSON 格式：
     }, [adapter, fullscreen]);
     reactExports.useEffect(() => () => {
       var _a;
-      const hadCustomFullscreen = document.documentElement.classList.contains("linkual-custom-fullscreen") || browserFullscreenActiveRef.current;
+      const hadCustomFullscreen = document.documentElement.classList.contains("linkual-custom-fullscreen");
       fullscreenRequestPendingRef.current = false;
-      browserFullscreenActiveRef.current = false;
       if (!hadCustomFullscreen) return;
       document.documentElement.classList.remove("linkual-custom-fullscreen");
-      document.documentElement.classList.remove("linkual-mobile-fullscreen-fallback");
       (_a = adapter.setCustomFullscreen) == null ? void 0 : _a.call(adapter, false);
       emitCustomLayoutChange();
       if (getBrowserFullscreenElement$1() === document.documentElement) {
@@ -13929,25 +13866,6 @@ JSON 格式：
         }
       }
     }, [adapter]);
-    reactExports.useEffect(() => {
-      var _a, _b;
-      const syncViewport = () => {
-        if (fullscreen) emitCustomLayoutChange();
-        else syncMobileViewportVars();
-      };
-      syncViewport();
-      window.addEventListener("resize", syncViewport);
-      window.addEventListener("orientationchange", syncViewport);
-      (_a = window.visualViewport) == null ? void 0 : _a.addEventListener("resize", syncViewport);
-      (_b = window.visualViewport) == null ? void 0 : _b.addEventListener("scroll", syncViewport);
-      return () => {
-        var _a2, _b2;
-        window.removeEventListener("resize", syncViewport);
-        window.removeEventListener("orientationchange", syncViewport);
-        (_a2 = window.visualViewport) == null ? void 0 : _a2.removeEventListener("resize", syncViewport);
-        (_b2 = window.visualViewport) == null ? void 0 : _b2.removeEventListener("scroll", syncViewport);
-      };
-    }, [fullscreen]);
     reactExports.useEffect(() => {
       var _a;
       if (!position) return;
@@ -14016,10 +13934,7 @@ JSON 格式：
       setDragging(false);
     };
     const exitCustomFullscreen = () => {
-      browserFullscreenActiveRef.current = false;
-      browserFullscreenFallbackRef.current = false;
       applyCustomFullscreenState(false);
-      document.documentElement.classList.remove("linkual-mobile-fullscreen-fallback");
       const browserFullscreenAction = getBrowserFullscreenElement$1() ? exitBrowserFullscreen$1() : void 0;
       if (isPromiseLike$1(browserFullscreenAction)) {
         browserFullscreenAction.catch((error) => console.warn("[Linkual] 浏览器全屏切换失败", error));
@@ -14034,36 +13949,22 @@ JSON 格式：
       }
       const nextFullscreen = !fullscreen;
       fullscreenRequestPendingRef.current = nextFullscreen;
-      browserFullscreenFallbackRef.current = false;
+      applyCustomFullscreenState(nextFullscreen);
       if (nextFullscreen) {
-        const enterFallback = () => {
-          browserFullscreenFallbackRef.current = true;
-          applyCustomFullscreenState(true);
-        };
-        const enterBrowserOverlay = () => {
-          applyBrowserFullscreenOverlayState(true);
-        };
-        const browserFullscreenAction = canRequestBrowserFullscreen() ? requestBrowserFullscreen() : void 0;
+        const browserFullscreenAction = requestBrowserFullscreen();
         const finishPending = () => {
           window.setTimeout(() => {
-            if (getBrowserFullscreenElement$1()) enterBrowserOverlay();
-            else if (!browserFullscreenFallbackRef.current) enterFallback();
             fullscreenRequestPendingRef.current = false;
-            document.documentElement.classList.toggle("linkual-mobile-fullscreen-fallback", browserFullscreenFallbackRef.current);
             emitCustomLayoutChange();
           }, FULLSCREEN_SETTLE_DELAY);
         };
         if (isPromiseLike$1(browserFullscreenAction)) {
           browserFullscreenAction.then(finishPending).catch((error) => {
             console.warn("[Linkual] 浏览器全屏切换失败", error);
-            enterFallback();
-            window.setTimeout(() => {
-              fullscreenRequestPendingRef.current = false;
-              emitCustomLayoutChange();
-            }, FULLSCREEN_SETTLE_DELAY);
+            fullscreenRequestPendingRef.current = false;
+            applyCustomFullscreenState(false);
           });
         } else {
-          if (!canRequestBrowserFullscreen()) enterFallback();
           finishPending();
         }
         return;
@@ -15702,8 +15603,8 @@ JSON 格式：
       html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .html5-video-player {
         position: fixed !important;
         inset: 0 auto auto 0 !important;
-        width: calc(var(--linkual-mobile-viewport-width, 100vw) - var(--linkual-sidebar-width, 0px)) !important;
-        max-width: calc(var(--linkual-mobile-viewport-width, 100vw) - var(--linkual-sidebar-width, 0px)) !important;
+        width: calc(100vw - var(--linkual-sidebar-width, 0px)) !important;
+        max-width: calc(100vw - var(--linkual-sidebar-width, 0px)) !important;
         height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px)) !important;
         max-height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px)) !important;
         min-height: 0 !important;
@@ -16112,8 +16013,8 @@ JSON 格式：
       html.linkual-custom-fullscreen ytd-app {
         position: fixed !important;
         inset: 0 !important;
-        width: calc(var(--linkual-mobile-viewport-width, 100vw) - var(--linkual-sidebar-width, 0px)) !important;
-        max-width: calc(var(--linkual-mobile-viewport-width, 100vw) - var(--linkual-sidebar-width, 0px)) !important;
+        width: calc(100vw - var(--linkual-sidebar-width, 0px)) !important;
+        max-width: calc(100vw - var(--linkual-sidebar-width, 0px)) !important;
         height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px)) !important;
         max-height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px)) !important;
         margin: 0 !important;
@@ -16147,8 +16048,8 @@ JSON 格式：
       html.linkual-custom-fullscreen .html5-video-player {
         position: fixed !important;
         inset: 0 auto auto 0 !important;
-        width: calc(var(--linkual-mobile-viewport-width, 100vw) - var(--linkual-sidebar-width, 0px)) !important;
-        max-width: calc(var(--linkual-mobile-viewport-width, 100vw) - var(--linkual-sidebar-width, 0px)) !important;
+        width: calc(100vw - var(--linkual-sidebar-width, 0px)) !important;
+        max-width: calc(100vw - var(--linkual-sidebar-width, 0px)) !important;
         height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px)) !important;
         max-height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px)) !important;
         min-height: 0 !important;
