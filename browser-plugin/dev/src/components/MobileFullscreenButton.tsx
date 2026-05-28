@@ -29,8 +29,26 @@ function getBrowserFullscreenElement() {
     null;
 }
 
+function getBrowserFullscreenTarget() {
+  const candidates = [
+    document.querySelector('.html5-video-player'),
+    document.getElementById('movie_player'),
+    document.querySelector('ytd-player'),
+    document.querySelector('.bpx-player-container'),
+    document.querySelector('.bilibili-player-video-wrap'),
+    document.querySelector('video')?.parentElement,
+    document.documentElement,
+  ];
+
+  return candidates.find((candidate): candidate is FullscreenElement => (
+    candidate instanceof HTMLElement &&
+    candidate.isConnected &&
+    candidate !== document.body
+  )) || document.documentElement as FullscreenElement;
+}
+
 function requestBrowserFullscreen() {
-  const target = document.documentElement as FullscreenElement;
+  const target = getBrowserFullscreenTarget();
 
   if (target.requestFullscreen) return target.requestFullscreen();
   if (target.webkitRequestFullscreen) return target.webkitRequestFullscreen();
@@ -39,7 +57,7 @@ function requestBrowserFullscreen() {
 }
 
 function canRequestBrowserFullscreen() {
-  const target = document.documentElement as FullscreenElement;
+  const target = getBrowserFullscreenTarget();
   return Boolean(
     target.requestFullscreen ||
     target.webkitRequestFullscreen ||
@@ -156,6 +174,7 @@ const MobileFullscreenButton: React.FC<MobileFullscreenButtonProps> = ({ adapter
   const buttonRef = useRef<HTMLButtonElement | null>(null);
   const progressRef = useRef<HTMLInputElement | null>(null);
   const fullscreenRequestPendingRef = useRef(false);
+  const browserFullscreenActiveRef = useRef(false);
   const browserFullscreenFallbackRef = useRef(false);
   const dragRef = useRef({
     pointerId: -1,
@@ -168,6 +187,7 @@ const MobileFullscreenButton: React.FC<MobileFullscreenButtonProps> = ({ adapter
 
   const applyCustomFullscreenState = (enabled: boolean) => {
     syncMobileViewportVars();
+    browserFullscreenActiveRef.current = false;
     document.documentElement.classList.toggle('linkual-custom-fullscreen', enabled);
     document.documentElement.classList.toggle('linkual-mobile-fullscreen-fallback', enabled && browserFullscreenFallbackRef.current);
     adapter.setCustomFullscreen?.(enabled);
@@ -175,12 +195,34 @@ const MobileFullscreenButton: React.FC<MobileFullscreenButtonProps> = ({ adapter
     emitCustomLayoutChange();
   };
 
+  const applyBrowserFullscreenOverlayState = (enabled: boolean) => {
+    syncMobileViewportVars();
+    browserFullscreenActiveRef.current = enabled;
+
+    if (enabled) {
+      browserFullscreenFallbackRef.current = false;
+      document.documentElement.classList.remove('linkual-custom-fullscreen');
+      document.documentElement.classList.remove('linkual-mobile-fullscreen-fallback');
+      adapter.setCustomFullscreen?.(false);
+    }
+
+    setFullscreen(enabled);
+    emitCustomLayoutChange();
+  };
+
   useEffect(() => {
     const syncFullscreenState = () => {
       const customFullscreen = document.documentElement.classList.contains('linkual-custom-fullscreen');
+      const browserFullscreen = Boolean(getBrowserFullscreenElement());
+
+      if (browserFullscreenActiveRef.current && !browserFullscreen && !customFullscreen) {
+        applyBrowserFullscreenOverlayState(false);
+        return;
+      }
+
       if (
         customFullscreen &&
-        !getBrowserFullscreenElement() &&
+        !browserFullscreen &&
         !browserFullscreenFallbackRef.current &&
         !fullscreenRequestPendingRef.current
       ) {
@@ -191,7 +233,7 @@ const MobileFullscreenButton: React.FC<MobileFullscreenButtonProps> = ({ adapter
         return;
       }
 
-      setFullscreen(customFullscreen);
+      setFullscreen(customFullscreen || (browserFullscreenActiveRef.current && browserFullscreen));
     };
 
     window.addEventListener('linkual_custom_fullscreen_changed', syncFullscreenState);
@@ -216,8 +258,9 @@ const MobileFullscreenButton: React.FC<MobileFullscreenButtonProps> = ({ adapter
   }, [adapter, fullscreen]);
 
   useEffect(() => () => {
-    const hadCustomFullscreen = document.documentElement.classList.contains('linkual-custom-fullscreen');
+    const hadCustomFullscreen = document.documentElement.classList.contains('linkual-custom-fullscreen') || browserFullscreenActiveRef.current;
     fullscreenRequestPendingRef.current = false;
+    browserFullscreenActiveRef.current = false;
 
     if (!hadCustomFullscreen) return;
 
@@ -337,6 +380,7 @@ const MobileFullscreenButton: React.FC<MobileFullscreenButtonProps> = ({ adapter
   };
 
   const exitCustomFullscreen = () => {
+    browserFullscreenActiveRef.current = false;
     browserFullscreenFallbackRef.current = false;
     applyCustomFullscreenState(false);
     document.documentElement.classList.remove('linkual-mobile-fullscreen-fallback');
@@ -363,13 +407,15 @@ const MobileFullscreenButton: React.FC<MobileFullscreenButtonProps> = ({ adapter
         browserFullscreenFallbackRef.current = true;
         applyCustomFullscreenState(true);
       };
+      const enterBrowserOverlay = () => {
+        applyBrowserFullscreenOverlayState(true);
+      };
       const browserFullscreenAction = canRequestBrowserFullscreen() ? requestBrowserFullscreen() : undefined;
       const finishPending = () => {
         window.setTimeout(() => {
-          if (!browserFullscreenFallbackRef.current) {
-            browserFullscreenFallbackRef.current = !getBrowserFullscreenElement();
-          }
-          applyCustomFullscreenState(true);
+          if (getBrowserFullscreenElement()) enterBrowserOverlay();
+          else if (!browserFullscreenFallbackRef.current) enterFallback();
+
           fullscreenRequestPendingRef.current = false;
           document.documentElement.classList.toggle('linkual-mobile-fullscreen-fallback', browserFullscreenFallbackRef.current);
           emitCustomLayoutChange();

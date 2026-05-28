@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Linkual Log
 // @namespace    npm/vite-plugin-monkey
-// @version      0.0.20
+// @version      0.0.21
 // @author       Sergio Gao
 // @icon         https://vitejs.dev/logo.svg
 // @downloadURL  https://raw.githubusercontent.com/gsjz/linkualog/main/browser-plugin/user/linkualog.user.js
@@ -13735,15 +13735,28 @@ JSON 格式：
     const doc = document;
     return document.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement || doc.msFullscreenElement || null;
   }
+  function getBrowserFullscreenTarget() {
+    var _a;
+    const candidates = [
+      document.querySelector(".html5-video-player"),
+      document.getElementById("movie_player"),
+      document.querySelector("ytd-player"),
+      document.querySelector(".bpx-player-container"),
+      document.querySelector(".bilibili-player-video-wrap"),
+      (_a = document.querySelector("video")) == null ? void 0 : _a.parentElement,
+      document.documentElement
+    ];
+    return candidates.find((candidate) => candidate instanceof HTMLElement && candidate.isConnected && candidate !== document.body) || document.documentElement;
+  }
   function requestBrowserFullscreen() {
-    const target = document.documentElement;
+    const target = getBrowserFullscreenTarget();
     if (target.requestFullscreen) return target.requestFullscreen();
     if (target.webkitRequestFullscreen) return target.webkitRequestFullscreen();
     if (target.mozRequestFullScreen) return target.mozRequestFullScreen();
     if (target.msRequestFullscreen) return target.msRequestFullscreen();
   }
   function canRequestBrowserFullscreen() {
-    const target = document.documentElement;
+    const target = getBrowserFullscreenTarget();
     return Boolean(
       target.requestFullscreen || target.webkitRequestFullscreen || target.mozRequestFullScreen || target.msRequestFullscreen
     );
@@ -13829,6 +13842,7 @@ JSON 格式：
     const buttonRef = reactExports.useRef(null);
     const progressRef = reactExports.useRef(null);
     const fullscreenRequestPendingRef = reactExports.useRef(false);
+    const browserFullscreenActiveRef = reactExports.useRef(false);
     const browserFullscreenFallbackRef = reactExports.useRef(false);
     const dragRef = reactExports.useRef({
       pointerId: -1,
@@ -13841,9 +13855,23 @@ JSON 格式：
     const applyCustomFullscreenState = (enabled) => {
       var _a;
       syncMobileViewportVars();
+      browserFullscreenActiveRef.current = false;
       document.documentElement.classList.toggle("linkual-custom-fullscreen", enabled);
       document.documentElement.classList.toggle("linkual-mobile-fullscreen-fallback", enabled && browserFullscreenFallbackRef.current);
       (_a = adapter.setCustomFullscreen) == null ? void 0 : _a.call(adapter, enabled);
+      setFullscreen(enabled);
+      emitCustomLayoutChange();
+    };
+    const applyBrowserFullscreenOverlayState = (enabled) => {
+      var _a;
+      syncMobileViewportVars();
+      browserFullscreenActiveRef.current = enabled;
+      if (enabled) {
+        browserFullscreenFallbackRef.current = false;
+        document.documentElement.classList.remove("linkual-custom-fullscreen");
+        document.documentElement.classList.remove("linkual-mobile-fullscreen-fallback");
+        (_a = adapter.setCustomFullscreen) == null ? void 0 : _a.call(adapter, false);
+      }
       setFullscreen(enabled);
       emitCustomLayoutChange();
     };
@@ -13851,14 +13879,19 @@ JSON 格式：
       const syncFullscreenState = () => {
         var _a;
         const customFullscreen = document.documentElement.classList.contains("linkual-custom-fullscreen");
-        if (customFullscreen && !getBrowserFullscreenElement$1() && !browserFullscreenFallbackRef.current && !fullscreenRequestPendingRef.current) {
+        const browserFullscreen = Boolean(getBrowserFullscreenElement$1());
+        if (browserFullscreenActiveRef.current && !browserFullscreen && !customFullscreen) {
+          applyBrowserFullscreenOverlayState(false);
+          return;
+        }
+        if (customFullscreen && !browserFullscreen && !browserFullscreenFallbackRef.current && !fullscreenRequestPendingRef.current) {
           document.documentElement.classList.remove("linkual-custom-fullscreen");
           (_a = adapter.setCustomFullscreen) == null ? void 0 : _a.call(adapter, false);
           emitCustomLayoutChange();
           setFullscreen(false);
           return;
         }
-        setFullscreen(customFullscreen);
+        setFullscreen(customFullscreen || browserFullscreenActiveRef.current && browserFullscreen);
       };
       window.addEventListener("linkual_custom_fullscreen_changed", syncFullscreenState);
       document.addEventListener("fullscreenchange", syncFullscreenState);
@@ -13881,8 +13914,9 @@ JSON 格式：
     }, [adapter, fullscreen]);
     reactExports.useEffect(() => () => {
       var _a;
-      const hadCustomFullscreen = document.documentElement.classList.contains("linkual-custom-fullscreen");
+      const hadCustomFullscreen = document.documentElement.classList.contains("linkual-custom-fullscreen") || browserFullscreenActiveRef.current;
       fullscreenRequestPendingRef.current = false;
+      browserFullscreenActiveRef.current = false;
       if (!hadCustomFullscreen) return;
       document.documentElement.classList.remove("linkual-custom-fullscreen");
       document.documentElement.classList.remove("linkual-mobile-fullscreen-fallback");
@@ -13982,6 +14016,7 @@ JSON 格式：
       setDragging(false);
     };
     const exitCustomFullscreen = () => {
+      browserFullscreenActiveRef.current = false;
       browserFullscreenFallbackRef.current = false;
       applyCustomFullscreenState(false);
       document.documentElement.classList.remove("linkual-mobile-fullscreen-fallback");
@@ -14005,13 +14040,14 @@ JSON 格式：
           browserFullscreenFallbackRef.current = true;
           applyCustomFullscreenState(true);
         };
+        const enterBrowserOverlay = () => {
+          applyBrowserFullscreenOverlayState(true);
+        };
         const browserFullscreenAction = canRequestBrowserFullscreen() ? requestBrowserFullscreen() : void 0;
         const finishPending = () => {
           window.setTimeout(() => {
-            if (!browserFullscreenFallbackRef.current) {
-              browserFullscreenFallbackRef.current = !getBrowserFullscreenElement$1();
-            }
-            applyCustomFullscreenState(true);
+            if (getBrowserFullscreenElement$1()) enterBrowserOverlay();
+            else if (!browserFullscreenFallbackRef.current) enterFallback();
             fullscreenRequestPendingRef.current = false;
             document.documentElement.classList.toggle("linkual-mobile-fullscreen-fallback", browserFullscreenFallbackRef.current);
             emitCustomLayoutChange();
