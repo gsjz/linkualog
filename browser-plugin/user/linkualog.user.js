@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Linkual Log
 // @namespace    npm/vite-plugin-monkey
-// @version      0.0.19
+// @version      0.0.20
 // @author       Sergio Gao
 // @icon         https://vitejs.dev/logo.svg
 // @downloadURL  https://raw.githubusercontent.com/gsjz/linkualog/main/browser-plugin/user/linkualog.user.js
@@ -13731,9 +13731,6 @@ JSON 格式：
   const DRAG_THRESHOLD = 5;
   const FULLSCREEN_SETTLE_DELAY = 180;
   const SEEK_STEP_SECONDS = 5;
-  const USER_AGENT = navigator.userAgent.toLowerCase();
-  const IS_ANDROID = USER_AGENT.includes("android");
-  const IS_MOBILE_EDGE = IS_ANDROID && USER_AGENT.includes("edg");
   function getBrowserFullscreenElement$1() {
     const doc = document;
     return document.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement || doc.msFullscreenElement || null;
@@ -13744,6 +13741,12 @@ JSON 格式：
     if (target.webkitRequestFullscreen) return target.webkitRequestFullscreen();
     if (target.mozRequestFullScreen) return target.mozRequestFullScreen();
     if (target.msRequestFullscreen) return target.msRequestFullscreen();
+  }
+  function canRequestBrowserFullscreen() {
+    const target = document.documentElement;
+    return Boolean(
+      target.requestFullscreen || target.webkitRequestFullscreen || target.mozRequestFullScreen || target.msRequestFullscreen
+    );
   }
   function exitBrowserFullscreen$1() {
     const doc = document;
@@ -13997,22 +14000,19 @@ JSON 格式：
       const nextFullscreen = !fullscreen;
       fullscreenRequestPendingRef.current = nextFullscreen;
       browserFullscreenFallbackRef.current = false;
-      applyCustomFullscreenState(nextFullscreen);
       if (nextFullscreen) {
-        if (IS_MOBILE_EDGE) {
+        const enterFallback = () => {
           browserFullscreenFallbackRef.current = true;
-          document.documentElement.classList.add("linkual-mobile-fullscreen-fallback");
-          window.setTimeout(() => {
-            fullscreenRequestPendingRef.current = false;
-            emitCustomLayoutChange();
-          }, FULLSCREEN_SETTLE_DELAY);
-          return;
-        }
-        const browserFullscreenAction = requestBrowserFullscreen();
+          applyCustomFullscreenState(true);
+        };
+        const browserFullscreenAction = canRequestBrowserFullscreen() ? requestBrowserFullscreen() : void 0;
         const finishPending = () => {
           window.setTimeout(() => {
+            if (!browserFullscreenFallbackRef.current) {
+              browserFullscreenFallbackRef.current = !getBrowserFullscreenElement$1();
+            }
+            applyCustomFullscreenState(true);
             fullscreenRequestPendingRef.current = false;
-            browserFullscreenFallbackRef.current = !getBrowserFullscreenElement$1();
             document.documentElement.classList.toggle("linkual-mobile-fullscreen-fallback", browserFullscreenFallbackRef.current);
             emitCustomLayoutChange();
           }, FULLSCREEN_SETTLE_DELAY);
@@ -14020,11 +14020,14 @@ JSON 格式：
         if (isPromiseLike$1(browserFullscreenAction)) {
           browserFullscreenAction.then(finishPending).catch((error) => {
             console.warn("[Linkual] 浏览器全屏切换失败", error);
-            browserFullscreenFallbackRef.current = true;
-            document.documentElement.classList.add("linkual-mobile-fullscreen-fallback");
-            finishPending();
+            enterFallback();
+            window.setTimeout(() => {
+              fullscreenRequestPendingRef.current = false;
+              emitCustomLayoutChange();
+            }, FULLSCREEN_SETTLE_DELAY);
           });
         } else {
+          if (!canRequestBrowserFullscreen()) enterFallback();
           finishPending();
         }
         return;
