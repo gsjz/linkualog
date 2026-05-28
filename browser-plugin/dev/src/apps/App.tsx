@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useCallback, useState, useEffect, useRef } from 'react';
 import { useVideoSync } from '../hooks/useVideoSync';
 import SubtitleItem from '../components/SubtitleItem';
 import Settings from '../components/Settings';
@@ -27,6 +27,9 @@ const INITIAL_RENDER_LIMIT = 80;
 const RENDER_BATCH_SIZE = 80;
 const ACTIVE_RENDER_BUFFER = 20;
 const LINKUAL_NAVIGATION_EVENT = 'linkual_navigation';
+const MIN_SIDEBAR_WIDTH = 250;
+const MIN_SIDEBAR_HEIGHT = 150;
+const MIN_REMAINING_VIEWPORT = 80;
 
 function getBrowserFullscreenElement() {
   const doc = document as BrowserFullscreenDocument;
@@ -50,6 +53,49 @@ function isPromiseLike(value: unknown): value is Promise<void> {
   return Boolean(value && typeof (value as Promise<void>).then === 'function');
 }
 
+function getVisualViewportSize() {
+  const reservedViewportHeight = Number.parseFloat(
+    getComputedStyle(document.documentElement).getPropertyValue('--linkual-visual-viewport-height')
+  );
+  const width = window.visualViewport?.width || window.innerWidth || document.documentElement.clientWidth;
+  const height = Number.isFinite(reservedViewportHeight) && reservedViewportHeight > 0
+    ? reservedViewportHeight
+    : window.visualViewport?.height || window.innerHeight || document.documentElement.clientHeight;
+
+  return {
+    width: Number.isFinite(width) && width > 0 ? width : window.innerWidth,
+    height: Number.isFinite(height) && height > 0 ? height : window.innerHeight,
+  };
+}
+
+function getReservedBottomHeight() {
+  const raw = getComputedStyle(document.documentElement).getPropertyValue('--linkual-universal-widget-height');
+  const parsed = Number.parseFloat(raw);
+  return Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
+}
+
+function parseConfigNumber(value: unknown, fallback: number) {
+  const parsed = Number.parseInt(String(value ?? ''), 10);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function clampSidebarWidth(width: number) {
+  const viewport = getVisualViewportSize();
+  const requestedWidth = Number.isFinite(width) ? width : MIN_SIDEBAR_WIDTH;
+  const maxWidth = Math.max(0, viewport.width - MIN_REMAINING_VIEWPORT);
+  const minWidth = Math.min(MIN_SIDEBAR_WIDTH, maxWidth || viewport.width);
+  return Math.max(0, Math.min(Math.max(requestedWidth, minWidth), maxWidth || viewport.width));
+}
+
+function clampSidebarHeight(height: number) {
+  const viewport = getVisualViewportSize();
+  const requestedHeight = Number.isFinite(height) ? height : MIN_SIDEBAR_HEIGHT;
+  const availableHeight = Math.max(0, viewport.height - getReservedBottomHeight());
+  const maxHeight = Math.max(0, availableHeight - MIN_REMAINING_VIEWPORT);
+  const minHeight = Math.min(MIN_SIDEBAR_HEIGHT, maxHeight || availableHeight);
+  return Math.max(0, Math.min(Math.max(requestedHeight, minHeight), maxHeight || availableHeight));
+}
+
 const App: React.FC<AppProps> = ({ adapter }) => {
   const [subs, setSubs] = useState<Subtitle[]>([]);
   
@@ -61,8 +107,8 @@ const App: React.FC<AppProps> = ({ adapter }) => {
   };
 
   const [layout, setLayout] = useState(getAdpCfg('layout_position') as string);
-  const [sidebarWidth, setSidebarWidth] = useState(parseInt(getAdpCfg('sidebar_width') as string, 10));
-  const [sidebarHeight, setSidebarHeight] = useState(parseInt(getAdpCfg('sidebar_height') as string, 10));
+  const [sidebarWidth, setSidebarWidth] = useState(parseConfigNumber(getAdpCfg('sidebar_width'), parseConfigNumber(DEFAULTS.sidebar_width, 500)));
+  const [sidebarHeight, setSidebarHeight] = useState(parseConfigNumber(getAdpCfg('sidebar_height'), parseConfigNumber(DEFAULTS.sidebar_height, 350)));
 
   const [themeColor, setThemeColor] = useState(ConfigService.get('theme_color') as string);
   const [doneColor, setDoneColor] = useState(ConfigService.get('done_color') as string);
@@ -72,7 +118,44 @@ const App: React.FC<AppProps> = ({ adapter }) => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [renderLimit, setRenderLimit] = useState(INITIAL_RENDER_LIMIT);
   const listRef = useRef<HTMLDivElement | null>(null);
+  const lastHostLayoutRef = useRef<{ adapter: IVideoAdapter; width: number; height: number; layout: string; inVideo: boolean } | null>(null);
   const activeIndex = useVideoSync(subs, adapter);
+
+  const resizeAdapterHost = useCallback((force = false) => {
+    if (!adapter.resizeHost) return;
+
+    const nextLayout = inVideo
+      ? {
+          adapter,
+          width: clampSidebarWidth(sidebarWidth),
+          height: clampSidebarHeight(sidebarHeight),
+          layout,
+          inVideo,
+        }
+      : {
+          adapter,
+          width: 0,
+          height: 0,
+          layout,
+          inVideo,
+        };
+    const prevLayout = lastHostLayoutRef.current;
+
+    if (
+      !force &&
+      prevLayout &&
+      prevLayout.adapter === nextLayout.adapter &&
+      prevLayout.width === nextLayout.width &&
+      prevLayout.height === nextLayout.height &&
+      prevLayout.layout === nextLayout.layout &&
+      prevLayout.inVideo === nextLayout.inVideo
+    ) {
+      return;
+    }
+
+    lastHostLayoutRef.current = nextLayout;
+    adapter.resizeHost(nextLayout.width, nextLayout.height, nextLayout.layout);
+  }, [adapter, inVideo, layout, sidebarHeight, sidebarWidth]);
 
   useEffect(() => {
     const checkVideo = () => {
@@ -106,8 +189,8 @@ const App: React.FC<AppProps> = ({ adapter }) => {
       setMobileFullscreenMode(ConfigService.get('mobile_fullscreen_mode') as string);
       
       setLayout(getAdpCfg('layout_position') as string);
-      setSidebarWidth(parseInt(getAdpCfg('sidebar_width') as string, 10));
-      setSidebarHeight(parseInt(getAdpCfg('sidebar_height') as string, 10));
+      setSidebarWidth(parseConfigNumber(getAdpCfg('sidebar_width'), parseConfigNumber(DEFAULTS.sidebar_width, 500)));
+      setSidebarHeight(parseConfigNumber(getAdpCfg('sidebar_height'), parseConfigNumber(DEFAULTS.sidebar_height, 350)));
     };
     window.addEventListener('linkual_settings_updated', handleSettingsUpdate);
     return () => window.removeEventListener('linkual_settings_updated', handleSettingsUpdate);
@@ -145,21 +228,11 @@ const App: React.FC<AppProps> = ({ adapter }) => {
   }, [adapter, inVideo]);
 
   useEffect(() => {
-    if (adapter.resizeHost) {
-      if (inVideo) {
-        adapter.resizeHost(sidebarWidth, sidebarHeight, layout);
-      } else {
-        adapter.resizeHost(0, 0, layout);
-      }
-    }
-  }, [sidebarWidth, sidebarHeight, layout, adapter, inVideo]);
+    resizeAdapterHost();
+  }, [resizeAdapterHost]);
 
   useEffect(() => {
-    const refreshCustomLayout = () => {
-      if (adapter.resizeHost && inVideo) {
-        adapter.resizeHost(sidebarWidth, sidebarHeight, layout);
-      }
-    };
+    const refreshCustomLayout = () => resizeAdapterHost(true);
 
     window.addEventListener('linkual_custom_layout_refresh', refreshCustomLayout);
     window.addEventListener(LINKUAL_NAVIGATION_EVENT, refreshCustomLayout);
@@ -167,7 +240,21 @@ const App: React.FC<AppProps> = ({ adapter }) => {
       window.removeEventListener('linkual_custom_layout_refresh', refreshCustomLayout);
       window.removeEventListener(LINKUAL_NAVIGATION_EVENT, refreshCustomLayout);
     };
-  }, [adapter, inVideo, layout, sidebarHeight, sidebarWidth]);
+  }, [resizeAdapterHost]);
+
+  useEffect(() => {
+    const refreshViewportLayout = () => resizeAdapterHost();
+
+    window.addEventListener('orientationchange', refreshViewportLayout);
+    window.addEventListener('resize', refreshViewportLayout);
+    window.visualViewport?.addEventListener('resize', refreshViewportLayout);
+
+    return () => {
+      window.removeEventListener('orientationchange', refreshViewportLayout);
+      window.removeEventListener('resize', refreshViewportLayout);
+      window.visualViewport?.removeEventListener('resize', refreshViewportLayout);
+    };
+  }, [resizeAdapterHost]);
 
   const startResize = (e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -176,9 +263,11 @@ const App: React.FC<AppProps> = ({ adapter }) => {
       const startHeight = sidebarHeight;
       let currentHeight = startHeight;
       const onMouseMove = (ev: globalThis.MouseEvent) => {
+        const viewport = getVisualViewportSize();
         let newHeight = startHeight - (ev.clientY - startY);
-        if (newHeight < 150) newHeight = 150;
-        if (newHeight > window.innerHeight * 0.8) newHeight = window.innerHeight * 0.8;
+        if (newHeight < MIN_SIDEBAR_HEIGHT) newHeight = MIN_SIDEBAR_HEIGHT;
+        if (newHeight > viewport.height * 0.8) newHeight = viewport.height * 0.8;
+        newHeight = clampSidebarHeight(newHeight);
         currentHeight = newHeight;
         setSidebarHeight(newHeight);
       };
@@ -195,9 +284,11 @@ const App: React.FC<AppProps> = ({ adapter }) => {
       const startWidth = sidebarWidth;
       let currentWidth = startWidth;
       const onMouseMove = (ev: globalThis.MouseEvent) => {
+        const viewport = getVisualViewportSize();
         let newWidth = startWidth - (ev.clientX - startX);
-        if (newWidth < 250) newWidth = 250;
-        if (newWidth > window.innerWidth * 0.8) newWidth = window.innerWidth * 0.8;
+        if (newWidth < MIN_SIDEBAR_WIDTH) newWidth = MIN_SIDEBAR_WIDTH;
+        if (newWidth > viewport.width * 0.8) newWidth = viewport.width * 0.8;
+        newWidth = clampSidebarWidth(newWidth);
         currentWidth = newWidth;
         setSidebarWidth(newWidth);
       };
@@ -214,10 +305,10 @@ const App: React.FC<AppProps> = ({ adapter }) => {
 
   const wrapStyle: React.CSSProperties = {
     display: inVideo ? 'flex' : 'none',
-    width: layout === 'right' ? sidebarWidth : '100%',
+    width: layout === 'right' ? clampSidebarWidth(sidebarWidth) : '100%',
     height: layout === 'bottom'
-      ? sidebarHeight
-      : 'calc(100vh - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom, 0px))',
+      ? clampSidebarHeight(sidebarHeight)
+      : 'calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom, 0px))',
     pointerEvents: inVideo ? 'auto' : 'none',
     '--linkual-theme': themeColor,
     '--linkual-done': doneColor,

@@ -256,8 +256,8 @@ export class YouTubeShortsAdapter implements IVideoAdapter {
         inset: 0 auto auto 0 !important;
         width: calc(100vw - var(--linkual-sidebar-width, 0px)) !important;
         max-width: calc(100vw - var(--linkual-sidebar-width, 0px)) !important;
-        height: calc(100vh - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px)) !important;
-        max-height: calc(100vh - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px)) !important;
+        height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px)) !important;
+        max-height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px)) !important;
         min-height: 0 !important;
         margin: 0 !important;
         padding: 0 !important;
@@ -331,7 +331,7 @@ export class YouTubeShortsAdapter implements IVideoAdapter {
       styleEl.textContent = `
         html, body { overflow-x: hidden !important; }
         ytd-app, #masthead-container { width: 100vw !important; max-width: 100vw !important; left: 0 !important; right: auto !important; margin-bottom: calc(var(--linkual-sidebar-height) + var(--linkual-universal-widget-height, 0px)) !important; }
-        ytd-shorts { height: calc(100vh - var(--linkual-sidebar-height) - var(--linkual-universal-widget-height, 0px)) !important; width: 100% !important; position: relative !important; }
+        ytd-shorts { height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-sidebar-height) - var(--linkual-universal-widget-height, 0px)) !important; width: 100% !important; position: relative !important; }
         #shorts-container, #shorts-inner-container, ytd-reel-video-renderer { width: 100% !important; max-width: 100% !important; height: 100% !important; }
         ${customFullscreenCss}
       `;

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Linkual Log
 // @namespace    npm/vite-plugin-monkey
-// @version      0.0.16
+// @version      0.0.17
 // @author       Sergio Gao
 // @icon         https://vitejs.dev/logo.svg
 // @downloadURL  https://raw.githubusercontent.com/gsjz/linkualog/main/browser-plugin/user/linkualog.user.js
@@ -16,7 +16,7 @@
 // @grant        unsafeWindow
 // ==/UserScript==
 
-(i=>{if(typeof GM_addStyle=="function"){GM_addStyle(i);return}const l=document.createElement("style");l.textContent=i,document.head.append(l)})(" #linkual-root .modal{position:fixed;top:0;left:0;width:100%;height:100%;background:#00000080;display:flex;justify-content:center;align-items:center;z-index:2147483647;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);pointer-events:auto}#linkual-root .modal-box{background:#fff;border-radius:12px;width:380px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 10px 30px #0003;animation:linkualSlideIn .2s ease-out}@keyframes linkualSlideIn{0%{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}#linkual-root .modal-header{padding:16px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #eee}#linkual-root .modal-header h3{margin:0;font-size:16px;color:#333}#linkual-root .close-btn{font-size:24px;line-height:1;color:#999;cursor:pointer;transition:color .2s}#linkual-root .close-btn:hover{color:#333}#linkual-root .tabs{display:flex;background:#fafafa;border-bottom:1px solid #eee}#linkual-root .tab{flex:1;text-align:center;padding:12px 0;font-size:14px;color:#666;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;-webkit-user-select:none;user-select:none}#linkual-root .tab:hover{color:#333;background:#00000005}#linkual-root .tab.active{color:var(--linkual-theme, #6a1b9a);font-weight:700;border-bottom:2px solid var(--linkual-theme, #6a1b9a);background:#fff}#linkual-root .tab-content{padding:20px;overflow-y:auto;flex:1}#linkual-root .fade-in{animation:linkualFadeIn .3s ease}@keyframes linkualFadeIn{0%{opacity:0}to{opacity:1}}#linkual-root .setting-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}#linkual-root .setting-row label{font-size:13px;font-weight:700;flex:1;color:#444}#linkual-root .setting-row input[type=color]{width:50px;height:32px;padding:0;cursor:pointer;border:1px solid #ddd;border-radius:4px}#linkual-root .setting-col{margin-bottom:16px}#linkual-root .setting-col label{font-size:13px;font-weight:700;display:block;margin-bottom:6px;color:#444}#linkual-root .setting-col input,#linkual-root .setting-col textarea,#linkual-root .setting-col select{width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box;font-family:inherit;font-size:13px;transition:border-color .2s}#linkual-root .setting-col input:focus,#linkual-root .setting-col textarea:focus,#linkual-root .setting-col select:focus{outline:none;border-color:var(--linkual-theme, #6a1b9a)}#linkual-root .setting-col textarea{resize:vertical;min-height:80px;line-height:1.5}#linkual-root .url-prefix-row{display:flex;align-items:stretch}#linkual-root .url-prefix-row input{border-radius:0;min-width:0}#linkual-root .url-fixed-prefix,#linkual-root .url-fixed-suffix{display:inline-flex;align-items:center;padding:0 10px;border:1px solid #ddd;background:#f7f7f7;color:#666;font-size:12px;white-space:nowrap}#linkual-root .url-fixed-prefix{border-right:0;border-radius:6px 0 0 6px}#linkual-root .url-fixed-suffix{border-left:0;border-radius:0 6px 6px 0}#linkual-root .url-prefix-row:focus-within .url-fixed-prefix{border-color:var(--linkual-theme, #6a1b9a);border-right:0}#linkual-root .url-prefix-row:focus-within .url-fixed-suffix{border-color:var(--linkual-theme, #6a1b9a);border-left:0}#linkual-root .setting-help{margin-top:6px;color:#888;font-size:12px;line-height:1.4}#linkual-root .modal-footer{padding:16px 20px;display:flex;gap:12px;border-top:1px solid #eee;background:#fafafa}#linkual-root .btn{flex:1;padding:10px;border:none;border-radius:6px;cursor:pointer;font-weight:700;font-size:14px;transition:opacity .2s}#linkual-root .btn:hover{opacity:.9}#linkual-root .reset-btn{background:#e0e0e0;color:#555}#linkual-root .save-btn{box-shadow:0 2px 6px #0000001a}#linkual-root{--linkual-theme: #6a1b9a;--linkual-done: #e8f5e9;--linkual-error: #ffebee}#linkual-root .linkual-wrap{position:fixed;z-index:2147483647;background:#fff;display:flex;flex-direction:column;font-family:sans-serif;color:#333;pointer-events:auto}#linkual-root .linkual-wrap.layout-right{top:0;right:0;height:100vh;box-shadow:-5px 0 15px #0000001a}#linkual-root .linkual-wrap.layout-bottom{bottom:calc(var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom,0px));left:0;width:100vw!important;box-shadow:0 -5px 15px #0000001a}#linkual-root .resizer{position:absolute;background:transparent;z-index:999;transition:background .2s}#linkual-root .linkual-wrap.layout-right .resizer{left:0;top:0;bottom:0;width:5px;cursor:ew-resize}#linkual-root .linkual-wrap.layout-bottom .resizer{top:0;left:0;right:0;height:5px;cursor:ns-resize}#linkual-root .resizer:hover,#linkual-root .resizer:active{background:var(--linkual-theme)}#linkual-root .header{background:var(--linkual-theme);color:#fff;padding:16px;font-weight:700;display:flex;justify-content:space-between;align-items:center}#linkual-root .settings-icon{cursor:pointer;-webkit-user-select:none;user-select:none}#linkual-root .linkual-mobile-fullscreen{position:fixed;right:20px;bottom:calc(20px + var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom,0px));z-index:2147483647;min-width:78px;min-height:40px;padding:10px 15px;background:#000;color:#fff;border:0;border-radius:5px;box-shadow:0 2px 8px #00000040;cursor:grab;font-size:14px;font-weight:700;line-height:1.2;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;-webkit-user-select:none;user-select:none;touch-action:none;-webkit-tap-highlight-color:transparent;pointer-events:auto}#linkual-root .linkual-mobile-fullscreen.is-dragging{cursor:grabbing}#linkual-root .linkual-player-controls{position:fixed;left:12px;bottom:calc(var(--linkual-sidebar-height, 0px) + var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom,0px) + 14px);z-index:2147483647;width:calc(100vw - var(--linkual-sidebar-width, 0px) - 24px);max-width:calc(100vw - var(--linkual-sidebar-width, 0px) - 24px);box-sizing:border-box;display:flex;flex-direction:column;gap:9px;padding:10px 12px;border-radius:8px;background:#000000b8;color:#fff;box-shadow:0 6px 20px #0000003d;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;pointer-events:auto;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}#linkual-root .linkual-player-progress-row{display:grid;grid-template-columns:52px minmax(0,1fr) 52px;align-items:center;gap:10px}#linkual-root .linkual-player-time{color:#ffffffe0;font-size:12px;font-variant-numeric:tabular-nums;line-height:1;text-align:center;white-space:nowrap}#linkual-root .linkual-player-progress{width:100%;height:18px;margin:0;padding:0;-moz-appearance:none;appearance:none;-webkit-appearance:none;background:transparent;cursor:pointer}#linkual-root .linkual-player-progress::-webkit-slider-runnable-track{height:5px;border-radius:999px;background:linear-gradient(to right,var(--linkual-theme, #6a1b9a) 0%,var(--linkual-theme, #6a1b9a) var(--linkual-progress, 0%),rgba(255,255,255,.32) var(--linkual-progress, 0%),rgba(255,255,255,.32) 100%)}#linkual-root .linkual-player-progress::-moz-range-track{height:5px;border-radius:999px;background:#ffffff52}#linkual-root .linkual-player-progress::-moz-range-progress{height:5px;border-radius:999px;background:var(--linkual-theme, #6a1b9a)}#linkual-root .linkual-player-progress::-webkit-slider-thumb{-moz-appearance:none;appearance:none;-webkit-appearance:none;width:15px;height:15px;margin-top:-5px;border-radius:50%;border:2px solid #fff;background:var(--linkual-theme, #6a1b9a);box-shadow:0 2px 8px #00000052}#linkual-root .linkual-player-progress::-moz-range-thumb{width:15px;height:15px;border-radius:50%;border:2px solid #fff;background:var(--linkual-theme, #6a1b9a);box-shadow:0 2px 8px #00000052}#linkual-root .linkual-player-button-row{display:flex;align-items:center;justify-content:center;gap:8px}#linkual-root .linkual-player-btn{height:31px;min-width:44px;padding:0 12px;border:1px solid rgba(255,255,255,.16);border-radius:6px;background:#ffffff1f;color:#fff;cursor:pointer;font:700 12px/1 system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif}#linkual-root .linkual-player-btn.primary{min-width:58px;background:var(--linkual-theme, #6a1b9a);border-color:transparent}#linkual-root .linkual-player-btn:hover{background:#fff3}#linkual-root .linkual-player-btn.primary:hover{filter:brightness(1.08)}#linkual-root .list{flex:1;overflow-y:auto;padding:12px;scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch}#linkual-root .list::-webkit-scrollbar{display:none}#linkual-root .empty-tip{padding:50px 20px;text-align:center;color:#999;font-style:italic}#linkual-root .load-more-tip{padding:16px 12px 22px;text-align:center;color:#999;font-size:12px}#linkual-root .item{padding:12px;margin-bottom:10px;border-radius:8px;border:1px solid #f0f0f0;transition:.2s}#linkual-root .item.active{border-left:5px solid var(--linkual-theme);background:#6a1b9a0d}#linkual-root .ctrl-bar{display:flex;gap:8px;margin-bottom:8px;align-items:center;padding:4px;border-radius:4px;background:transparent;transition:background .2s}#linkual-root .ctrl-bar.done{background-color:var(--linkual-done, #e8f5e9)}#linkual-root .ctrl-bar.error{background-color:var(--linkual-error, #ffebee);border:1px solid rgba(255,0,0,.1)}#linkual-root .tag-btn{font-size:11px;padding:3px 8px;border-radius:12px;display:inline-flex;align-items:center;cursor:pointer;transition:.2s;-webkit-user-select:none;user-select:none}#linkual-root .tag-play{background:#eee;color:#666}#linkual-root .tag-play:hover{background:var(--linkual-theme);color:#fff}#linkual-root .tag-pin{background:#e3f2fd;color:#1976d2}#linkual-root .tag-pin:hover{background:#1976d2;color:#fff}#linkual-root .btn-parse{flex:0 0 auto;margin-left:auto;display:inline-flex;align-items:center;justify-content:center;font-size:11px;color:#aaa;background:transparent;border:1px solid transparent;border-radius:4px;cursor:pointer;-webkit-user-select:none;user-select:none;padding:4px 7px;line-height:1.2;transition:.2s}#linkual-root .btn-parse:hover{color:#333;background:#0000000d;border-color:#00000014}#linkual-root .btn-chevron{font-size:12px;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:4px;cursor:pointer;transition:.2s;-webkit-user-select:none;user-select:none;color:#666}#linkual-root .btn-chevron:hover{background:#0000001a}#linkual-root .text-content{font-size:14px;line-height:1.5;padding:2px 0;color:#333;cursor:text;-webkit-user-select:text;user-select:text;overflow-wrap:anywhere;-webkit-touch-callout:default}#linkual-root .linkual-selection-add{position:fixed;z-index:999999;min-height:38px;max-width:min(320px,calc(100vw - 24px));padding:8px 12px;background:var(--linkual-theme, #6a1b9a);color:#fff;border:none;border-radius:6px;box-shadow:0 4px 12px #0003;cursor:pointer;font-size:13px;font-weight:700;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;-webkit-tap-highlight-color:transparent;touch-action:manipulation;pointer-events:auto}#linkual-root .linkual-selection-add-floating{transform:translate(-50%)}#linkual-root .linkual-selection-add-dock{left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));width:calc(100vw - 24px);max-width:none;min-height:46px;justify-content:center;font-size:14px}#linkual-root .linkual-selection-add-text{overflow:hidden;text-overflow:ellipsis}#linkual-root .ai-box{border-top:1px dashed #ccc;margin-top:8px;padding-top:8px;font-size:13px;white-space:pre-wrap;line-height:1.6;cursor:text}#linkual-root .lan-sync-module{border-top:1px solid #eee;padding:12px 16px;background:#fafafa;display:flex;flex-direction:column;gap:10px;margin-top:auto}#linkual-root .sync-input{width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;font-size:12px;box-sizing:border-box;outline:none;transition:border-color .2s}#linkual-root .sync-input:focus{border-color:var(--linkual-theme)}#linkual-root .sync-btn{width:100%;padding:10px;border:none;border-radius:6px;font-size:13px;font-weight:700;color:#fff;background-color:var(--linkual-theme);cursor:pointer;transition:all .2s}#linkual-root .sync-btn:hover{opacity:.9}#linkual-root .sync-btn:disabled{opacity:.6;cursor:not-allowed}#linkual-root .sync-btn.success{background-color:#4caf50}#linkual-root .sync-btn.error{background-color:#f44336}#linkual-root .linkual-universal-widget{position:fixed;left:0;right:0;bottom:0;z-index:2147483647;min-height:calc(var(--linkual-universal-widget-height, 58px) + env(safe-area-inset-bottom,0px));padding:8px 12px calc(8px + env(safe-area-inset-bottom,0px));box-sizing:border-box;display:flex;align-items:center;gap:10px;background:#fff;color:#222;border-top:1px solid rgba(0,0,0,.12);box-shadow:0 -8px 24px #00000024;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;pointer-events:auto}#linkual-root .linkual-universal-widget~.linkual-mobile-fullscreen{bottom:calc(20px + var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom,0px))}#linkual-root .linkual-universal-top{display:flex;align-items:center;justify-content:space-between;gap:10px;width:min(390px,32vw);min-width:260px;height:34px}#linkual-root .linkual-universal-selection{min-width:0;flex:1;display:flex;align-items:center;gap:8px;color:#444;font-size:13px}#linkual-root .linkual-universal-selection-label{flex:0 0 auto;color:#666;font-weight:700}#linkual-root .linkual-universal-selection-text{min-width:0;max-width:min(180px,14vw);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#111;font-weight:700}#linkual-root .linkual-universal-muted{color:#888}#linkual-root .linkual-universal-actions{flex:0 0 auto;display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0}#linkual-root .linkual-universal-status{max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;color:#666}#linkual-root .linkual-universal-status.status-success{color:#17803d}#linkual-root .linkual-universal-status.status-error{color:#c62828}#linkual-root .linkual-universal-add-btn,#linkual-root .linkual-universal-icon-btn,#linkual-root .linkual-universal-clear,#linkual-root .linkual-universal-send{border:0;border-radius:6px;min-height:30px;padding:0 12px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit}#linkual-root .linkual-universal-icon-btn,#linkual-root .linkual-universal-send{display:inline-flex;align-items:center;justify-content:center;gap:6px}#linkual-root .linkual-universal-add-btn,#linkual-root .linkual-universal-send{background:var(--linkual-theme, #000);color:#fff}#linkual-root .linkual-universal-icon-btn{background:#f1f1f1;color:#333}#linkual-root .linkual-universal-queue-btn{position:relative;background:var(--linkual-theme, #000);color:#fff}#linkual-root .linkual-universal-button-icon{display:none;flex:0 0 auto;width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}#linkual-root .linkual-universal-button-text{min-width:0}#linkual-root .linkual-universal-queue-count{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:#f44336;color:#fff;font-size:10px;line-height:1}#linkual-root .linkual-universal-clear{width:34px;padding:0;background:#f3f3f3;color:#555}#linkual-root .linkual-universal-form{flex:1;display:grid;grid-template-columns:minmax(120px,190px) minmax(220px,1fr) 34px auto auto;align-items:stretch;gap:8px}#linkual-root .linkual-universal-inline-actions{align-self:center;display:flex;align-items:center;gap:6px;height:34px;min-width:0}#linkual-root .linkual-universal-field{min-width:0;display:flex;flex-direction:row;align-items:center;gap:6px}#linkual-root .linkual-universal-mode-tab{flex:0 0 auto;min-width:48px;height:34px;padding:0 8px;border:1px solid #d7d7d7;border-radius:6px;background:#f6f6f6;color:#555;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit}#linkual-root .linkual-universal-mode-tab.active{border-color:var(--linkual-theme, #000);background:var(--linkual-theme, #000);color:#fff}#linkual-root .linkual-universal-field input{min-width:0;width:100%;height:34px;box-sizing:border-box;border:1px solid #d7d7d7;border-radius:6px;padding:7px 9px;color:#222;background:#fff;outline:none;font:13px/1.35 system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;letter-spacing:0}#linkual-root .linkual-universal-field input:focus{border-color:var(--linkual-theme, #000);box-shadow:0 0 0 2px #00000014}#linkual-root .linkual-universal-field.field-context input{overflow-x:auto;overflow-y:hidden;white-space:nowrap;scrollbar-width:none;-ms-overflow-style:none}#linkual-root .linkual-universal-field.field-context input::-webkit-scrollbar{display:none}#linkual-root .linkual-universal-clear,#linkual-root .linkual-universal-send{align-self:center;height:34px}#linkual-root .linkual-universal-send:disabled,#linkual-root .linkual-universal-clear:disabled{opacity:.45;cursor:not-allowed}#linkual-root .linkual-universal-expand-bar{position:fixed;left:0;right:0;bottom:0;z-index:2147483647;width:100vw;height:calc(28px + env(safe-area-inset-bottom,0px));padding:0 12px env(safe-area-inset-bottom,0px);border:0;border-radius:0;background:var(--linkual-theme, #000);color:#fff;box-shadow:0 -4px 14px #0003;cursor:pointer;font-size:12px;font-weight:800;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;-webkit-user-select:none;user-select:none;pointer-events:auto}#linkual-root .linkual-universal-expand-bar:hover{filter:brightness(1.08)}#linkual-root .linkual-universal-floating-add{position:fixed;z-index:2147483647;transform:translate(-50%);min-height:30px;padding:0 12px;border:0;border-radius:6px;background:var(--linkual-theme, #000);color:#fff;box-shadow:0 4px 12px #0003;cursor:pointer;font-size:12px;font-weight:800;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;pointer-events:auto}#linkual-root .linkual-vocab-queue-panel-wrap{position:fixed;right:12px;bottom:calc(var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom,0px) + 12px);z-index:2147483647;display:flex;flex-direction:column;align-items:flex-end;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;pointer-events:auto}@media (max-width: 720px){#linkual-root .linkual-universal-widget{width:100vw;max-width:100vw;overflow:visible;padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px));flex-direction:column;align-items:stretch;gap:7px}#linkual-root .linkual-universal-top{width:100%;min-width:0;gap:8px}#linkual-root .linkual-universal-selection{flex-wrap:wrap;gap:6px}#linkual-root .linkual-universal-selection-text{max-width:calc(100vw - 190px)}#linkual-root .linkual-universal-actions{gap:5px}#linkual-root .linkual-universal-inline-actions .linkual-universal-icon-btn{width:31px;min-width:31px;min-height:30px;padding:0;font-size:12px}#linkual-root .linkual-universal-status{display:none}#linkual-root .linkual-universal-form{grid-template-columns:minmax(0,1fr) 32px 36px 97px;gap:4px}#linkual-root .linkual-universal-field{flex-direction:row}#linkual-root .linkual-universal-field.field-context{grid-column:1 / -1;grid-row:2}#linkual-root .linkual-universal-clear{grid-column:2;grid-row:1;width:32px;min-width:32px}#linkual-root .linkual-universal-send{grid-column:3;grid-row:1;width:36px;min-width:36px;padding:0}#linkual-root .linkual-universal-inline-actions{grid-column:4;grid-row:1;gap:3px;overflow:hidden}#linkual-root .linkual-universal-button-icon{display:block}#linkual-root .linkual-universal-button-text{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}#linkual-root .linkual-universal-queue-count{position:absolute;top:-4px;right:-4px;min-width:14px;height:14px;padding:0 3px;font-size:9px}#linkual-root .linkual-universal-floating-add{display:none}#linkual-root .linkual-vocab-queue-panel-wrap{left:8px;right:8px;bottom:calc(var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom,0px) + 8px)}#linkual-root .linkual-vocab-queue-panel-wrap>div{width:100%!important;max-width:none!important;height:min(520px,calc(100vh - var(--linkual-universal-widget-height, 0px) - 24px))!important}#linkual-root .linkual-player-controls{left:8px;width:calc(100vw - var(--linkual-sidebar-width, 0px) - 16px);max-width:calc(100vw - var(--linkual-sidebar-width, 0px) - 16px);padding:8px;gap:7px}#linkual-root .linkual-player-progress-row{grid-template-columns:42px minmax(0,1fr) 42px;gap:6px}#linkual-root .linkual-player-time{font-size:11px}#linkual-root .linkual-player-button-row{gap:5px}#linkual-root .linkual-player-btn{min-width:34px;padding:0 8px}#linkual-root .linkual-player-btn.primary{min-width:48px}}@media (max-width: 360px){#linkual-root .linkual-universal-widget{padding-left:6px;padding-right:6px}#linkual-root .linkual-universal-form{grid-template-columns:minmax(0,1fr) 28px 32px 85px;gap:3px}#linkual-root .linkual-universal-mode-tab{min-width:42px;padding:0 5px}#linkual-root .linkual-universal-field{gap:4px}#linkual-root .linkual-universal-clear{width:28px;min-width:28px}#linkual-root .linkual-universal-send{width:32px;min-width:32px}#linkual-root .linkual-universal-inline-actions{gap:2px}#linkual-root .linkual-universal-inline-actions .linkual-universal-icon-btn{width:27px;min-width:27px}#linkual-root .linkual-player-controls{padding:7px 6px}#linkual-root .linkual-player-progress-row{grid-template-columns:38px minmax(0,1fr) 38px}#linkual-root .linkual-player-btn{min-width:30px;padding:0 6px}} ");
+(i=>{if(typeof GM_addStyle=="function"){GM_addStyle(i);return}const l=document.createElement("style");l.textContent=i,document.head.append(l)})(" #linkual-root .modal{position:fixed;top:0;left:0;width:100%;height:100%;background:#00000080;display:flex;justify-content:center;align-items:center;z-index:2147483647;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);pointer-events:auto}#linkual-root .modal-box{background:#fff;border-radius:12px;width:380px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 10px 30px #0003;animation:linkualSlideIn .2s ease-out}@keyframes linkualSlideIn{0%{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}#linkual-root .modal-header{padding:16px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #eee}#linkual-root .modal-header h3{margin:0;font-size:16px;color:#333}#linkual-root .close-btn{font-size:24px;line-height:1;color:#999;cursor:pointer;transition:color .2s}#linkual-root .close-btn:hover{color:#333}#linkual-root .tabs{display:flex;background:#fafafa;border-bottom:1px solid #eee}#linkual-root .tab{flex:1;text-align:center;padding:12px 0;font-size:14px;color:#666;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;-webkit-user-select:none;user-select:none}#linkual-root .tab:hover{color:#333;background:#00000005}#linkual-root .tab.active{color:var(--linkual-theme, #6a1b9a);font-weight:700;border-bottom:2px solid var(--linkual-theme, #6a1b9a);background:#fff}#linkual-root .tab-content{padding:20px;overflow-y:auto;flex:1}#linkual-root .fade-in{animation:linkualFadeIn .3s ease}@keyframes linkualFadeIn{0%{opacity:0}to{opacity:1}}#linkual-root .setting-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}#linkual-root .setting-row label{font-size:13px;font-weight:700;flex:1;color:#444}#linkual-root .setting-row input[type=color]{width:50px;height:32px;padding:0;cursor:pointer;border:1px solid #ddd;border-radius:4px}#linkual-root .setting-col{margin-bottom:16px}#linkual-root .setting-col label{font-size:13px;font-weight:700;display:block;margin-bottom:6px;color:#444}#linkual-root .setting-col input,#linkual-root .setting-col textarea,#linkual-root .setting-col select{width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box;font-family:inherit;font-size:13px;transition:border-color .2s}#linkual-root .setting-col input:focus,#linkual-root .setting-col textarea:focus,#linkual-root .setting-col select:focus{outline:none;border-color:var(--linkual-theme, #6a1b9a)}#linkual-root .setting-col textarea{resize:vertical;min-height:80px;line-height:1.5}#linkual-root .url-prefix-row{display:flex;align-items:stretch}#linkual-root .url-prefix-row input{border-radius:0;min-width:0}#linkual-root .url-fixed-prefix,#linkual-root .url-fixed-suffix{display:inline-flex;align-items:center;padding:0 10px;border:1px solid #ddd;background:#f7f7f7;color:#666;font-size:12px;white-space:nowrap}#linkual-root .url-fixed-prefix{border-right:0;border-radius:6px 0 0 6px}#linkual-root .url-fixed-suffix{border-left:0;border-radius:0 6px 6px 0}#linkual-root .url-prefix-row:focus-within .url-fixed-prefix{border-color:var(--linkual-theme, #6a1b9a);border-right:0}#linkual-root .url-prefix-row:focus-within .url-fixed-suffix{border-color:var(--linkual-theme, #6a1b9a);border-left:0}#linkual-root .setting-help{margin-top:6px;color:#888;font-size:12px;line-height:1.4}#linkual-root .modal-footer{padding:16px 20px;display:flex;gap:12px;border-top:1px solid #eee;background:#fafafa}#linkual-root .btn{flex:1;padding:10px;border:none;border-radius:6px;cursor:pointer;font-weight:700;font-size:14px;transition:opacity .2s}#linkual-root .btn:hover{opacity:.9}#linkual-root .reset-btn{background:#e0e0e0;color:#555}#linkual-root .save-btn{box-shadow:0 2px 6px #0000001a}#linkual-root{--linkual-theme: #6a1b9a;--linkual-done: #e8f5e9;--linkual-error: #ffebee}#linkual-root .linkual-wrap{position:fixed;z-index:2147483647;background:#fff;display:flex;flex-direction:column;font-family:sans-serif;color:#333;pointer-events:auto}#linkual-root .linkual-wrap.layout-right{top:0;right:0;max-width:min(100vw,var(--linkual-sidebar-width, 500px));height:calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px));max-height:calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px));box-shadow:-5px 0 15px #0000001a}#linkual-root .linkual-wrap.layout-bottom{bottom:calc(var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom,0px));left:0;width:100vw!important;max-width:100vw;max-height:calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px));box-shadow:0 -5px 15px #0000001a}#linkual-root .resizer{position:absolute;background:transparent;z-index:999;transition:background .2s}#linkual-root .linkual-wrap.layout-right .resizer{left:0;top:0;bottom:0;width:5px;cursor:ew-resize}#linkual-root .linkual-wrap.layout-bottom .resizer{top:0;left:0;right:0;height:5px;cursor:ns-resize}#linkual-root .resizer:hover,#linkual-root .resizer:active{background:var(--linkual-theme)}#linkual-root .header{background:var(--linkual-theme);color:#fff;padding:12px 16px;font-weight:700;display:flex;justify-content:space-between;align-items:center;gap:10px;min-height:44px;box-sizing:border-box}#linkual-root .header span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#linkual-root .settings-icon{cursor:pointer;-webkit-user-select:none;user-select:none}#linkual-root .linkual-mobile-fullscreen{position:fixed;right:20px;bottom:calc(20px + var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom,0px));z-index:2147483647;min-width:78px;min-height:40px;padding:10px 15px;background:#000;color:#fff;border:0;border-radius:5px;box-shadow:0 2px 8px #00000040;cursor:grab;font-size:14px;font-weight:700;line-height:1.2;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;-webkit-user-select:none;user-select:none;touch-action:none;-webkit-tap-highlight-color:transparent;pointer-events:auto}#linkual-root .linkual-mobile-fullscreen.is-dragging{cursor:grabbing}#linkual-root .linkual-player-controls{position:fixed;left:clamp(6px,2vw,12px);bottom:calc(var(--linkual-sidebar-height, 0px) + var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom,0px) + 14px);z-index:2147483647;width:calc(100vw - var(--linkual-sidebar-width, 0px) - clamp(12px,4vw,24px));max-width:calc(100vw - var(--linkual-sidebar-width, 0px) - clamp(12px,4vw,24px));max-height:calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px) - 12px);box-sizing:border-box;display:flex;flex-direction:column;gap:9px;padding:10px 12px;border-radius:8px;background:#000000b8;color:#fff;box-shadow:0 6px 20px #0000003d;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;pointer-events:auto;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);overflow:auto;overscroll-behavior:contain}#linkual-root .linkual-player-progress-row{display:grid;grid-template-columns:52px minmax(0,1fr) 52px;align-items:center;gap:10px}#linkual-root .linkual-player-time{color:#ffffffe0;font-size:12px;font-variant-numeric:tabular-nums;line-height:1;text-align:center;white-space:nowrap}#linkual-root .linkual-player-progress{width:100%;height:18px;margin:0;padding:0;-moz-appearance:none;appearance:none;-webkit-appearance:none;background:transparent;cursor:pointer}#linkual-root .linkual-player-progress::-webkit-slider-runnable-track{height:5px;border-radius:999px;background:linear-gradient(to right,var(--linkual-theme, #6a1b9a) 0%,var(--linkual-theme, #6a1b9a) var(--linkual-progress, 0%),rgba(255,255,255,.32) var(--linkual-progress, 0%),rgba(255,255,255,.32) 100%)}#linkual-root .linkual-player-progress::-moz-range-track{height:5px;border-radius:999px;background:#ffffff52}#linkual-root .linkual-player-progress::-moz-range-progress{height:5px;border-radius:999px;background:var(--linkual-theme, #6a1b9a)}#linkual-root .linkual-player-progress::-webkit-slider-thumb{-moz-appearance:none;appearance:none;-webkit-appearance:none;width:15px;height:15px;margin-top:-5px;border-radius:50%;border:2px solid #fff;background:var(--linkual-theme, #6a1b9a);box-shadow:0 2px 8px #00000052}#linkual-root .linkual-player-progress::-moz-range-thumb{width:15px;height:15px;border-radius:50%;border:2px solid #fff;background:var(--linkual-theme, #6a1b9a);box-shadow:0 2px 8px #00000052}#linkual-root .linkual-player-button-row{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}#linkual-root .linkual-player-btn{height:31px;min-width:44px;padding:0 12px;border:1px solid rgba(255,255,255,.16);border-radius:6px;background:#ffffff1f;color:#fff;cursor:pointer;font:700 12px/1 system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif}#linkual-root .linkual-player-btn.primary{min-width:58px;background:var(--linkual-theme, #6a1b9a);border-color:transparent}#linkual-root .linkual-player-btn:hover{background:#fff3}#linkual-root .linkual-player-btn.primary:hover{filter:brightness(1.08)}#linkual-root .list{flex:1;min-height:0;overflow-y:auto;padding:10px 12px;scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch}#linkual-root .list::-webkit-scrollbar{display:none}#linkual-root .empty-tip{padding:50px 20px;text-align:center;color:#999;font-style:italic}#linkual-root .load-more-tip{padding:16px 12px 22px;text-align:center;color:#999;font-size:12px}#linkual-root .item{padding:12px;margin-bottom:10px;border-radius:8px;border:1px solid #f0f0f0;transition:.2s}#linkual-root .item.active{border-left:5px solid var(--linkual-theme);background:#6a1b9a0d}#linkual-root .ctrl-bar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;align-items:center;padding:4px;border-radius:4px;background:transparent;transition:background .2s}#linkual-root .ctrl-bar.done{background-color:var(--linkual-done, #e8f5e9)}#linkual-root .ctrl-bar.error{background-color:var(--linkual-error, #ffebee);border:1px solid rgba(255,0,0,.1)}#linkual-root .tag-btn{font-size:11px;padding:3px 8px;border-radius:12px;display:inline-flex;align-items:center;cursor:pointer;transition:.2s;-webkit-user-select:none;user-select:none}#linkual-root .tag-play{background:#eee;color:#666}#linkual-root .tag-play:hover{background:var(--linkual-theme);color:#fff}#linkual-root .tag-pin{background:#e3f2fd;color:#1976d2}#linkual-root .tag-pin:hover{background:#1976d2;color:#fff}#linkual-root .btn-parse{flex:0 0 auto;margin-left:auto;display:inline-flex;align-items:center;justify-content:center;font-size:11px;color:#aaa;background:transparent;border:1px solid transparent;border-radius:4px;cursor:pointer;-webkit-user-select:none;user-select:none;padding:4px 7px;line-height:1.2;transition:.2s}#linkual-root .btn-parse:hover{color:#333;background:#0000000d;border-color:#00000014}#linkual-root .btn-chevron{font-size:12px;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:4px;cursor:pointer;transition:.2s;-webkit-user-select:none;user-select:none;color:#666}#linkual-root .btn-chevron:hover{background:#0000001a}#linkual-root .text-content{font-size:14px;line-height:1.5;padding:2px 0;color:#333;cursor:text;-webkit-user-select:text;user-select:text;overflow-wrap:anywhere;-webkit-touch-callout:default}#linkual-root .linkual-selection-add{position:fixed;z-index:999999;min-height:38px;max-width:min(320px,calc(100vw - 24px));padding:8px 12px;background:var(--linkual-theme, #6a1b9a);color:#fff;border:none;border-radius:6px;box-shadow:0 4px 12px #0003;cursor:pointer;font-size:13px;font-weight:700;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;-webkit-tap-highlight-color:transparent;touch-action:manipulation;pointer-events:auto}#linkual-root .linkual-selection-add-floating{transform:translate(-50%)}#linkual-root .linkual-selection-add-dock{left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));width:calc(100vw - 24px);max-width:none;min-height:46px;justify-content:center;font-size:14px}#linkual-root .linkual-selection-add-text{overflow:hidden;text-overflow:ellipsis}#linkual-root .ai-box{border-top:1px dashed #ccc;margin-top:8px;padding-top:8px;font-size:13px;white-space:pre-wrap;line-height:1.6;cursor:text}#linkual-root .lan-sync-module{border-top:1px solid #eee;padding:12px 16px;background:#fafafa;display:flex;flex-direction:column;gap:10px;margin-top:auto}#linkual-root .sync-input{width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;font-size:12px;box-sizing:border-box;outline:none;transition:border-color .2s}#linkual-root .sync-input:focus{border-color:var(--linkual-theme)}#linkual-root .sync-btn{width:100%;padding:10px;border:none;border-radius:6px;font-size:13px;font-weight:700;color:#fff;background-color:var(--linkual-theme);cursor:pointer;transition:all .2s}#linkual-root .sync-btn:hover{opacity:.9}#linkual-root .sync-btn:disabled{opacity:.6;cursor:not-allowed}#linkual-root .sync-btn.success{background-color:#4caf50}#linkual-root .sync-btn.error{background-color:#f44336}#linkual-root .linkual-universal-widget{position:fixed;left:0;right:0;bottom:0;z-index:2147483647;width:100vw;max-width:100vw;min-height:calc(var(--linkual-universal-widget-height, 58px) + env(safe-area-inset-bottom,0px));max-height:calc(var(--linkual-visual-viewport-height, 100vh) - 8px);padding:8px 12px calc(8px + env(safe-area-inset-bottom,0px));box-sizing:border-box;display:flex;flex-wrap:wrap;align-items:center;gap:10px;background:#fff;color:#222;border-top:1px solid rgba(0,0,0,.12);box-shadow:0 -8px 24px #00000024;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;pointer-events:auto;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}#linkual-root .linkual-universal-widget~.linkual-mobile-fullscreen{bottom:calc(20px + var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom,0px))}#linkual-root .linkual-universal-top{flex:0 1 390px;display:flex;align-items:center;justify-content:space-between;gap:10px;width:auto;max-width:100%;min-width:min(260px,100%);min-height:34px}#linkual-root .linkual-universal-selection{min-width:0;flex:1;display:flex;align-items:center;gap:8px;color:#444;font-size:13px}#linkual-root .linkual-universal-selection-label{flex:0 0 auto;color:#666;font-weight:700}#linkual-root .linkual-universal-selection-text{min-width:0;max-width:min(180px,14vw);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#111;font-weight:700}#linkual-root .linkual-universal-muted{color:#888}#linkual-root .linkual-universal-actions{flex:0 0 auto;display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0}#linkual-root .linkual-universal-status{max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;color:#666}#linkual-root .linkual-universal-status.status-success{color:#17803d}#linkual-root .linkual-universal-status.status-error{color:#c62828}#linkual-root .linkual-universal-add-btn,#linkual-root .linkual-universal-icon-btn,#linkual-root .linkual-universal-clear,#linkual-root .linkual-universal-send{border:0;border-radius:6px;min-height:30px;padding:0 12px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit}#linkual-root .linkual-universal-icon-btn,#linkual-root .linkual-universal-send{display:inline-flex;align-items:center;justify-content:center;gap:6px}#linkual-root .linkual-universal-add-btn,#linkual-root .linkual-universal-send{background:var(--linkual-theme, #000);color:#fff}#linkual-root .linkual-universal-icon-btn{background:#f1f1f1;color:#333}#linkual-root .linkual-universal-queue-btn{position:relative;background:var(--linkual-theme, #000);color:#fff}#linkual-root .linkual-universal-button-icon{display:none;flex:0 0 auto;width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}#linkual-root .linkual-universal-button-text{min-width:0}#linkual-root .linkual-universal-queue-count{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:#f44336;color:#fff;font-size:10px;line-height:1}#linkual-root .linkual-universal-clear{width:34px;padding:0;background:#f3f3f3;color:#555}#linkual-root .linkual-universal-form{flex:1;display:grid;grid-template-columns:minmax(120px,190px) minmax(160px,1fr) 34px auto auto;align-items:stretch;gap:8px;min-width:min(520px,100%);max-width:100%}#linkual-root .linkual-universal-inline-actions{align-self:center;display:flex;align-items:center;gap:6px;min-height:34px;min-width:0}#linkual-root .linkual-universal-field{min-width:0;display:flex;flex-direction:row;align-items:center;gap:6px}#linkual-root .linkual-universal-mode-tab{flex:0 0 auto;min-width:48px;height:34px;padding:0 8px;border:1px solid #d7d7d7;border-radius:6px;background:#f6f6f6;color:#555;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit}#linkual-root .linkual-universal-mode-tab.active{border-color:var(--linkual-theme, #000);background:var(--linkual-theme, #000);color:#fff}#linkual-root .linkual-universal-field input{min-width:0;width:100%;height:34px;box-sizing:border-box;border:1px solid #d7d7d7;border-radius:6px;padding:7px 9px;color:#222;background:#fff;outline:none;font:13px/1.35 system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;letter-spacing:0}#linkual-root .linkual-universal-field input:focus{border-color:var(--linkual-theme, #000);box-shadow:0 0 0 2px #00000014}#linkual-root .linkual-universal-field.field-context input{overflow-x:auto;overflow-y:hidden;white-space:nowrap;scrollbar-width:none;-ms-overflow-style:none}#linkual-root .linkual-universal-field.field-context input::-webkit-scrollbar{display:none}#linkual-root .linkual-universal-clear,#linkual-root .linkual-universal-send{align-self:center;height:34px}#linkual-root .linkual-universal-send:disabled,#linkual-root .linkual-universal-clear:disabled{opacity:.45;cursor:not-allowed}#linkual-root .linkual-universal-expand-bar{position:fixed;left:0;right:0;bottom:0;z-index:2147483647;width:100vw;height:calc(28px + env(safe-area-inset-bottom,0px));padding:0 12px env(safe-area-inset-bottom,0px);border:0;border-radius:0;background:var(--linkual-theme, #000);color:#fff;box-shadow:0 -4px 14px #0003;cursor:pointer;font-size:12px;font-weight:800;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;-webkit-user-select:none;user-select:none;pointer-events:auto}#linkual-root .linkual-universal-expand-bar:hover{filter:brightness(1.08)}#linkual-root .linkual-universal-floating-add{position:fixed;z-index:2147483647;transform:translate(-50%);min-height:30px;padding:0 12px;border:0;border-radius:6px;background:var(--linkual-theme, #000);color:#fff;box-shadow:0 4px 12px #0003;cursor:pointer;font-size:12px;font-weight:800;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;pointer-events:auto}#linkual-root .linkual-vocab-queue-panel-wrap{position:fixed;right:12px;bottom:calc(var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom,0px) + 12px);z-index:2147483647;display:flex;flex-direction:column;align-items:flex-end;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;pointer-events:auto}#linkual-root .linkual-vocab-queue-panel{width:min(400px,calc(100vw - 24px));height:min(580px,calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px) - 24px));min-height:min(280px,calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px) - 24px));max-height:calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px) - 24px);background:#fff;border-radius:8px;box-shadow:0 10px 30px #0003;border:1px solid #e4e4e7;display:flex;flex-direction:column;overflow:hidden;box-sizing:border-box}@media (max-width: 720px){#linkual-root .linkual-universal-widget{width:100vw;max-width:100vw;padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px));flex-direction:column;align-items:stretch;gap:7px}#linkual-root .linkual-universal-top{width:100%;min-width:0;gap:8px}#linkual-root .linkual-universal-selection{flex-wrap:wrap;gap:6px}#linkual-root .linkual-universal-selection-text{max-width:calc(100vw - 190px)}#linkual-root .linkual-universal-actions{gap:5px}#linkual-root .linkual-universal-inline-actions .linkual-universal-icon-btn{width:31px;min-width:31px;min-height:30px;padding:0;font-size:12px}#linkual-root .linkual-universal-status{display:none}#linkual-root .linkual-universal-form{grid-template-columns:minmax(0,1fr) 32px 36px minmax(87px,auto);gap:4px;min-width:0}#linkual-root .linkual-universal-field{flex-direction:row}#linkual-root .linkual-universal-field.field-context{grid-column:1 / -1;grid-row:2}#linkual-root .linkual-universal-clear{grid-column:2;grid-row:1;width:32px;min-width:32px}#linkual-root .linkual-universal-send{grid-column:3;grid-row:1;width:36px;min-width:36px;padding:0}#linkual-root .linkual-universal-inline-actions{grid-column:4;grid-row:1;gap:3px;justify-content:flex-end}#linkual-root .linkual-universal-button-icon{display:block}#linkual-root .linkual-universal-button-text{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}#linkual-root .linkual-universal-queue-count{position:absolute;top:-4px;right:-4px;min-width:14px;height:14px;padding:0 3px;font-size:9px}#linkual-root .linkual-universal-floating-add{display:none}#linkual-root .linkual-vocab-queue-panel-wrap{left:8px;right:8px;bottom:calc(var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom,0px) + 8px)}#linkual-root .linkual-vocab-queue-panel-wrap>div{width:100%!important;max-width:none!important;height:min(520px,calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px) - 16px))!important;max-height:calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px) - 16px)!important;min-height:min(220px,calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px) - 16px))!important}#linkual-root .linkual-player-controls{left:8px;width:calc(100vw - var(--linkual-sidebar-width, 0px) - 16px);max-width:calc(100vw - var(--linkual-sidebar-width, 0px) - 16px);padding:8px;gap:7px}#linkual-root .linkual-player-progress-row{grid-template-columns:42px minmax(0,1fr) 42px;gap:6px}#linkual-root .linkual-player-time{font-size:11px}#linkual-root .linkual-player-button-row{gap:5px}#linkual-root .linkual-player-btn{min-width:34px;padding:0 8px}#linkual-root .linkual-player-btn.primary{min-width:48px}}@media (max-width: 360px){#linkual-root .linkual-universal-widget{padding-left:6px;padding-right:6px}#linkual-root .linkual-universal-form{grid-template-columns:minmax(0,1fr) 28px 32px minmax(81px,auto);gap:3px}#linkual-root .linkual-universal-mode-tab{min-width:42px;padding:0 5px}#linkual-root .linkual-universal-field{gap:4px}#linkual-root .linkual-universal-clear{width:28px;min-width:28px}#linkual-root .linkual-universal-send{width:32px;min-width:32px}#linkual-root .linkual-universal-inline-actions{gap:2px}#linkual-root .linkual-universal-inline-actions .linkual-universal-icon-btn{width:27px;min-width:27px}#linkual-root .linkual-player-controls{padding:7px 6px}#linkual-root .linkual-player-progress-row{grid-template-columns:38px minmax(0,1fr) 38px}#linkual-root .linkual-player-btn{min-width:30px;padding:0 6px}}@media (max-width: 320px){#linkual-root .linkual-universal-form{grid-template-columns:minmax(0,1fr) 28px 32px}#linkual-root .linkual-universal-inline-actions{grid-column:1 / -1;grid-row:3;justify-content:flex-end}#linkual-root .linkual-universal-inline-actions .linkual-universal-icon-btn{width:30px;min-width:30px}#linkual-root .linkual-universal-selection-text{max-width:calc(100vw - 150px)}}@media (max-height: 520px){#linkual-root .linkual-universal-widget{padding-top:6px;padding-bottom:calc(6px + env(safe-area-inset-bottom,0px));gap:5px}#linkual-root .linkual-universal-top{min-height:30px}#linkual-root .linkual-universal-field input,#linkual-root .linkual-universal-mode-tab,#linkual-root .linkual-universal-clear,#linkual-root .linkual-universal-send,#linkual-root .linkual-universal-inline-actions{height:30px;min-height:30px}#linkual-root .linkual-vocab-queue-panel-wrap{bottom:calc(var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom,0px) + 6px)}}@media (max-height: 420px){#linkual-root .linkual-universal-widget{align-content:flex-start}#linkual-root .linkual-universal-selection,#linkual-root .linkual-universal-field input,#linkual-root .linkual-universal-add-btn,#linkual-root .linkual-universal-icon-btn,#linkual-root .linkual-universal-clear,#linkual-root .linkual-universal-send{font-size:12px}#linkual-root .linkual-vocab-queue-panel{border-radius:6px}} ");
 
 (function () {
   'use strict';
@@ -13647,7 +13647,7 @@ JSON 格式：
     const sendableCount = tasks.filter(canSendTask).length;
     const bulkSendDisabled = isBulkSending || sendableCount === 0;
     if (!isOpen) return null;
-    return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "linkual-vocab-queue-panel-wrap", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { width: "400px", height: "580px", background: "#fff", borderRadius: "8px", boxShadow: "0 10px 30px rgba(0,0,0,0.2)", border: "1px solid #e4e4e7", display: "flex", flexDirection: "column", overflow: "hidden" }, children: [
+    return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "linkual-vocab-queue-panel-wrap", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-vocab-queue-panel", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { padding: "12px", borderBottom: "1px solid #e4e4e7", background: "#fafafa", display: "flex", flexDirection: "column", gap: "8px" }, children: [
         /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }, children: [
           /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { style: { fontSize: "14px", color: "#333" }, children: "制卡队列" }),
@@ -14074,6 +14074,7 @@ JSON 格式：
   const DESKTOP_WIDGET_HEIGHT = 58;
   const MOBILE_WIDGET_HEIGHT = 132;
   const COLLAPSED_WIDGET_HEIGHT = 28;
+  const WIDGET_VIEWPORT_MARGIN = 8;
   const MAX_WORD_SELECTION_LENGTH = 180;
   const MAX_CONTEXT_SELECTION_LENGTH = 4e3;
   const CONTEXT_SENTENCE_RADIUS = 2;
@@ -14084,6 +14085,23 @@ JSON 格式：
   const LINKUAL_NAVIGATION_EVENT$2 = "linkual_navigation";
   const FLOATING_BUTTON_MARGIN = 10;
   const getDefaultExpandedHeight = () => window.matchMedia("(max-width: 720px)").matches ? MOBILE_WIDGET_HEIGHT : DESKTOP_WIDGET_HEIGHT;
+  const isOwnViewportGetterPatched = (target, marker) => Boolean(
+    target && target[marker]
+  );
+  const getVisualViewportHeight = () => {
+    var _a;
+    const viewportHeight = ((_a = window.visualViewport) == null ? void 0 : _a.height) || window.innerHeight || document.documentElement.clientHeight;
+    const reservedOffset = isOwnViewportGetterPatched(window.visualViewport, "__linkualVisualViewportHeightPatched") || isOwnViewportGetterPatched(window, "__linkualInnerHeightPatched") ? getViewportOffset() : 0;
+    const rawHeight = Number(viewportHeight) + reservedOffset;
+    return Number.isFinite(rawHeight) && rawHeight > 0 ? rawHeight : getDefaultExpandedHeight();
+  };
+  const getMaxWidgetHeight = () => Math.max(
+    COLLAPSED_WIDGET_HEIGHT,
+    Math.floor(getVisualViewportHeight() - WIDGET_VIEWPORT_MARGIN)
+  );
+  const syncVisualViewportHeightProperty = () => {
+    document.documentElement.style.setProperty("--linkual-visual-viewport-height", `${Math.ceil(getVisualViewportHeight())}px`);
+  };
   const ActionIcon = ({ name }) => {
     const paths = {
       add: /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
@@ -14307,7 +14325,7 @@ JSON 格式：
     styleEl.textContent = `
     html.linkual-universal-widget-open {
       --linkual-page-bottom-reserve: calc(var(--linkual-universal-widget-height, ${COLLAPSED_WIDGET_HEIGHT}px) + env(safe-area-inset-bottom, 0px));
-      --linkual-page-height: calc(100vh - var(--linkual-page-bottom-reserve));
+      --linkual-page-height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-page-bottom-reserve));
       scroll-padding-bottom: var(--linkual-page-bottom-reserve) !important;
     }
     html.linkual-universal-widget-open,
@@ -14345,6 +14363,7 @@ JSON 格式：
     ensurePageReserveStyle();
     patchDocumentViewportElements();
     pageWindow[VIEWPORT_OFFSET_KEY] = nextHeight;
+    syncVisualViewportHeightProperty();
     document.documentElement.style.setProperty("--linkual-universal-widget-height", `${nextHeight}px`);
     document.documentElement.classList.add("linkual-universal-widget-open");
     dispatchViewportResize();
@@ -14353,6 +14372,7 @@ JSON 格式：
     const pageWindow = getPageWindow$1();
     document.documentElement.classList.remove("linkual-universal-widget-open");
     document.documentElement.style.removeProperty("--linkual-universal-widget-height");
+    document.documentElement.style.removeProperty("--linkual-visual-viewport-height");
     pageWindow[VIEWPORT_OFFSET_KEY] = 0;
     dispatchViewportResize();
   };
@@ -14383,13 +14403,14 @@ JSON 格式：
     const measureWidgetHeight = reactExports.useCallback(() => {
       const baseHeight = getDefaultExpandedHeight();
       const measuredHeight = widgetRef.current ? Math.ceil(widgetRef.current.scrollHeight) : 0;
-      const nextHeight = Math.max(baseHeight, measuredHeight);
+      const nextHeight = Math.min(getMaxWidgetHeight(), Math.max(baseHeight, measuredHeight));
       setReservedHeight((currentHeight) => Math.abs(currentHeight - nextHeight) > 1 ? nextHeight : currentHeight);
     }, []);
     reactExports.useEffect(() => {
       var _a;
       const updateReservedHeight = () => {
-        setReservedHeight(getDefaultExpandedHeight());
+        syncVisualViewportHeightProperty();
+        setReservedHeight(Math.min(getDefaultExpandedHeight(), getMaxWidgetHeight()));
         window.requestAnimationFrame(measureWidgetHeight);
       };
       updateReservedHeight();
@@ -14686,6 +14707,9 @@ JSON 格式：
   const RENDER_BATCH_SIZE = 80;
   const ACTIVE_RENDER_BUFFER = 20;
   const LINKUAL_NAVIGATION_EVENT$1 = "linkual_navigation";
+  const MIN_SIDEBAR_WIDTH = 250;
+  const MIN_SIDEBAR_HEIGHT = 150;
+  const MIN_REMAINING_VIEWPORT = 80;
   function getBrowserFullscreenElement() {
     const doc = document;
     return document.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement || doc.msFullscreenElement || null;
@@ -14700,6 +14724,42 @@ JSON 格式：
   function isPromiseLike(value) {
     return Boolean(value && typeof value.then === "function");
   }
+  function getVisualViewportSize() {
+    var _a, _b;
+    const reservedViewportHeight = Number.parseFloat(
+      getComputedStyle(document.documentElement).getPropertyValue("--linkual-visual-viewport-height")
+    );
+    const width = ((_a = window.visualViewport) == null ? void 0 : _a.width) || window.innerWidth || document.documentElement.clientWidth;
+    const height = Number.isFinite(reservedViewportHeight) && reservedViewportHeight > 0 ? reservedViewportHeight : ((_b = window.visualViewport) == null ? void 0 : _b.height) || window.innerHeight || document.documentElement.clientHeight;
+    return {
+      width: Number.isFinite(width) && width > 0 ? width : window.innerWidth,
+      height: Number.isFinite(height) && height > 0 ? height : window.innerHeight
+    };
+  }
+  function getReservedBottomHeight() {
+    const raw = getComputedStyle(document.documentElement).getPropertyValue("--linkual-universal-widget-height");
+    const parsed = Number.parseFloat(raw);
+    return Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
+  }
+  function parseConfigNumber(value, fallback) {
+    const parsed = Number.parseInt(String(value ?? ""), 10);
+    return Number.isFinite(parsed) ? parsed : fallback;
+  }
+  function clampSidebarWidth(width) {
+    const viewport = getVisualViewportSize();
+    const requestedWidth = Number.isFinite(width) ? width : MIN_SIDEBAR_WIDTH;
+    const maxWidth = Math.max(0, viewport.width - MIN_REMAINING_VIEWPORT);
+    const minWidth = Math.min(MIN_SIDEBAR_WIDTH, maxWidth || viewport.width);
+    return Math.max(0, Math.min(Math.max(requestedWidth, minWidth), maxWidth || viewport.width));
+  }
+  function clampSidebarHeight(height) {
+    const viewport = getVisualViewportSize();
+    const requestedHeight = Number.isFinite(height) ? height : MIN_SIDEBAR_HEIGHT;
+    const availableHeight = Math.max(0, viewport.height - getReservedBottomHeight());
+    const maxHeight = Math.max(0, availableHeight - MIN_REMAINING_VIEWPORT);
+    const minHeight = Math.min(MIN_SIDEBAR_HEIGHT, maxHeight || availableHeight);
+    return Math.max(0, Math.min(Math.max(requestedHeight, minHeight), maxHeight || availableHeight));
+  }
   const App = ({ adapter }) => {
     const [subs, setSubs] = reactExports.useState([]);
     const [inVideo, setInVideo] = reactExports.useState(adapter.isVideoPage());
@@ -14708,8 +14768,8 @@ JSON 格式：
       return val !== null && val !== void 0 && val !== "" ? val : ConfigService.get(key);
     };
     const [layout, setLayout] = reactExports.useState(getAdpCfg("layout_position"));
-    const [sidebarWidth, setSidebarWidth] = reactExports.useState(parseInt(getAdpCfg("sidebar_width"), 10));
-    const [sidebarHeight, setSidebarHeight] = reactExports.useState(parseInt(getAdpCfg("sidebar_height"), 10));
+    const [sidebarWidth, setSidebarWidth] = reactExports.useState(parseConfigNumber(getAdpCfg("sidebar_width"), parseConfigNumber(DEFAULTS.sidebar_width, 500)));
+    const [sidebarHeight, setSidebarHeight] = reactExports.useState(parseConfigNumber(getAdpCfg("sidebar_height"), parseConfigNumber(DEFAULTS.sidebar_height, 350)));
     const [themeColor, setThemeColor] = reactExports.useState(ConfigService.get("theme_color"));
     const [doneColor, setDoneColor] = reactExports.useState(ConfigService.get("done_color"));
     const [errorColor, setErrorColor] = reactExports.useState(ConfigService.get("error_color"));
@@ -14717,7 +14777,30 @@ JSON 格式：
     const [isSettingsOpen, setIsSettingsOpen] = reactExports.useState(false);
     const [renderLimit, setRenderLimit] = reactExports.useState(INITIAL_RENDER_LIMIT);
     const listRef = reactExports.useRef(null);
+    const lastHostLayoutRef = reactExports.useRef(null);
     const activeIndex = useVideoSync(subs, adapter);
+    const resizeAdapterHost = reactExports.useCallback((force = false) => {
+      if (!adapter.resizeHost) return;
+      const nextLayout = inVideo ? {
+        adapter,
+        width: clampSidebarWidth(sidebarWidth),
+        height: clampSidebarHeight(sidebarHeight),
+        layout,
+        inVideo
+      } : {
+        adapter,
+        width: 0,
+        height: 0,
+        layout,
+        inVideo
+      };
+      const prevLayout = lastHostLayoutRef.current;
+      if (!force && prevLayout && prevLayout.adapter === nextLayout.adapter && prevLayout.width === nextLayout.width && prevLayout.height === nextLayout.height && prevLayout.layout === nextLayout.layout && prevLayout.inVideo === nextLayout.inVideo) {
+        return;
+      }
+      lastHostLayoutRef.current = nextLayout;
+      adapter.resizeHost(nextLayout.width, nextLayout.height, nextLayout.layout);
+    }, [adapter, inVideo, layout, sidebarHeight, sidebarWidth]);
     reactExports.useEffect(() => {
       const checkVideo = () => {
         setInVideo((prev) => {
@@ -14745,8 +14828,8 @@ JSON 格式：
         setErrorColor(ConfigService.get("error_color"));
         setMobileFullscreenMode(ConfigService.get("mobile_fullscreen_mode"));
         setLayout(getAdpCfg("layout_position"));
-        setSidebarWidth(parseInt(getAdpCfg("sidebar_width"), 10));
-        setSidebarHeight(parseInt(getAdpCfg("sidebar_height"), 10));
+        setSidebarWidth(parseConfigNumber(getAdpCfg("sidebar_width"), parseConfigNumber(DEFAULTS.sidebar_width, 500)));
+        setSidebarHeight(parseConfigNumber(getAdpCfg("sidebar_height"), parseConfigNumber(DEFAULTS.sidebar_height, 350)));
       };
       window.addEventListener("linkual_settings_updated", handleSettingsUpdate);
       return () => window.removeEventListener("linkual_settings_updated", handleSettingsUpdate);
@@ -14778,27 +14861,30 @@ JSON 格式：
       return () => window.removeEventListener("linkual_custom_fullscreen_changed", clearCustomFullscreenIfNeeded);
     }, [adapter, inVideo]);
     reactExports.useEffect(() => {
-      if (adapter.resizeHost) {
-        if (inVideo) {
-          adapter.resizeHost(sidebarWidth, sidebarHeight, layout);
-        } else {
-          adapter.resizeHost(0, 0, layout);
-        }
-      }
-    }, [sidebarWidth, sidebarHeight, layout, adapter, inVideo]);
+      resizeAdapterHost();
+    }, [resizeAdapterHost]);
     reactExports.useEffect(() => {
-      const refreshCustomLayout = () => {
-        if (adapter.resizeHost && inVideo) {
-          adapter.resizeHost(sidebarWidth, sidebarHeight, layout);
-        }
-      };
+      const refreshCustomLayout = () => resizeAdapterHost(true);
       window.addEventListener("linkual_custom_layout_refresh", refreshCustomLayout);
       window.addEventListener(LINKUAL_NAVIGATION_EVENT$1, refreshCustomLayout);
       return () => {
         window.removeEventListener("linkual_custom_layout_refresh", refreshCustomLayout);
         window.removeEventListener(LINKUAL_NAVIGATION_EVENT$1, refreshCustomLayout);
       };
-    }, [adapter, inVideo, layout, sidebarHeight, sidebarWidth]);
+    }, [resizeAdapterHost]);
+    reactExports.useEffect(() => {
+      var _a;
+      const refreshViewportLayout = () => resizeAdapterHost();
+      window.addEventListener("orientationchange", refreshViewportLayout);
+      window.addEventListener("resize", refreshViewportLayout);
+      (_a = window.visualViewport) == null ? void 0 : _a.addEventListener("resize", refreshViewportLayout);
+      return () => {
+        var _a2;
+        window.removeEventListener("orientationchange", refreshViewportLayout);
+        window.removeEventListener("resize", refreshViewportLayout);
+        (_a2 = window.visualViewport) == null ? void 0 : _a2.removeEventListener("resize", refreshViewportLayout);
+      };
+    }, [resizeAdapterHost]);
     const startResize = (e) => {
       e.preventDefault();
       if (layout === "bottom") {
@@ -14806,9 +14892,11 @@ JSON 格式：
         const startHeight = sidebarHeight;
         let currentHeight = startHeight;
         const onMouseMove = (ev) => {
+          const viewport = getVisualViewportSize();
           let newHeight = startHeight - (ev.clientY - startY);
-          if (newHeight < 150) newHeight = 150;
-          if (newHeight > window.innerHeight * 0.8) newHeight = window.innerHeight * 0.8;
+          if (newHeight < MIN_SIDEBAR_HEIGHT) newHeight = MIN_SIDEBAR_HEIGHT;
+          if (newHeight > viewport.height * 0.8) newHeight = viewport.height * 0.8;
+          newHeight = clampSidebarHeight(newHeight);
           currentHeight = newHeight;
           setSidebarHeight(newHeight);
         };
@@ -14825,9 +14913,11 @@ JSON 格式：
         const startWidth = sidebarWidth;
         let currentWidth = startWidth;
         const onMouseMove = (ev) => {
+          const viewport = getVisualViewportSize();
           let newWidth = startWidth - (ev.clientX - startX);
-          if (newWidth < 250) newWidth = 250;
-          if (newWidth > window.innerWidth * 0.8) newWidth = window.innerWidth * 0.8;
+          if (newWidth < MIN_SIDEBAR_WIDTH) newWidth = MIN_SIDEBAR_WIDTH;
+          if (newWidth > viewport.width * 0.8) newWidth = viewport.width * 0.8;
+          newWidth = clampSidebarWidth(newWidth);
           currentWidth = newWidth;
           setSidebarWidth(newWidth);
         };
@@ -14843,8 +14933,8 @@ JSON 格式：
     };
     const wrapStyle = {
       display: inVideo ? "flex" : "none",
-      width: layout === "right" ? sidebarWidth : "100%",
-      height: layout === "bottom" ? sidebarHeight : "calc(100vh - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom, 0px))",
+      width: layout === "right" ? clampSidebarWidth(sidebarWidth) : "100%",
+      height: layout === "bottom" ? clampSidebarHeight(sidebarHeight) : "calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom, 0px))",
       pointerEvents: inVideo ? "auto" : "none",
       "--linkual-theme": themeColor,
       "--linkual-done": doneColor,
@@ -15515,8 +15605,8 @@ JSON 格式：
         inset: 0 auto auto 0 !important;
         width: calc(100vw - var(--linkual-sidebar-width, 0px)) !important;
         max-width: calc(100vw - var(--linkual-sidebar-width, 0px)) !important;
-        height: calc(100vh - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px)) !important;
-        max-height: calc(100vh - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px)) !important;
+        height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px)) !important;
+        max-height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px)) !important;
         min-height: 0 !important;
         margin: 0 !important;
         padding: 0 !important;
@@ -15589,7 +15679,7 @@ JSON 格式：
         styleEl.textContent = `
         html, body { overflow-x: hidden !important; }
         ytd-app, #masthead-container { width: 100vw !important; max-width: 100vw !important; left: 0 !important; right: auto !important; margin-bottom: calc(var(--linkual-sidebar-height) + var(--linkual-universal-widget-height, 0px)) !important; }
-        ytd-shorts { height: calc(100vh - var(--linkual-sidebar-height) - var(--linkual-universal-widget-height, 0px)) !important; width: 100% !important; position: relative !important; }
+        ytd-shorts { height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-sidebar-height) - var(--linkual-universal-widget-height, 0px)) !important; width: 100% !important; position: relative !important; }
         #shorts-container, #shorts-inner-container, ytd-reel-video-renderer { width: 100% !important; max-width: 100% !important; height: 100% !important; }
         ${customFullscreenCss}
       `;
@@ -15925,8 +16015,8 @@ JSON 格式：
         inset: 0 !important;
         width: calc(100vw - var(--linkual-sidebar-width, 0px)) !important;
         max-width: calc(100vw - var(--linkual-sidebar-width, 0px)) !important;
-        height: calc(100vh - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px)) !important;
-        max-height: calc(100vh - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px)) !important;
+        height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px)) !important;
+        max-height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px)) !important;
         margin: 0 !important;
         background: #000 !important;
         z-index: 2147483000 !important;
@@ -15960,8 +16050,8 @@ JSON 格式：
         inset: 0 auto auto 0 !important;
         width: calc(100vw - var(--linkual-sidebar-width, 0px)) !important;
         max-width: calc(100vw - var(--linkual-sidebar-width, 0px)) !important;
-        height: calc(100vh - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px)) !important;
-        max-height: calc(100vh - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px)) !important;
+        height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px)) !important;
+        max-height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px)) !important;
         min-height: 0 !important;
         margin: 0 !important;
         padding: 0 !important;
@@ -16009,7 +16099,7 @@ JSON 格式：
           max-width: calc(100vw - var(--linkual-sidebar-width)) !important;
           min-height: 0 !important;
           height: calc((100vw - var(--linkual-sidebar-width)) * 9 / 16) !important;
-          max-height: calc(100vh - var(--linkual-universal-widget-height, 0px) - 56px) !important;
+          max-height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - 56px) !important;
           margin: 0 !important; transform: none !important;
         }
         ytd-watch-flexy[theater] .html5-video-player .html5-video-container,
@@ -16034,7 +16124,7 @@ JSON 格式：
         ytd-watch-flexy[theater] .html5-video-player {
           width: 100vw !important; max-width: 100vw !important; min-height: 0 !important;
           height: calc(100vw * 9 / 16) !important;
-          max-height: calc(100vh - var(--linkual-sidebar-height) - var(--linkual-universal-widget-height, 0px) - 56px) !important;
+          max-height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-sidebar-height) - var(--linkual-universal-widget-height, 0px) - 56px) !important;
           margin: 0 auto !important; transform: none !important;
         }
         ytd-watch-flexy[theater] .html5-video-player .html5-video-container,

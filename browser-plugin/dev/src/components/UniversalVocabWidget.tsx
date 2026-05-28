@@ -22,6 +22,7 @@ interface SelectionCapture {
 const DESKTOP_WIDGET_HEIGHT = 58;
 const MOBILE_WIDGET_HEIGHT = 132;
 const COLLAPSED_WIDGET_HEIGHT = 28;
+const WIDGET_VIEWPORT_MARGIN = 8;
 const MAX_WORD_SELECTION_LENGTH = 180;
 const MAX_CONTEXT_SELECTION_LENGTH = 4000;
 const CONTEXT_SENTENCE_RADIUS = 2;
@@ -35,6 +36,29 @@ const FLOATING_BUTTON_MARGIN = 10;
 const getDefaultExpandedHeight = () => (
   window.matchMedia('(max-width: 720px)').matches ? MOBILE_WIDGET_HEIGHT : DESKTOP_WIDGET_HEIGHT
 );
+
+const isOwnViewportGetterPatched = (target: object | null | undefined, marker: string) => Boolean(
+  target && (target as Record<string, unknown>)[marker]
+);
+
+const getVisualViewportHeight = () => {
+  const viewportHeight = window.visualViewport?.height || window.innerHeight || document.documentElement.clientHeight;
+  const reservedOffset = (
+    isOwnViewportGetterPatched(window.visualViewport, '__linkualVisualViewportHeightPatched')
+    || isOwnViewportGetterPatched(window, '__linkualInnerHeightPatched')
+  ) ? getViewportOffset() : 0;
+  const rawHeight = Number(viewportHeight) + reservedOffset;
+  return Number.isFinite(rawHeight) && rawHeight > 0 ? rawHeight : getDefaultExpandedHeight();
+};
+
+const getMaxWidgetHeight = () => Math.max(
+  COLLAPSED_WIDGET_HEIGHT,
+  Math.floor(getVisualViewportHeight() - WIDGET_VIEWPORT_MARGIN)
+);
+
+const syncVisualViewportHeightProperty = () => {
+  document.documentElement.style.setProperty('--linkual-visual-viewport-height', `${Math.ceil(getVisualViewportHeight())}px`);
+};
 
 const ActionIcon: React.FC<{ name: WidgetIcon }> = ({ name }) => {
   const paths: Record<WidgetIcon, React.ReactNode> = {
@@ -325,7 +349,7 @@ const ensurePageReserveStyle = () => {
   styleEl.textContent = `
     html.linkual-universal-widget-open {
       --linkual-page-bottom-reserve: calc(var(--linkual-universal-widget-height, ${COLLAPSED_WIDGET_HEIGHT}px) + env(safe-area-inset-bottom, 0px));
-      --linkual-page-height: calc(100vh - var(--linkual-page-bottom-reserve));
+      --linkual-page-height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-page-bottom-reserve));
       scroll-padding-bottom: var(--linkual-page-bottom-reserve) !important;
     }
     html.linkual-universal-widget-open,
@@ -368,6 +392,7 @@ const applyPageReserve = (height: number) => {
   patchDocumentViewportElements();
 
   pageWindow[VIEWPORT_OFFSET_KEY] = nextHeight;
+  syncVisualViewportHeightProperty();
   document.documentElement.style.setProperty('--linkual-universal-widget-height', `${nextHeight}px`);
   document.documentElement.classList.add('linkual-universal-widget-open');
   dispatchViewportResize();
@@ -378,6 +403,7 @@ const releasePageReserve = () => {
 
   document.documentElement.classList.remove('linkual-universal-widget-open');
   document.documentElement.style.removeProperty('--linkual-universal-widget-height');
+  document.documentElement.style.removeProperty('--linkual-visual-viewport-height');
   pageWindow[VIEWPORT_OFFSET_KEY] = 0;
   dispatchViewportResize();
 };
@@ -413,7 +439,7 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
   const measureWidgetHeight = useCallback(() => {
     const baseHeight = getDefaultExpandedHeight();
     const measuredHeight = widgetRef.current ? Math.ceil(widgetRef.current.scrollHeight) : 0;
-    const nextHeight = Math.max(baseHeight, measuredHeight);
+    const nextHeight = Math.min(getMaxWidgetHeight(), Math.max(baseHeight, measuredHeight));
 
     setReservedHeight((currentHeight) => (
       Math.abs(currentHeight - nextHeight) > 1 ? nextHeight : currentHeight
@@ -422,7 +448,8 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
 
   useEffect(() => {
     const updateReservedHeight = () => {
-      setReservedHeight(getDefaultExpandedHeight());
+      syncVisualViewportHeightProperty();
+      setReservedHeight(Math.min(getDefaultExpandedHeight(), getMaxWidgetHeight()));
       window.requestAnimationFrame(measureWidgetHeight);
     };
 

@@ -315,8 +315,8 @@ export class YouTubeAdapter implements IVideoAdapter {
         inset: 0 !important;
         width: calc(100vw - var(--linkual-sidebar-width, 0px)) !important;
         max-width: calc(100vw - var(--linkual-sidebar-width, 0px)) !important;
-        height: calc(100vh - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px)) !important;
-        max-height: calc(100vh - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px)) !important;
+        height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px)) !important;
+        max-height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px)) !important;
         margin: 0 !important;
         background: #000 !important;
         z-index: 2147483000 !important;
@@ -350,8 +350,8 @@ export class YouTubeAdapter implements IVideoAdapter {
         inset: 0 auto auto 0 !important;
         width: calc(100vw - var(--linkual-sidebar-width, 0px)) !important;
         max-width: calc(100vw - var(--linkual-sidebar-width, 0px)) !important;
-        height: calc(100vh - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px)) !important;
-        max-height: calc(100vh - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px)) !important;
+        height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px)) !important;
+        max-height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px)) !important;
         min-height: 0 !important;
         margin: 0 !important;
         padding: 0 !important;
@@ -400,7 +400,7 @@ export class YouTubeAdapter implements IVideoAdapter {
           max-width: calc(100vw - var(--linkual-sidebar-width)) !important;
           min-height: 0 !important;
           height: calc((100vw - var(--linkual-sidebar-width)) * 9 / 16) !important;
-          max-height: calc(100vh - var(--linkual-universal-widget-height, 0px) - 56px) !important;
+          max-height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - 56px) !important;
           margin: 0 !important; transform: none !important;
         }
         ytd-watch-flexy[theater] .html5-video-player .html5-video-container,
@@ -425,7 +425,7 @@ export class YouTubeAdapter implements IVideoAdapter {
         ytd-watch-flexy[theater] .html5-video-player {
           width: 100vw !important; max-width: 100vw !important; min-height: 0 !important;
           height: calc(100vw * 9 / 16) !important;
-          max-height: calc(100vh - var(--linkual-sidebar-height) - var(--linkual-universal-widget-height, 0px) - 56px) !important;
+          max-height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-sidebar-height) - var(--linkual-universal-widget-height, 0px) - 56px) !important;
           margin: 0 auto !important; transform: none !important;
         }
         ytd-watch-flexy[theater] .html5-video-player .html5-video-container,
