@@ -26,6 +26,7 @@ type BrowserFullscreenDocument = Document & {
 const INITIAL_RENDER_LIMIT = 80;
 const RENDER_BATCH_SIZE = 80;
 const ACTIVE_RENDER_BUFFER = 20;
+const LINKUAL_NAVIGATION_EVENT = 'linkual_navigation';
 
 function getBrowserFullscreenElement() {
   const doc = document as BrowserFullscreenDocument;
@@ -83,10 +84,12 @@ const App: React.FC<AppProps> = ({ adapter }) => {
     
     const interval = setInterval(checkVideo, 500);
     window.addEventListener('yt-navigate-finish', checkVideo);
+    window.addEventListener(LINKUAL_NAVIGATION_EVENT, checkVideo);
     
     return () => {
       clearInterval(interval);
       window.removeEventListener('yt-navigate-finish', checkVideo);
+      window.removeEventListener(LINKUAL_NAVIGATION_EVENT, checkVideo);
     };
   }, [adapter]);
 
@@ -159,7 +162,11 @@ const App: React.FC<AppProps> = ({ adapter }) => {
     };
 
     window.addEventListener('linkual_custom_layout_refresh', refreshCustomLayout);
-    return () => window.removeEventListener('linkual_custom_layout_refresh', refreshCustomLayout);
+    window.addEventListener(LINKUAL_NAVIGATION_EVENT, refreshCustomLayout);
+    return () => {
+      window.removeEventListener('linkual_custom_layout_refresh', refreshCustomLayout);
+      window.removeEventListener(LINKUAL_NAVIGATION_EVENT, refreshCustomLayout);
+    };
   }, [adapter, inVideo, layout, sidebarHeight, sidebarWidth]);
 
   const startResize = (e: React.MouseEvent<HTMLDivElement>) => {

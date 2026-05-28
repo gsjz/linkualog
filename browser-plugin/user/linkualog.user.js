@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Linkual Log
 // @namespace    npm/vite-plugin-monkey
-// @version      0.0.15
+// @version      0.0.16
 // @author       Sergio Gao
 // @icon         https://vitejs.dev/logo.svg
 // @downloadURL  https://raw.githubusercontent.com/gsjz/linkualog/main/browser-plugin/user/linkualog.user.js
@@ -14080,6 +14080,8 @@ JSON 格式：
   const SENTENCE_PATTERN = /[^.!?。！？]+[.!?。！？]+["'”’）)]*|[^.!?。！？]+$/g;
   const VIEWPORT_PATCH_MARKER = "__linkualUniversalViewportPatchInstalled";
   const VIEWPORT_OFFSET_KEY = "__linkualUniversalWidgetHeight";
+  const PAGE_RESERVE_STYLE_ID = "linkual-universal-page-reserve";
+  const LINKUAL_NAVIGATION_EVENT$2 = "linkual_navigation";
   const FLOATING_BUTTON_MARGIN = 10;
   const getDefaultExpandedHeight = () => window.matchMedia("(max-width: 720px)").matches ? MOBILE_WIDGET_HEIGHT : DESKTOP_WIDGET_HEIGHT;
   const ActionIcon = ({ name }) => {
@@ -14244,7 +14246,7 @@ JSON 格式：
       left: position.left
     };
   };
-  const getPageWindow = () => {
+  const getPageWindow$1 = () => {
     try {
       return typeof unsafeWindow !== "undefined" ? unsafeWindow : window;
     } catch {
@@ -14260,46 +14262,102 @@ JSON 格式：
     }
     return void 0;
   };
+  const getViewportOffset = () => {
+    const pageWindow = getPageWindow$1();
+    const raw = Number(pageWindow[VIEWPORT_OFFSET_KEY] || 0);
+    return Number.isFinite(raw) ? raw : 0;
+  };
+  const patchNumericHeightGetter = (target, property, marker) => {
+    if (!target || target[marker]) return;
+    const descriptor = findPropertyDescriptor(target, property);
+    if (!(descriptor == null ? void 0 : descriptor.get)) return;
+    try {
+      Object.defineProperty(target, property, {
+        configurable: true,
+        get() {
+          var _a;
+          const value = Number(((_a = descriptor.get) == null ? void 0 : _a.call(this)) || 0);
+          return Math.max(0, value - getViewportOffset());
+        }
+      });
+      target[marker] = true;
+    } catch {
+    }
+  };
+  const patchDocumentViewportElements = () => {
+    patchNumericHeightGetter(document.documentElement, "clientHeight", "__linkualClientHeightPatched");
+    patchNumericHeightGetter(document.body, "clientHeight", "__linkualClientHeightPatched");
+  };
   const installViewportHeightPatch = () => {
-    const pageWindow = getPageWindow();
-    if (pageWindow[VIEWPORT_PATCH_MARKER]) return;
-    const getOffset = () => {
-      const raw = Number(pageWindow[VIEWPORT_OFFSET_KEY] || 0);
-      return Number.isFinite(raw) ? raw : 0;
+    const pageWindow = getPageWindow$1();
+    if (!pageWindow[VIEWPORT_PATCH_MARKER]) {
+      patchNumericHeightGetter(pageWindow, "innerHeight", "__linkualInnerHeightPatched");
+      patchNumericHeightGetter(pageWindow.visualViewport, "height", "__linkualVisualViewportHeightPatched");
+      pageWindow[VIEWPORT_PATCH_MARKER] = true;
+    }
+    patchDocumentViewportElements();
+  };
+  const ensurePageReserveStyle = () => {
+    let styleEl = document.getElementById(PAGE_RESERVE_STYLE_ID);
+    if (!styleEl) {
+      styleEl = document.createElement("style");
+      styleEl.id = PAGE_RESERVE_STYLE_ID;
+      document.head.appendChild(styleEl);
+    }
+    styleEl.textContent = `
+    html.linkual-universal-widget-open {
+      --linkual-page-bottom-reserve: calc(var(--linkual-universal-widget-height, ${COLLAPSED_WIDGET_HEIGHT}px) + env(safe-area-inset-bottom, 0px));
+      --linkual-page-height: calc(100vh - var(--linkual-page-bottom-reserve));
+      scroll-padding-bottom: var(--linkual-page-bottom-reserve) !important;
+    }
+    html.linkual-universal-widget-open,
+    html.linkual-universal-widget-open body {
+      min-height: var(--linkual-page-height) !important;
+    }
+    html.linkual-universal-widget-open body {
+      padding-bottom: var(--linkual-page-bottom-reserve) !important;
+      box-sizing: border-box !important;
+    }
+    html.linkual-universal-widget-open [data-linkual-root="true"] {
+      padding-bottom: 0 !important;
+    }
+  `;
+  };
+  const dispatchViewportResize = () => {
+    const pageWindow = getPageWindow$1();
+    const PageEvent = pageWindow.Event || Event;
+    const dispatch = () => {
+      var _a;
+      window.dispatchEvent(new Event("resize"));
+      if (pageWindow !== window) {
+        pageWindow.dispatchEvent(new PageEvent("resize"));
+      }
+      (_a = pageWindow.visualViewport) == null ? void 0 : _a.dispatchEvent(new PageEvent("resize"));
     };
-    try {
-      const descriptor = findPropertyDescriptor(pageWindow, "innerHeight");
-      if (descriptor == null ? void 0 : descriptor.get) {
-        Object.defineProperty(pageWindow, "innerHeight", {
-          configurable: true,
-          get() {
-            var _a;
-            const value = Number(((_a = descriptor.get) == null ? void 0 : _a.call(pageWindow)) || 0);
-            return Math.max(0, value - getOffset());
-          }
-        });
-      }
-    } catch {
-    }
-    try {
-      const viewport = pageWindow.visualViewport;
-      const descriptor = viewport ? findPropertyDescriptor(viewport, "height") : void 0;
-      if (viewport && (descriptor == null ? void 0 : descriptor.get)) {
-        Object.defineProperty(viewport, "height", {
-          configurable: true,
-          get() {
-            var _a;
-            const value = Number(((_a = descriptor.get) == null ? void 0 : _a.call(viewport)) || 0);
-            return Math.max(0, value - getOffset());
-          }
-        });
-      }
-    } catch {
-    }
-    pageWindow[VIEWPORT_PATCH_MARKER] = true;
+    dispatch();
+    window.requestAnimationFrame(dispatch);
+    window.setTimeout(dispatch, 120);
+  };
+  const applyPageReserve = (height) => {
+    const nextHeight = Math.max(0, Math.ceil(height));
+    const pageWindow = getPageWindow$1();
+    installViewportHeightPatch();
+    ensurePageReserveStyle();
+    patchDocumentViewportElements();
+    pageWindow[VIEWPORT_OFFSET_KEY] = nextHeight;
+    document.documentElement.style.setProperty("--linkual-universal-widget-height", `${nextHeight}px`);
+    document.documentElement.classList.add("linkual-universal-widget-open");
+    dispatchViewportResize();
+  };
+  const releasePageReserve = () => {
+    const pageWindow = getPageWindow$1();
+    document.documentElement.classList.remove("linkual-universal-widget-open");
+    document.documentElement.style.removeProperty("--linkual-universal-widget-height");
+    pageWindow[VIEWPORT_OFFSET_KEY] = 0;
+    dispatchViewportResize();
   };
   const UniversalVocabWidget = ({ onOpenSettings }) => {
-    const [isExpanded, setIsExpanded] = reactExports.useState(true);
+    const [isExpanded, setIsExpanded] = reactExports.useState(false);
     const [selection, setSelection] = reactExports.useState(null);
     const [word, setWord] = reactExports.useState("");
     const [context, setContext] = reactExports.useState("");
@@ -14329,13 +14387,20 @@ JSON 格式：
       setReservedHeight((currentHeight) => Math.abs(currentHeight - nextHeight) > 1 ? nextHeight : currentHeight);
     }, []);
     reactExports.useEffect(() => {
+      var _a;
       const updateReservedHeight = () => {
         setReservedHeight(getDefaultExpandedHeight());
         window.requestAnimationFrame(measureWidgetHeight);
       };
       updateReservedHeight();
-      window.addEventListener("resize", updateReservedHeight);
-      return () => window.removeEventListener("resize", updateReservedHeight);
+      const desktopQuery = window.matchMedia("(max-width: 720px)");
+      desktopQuery.addEventListener("change", updateReservedHeight);
+      (_a = window.visualViewport) == null ? void 0 : _a.addEventListener("resize", updateReservedHeight);
+      return () => {
+        var _a2;
+        desktopQuery.removeEventListener("change", updateReservedHeight);
+        (_a2 = window.visualViewport) == null ? void 0 : _a2.removeEventListener("resize", updateReservedHeight);
+      };
     }, [measureWidgetHeight]);
     reactExports.useEffect(() => {
       if (!isExpanded) return void 0;
@@ -14359,37 +14424,26 @@ JSON 格式：
       window.dispatchEvent(new Event(QUEUE_REQUEST_COUNT_EVENT));
       return () => window.removeEventListener(QUEUE_COUNT_EVENT, updateQueueCount);
     }, []);
+    reactExports.useEffect(() => releasePageReserve, []);
     reactExports.useEffect(() => {
-      installViewportHeightPatch();
-      let styleEl = document.getElementById("linkual-universal-page-reserve");
-      if (!styleEl) {
-        styleEl = document.createElement("style");
-        styleEl.id = "linkual-universal-page-reserve";
-        document.head.appendChild(styleEl);
-      }
-      styleEl.textContent = `
-      html.linkual-universal-widget-open {
-        --linkual-page-height: calc(100vh - var(--linkual-universal-widget-height, ${DESKTOP_WIDGET_HEIGHT}px) - env(safe-area-inset-bottom, 0px));
-        scroll-padding-bottom: calc(var(--linkual-universal-widget-height, ${DESKTOP_WIDGET_HEIGHT}px) + env(safe-area-inset-bottom, 0px)) !important;
-      }
-      html.linkual-universal-widget-open body {
-        padding-bottom: calc(var(--linkual-universal-widget-height, ${DESKTOP_WIDGET_HEIGHT}px) + env(safe-area-inset-bottom, 0px)) !important;
-        box-sizing: border-box !important;
-      }
-    `;
-      const pageWindow = getPageWindow();
-      pageWindow[VIEWPORT_OFFSET_KEY] = activeWidgetHeight;
-      document.documentElement.style.setProperty("--linkual-universal-widget-height", `${activeWidgetHeight}px`);
-      document.documentElement.classList.add("linkual-universal-widget-open");
-      window.dispatchEvent(new Event("resize"));
-      return () => {
-        document.documentElement.classList.remove("linkual-universal-widget-open");
-        document.documentElement.style.removeProperty("--linkual-universal-widget-height");
-        const cleanupWindow = getPageWindow();
-        cleanupWindow[VIEWPORT_OFFSET_KEY] = 0;
-        window.dispatchEvent(new Event("resize"));
-      };
+      applyPageReserve(activeWidgetHeight);
     }, [activeWidgetHeight]);
+    reactExports.useEffect(() => {
+      const handleNavigationRefresh = () => {
+        setSelection(null);
+        setSourceUrl(getPageUrl());
+        window.requestAnimationFrame(() => {
+          if (isExpanded) measureWidgetHeight();
+          applyPageReserve(activeWidgetHeight);
+        });
+      };
+      window.addEventListener(LINKUAL_NAVIGATION_EVENT$2, handleNavigationRefresh);
+      window.addEventListener("pageshow", handleNavigationRefresh);
+      return () => {
+        window.removeEventListener(LINKUAL_NAVIGATION_EVENT$2, handleNavigationRefresh);
+        window.removeEventListener("pageshow", handleNavigationRefresh);
+      };
+    }, [activeWidgetHeight, isExpanded, measureWidgetHeight]);
     const refreshSelection = reactExports.useCallback(() => {
       if (!isExpanded) return;
       setSelection(captureSelection(selectionMode));
@@ -14631,6 +14685,7 @@ JSON 格式：
   const INITIAL_RENDER_LIMIT = 80;
   const RENDER_BATCH_SIZE = 80;
   const ACTIVE_RENDER_BUFFER = 20;
+  const LINKUAL_NAVIGATION_EVENT$1 = "linkual_navigation";
   function getBrowserFullscreenElement() {
     const doc = document;
     return document.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement || doc.msFullscreenElement || null;
@@ -14672,9 +14727,11 @@ JSON 格式：
       };
       const interval = setInterval(checkVideo, 500);
       window.addEventListener("yt-navigate-finish", checkVideo);
+      window.addEventListener(LINKUAL_NAVIGATION_EVENT$1, checkVideo);
       return () => {
         clearInterval(interval);
         window.removeEventListener("yt-navigate-finish", checkVideo);
+        window.removeEventListener(LINKUAL_NAVIGATION_EVENT$1, checkVideo);
       };
     }, [adapter]);
     reactExports.useEffect(() => {
@@ -14736,7 +14793,11 @@ JSON 格式：
         }
       };
       window.addEventListener("linkual_custom_layout_refresh", refreshCustomLayout);
-      return () => window.removeEventListener("linkual_custom_layout_refresh", refreshCustomLayout);
+      window.addEventListener(LINKUAL_NAVIGATION_EVENT$1, refreshCustomLayout);
+      return () => {
+        window.removeEventListener("linkual_custom_layout_refresh", refreshCustomLayout);
+        window.removeEventListener(LINKUAL_NAVIGATION_EVENT$1, refreshCustomLayout);
+      };
     }, [adapter, inVideo, layout, sidebarHeight, sidebarWidth]);
     const startResize = (e) => {
       e.preventDefault();
@@ -16083,6 +16144,15 @@ JSON 格式：
     throw new Error("[Linkual] 阻止在 iframe 中重复执行");
   }
   let rootInstance = null;
+  let navigationRefreshTimer = null;
+  const LINKUAL_NAVIGATION_EVENT = "linkual_navigation";
+  function getPageWindow() {
+    try {
+      return typeof unsafeWindow !== "undefined" ? unsafeWindow : window;
+    } catch {
+      return window;
+    }
+  }
   function isolateRoot(app) {
     app.dataset.linkualRoot = "true";
     app.style.position = "fixed";
@@ -16097,13 +16167,27 @@ JSON 格式：
     app.style.zIndex = "2147483647";
     app.style.pointerEvents = "none";
   }
+  function getRootHost() {
+    const fullscreenElement = document.fullscreenElement;
+    if (fullscreenElement instanceof HTMLElement && fullscreenElement.isConnected) {
+      return fullscreenElement;
+    }
+    return document.body;
+  }
+  function attachRootToActiveHost(app) {
+    const host = getRootHost();
+    if (host && app.parentElement !== host) {
+      host.append(app);
+    }
+  }
   function mountApp() {
+    if (!document.body) return;
     let app = document.getElementById("linkual-root");
     if (!app) {
       app = document.createElement("div");
       app.id = "linkual-root";
-      document.body.append(app);
     }
+    attachRootToActiveHost(app);
     isolateRoot(app);
     const adapter = getAdapter();
     if (rootInstance) {
@@ -16113,23 +16197,76 @@ JSON 格式：
       rootInstance.render(/* @__PURE__ */ jsxRuntimeExports.jsx(App, { adapter }));
     }
   }
+  function dispatchNavigationRefresh() {
+    window.dispatchEvent(new Event(LINKUAL_NAVIGATION_EVENT));
+    window.dispatchEvent(new Event("linkual_custom_layout_refresh"));
+    window.dispatchEvent(new Event("resize"));
+  }
+  function scheduleNavigationRefresh() {
+    if (navigationRefreshTimer !== null) {
+      window.clearTimeout(navigationRefreshTimer);
+    }
+    navigationRefreshTimer = window.setTimeout(() => {
+      navigationRefreshTimer = null;
+      mountApp();
+      dispatchNavigationRefresh();
+    }, 80);
+  }
+  function installNavigationHooks() {
+    const pageWindow = getPageWindow();
+    if (pageWindow.__linkualNavigationHooked) return;
+    pageWindow.__linkualNavigationHooked = true;
+    const wrapHistoryMethod = (methodName) => {
+      var _a;
+      const rawMethod = (_a = pageWindow.history) == null ? void 0 : _a[methodName];
+      if (typeof rawMethod !== "function") return;
+      try {
+        Object.defineProperty(pageWindow.history, methodName, {
+          configurable: true,
+          writable: true,
+          value(...args) {
+            const result = rawMethod.apply(this, args);
+            scheduleNavigationRefresh();
+            return result;
+          }
+        });
+      } catch {
+      }
+    };
+    wrapHistoryMethod("pushState");
+    wrapHistoryMethod("replaceState");
+    pageWindow.addEventListener("popstate", scheduleNavigationRefresh, true);
+    pageWindow.addEventListener("hashchange", scheduleNavigationRefresh, true);
+    window.addEventListener("pageshow", scheduleNavigationRefresh);
+  }
   if (document.body) {
     mountApp();
   } else {
     document.addEventListener("DOMContentLoaded", mountApp);
   }
-  window.addEventListener("yt-navigate-finish", mountApp);
+  installNavigationHooks();
+  window.addEventListener("yt-navigate-finish", scheduleNavigationRefresh);
+  document.addEventListener("fullscreenchange", () => {
+    const app = document.getElementById("linkual-root");
+    if (app) attachRootToActiveHost(app);
+  });
   const observer = new MutationObserver(() => {
     if (document.body && !document.getElementById("linkual-root")) {
       console.log("[Linkual] 检测到根节点被意外移除，正在尝试恢复...");
       mountApp();
+    } else {
+      const app = document.getElementById("linkual-root");
+      if (app) attachRootToActiveHost(app);
     }
   });
   if (document.body) {
+    observer.observe(document.documentElement, { childList: true, subtree: false });
     observer.observe(document.body, { childList: true, subtree: false });
   } else {
     document.addEventListener("DOMContentLoaded", () => {
+      observer.observe(document.documentElement, { childList: true, subtree: false });
       observer.observe(document.body, { childList: true, subtree: false });
+      installNavigationHooks();
     });
   }
 
