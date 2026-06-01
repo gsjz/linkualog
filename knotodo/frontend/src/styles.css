@@ -303,12 +303,18 @@ button {
 }
 
 .knt-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: 1px solid var(--line-strong);
   border-radius: 8px;
   padding: 8px 10px;
   background: var(--surface);
   color: inherit;
   font-weight: 600;
+  text-decoration: none;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
 .knt-btn:disabled {

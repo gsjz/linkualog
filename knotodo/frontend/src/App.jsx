@@ -1919,6 +1919,17 @@ function App() {
 
   return (
     <div className="knt-app">
+      <header className="knt-topbar">
+        <div className="knt-topbar-left">
+          <h1>KnoTodo</h1>
+          <p>Boards, timeline, and scheduled cards</p>
+        </div>
+        <div className="knt-topbar-right">
+          <a className="knt-btn knt-return-link" href="/">
+            返回 Linkual Log
+          </a>
+        </div>
+      </header>
       <section className="knt-layout knt-layout--three">
         <aside className={`knt-leftbar${isCardDetailVisible ? ' is-detail-open' : ''}`}>
           <section className="knt-panel">

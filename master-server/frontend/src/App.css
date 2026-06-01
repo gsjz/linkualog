@@ -2215,6 +2215,30 @@
   gap: 12px !important;
 }
 
+.master-fullscreen-button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 7px !important;
+  white-space: nowrap !important;
+}
+
+.master-fullscreen-button.is-active,
+.master-mobile-fullscreen-button.is-active {
+  border-color: var(--ms-text) !important;
+  background: var(--ms-text) !important;
+  color: #fff !important;
+}
+
+.master-mobile-fullscreen-button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 7px !important;
+  width: 100% !important;
+  min-height: 36px !important;
+}
+
 .master-mobile-tools-layer {
   display: none;
 }
@@ -2544,7 +2568,7 @@
 
   .master-tabs {
     display: grid !important;
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
     width: 100% !important;
     gap: 8px !important;
     padding: 4px !important;
@@ -4503,7 +4527,7 @@
 
   .master-tabs {
     display: grid !important;
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
     gap: 6px !important;
     padding: 0 !important;
     border: none !important;
@@ -5297,6 +5321,12 @@
     height: 34px !important;
   }
 
+  .master-actions.is-mobile-actions .master-fullscreen-button {
+    width: 34px !important;
+    height: 34px !important;
+    padding: 0 !important;
+  }
+
 	  .master-mobile-tools-layer {
 	    position: fixed !important;
 	    inset: 0 !important;
@@ -5369,7 +5399,8 @@
   }
 
   .master-mobile-select-label .master-select,
-  .master-mobile-config-button {
+  .master-mobile-config-button,
+  .master-mobile-fullscreen-button {
     width: 100% !important;
   }
 
@@ -5379,7 +5410,8 @@
     min-width: 0 !important;
   }
 
-  .master-mobile-config-button {
+  .master-mobile-config-button,
+  .master-mobile-fullscreen-button {
     height: 36px !important;
     min-height: 36px !important;
     justify-content: center !important;
@@ -5720,6 +5752,12 @@
     font-size: 12px !important;
   }
 
+  .master-fullscreen-button {
+    height: 34px !important;
+    padding: 0 12px !important;
+    font-size: 12px !important;
+  }
+
   .master-shell.is-desktop-minimal .master-header {
     min-height: 60px !important;
     padding: 10px 18px !important;
@@ -5744,6 +5782,11 @@
 
   .master-shell.is-desktop-minimal .master-layout-toggle {
     min-width: 88px !important;
+    height: 32px !important;
+    padding: 0 10px !important;
+  }
+
+  .master-shell.is-desktop-minimal .master-fullscreen-button {
     height: 32px !important;
     padding: 0 10px !important;
   }

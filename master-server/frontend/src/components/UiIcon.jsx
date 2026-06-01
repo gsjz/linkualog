@@ -249,6 +249,18 @@ export default function UiIcon({ name, size = 18 }) {
     );
   }
 
+  if (name === 'todo') {
+    return (
+      <svg {...commonProps}>
+        <rect x="4" y="4" width="16" height="16" rx="2" />
+        <path d="m8 9 1.7 1.7L13 7.5" />
+        <path d="M15 9.5h2" />
+        <path d="m8 15 1.7 1.7L13 13.5" />
+        <path d="M15 15.5h2" />
+      </svg>
+    );
+  }
+
   if (name === 'target') {
     return (
       <svg {...commonProps}>
@@ -289,6 +301,36 @@ export default function UiIcon({ name, size = 18 }) {
         <path d="m20 4-8.5 8.5" />
         <path d="M11 6H6.5A2.5 2.5 0 0 0 4 8.5v9A2.5 2.5 0 0 0 6.5 20h9a2.5 2.5 0 0 0 2.5-2.5V13" />
         <path d="M8 13.5h5" />
+      </svg>
+    );
+  }
+
+  if (name === 'fullscreen') {
+    return (
+      <svg {...commonProps}>
+        <path d="M8.5 4H4v4.5" />
+        <path d="M4 4 9.2 9.2" />
+        <path d="M15.5 4H20v4.5" />
+        <path d="M20 4 14.8 9.2" />
+        <path d="M8.5 20H4v-4.5" />
+        <path d="M4 20 9.2 14.8" />
+        <path d="M15.5 20H20v-4.5" />
+        <path d="M20 20 14.8 14.8" />
+      </svg>
+    );
+  }
+
+  if (name === 'fullscreen-exit') {
+    return (
+      <svg {...commonProps}>
+        <path d="M9 4.5V9H4.5" />
+        <path d="M9 9 4 4" />
+        <path d="M15 4.5V9h4.5" />
+        <path d="m15 9 5-5" />
+        <path d="M9 19.5V15H4.5" />
+        <path d="m9 15-5 5" />
+        <path d="M15 19.5V15h4.5" />
+        <path d="m15 15 5 5" />
       </svg>
     );
   }

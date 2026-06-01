@@ -51,6 +51,35 @@ const normalizeUrlPart = (value) => String(value || '').trim();
 
 const normalizeUrlWord = (value) => normalizeUrlPart(value).replace(/\.json$/i, '');
 
+const getFullscreenElement = () => {
+  if (typeof document === 'undefined') return null;
+  return document.fullscreenElement
+    || document.webkitFullscreenElement
+    || document.mozFullScreenElement
+    || document.msFullscreenElement
+    || null;
+};
+
+const requestFullscreen = (element) => {
+  if (!element) return Promise.reject(new Error('Fullscreen target is not available.'));
+  const request = element.requestFullscreen
+    || element.webkitRequestFullscreen
+    || element.mozRequestFullScreen
+    || element.msRequestFullscreen;
+  if (!request) return Promise.reject(new Error('Fullscreen is not supported by this browser.'));
+  return Promise.resolve(request.call(element));
+};
+
+const exitFullscreen = () => {
+  if (typeof document === 'undefined') return Promise.resolve();
+  const exit = document.exitFullscreen
+    || document.webkitExitFullscreen
+    || document.mozCancelFullScreen
+    || document.msExitFullscreen;
+  if (!exit) return Promise.reject(new Error('Fullscreen exit is not supported by this browser.'));
+  return Promise.resolve(exit.call(document));
+};
+
 const safeDecodePathPart = (value) => {
   try {
     return decodeURIComponent(value);
@@ -127,6 +156,7 @@ function App() {
   const [currentTab, setCurrentTab] = useState(initialUrlState.tab);
   const [addVocabularyCategory, setAddVocabularyCategory] = useState(readAddVocabularyCategory);
   const [categories, setCategories] = useState([]);
+  const [isFullscreen, setIsFullscreen] = useState(() => Boolean(getFullscreenElement()));
   const [vocabularyRouteState, setVocabularyRouteState] = useState(() => ({
     category: initialUrlState.category,
     word: initialUrlState.word,
@@ -186,6 +216,27 @@ function App() {
     if (typeof window === 'undefined') return;
     localStorage.setItem(DESKTOP_MINIMAL_MODE_KEY, preferDesktopMinimalMode ? '1' : '0');
   }, [preferDesktopMinimalMode]);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return undefined;
+
+    const handleFullscreenChange = () => {
+      setIsFullscreen(Boolean(getFullscreenElement()));
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+    handleFullscreenChange();
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+    };
+  }, []);
 
   useEffect(() => {
     const handlePopState = () => {
@@ -289,6 +340,30 @@ function App() {
     setShowConfig(true);
   }, []);
 
+  const handleOpenTodo = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    window.location.assign('/todo');
+  }, []);
+
+  const handleFullscreenToggle = useCallback(() => {
+    if (typeof document === 'undefined') return;
+
+    const fullscreenElement = getFullscreenElement();
+    const action = fullscreenElement
+      ? exitFullscreen()
+      : requestFullscreen(document.documentElement);
+
+    action
+      .then(() => {
+        setMobileToolsOpen(false);
+      })
+      .catch(() => {});
+  }, []);
+
+  const fullscreenLabel = isFullscreen ? '退出全屏' : '全屏';
+  const fullscreenAriaLabel = isFullscreen ? '退出全屏显示' : '进入全屏显示';
+  const fullscreenIconName = isFullscreen ? 'fullscreen-exit' : 'fullscreen';
+
   return (
     <div className={`master-shell${useDesktopMinimalMode ? ' is-desktop-minimal' : ''}`}>
       <header className={`master-header${mobileToolsOpen ? ' has-mobile-tools-open' : ''}`}>
@@ -334,12 +409,34 @@ function App() {
               </span>
               <span className="master-tab-label">可视化</span>
             </button>
+            <button
+              type="button"
+              onClick={handleOpenTodo}
+              aria-label="打开待办页面"
+              className="master-tab"
+            >
+              <span className="master-tab-icon">
+                <UiIcon name="todo" size={17} />
+              </span>
+              <span className="master-tab-label">{usesCompactLayout ? '待办' : '待办事项'}</span>
+            </button>
           </div>
         </div>
 
         <div className={`master-actions${useDesktopMinimalMode ? ' is-compact-layout' : ''}${usesCompactViewport ? ' is-mobile-actions' : ''}`}>
           {usesCompactViewport ? (
             <>
+              <button
+                type="button"
+                onClick={handleFullscreenToggle}
+                className={`master-icon-button master-fullscreen-button${isFullscreen ? ' is-active' : ''}`}
+                aria-label={fullscreenAriaLabel}
+                aria-pressed={isFullscreen}
+                title={fullscreenAriaLabel}
+              >
+                <UiIcon name={fullscreenIconName} size={18} />
+              </button>
+
               <button
                 type="button"
                 onClick={() => setMobileToolsOpen((open) => !open)}
@@ -388,12 +485,34 @@ function App() {
                     >
                       全局配置
                     </button>
+
+                    <button
+                      type="button"
+                      onClick={handleFullscreenToggle}
+                      className={`master-secondary-button master-mobile-fullscreen-button${isFullscreen ? ' is-active' : ''}`}
+                      aria-pressed={isFullscreen}
+                    >
+                      <UiIcon name={fullscreenIconName} size={17} />
+                      <span>{fullscreenLabel}</span>
+                    </button>
                   </section>
                 </div>
               ) : null}
             </>
           ) : (
             <>
+            <button
+              type="button"
+              onClick={handleFullscreenToggle}
+              aria-pressed={isFullscreen}
+              aria-label={fullscreenAriaLabel}
+              className={`master-secondary-button master-fullscreen-button${isFullscreen ? ' is-active' : ''}`}
+              title={fullscreenAriaLabel}
+            >
+              <UiIcon name={fullscreenIconName} size={17} />
+              <span>{fullscreenLabel}</span>
+            </button>
+
             <button
               type="button"
               onClick={handleDesktopMinimalModeToggle}
