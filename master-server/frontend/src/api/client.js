@@ -128,6 +128,15 @@ export const getVocabularyCategories = async () => {
   return handleResponse(res);
 };
 
+export const getReviewVisualization = async (category = '') => {
+  const params = new URLSearchParams();
+  const normalizedCategory = String(category || '').trim();
+  if (normalizedCategory) params.set('category', normalizedCategory);
+  const query = params.toString();
+  const res = await fetch(`${BACKEND_URL}/api/review/visualization${query ? `?${query}` : ''}`);
+  return handleResponse(res);
+};
+
 const requireVocabularyCategory = (category) => {
   const normalized = String(category || '').trim();
   if (!normalized) {

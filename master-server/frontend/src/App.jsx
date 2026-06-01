@@ -2,13 +2,14 @@ import React, { useCallback, useEffect, useState } from 'react';
 import TaskVisualizer from './components/TaskVisualizer';
 import ConfigForm from './components/ConfigForm';
 import VocabularyWorkspace from './components/VocabularyWorkspace';
+import VisualizationDashboard from './components/VisualizationDashboard';
 import UiIcon from './components/UiIcon';
 import { getVocabularyCategories } from './api/client';
 import './App.css';
 
 const COMPACT_LAYOUT_MEDIA_QUERY = '(max-width: 1180px)';
 const DESKTOP_MINIMAL_MODE_KEY = 'linkualogDesktopMinimalMode';
-const VALID_TABS = new Set(['tasks', 'vocabulary']);
+const VALID_TABS = new Set(['tasks', 'vocabulary', 'visualization']);
 const MOBILE_TOOLS_PANEL_ID = 'master-mobile-tools-panel';
 
 const readUsesCompactViewport = () => {
@@ -310,6 +311,16 @@ function App() {
               </span>
               <span className="master-tab-label">{usesCompactLayout ? '词库' : '我的生词本'}</span>
             </button>
+            <button
+              onClick={() => handleTabChange('visualization')}
+              aria-label="打开可视化"
+              className={`master-tab${currentTab === 'visualization' ? ' active' : ''}`}
+            >
+              <span className="master-tab-icon">
+                <UiIcon name="chart" size={17} />
+              </span>
+              <span className="master-tab-label">可视化</span>
+            </button>
           </div>
         </div>
 
@@ -420,6 +431,14 @@ function App() {
               compactDesktop={useDesktopMinimalMode}
               onOpenConfig={handleOpenConfig}
               onSelectionChange={handleVocabularySelectionChange}
+            />
+          </div>
+          <div
+            className={`master-pane${currentTab === 'visualization' ? ' is-active' : ''}`}
+            aria-hidden={currentTab !== 'visualization'}
+          >
+            <VisualizationDashboard
+              categories={categories}
             />
           </div>
         </div>

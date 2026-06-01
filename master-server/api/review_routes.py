@@ -1,8 +1,9 @@
 import logging
 import os
 import re
+from collections import Counter
 from copy import deepcopy
-from datetime import date
+from datetime import date, timedelta
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
@@ -364,6 +365,106 @@ def _score_review_candidate(advice: dict, created_at: str, today: date) -> float
         today,
         _DEFAULT_RECOMMENDATION_PREFERENCES,
     )["priority_score"]
+
+
+def _format_month_key(value: date) -> str:
+    return value.strftime("%Y-%m")
+
+
+def _default_daily_review_counts(today: date, days: int = 14) -> list[dict]:
+    start = today - timedelta(days=max(days - 1, 0))
+    return [
+        {
+            "date": format_review_date(start + timedelta(days=offset)),
+            "count": 0,
+        }
+        for offset in range(days)
+    ]
+
+
+def _score_bucket(score: int | None) -> str:
+    if score is None:
+        return "unreviewed"
+    if score >= 4:
+        return "mastered"
+    if score >= 2:
+        return "familiar"
+    return "unfamiliar"
+
+
+def _entry_example_feature_flags(payload: dict) -> dict:
+    examples = payload.get("examples") if isinstance(payload.get("examples"), list) else []
+    has_examples = bool(examples)
+    has_focus = False
+    has_explanation = False
+    has_source = False
+    has_youtube = False
+
+    for example in examples:
+        if not isinstance(example, dict):
+            continue
+        raw_focus_positions = example.get("focusPositions", example.get("focusPosition", example.get("fp", example.get("fps"))))
+        raw_focus_words = example.get("focusWords")
+        if isinstance(raw_focus_positions, list) and raw_focus_positions:
+            has_focus = True
+        if isinstance(raw_focus_words, list) and any(str(item or "").strip() for item in raw_focus_words):
+            has_focus = True
+        if str(example.get("explanation") or "").strip():
+            has_explanation = True
+        source = example.get("source")
+        if isinstance(source, dict) and (str(source.get("text") or "").strip() or str(source.get("url") or "").strip()):
+            has_source = True
+        if isinstance(example.get("youtube"), dict) and str(example["youtube"].get("url") or "").strip():
+            has_youtube = True
+
+    return {
+        "has_examples": has_examples,
+        "has_focus": has_focus,
+        "has_explanation": has_explanation,
+        "has_source": has_source,
+        "has_youtube": has_youtube,
+    }
+
+
+def _build_feature_share_items(counts: dict[str, int], total: int) -> list[dict]:
+    labels = {
+        "has_examples": "带例句",
+        "has_focus": "有重点词",
+        "has_explanation": "有解析",
+        "has_source": "有来源",
+        "has_youtube": "YouTube 来源",
+        "marked": "已标记",
+    }
+    return [
+        {
+            "key": key,
+            "label": label,
+            "count": int(counts.get(key, 0)),
+            "ratio": round((int(counts.get(key, 0)) / total), 4) if total > 0 else 0.0,
+        }
+        for key, label in labels.items()
+    ]
+
+
+def _review_status_label(status: str) -> str:
+    labels = {
+        "overdue": "已逾期",
+        "due_today": "今日到期",
+        "due_soon": "即将到期",
+        "scheduled": "已安排",
+        "new": "新词",
+    }
+    return labels.get(status, status or "未知")
+
+
+def _score_bucket_label(bucket: str) -> str:
+    labels = {
+        "mastered": "熟练",
+        "familiar": "熟悉",
+        "unfamiliar": "陌生",
+        "unreviewed": "未复习",
+    }
+    return labels.get(bucket, bucket or "未知")
 
 
 def _clamp_probability(value, fallback: float = 0.66) -> float:
@@ -816,6 +917,302 @@ def _merge_llm_example_suggestions(existing_items, additional_items) -> list[dic
 @router.get("/api/health")
 def health_check():
     return {"status": "ok"}
+
+
+@router.get("/api/review/visualization")
+def review_visualization(category: str | None = None):
+    try:
+        today = date.today()
+        selected_category = str(category or "").strip()
+        all_categories = list_categories()
+        scoped_categories = [selected_category] if selected_category else all_categories
+
+        category_summaries = {}
+        global_counts = {
+            "total": 0,
+            "marked": 0,
+            "reviewed": 0,
+            "today_reviewed": 0,
+        }
+        global_bucket_counts = Counter()
+        global_status_counts = Counter()
+        global_feature_counts = Counter()
+        global_daily_review_counts = Counter()
+        global_created_month_counts = Counter()
+        selected_entries = []
+        skipped = []
+
+        for category_name in all_categories:
+            category_counts = {
+                "total": 0,
+                "marked": 0,
+                "reviewed": 0,
+                "today_reviewed": 0,
+            }
+            category_bucket_counts = Counter()
+            category_status_counts = Counter()
+            category_feature_counts = Counter()
+            category_today_feature_counts = Counter()
+            category_daily_review_counts = Counter()
+            category_latest_entries = []
+
+            try:
+                files = list_vocab_files(category_name)
+            except Exception as exc:
+                skipped.append({"category": category_name, "reason": str(exc)})
+                category_summaries[category_name] = {
+                    "category": category_name,
+                    "total": 0,
+                    "counts": category_counts,
+                    "mastery": [],
+                    "review_status": [],
+                    "today_feature_share": [],
+                    "latest_reviews": [],
+                    "error": str(exc),
+                }
+                continue
+
+            for path in files:
+                file_name = os.path.basename(path)
+                try:
+                    payload = load_vocab_file(path)
+                except Exception as exc:
+                    skipped.append({"category": category_name, "file": file_name, "reason": str(exc)})
+                    continue
+
+                fallback_word = os.path.splitext(file_name)[0]
+                word = str(payload.get("word") or fallback_word).strip() or fallback_word
+                reviews = _safe_reviews(payload.get("reviews"))
+                latest_review = reviews[-1] if reviews else None
+                latest_score = latest_review.get("score") if latest_review else None
+                bucket = _score_bucket(latest_score)
+                advice = build_review_advice(reviews, today=today)
+                status = str(advice.get("status") or "unknown")
+                created_at = _safe_created_at(payload.get("createdAt"))
+                feature_flags = _entry_example_feature_flags(payload)
+                marked = bool(payload.get("marked", False))
+                reviewed_today = any(review.get("date") == format_review_date(today) for review in reviews)
+
+                category_counts["total"] += 1
+                category_counts["marked"] += int(marked)
+                category_counts["reviewed"] += int(bool(reviews))
+                category_counts["today_reviewed"] += int(reviewed_today)
+                category_bucket_counts[bucket] += 1
+                category_status_counts[status] += 1
+                for key, enabled in feature_flags.items():
+                    category_feature_counts[key] += int(enabled)
+                    if reviewed_today:
+                        category_today_feature_counts[key] += int(enabled)
+                category_feature_counts["marked"] += int(marked)
+                if reviewed_today:
+                    category_today_feature_counts["marked"] += int(marked)
+
+                if created_at:
+                    try:
+                        category_created_day = parse_review_date(created_at)
+                        global_created_month_counts[_format_month_key(category_created_day)] += 1
+                    except Exception:
+                        pass
+
+                for review in reviews:
+                    review_date = str(review.get("date") or "").strip()
+                    if review_date:
+                        category_daily_review_counts[review_date] += 1
+
+                entry_summary = {
+                    "category": category_name,
+                    "file": file_name,
+                    "word": word,
+                    "marked": marked,
+                    "created_at": created_at,
+                    "latest_review": latest_review,
+                    "latest_score": latest_score,
+                    "mastery_bucket": bucket,
+                    "mastery_label": _score_bucket_label(bucket),
+                    "review_status": status,
+                    "review_status_label": _review_status_label(status),
+                    "review_count": len(reviews),
+                    "next_review_date": advice.get("next_review_date"),
+                    "days_until_due": advice.get("days_until_due"),
+                    "feature_flags": feature_flags,
+                    "reviewed_today": reviewed_today,
+                }
+
+                if category_name in scoped_categories:
+                    selected_entries.append(entry_summary)
+
+                if latest_review:
+                    category_latest_entries.append(entry_summary)
+
+            category_latest_entries.sort(
+                key=lambda item: (
+                    str(item.get("latest_review", {}).get("date") or ""),
+                    str(item.get("word") or ""),
+                ),
+                reverse=True,
+            )
+
+            category_summaries[category_name] = {
+                "category": category_name,
+                "total": category_counts["total"],
+                "counts": category_counts,
+                "mastery": [
+                    {
+                        "key": key,
+                        "label": _score_bucket_label(key),
+                        "count": category_bucket_counts.get(key, 0),
+                    }
+                    for key in ("mastered", "familiar", "unfamiliar", "unreviewed")
+                ],
+                "review_status": [
+                    {
+                        "key": key,
+                        "label": _review_status_label(key),
+                        "count": category_status_counts.get(key, 0),
+                    }
+                    for key in ("overdue", "due_today", "due_soon", "scheduled", "new")
+                ],
+                "today_feature_share": _build_feature_share_items(category_today_feature_counts, category_counts["today_reviewed"]),
+                "feature_share": _build_feature_share_items(category_feature_counts, category_counts["total"]),
+                "latest_reviews": category_latest_entries[:8],
+            }
+
+            for key, value in category_counts.items():
+                global_counts[key] += value
+            global_bucket_counts.update(category_bucket_counts)
+            global_status_counts.update(category_status_counts)
+            global_feature_counts.update(category_feature_counts)
+            global_daily_review_counts.update(category_daily_review_counts)
+
+        selected_total = len(selected_entries)
+        selected_counts = {
+            "total": selected_total,
+            "marked": sum(1 for item in selected_entries if item.get("marked")),
+            "reviewed": sum(1 for item in selected_entries if item.get("review_count", 0) > 0),
+            "today_reviewed": sum(1 for item in selected_entries if item.get("reviewed_today")),
+        }
+        selected_bucket_counts = Counter(item.get("mastery_bucket") for item in selected_entries)
+        selected_status_counts = Counter(item.get("review_status") for item in selected_entries)
+        selected_feature_counts = Counter()
+        selected_today_feature_counts = Counter()
+        due_entries = []
+        latest_selected_reviews = []
+
+        for item in selected_entries:
+            flags = item.get("feature_flags") if isinstance(item.get("feature_flags"), dict) else {}
+            for key, enabled in flags.items():
+                selected_feature_counts[key] += int(enabled)
+                if item.get("reviewed_today"):
+                    selected_today_feature_counts[key] += int(enabled)
+            selected_feature_counts["marked"] += int(bool(item.get("marked")))
+            if item.get("reviewed_today"):
+                selected_today_feature_counts["marked"] += int(bool(item.get("marked")))
+            if item.get("review_status") in {"overdue", "due_today", "due_soon", "new"}:
+                due_entries.append(item)
+            if item.get("latest_review"):
+                latest_selected_reviews.append(item)
+
+        due_entries.sort(
+            key=lambda item: (
+                int(item.get("days_until_due") if item.get("days_until_due") is not None else 10_000),
+                str(item.get("word") or ""),
+            )
+        )
+        latest_selected_reviews.sort(
+            key=lambda item: (
+                str(item.get("latest_review", {}).get("date") or ""),
+                str(item.get("word") or ""),
+            ),
+            reverse=True,
+        )
+
+        daily_review_trend = _default_daily_review_counts(today, days=14)
+        for item in daily_review_trend:
+            item["count"] = int(global_daily_review_counts.get(item["date"], 0))
+
+        category_rank = sorted(
+            [
+                {
+                    "category": name,
+                    "total": summary.get("total", 0),
+                    "today_reviewed": summary.get("counts", {}).get("today_reviewed", 0),
+                    "marked": summary.get("counts", {}).get("marked", 0),
+                }
+                for name, summary in category_summaries.items()
+            ],
+            key=lambda item: (-int(item.get("total") or 0), item.get("category", "")),
+        )
+
+        created_month_trend = [
+            {"month": key, "count": global_created_month_counts[key]}
+            for key in sorted(global_created_month_counts.keys())[-12:]
+        ]
+
+        return {
+            "status": "success",
+            "category": selected_category,
+            "generated_at": format_review_date(today),
+            "categories": all_categories,
+            "overview": {
+                "counts": global_counts,
+                "mastery": [
+                    {
+                        "key": key,
+                        "label": _score_bucket_label(key),
+                        "count": global_bucket_counts.get(key, 0),
+                    }
+                    for key in ("mastered", "familiar", "unfamiliar", "unreviewed")
+                ],
+                "review_status": [
+                    {
+                        "key": key,
+                        "label": _review_status_label(key),
+                        "count": global_status_counts.get(key, 0),
+                    }
+                    for key in ("overdue", "due_today", "due_soon", "scheduled", "new")
+                ],
+                "feature_share": _build_feature_share_items(global_feature_counts, global_counts["total"]),
+                "daily_review_trend": daily_review_trend,
+                "created_month_trend": created_month_trend,
+                "category_rank": category_rank,
+            },
+            "selected": {
+                "category": selected_category,
+                "label": selected_category or "全部目录",
+                "counts": selected_counts,
+                "mastery": [
+                    {
+                        "key": key,
+                        "label": _score_bucket_label(key),
+                        "count": selected_bucket_counts.get(key, 0),
+                    }
+                    for key in ("mastered", "familiar", "unfamiliar", "unreviewed")
+                ],
+                "review_status": [
+                    {
+                        "key": key,
+                        "label": _review_status_label(key),
+                        "count": selected_status_counts.get(key, 0),
+                    }
+                    for key in ("overdue", "due_today", "due_soon", "scheduled", "new")
+                ],
+                "feature_share": _build_feature_share_items(selected_feature_counts, selected_total),
+                "today_feature_share": _build_feature_share_items(
+                    selected_today_feature_counts,
+                    selected_counts["today_reviewed"],
+                ),
+                "due_entries": due_entries[:10],
+                "latest_reviews": latest_selected_reviews[:10],
+            },
+            "category_summaries": category_summaries,
+            "meta": {
+                "scanned_categories": len(all_categories),
+                "scanned_files": global_counts["total"],
+                "skipped": skipped,
+            },
+        }
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
 
 
 @router.post("/api/vocabulary/save")

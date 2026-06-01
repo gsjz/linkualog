@@ -343,6 +343,28 @@ export default function UiIcon({ name, size = 18 }) {
     );
   }
 
+  if (name === 'chart') {
+    return (
+      <svg {...commonProps}>
+        <path d="M4 20V5" />
+        <path d="M4 20h16" />
+        <path d="M8 16v-5" />
+        <path d="M12 16V8" />
+        <path d="M16 16v-9" />
+      </svg>
+    );
+  }
+
+  if (name === 'pie') {
+    return (
+      <svg {...commonProps}>
+        <path d="M12 3v9h9" />
+        <path d="M20.5 14.5A8.7 8.7 0 1 1 9.5 3.5" />
+        <path d="M14 3.3A8.7 8.7 0 0 1 20.7 10H14z" />
+      </svg>
+    );
+  }
+
   if (name === 'history') {
     return (
       <svg {...commonProps}>
