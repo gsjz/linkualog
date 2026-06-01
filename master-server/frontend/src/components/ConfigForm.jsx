@@ -50,8 +50,6 @@ export default function ConfigForm({ onClose }) {
     model: DEFAULT_MODEL,
     api_key: '',
     hasKey: false,
-    frontend_port: 8000,
-    backend_port: 8080,
     log_level: 'INFO',
     review_llm_timeout_seconds: 75,
     review_folder_merge_llm_timeout_seconds: 90,
@@ -71,7 +69,6 @@ export default function ConfigForm({ onClose }) {
     review_recommend_score_weight: 0.75,
     review_recommend_created_order: 'recent',
     review_recommend_score_order: 'low',
-    running_in_docker: false,
   });
   const [uiConfig, setUiConfig] = useState(readLocalUiConfig);
 
@@ -134,8 +131,6 @@ export default function ConfigForm({ onClose }) {
       provider: config.provider,
       model: config.model,
       api_key: config.api_key,
-      frontend_port: numberValue(config.frontend_port, 8000),
-      backend_port: numberValue(config.backend_port, 8080),
       log_level: String(config.log_level || 'INFO').trim().toUpperCase(),
       review_llm_timeout_seconds: numberValue(config.review_llm_timeout_seconds, 75),
       review_folder_merge_llm_timeout_seconds: numberValue(config.review_folder_merge_llm_timeout_seconds, 90),
@@ -170,7 +165,7 @@ export default function ConfigForm({ onClose }) {
         hasKey: Boolean(data?.data?.hasKey ?? true),
       }));
       setStatusKind('success');
-      setStatusMsg('设置已保存。端口类配置需要重启服务后生效。');
+      setStatusMsg('设置已保存。');
       setTimeout(() => {
         onClose();
       }, 1000);
@@ -187,7 +182,20 @@ export default function ConfigForm({ onClose }) {
     setStatusMsg('');
 
     try {
+      const preservedRuntimePorts = {};
+      if (Number.isFinite(Number(config.frontend_port))) {
+        preservedRuntimePorts.frontend_port = numberValue(config.frontend_port, 8000);
+      }
+      if (Number.isFinite(Number(config.backend_port))) {
+        preservedRuntimePorts.backend_port = numberValue(config.backend_port, 8080);
+      }
+
       const data = await resetConfig();
+      let nextServerConfig = data.data || {};
+      if (Object.keys(preservedRuntimePorts).length) {
+        const restored = await saveConfig(preservedRuntimePorts);
+        nextServerConfig = restored.data || nextServerConfig;
+      }
       const nextUiConfig = { ...DEFAULT_UI_CONFIG };
 
       localStorage.setItem('defaultFoldedKeys', nextUiConfig.defaultFoldedKeys);
@@ -195,15 +203,15 @@ export default function ConfigForm({ onClose }) {
 
       setConfig((prev) => ({
         ...prev,
-        ...(data.data || {}),
+        ...nextServerConfig,
         api_key: '',
-        hasKey: Boolean(data?.data?.hasKey),
+        hasKey: Boolean(nextServerConfig?.hasKey),
       }));
 
       window.dispatchEvent(new Event('config-updated'));
 
       setStatusKind('success');
-      setStatusMsg('已同步为默认设置。端口类配置需要重启服务后生效。');
+      setStatusMsg('已同步为默认设置。');
     } catch (err) {
       setStatusKind('error');
       setStatusMsg(`同步默认设置失败: ${err.message}`);
@@ -222,7 +230,7 @@ export default function ConfigForm({ onClose }) {
           <div>
             <h2 className="config-modal-title">全局设置</h2>
             <div className="config-modal-subtitle">
-              所有设置都可写入本地配置文件；端口类配置重启后生效。
+              所有设置都会写入本地配置文件。
             </div>
           </div>
           <button type="button" className="config-modal-close" onClick={onClose} disabled={saving || resetting}>✕</button>
@@ -275,19 +283,6 @@ export default function ConfigForm({ onClose }) {
 
             {page === 'runtime' ? (
               <>
-                <div className="config-info-box">
-                  当前运行环境：{config.running_in_docker ? 'Docker' : '非 Docker'}。默认前端端口会在非 Docker 时回落到 `8000`，Docker 内回落到 `80`。
-                </div>
-                <div style={rowStyle}>
-                  <label style={labelStyle}>
-                    前端端口
-                    <input type="number" value={config.frontend_port} onChange={(e) => setField('frontend_port', e.target.value)} style={inputStyle(loading)} disabled={loading || saving || resetting} />
-                  </label>
-                  <label style={labelStyle}>
-                    后端端口
-                    <input type="number" value={config.backend_port} onChange={(e) => setField('backend_port', e.target.value)} style={inputStyle(loading)} disabled={loading || saving || resetting} />
-                  </label>
-                </div>
                 <label style={labelStyle}>
                   日志级别
                   <select value={config.log_level} onChange={(e) => setField('log_level', e.target.value)} style={inputStyle(loading)} disabled={loading || saving || resetting}>
