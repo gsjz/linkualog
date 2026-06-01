@@ -166,6 +166,48 @@ def _sanitize_focus_positions(raw_focus) -> list[int]:
     return values
 
 
+PLACEHOLDER_SOURCE_NAMES = {
+    "资源解析任务",
+    "未命名",
+    "未命名任务",
+    "untitled",
+    "untitled task",
+}
+
+
+def _is_placeholder_source_name(value) -> bool:
+    normalized = _normalize_source_name(value)
+    return not normalized or normalized.casefold() in PLACEHOLDER_SOURCE_NAMES
+
+
+def _update_example_source(example: dict, source_name: str, source_url: str) -> None:
+    normalized_source_name = _normalize_source_name(source_name)
+    normalized_source_url = str(source_url or "").strip()
+
+    current_source = example.get("source")
+    if isinstance(current_source, dict):
+        source = current_source
+    else:
+        source = {}
+        current_source_name = _extract_source_name(current_source)
+        if current_source_name:
+            source["text"] = current_source_name
+        example["source"] = source
+
+    current_source_name = _extract_source_name(source)
+    should_update_name = (
+        normalized_source_name
+        and (
+            _is_placeholder_source_name(current_source_name)
+            or not _is_placeholder_source_name(normalized_source_name)
+        )
+    )
+    if should_update_name:
+        source["text"] = normalized_source_name
+    if normalized_source_url:
+        source["url"] = normalized_source_url
+
+
 def merge_or_create_vocab(
     word: str,
     context: str,
@@ -180,6 +222,7 @@ def merge_or_create_vocab(
         llm_generated_data = {}
     category = require_vocab_subdir(category)
     sanitized_focus_positions = _sanitize_focus_positions(focus_positions if focus_positions is not None else [])
+    normalized_source_name = _normalize_source_name(source_name)
     normalized_source_url = str(source_url or "").strip()
         
     existing_data = load_vocab(word, category)
@@ -212,11 +255,7 @@ def merge_or_create_vocab(
                     matched_ex["focusWords"] = focus_words
                 if sanitized_focus_positions:
                     matched_ex["focusPositions"] = sanitized_focus_positions
-                matched_source = matched_ex.setdefault("source", {})
-                if source_name and not matched_source.get("text"):
-                    matched_source["text"] = source_name
-                if normalized_source_url and not matched_source.get("url"):
-                    matched_source["url"] = normalized_source_url
+                _update_example_source(matched_ex, normalized_source_name, normalized_source_url)
                 
                 if youtube and not matched_ex.get("youtube"):
                     matched_ex["youtube"] = youtube
@@ -226,7 +265,7 @@ def merge_or_create_vocab(
                     "explanation": extracted_explanation,
                     "focusWords": focus_words,
                     "source": {
-                        "text": source_name if source_name else "",
+                        "text": normalized_source_name,
                         "url": normalized_source_url
                     }
                 }
@@ -251,7 +290,7 @@ def merge_or_create_vocab(
             "explanation": extracted_explanation,
             "focusWords": focus_words,
             "source": {
-                "text": source_name if source_name else "",
+                "text": normalized_source_name,
                 "url": normalized_source_url
             }
         } if context else None
