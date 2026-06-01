@@ -498,6 +498,7 @@ export default function VocabularyReview({
   const [recommendPreferences, setRecommendPreferences] = useState(() => (
     normalizeRecommendationPreferences(DEFAULT_RECOMMENDATION_PREFERENCES)
   ));
+  const [recommendPreferenceHydrated, setRecommendPreferenceHydrated] = useState(false);
   const pendingLaunchRef = useRef(null);
   const selectedCategoryRef = useRef(selectedCategory);
   const entriesRequestRef = useRef(0);
@@ -505,9 +506,14 @@ export default function VocabularyReview({
   const handledEntryUpdateTokenRef = useRef('');
   const handledLaunchRequestKeyRef = useRef('');
   const recommendPreferenceHydratedRef = useRef(false);
+  const recommendPreferenceDirtyRef = useRef(false);
+  const recommendPreferencesRef = useRef(normalizeRecommendationPreferences(DEFAULT_RECOMMENDATION_PREFERENCES));
   const savedRecommendPreferenceKeyRef = useRef(recommendationPreferencesKey(DEFAULT_RECOMMENDATION_PREFERENCES));
   const recommendPreferenceSaveTimerRef = useRef(null);
+  const recommendPreferenceSaveInFlightRef = useRef(false);
+  const recommendPreferenceSaveRequestRef = useRef(0);
   const recommendationQueueRequestRef = useRef(0);
+  const recommendationRefreshRequestRef = useRef(0);
   const autoRecommendationPoolKeyRef = useRef('');
   const infoButtonRef = useRef(null);
   const [mobileInfoPanelPosition, setMobileInfoPanelPosition] = useState(null);
@@ -555,6 +561,10 @@ export default function VocabularyReview({
     setDesktopExampleNotesCollapsed(collapsed);
     localStorage.setItem(DESKTOP_CONTENT_COLLAPSED_KEY, collapsed ? '1' : '0');
   }, []);
+
+  useEffect(() => {
+    recommendPreferencesRef.current = normalizeRecommendationPreferences(recommendPreferences);
+  }, [recommendPreferences]);
 
   const resetCurrentEntry = useCallback((nextEntries = []) => {
     detailRequestRef.current += 1;
@@ -722,8 +732,12 @@ export default function VocabularyReview({
       .then((config) => {
         if (cancelled) return;
         const nextPreferences = recommendationPreferencesFromConfig(config || {});
-        savedRecommendPreferenceKeyRef.current = recommendationPreferencesKey(nextPreferences);
-        setRecommendPreferences(nextPreferences);
+        const nextKey = recommendationPreferencesKey(nextPreferences);
+        savedRecommendPreferenceKeyRef.current = nextKey;
+        if (!recommendPreferenceDirtyRef.current) {
+          recommendPreferencesRef.current = nextPreferences;
+          setRecommendPreferences(nextPreferences);
+        }
       })
       .catch((error) => {
         console.error('读取推荐偏好失败', error);
@@ -731,6 +745,7 @@ export default function VocabularyReview({
       .finally(() => {
         if (!cancelled) {
           recommendPreferenceHydratedRef.current = true;
+          setRecommendPreferenceHydrated(true);
         }
       });
 
@@ -755,22 +770,44 @@ export default function VocabularyReview({
       window.clearTimeout(recommendPreferenceSaveTimerRef.current);
     }
 
-    recommendPreferenceSaveTimerRef.current = window.setTimeout(() => {
+    const runSave = () => {
+      if (recommendPreferenceSaveInFlightRef.current) {
+        recommendPreferenceSaveTimerRef.current = window.setTimeout(runSave, 320);
+        return;
+      }
+      const requestPreferences = normalizeRecommendationPreferences(recommendPreferencesRef.current);
+      const requestKey = recommendationPreferencesKey(requestPreferences);
+      if (requestKey === savedRecommendPreferenceKeyRef.current) {
+        recommendPreferenceDirtyRef.current = false;
+        setSavingRecommendPreferences(false);
+        return;
+      }
+      const requestId = recommendPreferenceSaveRequestRef.current + 1;
+      recommendPreferenceSaveRequestRef.current = requestId;
+      recommendPreferenceSaveInFlightRef.current = true;
       setSavingRecommendPreferences(true);
-      saveConfig(recommendationPreferencesToConfig(recommendPreferences))
+      saveConfig(recommendationPreferencesToConfig(requestPreferences))
         .then((res) => {
           const nextPreferences = recommendationPreferencesFromConfig(res?.data || {});
-          savedRecommendPreferenceKeyRef.current = recommendationPreferencesKey(nextPreferences);
-          setRecommendPreferences(nextPreferences);
+          const savedKey = recommendationPreferencesKey(nextPreferences);
+          if (recommendPreferenceSaveRequestRef.current !== requestId) return;
+          savedRecommendPreferenceKeyRef.current = savedKey;
+          const currentKey = recommendationPreferencesKey(recommendPreferencesRef.current);
+          recommendPreferenceDirtyRef.current = currentKey !== savedKey;
           window.dispatchEvent(new Event('config-updated'));
         })
         .catch((error) => {
           console.error('保存推荐偏好失败', error);
         })
         .finally(() => {
-          setSavingRecommendPreferences(false);
+          if (recommendPreferenceSaveRequestRef.current === requestId) {
+            recommendPreferenceSaveInFlightRef.current = false;
+            setSavingRecommendPreferences(false);
+          }
         });
-    }, 420);
+    };
+
+    recommendPreferenceSaveTimerRef.current = window.setTimeout(runSave, 420);
 
     return () => {
       if (recommendPreferenceSaveTimerRef.current) {
@@ -1051,10 +1088,15 @@ export default function VocabularyReview({
   }, [entries, handleSelectEntry, selectedCategory]);
 
   const handleRecommendPreferencesChange = useCallback((patch) => {
-    setRecommendPreferences((prev) => normalizeRecommendationPreferences({
-      ...prev,
-      ...(patch || {}),
-    }));
+    setRecommendPreferences((prev) => {
+      const next = normalizeRecommendationPreferences({
+        ...prev,
+        ...(patch || {}),
+      });
+      recommendPreferencesRef.current = next;
+      recommendPreferenceDirtyRef.current = recommendationPreferencesKey(next) !== savedRecommendPreferenceKeyRef.current;
+      return next;
+    });
     setRecommendExcludeKeys([]);
     setRecommendation(null);
     setRecommendationQueue([]);
@@ -1063,6 +1105,9 @@ export default function VocabularyReview({
   const runRecommendationRefresh = useCallback(async (excludeKeys = [], options = {}) => {
     const fallbackPool = Array.isArray(options?.fallbackPool) ? options.fallbackPool : visibleEntries;
     const fallbackOnEmpty = Boolean(options?.fallbackOnEmpty);
+    const requestId = recommendationRefreshRequestRef.current + 1;
+    recommendationRefreshRequestRef.current = requestId;
+    const requestPreferences = normalizeRecommendationPreferences(recommendPreferencesRef.current);
     setLoadingRecommendation(true);
     try {
       const scopeCategory = recommendScope === ALL_RECOMMEND_SCOPE ? '' : recommendScope;
@@ -1070,9 +1115,10 @@ export default function VocabularyReview({
         scopeCategory,
         excludeKeys,
         20,
-        recommendPreferences,
+        requestPreferences,
         recommendationMarkFilterFromEntryFilter(entryFilter),
       );
+      if (recommendationRefreshRequestRef.current !== requestId) return null;
       recommendationQueueRequestRef.current += 1;
       setLoadingRecommendationQueue(false);
       const recommended = applyRecommendationResult(res, fallbackPool);
@@ -1085,15 +1131,18 @@ export default function VocabularyReview({
       }
       return null;
     } catch (error) {
+      if (recommendationRefreshRequestRef.current !== requestId) return null;
       console.error('推荐词条失败', error);
       if (fallbackOnEmpty) {
         handleDrawRandomEntry(fallbackPool);
       }
       return null;
     } finally {
-      setLoadingRecommendation(false);
+      if (recommendationRefreshRequestRef.current === requestId) {
+        setLoadingRecommendation(false);
+      }
     }
-  }, [applyRecommendationResult, entryFilter, handleDrawRandomEntry, handleUseRecommendation, recommendPreferences, recommendScope, visibleEntries]);
+  }, [applyRecommendationResult, entryFilter, handleDrawRandomEntry, handleUseRecommendation, recommendScope, visibleEntries]);
 
   useEffect(() => {
     if (!randomSelectionMode || !visibleEntries.length) {
@@ -1106,13 +1155,14 @@ export default function VocabularyReview({
     const requestId = recommendationQueueRequestRef.current + 1;
     recommendationQueueRequestRef.current = requestId;
     const scopeCategory = recommendScope === ALL_RECOMMEND_SCOPE ? '' : recommendScope;
+    const requestPreferences = normalizeRecommendationPreferences(recommendPreferencesRef.current);
     setLoadingRecommendationQueue(true);
 
     fetchRecommendedWord(
       scopeCategory,
       [],
       8,
-      recommendPreferences,
+      requestPreferences,
       recommendationMarkFilterFromEntryFilter(entryFilter),
     )
       .then((res) => {
@@ -1895,7 +1945,7 @@ export default function VocabularyReview({
             <div className="vocab-review-floating-title">随机设置</div>
             <div className="vocab-review-floating-caption">
               {recommendationScopeLabel} · {recommendationPreferenceSummary}
-              {savingRecommendPreferences ? ' · 保存中' : ''}
+              {!recommendPreferenceHydrated ? ' · 读取中' : (savingRecommendPreferences ? ' · 保存中' : '')}
             </div>
           </div>
           <button
