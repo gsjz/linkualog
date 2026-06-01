@@ -4,12 +4,20 @@ import UiIcon from './UiIcon';
 
 const ACTIVE_VOCAB_CATEGORY_KEY = 'activeVocabCategory';
 const ACTIVE_VOCAB_CATEGORY_EVENT = 'active-vocab-category-updated';
+const ADD_VOCAB_CATEGORY_KEY = 'addVocabularyCategory';
+const ADD_VOCAB_CATEGORY_EVENT = 'add-vocabulary-category-updated';
+const LEGACY_UPLOAD_DEFAULT_CATEGORY_KEY = 'uploadDefaultCategory';
+const LEGACY_DEFAULT_CATEGORY_KEY = 'defaultCategory';
 
 const normalizeCategoryValue = (value) => String(value || '').trim();
 
 const readStoredActiveVocabularyCategory = () => {
   if (typeof window === 'undefined') return '';
-  return normalizeCategoryValue(window.localStorage.getItem('defaultCategory'));
+  const storedAddCategory = window.localStorage.getItem(ADD_VOCAB_CATEGORY_KEY);
+  if (storedAddCategory !== null) return normalizeCategoryValue(storedAddCategory);
+  const storedUploadCategory = window.localStorage.getItem(LEGACY_UPLOAD_DEFAULT_CATEGORY_KEY);
+  if (storedUploadCategory !== null) return normalizeCategoryValue(storedUploadCategory);
+  return normalizeCategoryValue(window.localStorage.getItem(LEGACY_DEFAULT_CATEGORY_KEY));
 };
 
 const getQueueStatusTone = (status) => {
@@ -50,14 +58,14 @@ export default function VocabQueueWidget({
   onOpenChange = null,
   defaultOpen = false,
   categories = [],
-  defaultCategory = null,
-  onDefaultCategoryChange = null,
+  selectedCategory: controlledCategory = null,
+  onSelectedCategoryChange = null,
   onStatsChange = null,
 } = {}) {
   const isControlledOpen = typeof open === 'boolean';
-  const normalizedDefaultCategory = defaultCategory === null || defaultCategory === undefined
+  const normalizedControlledCategory = controlledCategory === null || controlledCategory === undefined
     ? null
-    : normalizeCategoryValue(defaultCategory);
+    : normalizeCategoryValue(controlledCategory);
   const [internalOpen, setInternalOpen] = useState(defaultOpen);
   const isOpen = isControlledOpen ? open : internalOpen;
   const [activeTab, setActiveTab] = useState('manual'); 
@@ -69,7 +77,7 @@ export default function VocabQueueWidget({
   const [mContext, setMContext] = useState('');
   const [mSource, setMSource] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(() => (
-    normalizedDefaultCategory ?? readStoredActiveVocabularyCategory()
+    normalizedControlledCategory ?? readStoredActiveVocabularyCategory()
   ));
   const [categoryError, setCategoryError] = useState('');
 
@@ -109,18 +117,18 @@ export default function VocabQueueWidget({
     setSelectedCategory(nextCategory);
     setCategoryError('');
 
-    if (onDefaultCategoryChange) {
-      onDefaultCategoryChange(nextCategory);
+    if (onSelectedCategoryChange) {
+      onSelectedCategoryChange(nextCategory);
       return;
     }
 
     if (typeof window === 'undefined') return;
-    window.localStorage.setItem('defaultCategory', nextCategory);
-    window.dispatchEvent(new Event('config-updated'));
-    window.dispatchEvent(new CustomEvent('default-category-updated', {
+    window.localStorage.setItem(ADD_VOCAB_CATEGORY_KEY, nextCategory);
+    window.localStorage.removeItem(LEGACY_UPLOAD_DEFAULT_CATEGORY_KEY);
+    window.dispatchEvent(new CustomEvent(ADD_VOCAB_CATEGORY_EVENT, {
       detail: { category: nextCategory },
     }));
-  }, [onDefaultCategoryChange]);
+  }, [onSelectedCategoryChange]);
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -144,15 +152,13 @@ export default function VocabQueueWidget({
 
   useEffect(() => {
     const handleConfigUpdate = () => {
-      setSelectedCategory(normalizeCategoryValue(localStorage.getItem('defaultCategory')));
+      setSelectedCategory(readStoredActiveVocabularyCategory());
       setCategoryError('');
     };
     const handleDefaultCategoryUpdate = () => handleConfigUpdate();
-    window.addEventListener('config-updated', handleConfigUpdate);
-    window.addEventListener('default-category-updated', handleDefaultCategoryUpdate);
+    window.addEventListener(ADD_VOCAB_CATEGORY_EVENT, handleDefaultCategoryUpdate);
     return () => {
-      window.removeEventListener('config-updated', handleConfigUpdate);
-      window.removeEventListener('default-category-updated', handleDefaultCategoryUpdate);
+      window.removeEventListener(ADD_VOCAB_CATEGORY_EVENT, handleDefaultCategoryUpdate);
     };
   }, []);
 
@@ -206,12 +212,17 @@ export default function VocabQueueWidget({
 
   useEffect(() => {
     const handleEvent = (e) => {
-      const category = String(categoryRef.current || '').trim();
+      const requestedCategory = normalizeCategoryValue(e?.detail?.category);
+      const category = requestedCategory || String(categoryRef.current || '').trim();
       if (!category) {
         setCategoryError('先选择目标目录，避免保存到 data/ 根目录。');
         setActiveTab('manual');
         setQueueOpen(true);
         return;
+      }
+      if (requestedCategory) {
+        setSelectedCategory(requestedCategory);
+        setCategoryError('');
       }
       const { word, context, source, fetchLlm, focusPositions } = e.detail;
       const newTask = {
@@ -307,13 +318,13 @@ export default function VocabQueueWidget({
            <span>词库</span>
            {pendingCount > 0 ? <span className="queue-fab-count">{pendingCount}</span> : null}
          </div>
-         <label className="queue-category-picker" style={{ minWidth: 0, display: 'inline-flex', alignItems: 'center', gap: '6px' }} title="默认生词本目录">
+         <label className="queue-category-picker" style={{ minWidth: 0, display: 'inline-flex', alignItems: 'center', gap: '6px' }} title="加词保存目录">
            <UiIcon name="folder" size={15} />
            <select
              className="queue-category-select"
              value={selectedCategory}
              onChange={(e) => handleSelectedCategoryChange(e.target.value)}
-             aria-label="默认生词本目录"
+             aria-label="加词保存目录"
              style={{
                maxWidth: embedded ? '190px' : '170px',
                height: '30px',

@@ -1515,6 +1515,7 @@
 .task-layout .task-segment-button,
 .task-layout .result-json-box button,
 .task-layout .result-json-box input,
+.task-layout .result-json-box select,
 .task-layout .result-json-box textarea {
   border: 1px solid var(--ms-border) !important;
   border-radius: var(--ms-radius-sm) !important;
@@ -1537,6 +1538,7 @@
 .task-layout .task-inline-input,
 .task-layout .task-file-input,
 .task-layout .result-json-box input,
+.task-layout .result-json-box select,
 .task-layout .result-json-box textarea {
   border: 1px solid var(--ms-border) !important;
   background: #fff !important;

@@ -6,7 +6,6 @@ const DEFAULT_PROVIDER = 'https://dashscope.aliyuncs.com/compatible-mode/v1';
 const DEFAULT_MODEL = 'qwen3.5-flash';
 const DEFAULT_UI_CONFIG = {
   defaultFoldedKeys: 'extracted_text,bbox',
-  defaultCategory: '',
 };
 const PAGES = [
   { id: 'llm', label: '1. LLM' },
@@ -18,7 +17,6 @@ const PAGES = [
 function readLocalUiConfig() {
   return {
     defaultFoldedKeys: localStorage.getItem('defaultFoldedKeys') ?? DEFAULT_UI_CONFIG.defaultFoldedKeys,
-    defaultCategory: String(localStorage.getItem('defaultCategory') ?? DEFAULT_UI_CONFIG.defaultCategory).trim(),
   };
 }
 
@@ -40,7 +38,7 @@ function inputStyle(disabled = false) {
   };
 }
 
-export default function ConfigForm({ onClose, categories = [] }) {
+export default function ConfigForm({ onClose }) {
   const [page, setPage] = useState(PAGES[0].id);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -161,14 +159,9 @@ export default function ConfigForm({ onClose, categories = [] }) {
 
     try {
       const data = await saveConfig(payload);
-      const defaultCategory = String(uiConfig.defaultCategory || '').trim();
 
       localStorage.setItem('defaultFoldedKeys', uiConfig.defaultFoldedKeys);
-      localStorage.setItem('defaultCategory', defaultCategory);
       window.dispatchEvent(new Event('config-updated'));
-      window.dispatchEvent(new CustomEvent('default-category-updated', {
-        detail: { category: defaultCategory },
-      }));
 
       setConfig((prev) => ({
         ...prev,
@@ -198,8 +191,6 @@ export default function ConfigForm({ onClose, categories = [] }) {
       const nextUiConfig = { ...DEFAULT_UI_CONFIG };
 
       localStorage.setItem('defaultFoldedKeys', nextUiConfig.defaultFoldedKeys);
-      localStorage.setItem('defaultCategory', nextUiConfig.defaultCategory);
-      localStorage.removeItem('vocabReviewCategory');
       setUiConfig(nextUiConfig);
 
       setConfig((prev) => ({
@@ -209,12 +200,7 @@ export default function ConfigForm({ onClose, categories = [] }) {
         hasKey: Boolean(data?.data?.hasKey),
       }));
 
-      window.dispatchEvent(new CustomEvent('config-updated', {
-        detail: { category: nextUiConfig.defaultCategory },
-      }));
-      window.dispatchEvent(new CustomEvent('default-category-updated', {
-        detail: { category: nextUiConfig.defaultCategory },
-      }));
+      window.dispatchEvent(new Event('config-updated'));
 
       setStatusKind('success');
       setStatusMsg('已同步为默认设置。端口类配置需要重启服务后生效。');
@@ -394,20 +380,6 @@ export default function ConfigForm({ onClose, categories = [] }) {
                     style={inputStyle(false)}
                     disabled={saving || resetting}
                   />
-                </label>
-                <label style={labelStyle}>
-                  默认生词本目录
-                  <select
-                    value={uiConfig.defaultCategory}
-                    onChange={(e) => setUiConfig((prev) => ({ ...prev, defaultCategory: e.target.value }))}
-                    style={inputStyle(false)}
-                    disabled={saving || resetting}
-                  >
-                    <option value="">请选择目录</option>
-                    {categories.map((category) => (
-                      <option key={category} value={category}>{category}</option>
-                    ))}
-                  </select>
                 </label>
                 <div className="config-info-box">
                   这一页保存的是浏览器本地界面偏好，不需要重启服务。

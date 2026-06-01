@@ -18,9 +18,9 @@ import {
   getVocabularyList,
 } from '../api/client';
 
-const dispatchVocabTask = (word, context, taskName, fetchLlm, focusPositions = []) => {
+const dispatchVocabTask = (word, context, taskName, fetchLlm, focusPositions = [], category = '') => {
   window.dispatchEvent(new CustomEvent('add-vocab-task', {
-    detail: { word, context, source: taskName, fetchLlm, focusPositions }
+    detail: { word, context, source: taskName, fetchLlm, focusPositions, category }
   }));
 };
 
@@ -97,6 +97,10 @@ const buildSimilarityBigrams = (value) => {
 const RESULT_VIEW_STORAGE_KEY = 'taskResultViewMode';
 const ACTIVE_VOCAB_CATEGORY_KEY = 'activeVocabCategory';
 const ACTIVE_VOCAB_CATEGORY_EVENT = 'active-vocab-category-updated';
+const ADD_VOCAB_CATEGORY_KEY = 'addVocabularyCategory';
+const ADD_VOCAB_CATEGORY_EVENT = 'add-vocabulary-category-updated';
+const LEGACY_UPLOAD_DEFAULT_CATEGORY_KEY = 'uploadDefaultCategory';
+const LEGACY_DEFAULT_CATEGORY_KEY = 'defaultCategory';
 
 const normalizeResultViewMode = (value) => (value === 'json' ? 'json' : 'structured');
 
@@ -105,7 +109,11 @@ const readStoredActiveVocabularyCategory = () => {
 
   const storedCategory = window.localStorage.getItem(ACTIVE_VOCAB_CATEGORY_KEY);
   if (storedCategory !== null) return String(storedCategory || '').trim();
-  return String(window.localStorage.getItem('defaultCategory') || '').trim();
+  const storedAddCategory = window.localStorage.getItem(ADD_VOCAB_CATEGORY_KEY);
+  if (storedAddCategory !== null) return String(storedAddCategory || '').trim();
+  const storedUploadCategory = window.localStorage.getItem(LEGACY_UPLOAD_DEFAULT_CATEGORY_KEY);
+  if (storedUploadCategory !== null) return String(storedUploadCategory || '').trim();
+  return String(window.localStorage.getItem(LEGACY_DEFAULT_CATEGORY_KEY) || '').trim();
 };
 
 const computeDiceScore = (leftItems, rightItems) => {
@@ -390,7 +398,7 @@ const JsonNode = ({ val, nodeKey, foldedKeys, isRoot = false, taskName = '' }) =
       : Array.isArray(val.fp)
           ? val.fp
           : (Array.isArray(val.fps) ? val.fps : []);
-    dispatchVocabTask(word, context, taskName, fetchLlm, focusPositions);
+    dispatchVocabTask(word, context, taskName, fetchLlm, focusPositions, readStoredActiveVocabularyCategory());
   };
 
   const isVocabItem = isObjectOrArray && !isArray && val.word && (val.context || val.example || val.text);
@@ -1100,9 +1108,19 @@ const ExperimentalMarkView = ({
   vocabularyScopeLabel = '',
   vocabularyWordsLoading = false,
   onOpenVocabularyEntry = null,
+  addVocabularyCategory = '',
+  categories = [],
+  onAddVocabularyCategoryChange = null,
 }) => {
   const itemRefs = useRef({});
   const lastFocusKeyRef = useRef('');
+  const normalizedAddVocabularyCategory = String(addVocabularyCategory || '').trim();
+  const categoryOptions = useMemo(() => (
+    [...new Set((Array.isArray(categories) ? categories : [])
+      .map((item) => String(item || '').trim())
+      .filter(Boolean))]
+  ), [categories]);
+  const selectedCategoryMissing = normalizedAddVocabularyCategory && !categoryOptions.includes(normalizedAddVocabularyCategory);
 
   useEffect(() => {
     if (!selectedMarkId) return undefined;
@@ -1223,8 +1241,31 @@ const ExperimentalMarkView = ({
               </span>
             </div>
 
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button onClick={(e) => { e.stopPropagation(); dispatchVocabTask(mark.word, mark.context, taskName, false, getSerializableFocusPositions(mark)); }} style={{ padding: '3px 10px', fontSize: '12px', background: 'var(--ms-surface-muted)', color: 'var(--ms-text)', border: '1px solid var(--ms-border)', borderRadius: '4px', cursor: 'pointer' }}>保存</button>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <button onClick={(e) => { e.stopPropagation(); dispatchVocabTask(mark.word, mark.context, taskName, false, getSerializableFocusPositions(mark), normalizedAddVocabularyCategory); }} style={{ padding: '3px 10px', fontSize: '12px', background: 'var(--ms-surface-muted)', color: 'var(--ms-text)', border: '1px solid var(--ms-border)', borderRadius: '4px', cursor: 'pointer' }}>保存</button>
+              {isSelected ? (
+                <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', minWidth: 0, fontSize: '12px', color: 'var(--ms-text-muted)' }}>
+                  <UiIcon name="folder" size={14} />
+                  <select
+                    className="task-mark-category-select"
+                    value={normalizedAddVocabularyCategory}
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      if (onAddVocabularyCategoryChange) onAddVocabularyCategoryChange(e.target.value);
+                    }}
+                    aria-label="加词保存目录"
+                    title="加词保存目录"
+                    style={{ height: '28px', maxWidth: '180px', padding: '0 8px', border: '1px solid var(--ms-border)', borderRadius: '4px', background: '#fff', color: normalizedAddVocabularyCategory ? 'var(--ms-text)' : 'var(--ms-text-faint)', fontSize: '12px' }}
+                  >
+                    <option value="">选择目录</option>
+                    {selectedCategoryMissing ? <option value={normalizedAddVocabularyCategory}>{normalizedAddVocabularyCategory}</option> : null}
+                    {categoryOptions.map((category) => (
+                      <option key={category} value={category}>{category}</option>
+                    ))}
+                  </select>
+                </label>
+              ) : null}
             </div>
 
           </div>
@@ -1239,8 +1280,8 @@ export default function TaskVisualizer({
   simpleCreateOnly = false,
   isActive = true,
   categories = [],
-  defaultCategory = '',
-  onDefaultCategoryChange = null,
+  addVocabularyCategory = '',
+  onAddVocabularyCategoryChange = null,
 }) {
   const [pageMode, setPageMode] = useState(simpleCreateOnly ? 'create' : 'browse');
   const [createToolsOpen, setCreateToolsOpen] = useState(false);
@@ -1397,10 +1438,12 @@ export default function TaskVisualizer({
 
     window.addEventListener('config-updated', handleConfigUpdate);
     window.addEventListener('default-category-updated', handleConfigUpdate);
+    window.addEventListener(ADD_VOCAB_CATEGORY_EVENT, handleConfigUpdate);
     window.addEventListener(ACTIVE_VOCAB_CATEGORY_EVENT, handleConfigUpdate);
     return () => {
       window.removeEventListener('config-updated', handleConfigUpdate);
       window.removeEventListener('default-category-updated', handleConfigUpdate);
+      window.removeEventListener(ADD_VOCAB_CATEGORY_EVENT, handleConfigUpdate);
       window.removeEventListener(ACTIVE_VOCAB_CATEGORY_EVENT, handleConfigUpdate);
     };
   }, []);
@@ -1829,8 +1872,8 @@ export default function TaskVisualizer({
       : 'var(--ms-text)';
   const createTaskDisabled = isUploading || !stagedFiles.length;
   const allUploadsSelected = stagedFiles.length > 0 && selectedUploadIds.length === stagedFiles.length;
-  const normalizedDefaultCategory = String(defaultCategory || '').trim();
-  const defaultCategoryLabel = normalizedDefaultCategory ? formatCategoryLabel(normalizedDefaultCategory) : '目录';
+  const normalizedAddVocabularyCategory = String(addVocabularyCategory || '').trim();
+  const addVocabularyCategoryLabel = normalizedAddVocabularyCategory ? formatCategoryLabel(normalizedAddVocabularyCategory) : '未选目录';
   const queueBadgeCount = vocabQueueStats.pending || vocabQueueStats.failed || 0;
   const renderTaskNameRecommendationStatus = () => {
     if (!existingTaskNameSuggestion?.name && !existingTaskNameSuggestionError) return null;
@@ -1900,9 +1943,9 @@ export default function TaskVisualizer({
       type="button"
       className={`task-icon-button task-vocab-queue-trigger${vocabQueueOpen ? ' is-active' : ''}${queueBadgeCount > 0 ? ' has-badge' : ''}${className ? ` ${className}` : ''}`}
       onClick={handleToggleVocabQueue}
-      aria-label={`打开词库工具，当前目录 ${defaultCategoryLabel}`}
+      aria-label={`打开加词工具，保存目录 ${addVocabularyCategoryLabel}`}
       aria-expanded={vocabQueueOpen}
-      title={`词库 · ${defaultCategoryLabel}`}
+      title={`加词 · ${addVocabularyCategoryLabel}`}
     >
       <UiIcon name="book" size={17} />
       {queueBadgeCount > 0 ? <span className="task-icon-badge">{queueBadgeCount}</span> : null}
@@ -2206,6 +2249,9 @@ export default function TaskVisualizer({
                                 vocabularyScopeLabel={currentVocabScopeLabel}
                                 vocabularyWordsLoading={loadingCurrentVocabWords}
                                 onOpenVocabularyEntry={onOpenVocabularyEntry}
+                                addVocabularyCategory={addVocabularyCategory}
+                                categories={categories}
+                                onAddVocabularyCategoryChange={onAddVocabularyCategoryChange}
                               />
                         ) : (
                           <div className="task-empty-state" style={{ color: '#a1a1aa' }}>等待处理...</div>
@@ -2241,8 +2287,8 @@ export default function TaskVisualizer({
         open={vocabQueueOpen}
         onOpenChange={setVocabQueueOpen}
         categories={categories}
-        defaultCategory={defaultCategory}
-        onDefaultCategoryChange={onDefaultCategoryChange}
+        selectedCategory={addVocabularyCategory}
+        onSelectedCategoryChange={onAddVocabularyCategoryChange}
         onStatsChange={setVocabQueueStats}
       />
 

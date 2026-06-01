@@ -11,6 +11,10 @@ const COMPACT_LAYOUT_MEDIA_QUERY = '(max-width: 1180px)';
 const DESKTOP_MINIMAL_MODE_KEY = 'linkualogDesktopMinimalMode';
 const VALID_TABS = new Set(['tasks', 'vocabulary', 'visualization']);
 const MOBILE_TOOLS_PANEL_ID = 'master-mobile-tools-panel';
+const ADD_VOCAB_CATEGORY_KEY = 'addVocabularyCategory';
+const ADD_VOCAB_CATEGORY_EVENT = 'add-vocabulary-category-updated';
+const LEGACY_UPLOAD_DEFAULT_CATEGORY_KEY = 'uploadDefaultCategory';
+const LEGACY_DEFAULT_CATEGORY_KEY = 'defaultCategory';
 
 const readUsesCompactViewport = () => {
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false;
@@ -20,6 +24,15 @@ const readUsesCompactViewport = () => {
 const readDesktopMinimalMode = () => {
   if (typeof window === 'undefined') return false;
   return localStorage.getItem(DESKTOP_MINIMAL_MODE_KEY) === '1';
+};
+
+const readAddVocabularyCategory = () => {
+  if (typeof window === 'undefined') return '';
+  const storedAddCategory = localStorage.getItem(ADD_VOCAB_CATEGORY_KEY);
+  if (storedAddCategory !== null) return String(storedAddCategory || '').trim();
+  const storedUploadCategory = localStorage.getItem(LEGACY_UPLOAD_DEFAULT_CATEGORY_KEY);
+  if (storedUploadCategory !== null) return String(storedUploadCategory || '').trim();
+  return String(localStorage.getItem(LEGACY_DEFAULT_CATEGORY_KEY) || '').trim();
 };
 
 const normalizeTab = (value) => {
@@ -112,7 +125,7 @@ function App() {
   const [showConfig, setShowConfig] = useState(false);
   const [mobileToolsOpen, setMobileToolsOpen] = useState(false);
   const [currentTab, setCurrentTab] = useState(initialUrlState.tab);
-  const [defaultCategory, setDefaultCategory] = useState(() => String(localStorage.getItem('defaultCategory') || '').trim());
+  const [addVocabularyCategory, setAddVocabularyCategory] = useState(readAddVocabularyCategory);
   const [categories, setCategories] = useState([]);
   const [vocabularyRouteState, setVocabularyRouteState] = useState(() => ({
     category: initialUrlState.category,
@@ -139,14 +152,14 @@ function App() {
     const handleDefaultCategoryUpdate = (e) => {
       const fromEvent = e?.detail?.category;
       if (typeof fromEvent === 'string') {
-        setDefaultCategory(String(fromEvent || '').trim());
+        setAddVocabularyCategory(String(fromEvent || '').trim());
       } else {
-        setDefaultCategory(String(localStorage.getItem('defaultCategory') || '').trim());
+        setAddVocabularyCategory(readAddVocabularyCategory());
       }
     };
 
-    window.addEventListener('default-category-updated', handleDefaultCategoryUpdate);
-    return () => window.removeEventListener('default-category-updated', handleDefaultCategoryUpdate);
+    window.addEventListener(ADD_VOCAB_CATEGORY_EVENT, handleDefaultCategoryUpdate);
+    return () => window.removeEventListener(ADD_VOCAB_CATEGORY_EVENT, handleDefaultCategoryUpdate);
   }, []);
 
   useEffect(() => {
@@ -199,12 +212,12 @@ function App() {
     });
   }, [currentTab, preferDesktopMinimalMode, vocabularyRouteState]);
 
-  const handleDefaultCategoryChange = (nextCategory) => {
+  const handleAddVocabularyCategoryChange = (nextCategory) => {
     const finalCategory = String(nextCategory || '').trim();
-    localStorage.setItem('defaultCategory', finalCategory);
-    setDefaultCategory(finalCategory);
-    window.dispatchEvent(new Event('config-updated'));
-    window.dispatchEvent(new CustomEvent('default-category-updated', {
+    localStorage.setItem(ADD_VOCAB_CATEGORY_KEY, finalCategory);
+    localStorage.removeItem(LEGACY_UPLOAD_DEFAULT_CATEGORY_KEY);
+    setAddVocabularyCategory(finalCategory);
+    window.dispatchEvent(new CustomEvent(ADD_VOCAB_CATEGORY_EVENT, {
       detail: { category: finalCategory }
     }));
   };
@@ -403,7 +416,7 @@ function App() {
         </div>
       </header>
 
-      {showConfig ? <ConfigForm onClose={() => setShowConfig(false)} categories={categories} /> : null}
+      {showConfig ? <ConfigForm onClose={() => setShowConfig(false)} /> : null}
 
       <main className="app-main">
         <div className="task-container-wrapper">
@@ -416,8 +429,8 @@ function App() {
               simpleCreateOnly={usesCompactLayout}
               isActive={currentTab === 'tasks'}
               categories={categories}
-              defaultCategory={defaultCategory}
-              onDefaultCategoryChange={handleDefaultCategoryChange}
+              addVocabularyCategory={addVocabularyCategory}
+              onAddVocabularyCategoryChange={handleAddVocabularyCategoryChange}
             />
           </div>
           <div
