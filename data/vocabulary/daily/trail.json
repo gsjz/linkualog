@@ -1,0 +1,34 @@
+{
+  "word": "trail",
+  "createdAt": "2026-05-27",
+  "reviews": [
+    {
+      "date": "2026-05-29",
+      "score": 1
+    },
+    {
+      "date": "2026-05-30",
+      "score": 2
+    }
+  ],
+  "definitions": [
+    "踪迹；线索（尤用于 on the trail of sb/sth，表示“在追查/追踪……”）"
+  ],
+  "examples": [
+    {
+      "text": "Your agent is about to infiltrate a life or death poker game in a hidden back room of the grand casino. You’re on the trail of an elite society of assassins, each of whom carries a signature playing card corresponding to their role. You’ve received intel from a 100% reliable source about how they operate.",
+      "explanation": "这里的 trail 不是“道路”，而是“踪迹、线索”。on the trail of an elite society of assassins 表示“正在追查一个精英刺客组织的线索 / 正在追踪这个精英刺客组织”。",
+      "focusWords": [
+        "trail"
+      ],
+      "source": {
+        "text": "Can you solve the secret assassin society riddle? - Alex Rosenthal",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=XkHJyqZqjxE",
+        "timestamp": 14
+      }
+    }
+  ]
+}

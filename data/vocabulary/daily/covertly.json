@@ -1,0 +1,30 @@
+{
+  "word": "covertly",
+  "createdAt": "2026-05-27",
+  "reviews": [
+    {
+      "date": "2026-05-29",
+      "score": 2
+    }
+  ],
+  "definitions": [
+    "秘密地；暗中地；偷偷地"
+  ],
+  "examples": [
+    {
+      "text": "The game is a variant of poker played with a single, fair deck where every player receives two cards in secret. Each assassin immediately and covertly swaps one of the cards they’ve been fairly dealt with their signature card. Then the robo-dealer reveals three shared cards on the table.",
+      "explanation": "这里的 covertly 表示“秘密地、暗中地”，强调刺客在不让别人察觉的情况下，把自己手中的一张牌换成代表身份的牌。",
+      "focusWords": [
+        "covertly"
+      ],
+      "source": {
+        "text": "Can you solve the secret assassin society riddle? - Alex Rosenthal",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=XkHJyqZqjxE",
+        "timestamp": 41
+      }
+    }
+  ]
+}

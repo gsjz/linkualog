@@ -1,0 +1,34 @@
+{
+  "word": "scattered",
+  "createdAt": "2026-05-28",
+  "reviews": [
+    {
+      "date": "2026-05-29",
+      "score": 3
+    },
+    {
+      "date": "2026-06-01",
+      "score": 4
+    }
+  ],
+  "definitions": [
+    "（光等）被散射的；分散开的"
+  ],
+  "examples": [
+    {
+      "text": "on a microscopic level, allowing light to strike it without being scattered in different directions. But this still doesn't explain why light is able to pass through glass",
+      "explanation": "这里的 scattered 指“被散射、向各个方向分开传播”。句子意思是：让光照到它上面时，光不会向不同方向散射。",
+      "focusWords": [
+        "scattered"
+      ],
+      "source": {
+        "text": "玻璃为何是透明的? ——马克·米奥多尼克",
+        "url": "https://www.youtube.com/watch?v=VwRLIt6jgdM"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=VwRLIt6jgdM",
+        "timestamp": 106
+      }
+    }
+  ]
+}

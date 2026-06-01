@@ -1,0 +1,30 @@
+{
+  "word": "assassins",
+  "createdAt": "2026-05-27",
+  "reviews": [
+    {
+      "date": "2026-05-29",
+      "score": 2
+    }
+  ],
+  "definitions": [
+    "刺客；暗杀者（assassin 的复数）"
+  ],
+  "examples": [
+    {
+      "text": "Your agent is about to infiltrate a life or death poker game in a hidden back room of the grand casino. You’re on the trail of an elite society of assassins, each of whom carries a signature playing card corresponding to their role. You’ve received intel from a 100% reliable source about how they operate.",
+      "explanation": "这里的 assassins 指“刺客、暗杀者”。句子说主角正在追踪一个精英刺客组织，组织里的每个人都带着一张能对应其身份的标志性扑克牌。",
+      "focusWords": [
+        "assassins"
+      ],
+      "source": {
+        "text": "Can you solve the secret assassin society riddle? - Alex Rosenthal",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=XkHJyqZqjxE",
+        "timestamp": 14
+      }
+    }
+  ]
+}

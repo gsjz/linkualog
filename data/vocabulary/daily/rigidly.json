@@ -1,0 +1,30 @@
+{
+  "word": "rigidly",
+  "createdAt": "2026-05-28",
+  "reviews": [
+    {
+      "date": "2026-05-29",
+      "score": 2
+    }
+  ],
+  "definitions": [
+    "僵硬地；严格地；牢固地（在本句中指“以固定、稳定的方式”形成）"
+  ],
+  "examples": [
+    {
+      "text": "isn't made of multiple tiny bits of quartz, and for good reason. For one thing, the edges of the rigidly formed grains and smaller defects within the crystal structure reflect and disperse light that hits them.",
+      "explanation": "这里的 rigidly 是副词，修饰 formed，表示“以非常固定、稳定、几乎不易变化的方式形成”。rigidly formed grains 可理解为“结构很固定地形成的颗粒”。",
+      "focusWords": [
+        "rigidly"
+      ],
+      "source": {
+        "text": "玻璃为何是透明的? ——马克·米奥多尼克",
+        "url": "https://www.youtube.com/watch?v=VwRLIt6jgdM"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=VwRLIt6jgdM",
+        "timestamp": 58
+      }
+    }
+  ]
+}

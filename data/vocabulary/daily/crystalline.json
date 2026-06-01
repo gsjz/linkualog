@@ -1,0 +1,30 @@
+{
+  "word": "crystalline",
+  "createdAt": "2026-05-28",
+  "reviews": [
+    {
+      "date": "2026-05-29",
+      "score": 2
+    }
+  ],
+  "definitions": [
+    "结晶的；晶体的（如 crystalline form 表示“晶体状的/结晶形态的”）"
+  ],
+  "examples": [
+    {
+      "text": "These react together to form silicon dioxide, whose molecules arrange themselves into a regular crystalline form known as quartz. Quartz is commonly found in sand, where it often makes up most of the grains",
+      "explanation": "这里的 crystalline 用来修饰 form，表示“结晶的；晶体状的”。句子意思是：二氧化硅的分子会排列成规则的晶体结构，这种晶体形式叫作石英。",
+      "focusWords": [
+        "crystalline"
+      ],
+      "source": {
+        "text": "玻璃为何是透明的? ——马克·米奥多尼克",
+        "url": "https://www.youtube.com/watch?v=VwRLIt6jgdM"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=VwRLIt6jgdM",
+        "timestamp": 42
+      }
+    }
+  ]
+}

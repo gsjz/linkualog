@@ -1,0 +1,38 @@
+{
+  "word": "high-stakes",
+  "createdAt": "2026-05-27",
+  "reviews": [
+    {
+      "date": "2026-05-29",
+      "score": 1
+    },
+    {
+      "date": "2026-05-30",
+      "score": 2
+    }
+  ],
+  "definitions": [
+    "high-stakes：高风险的；赌注很高的；成败攸关的"
+  ],
+  "examples": [
+    {
+      "text": "each of whom carries a signature playing card corresponding to their role. You’ve received intel from a 100% reliable source about how they operate. Their M.O. is to invite their victims to a high stakes game with one or more killers at the table. The game is a variant of poker played with a single, fair deck",
+      "explanation": "这里的 high stakes game 指“高赌注的游戏”或“风险极高的对局”。high-stakes 用来强调这场游戏一旦输掉，后果会很严重，成败代价很大。",
+      "focusWords": [
+        "high-stakes"
+      ],
+      "source": {
+        "text": "Can you solve the secret assassin society riddle? - Alex Rosenthal",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=XkHJyqZqjxE",
+        "timestamp": 27
+      },
+      "focusPositions": [
+        41,
+        42
+      ]
+    }
+  ]
+}

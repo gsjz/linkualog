@@ -1,0 +1,30 @@
+{
+  "word": "vibrate",
+  "createdAt": "2026-05-28",
+  "reviews": [
+    {
+      "date": "2026-05-29",
+      "score": 2
+    }
+  ],
+  "definitions": [
+    "（使）振动；（使）震动；颤动"
+  ],
+  "examples": [
+    {
+      "text": "reflect and disperse light that hits them. But when the quartz is heated high enough the extra energy makes the molecules vibrate until they break the bonds holding them together and become a flowing liquid,",
+      "explanation": "这里的 vibrate 表示“振动、震动”。句子意思是：当石英被加热到足够高的温度时，额外的能量会让分子不断振动，直到它们挣脱彼此之间的化学键，最终变成流动的液体。",
+      "focusWords": [
+        "vibrate"
+      ],
+      "source": {
+        "text": "玻璃为何是透明的? ——马克·米奥多尼克",
+        "url": "https://www.youtube.com/watch?v=VwRLIt6jgdM"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=VwRLIt6jgdM",
+        "timestamp": 69
+      }
+    }
+  ]
+}

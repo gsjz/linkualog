@@ -9,9 +9,15 @@
     {
       "date": "2026-05-25",
       "score": 2
+    },
+    {
+      "date": "2026-05-29",
+      "score": 2
     }
   ],
-  "definitions": [],
+  "definitions": [
+    "挫折；阻碍；使事情进展受阻的问题"
+  ],
   "examples": [
     {
       "text": "None of this is guaranteed, and it will be hard and full of failure and setbacks.",

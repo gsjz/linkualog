@@ -1,0 +1,34 @@
+{
+  "word": "quartz",
+  "createdAt": "2026-05-28",
+  "reviews": [
+    {
+      "date": "2026-05-29",
+      "score": 1
+    },
+    {
+      "date": "2026-05-30",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "石英；二氧化硅形成的常见矿物，常见于沙子中。"
+  ],
+  "examples": [
+    {
+      "text": "These react together to form silicon dioxide, whose molecules arrange themselves into a regular crystalline form known as quartz. Quartz is commonly found in sand, where it often makes up most of the grains",
+      "explanation": "这句话说明：二氧化硅（silicon dioxide）会形成一种规则的晶体结构，这种晶体就叫 quartz（石英）。石英在沙子中很常见，常常构成大部分沙粒。",
+      "focusWords": [
+        "quartz"
+      ],
+      "source": {
+        "text": "玻璃为何是透明的? ——马克·米奥多尼克",
+        "url": "https://www.youtube.com/watch?v=VwRLIt6jgdM"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=VwRLIt6jgdM",
+        "timestamp": 42
+      }
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "word": "magnifying-lens",
+  "createdAt": "2026-05-28",
+  "reviews": [
+    {
+      "date": "2026-05-29",
+      "score": 2
+    }
+  ],
+  "definitions": [
+    "放大镜（magnifying lens）"
+  ],
+  "examples": [
+    {
+      "text": "put on your glasses if you wear them. You might want to grab a pair of binoculars, too, or a magnifying lens. Now, what do you see? Well, whatever it is,",
+      "explanation": "这里实际出现的是 magnifying lens，意思是“放大镜”。其中 magnifying 表示“用于放大的”，通常不是脱离 lens 单独记忆的重点。整句是在让你拿上眼镜、双筒望远镜或放大镜，然后观察看到什么。",
+      "focusWords": [
+        "magnifying lens"
+      ],
+      "source": {
+        "text": "玻璃为何是透明的? ——马克·米奥多尼克",
+        "url": "https://www.youtube.com/watch?v=VwRLIt6jgdM"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=VwRLIt6jgdM",
+        "timestamp": 13
+      }
+    }
+  ]
+}

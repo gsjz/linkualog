@@ -13,6 +13,10 @@
     {
       "date": "2026-05-22",
       "score": 4
+    },
+    {
+      "date": "2026-05-27",
+      "score": 4
     }
   ],
   "definitions": [
@@ -38,5 +42,5 @@
   "mergedFrom": [
     "circumnavigating"
   ],
-  "marked": true
+  "marked": false
 }

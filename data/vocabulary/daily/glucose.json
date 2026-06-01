@@ -1,5 +1,5 @@
 {
-  "word": "Glucose",
+  "word": "glucose",
   "createdAt": "2026-03-27",
   "reviews": [
     {
@@ -16,6 +16,10 @@
     },
     {
       "date": "2026-05-09",
+      "score": 2
+    },
+    {
+      "date": "2026-05-29",
       "score": 2
     }
   ],

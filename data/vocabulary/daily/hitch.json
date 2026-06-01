@@ -5,17 +5,25 @@
     {
       "date": "2026-05-20",
       "score": 2
+    },
+    {
+      "date": "2026-05-27",
+      "score": 1
+    },
+    {
+      "date": "2026-05-29",
+      "score": 2
     }
   ],
   "definitions": [
     "1. 搭便车；顺路搭乘",
     "2. 钩住；系住",
-    "3. 临时附带；顺带发生"
+    "3. （使）猛拉；突然移动；向上提"
   ],
   "examples": [
     {
-      "text": "The infrastructure connecting these vulnerable farms could quickly spread disease: pathogens could hitch a ride from one farm to another on workers’ boots, railroad cars, and steamships. That’s exactly what happened in the 1910s,",
-      "explanation": "这里 hitch a ride 表示“搭便车/搭载传播”，指病原体借助工人的靴子、铁路车厢和轮船等媒介，从一个农场传播到另一个农场。",
+      "text": "The infrastructure connecting these vulnerable farms could quickly spread disease: pathogens could hitch a ride from one farm to another on workers’ boots, railroad cars, and steamships.",
+      "explanation": "这里 hitch a ride 表示“搭便车、借助……传播”。句中指病原体附着在工人的靴子、火车车厢和轮船等媒介上，从一个农场传播到另一个农场。",
       "focusWords": [
         "hitch"
       ],

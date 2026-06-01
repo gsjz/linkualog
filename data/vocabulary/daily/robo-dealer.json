@@ -1,0 +1,34 @@
+{
+  "word": "robo-dealer",
+  "createdAt": "2026-05-27",
+  "reviews": [
+    {
+      "date": "2026-05-29",
+      "score": 1
+    },
+    {
+      "date": "2026-05-30",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "机器人发牌员；自动发牌装置（尤指纸牌游戏中负责发牌的机器）"
+  ],
+  "examples": [
+    {
+      "text": "Each assassin immediately and covertly swaps one of the cards they’ve been fairly dealt with their signature card. Then the robo-dealer reveals three shared cards on the table. After betting, the assassins play their signature cards as a signal that they’re ready.",
+      "explanation": "这里的 robo-dealer 指“机器人发牌员”或“自动发牌装置”。句子意思是：在每个刺客暗中换牌之后，这个自动发牌系统会在桌上翻开三张公共牌。该词重点不是 dealer 的“商人”义，而是牌局里“发牌者”的意思。",
+      "focusWords": [
+        "robo-dealer"
+      ],
+      "source": {
+        "text": "Can you solve the secret assassin society riddle? - Alex Rosenthal",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=XkHJyqZqjxE",
+        "timestamp": 49
+      }
+    }
+  ]
+}

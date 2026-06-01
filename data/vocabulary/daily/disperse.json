@@ -1,0 +1,30 @@
+{
+  "word": "disperse",
+  "createdAt": "2026-05-28",
+  "reviews": [
+    {
+      "date": "2026-05-29",
+      "score": 2
+    }
+  ],
+  "definitions": [
+    "使……分散；散开；散射（如光）"
+  ],
+  "examples": [
+    {
+      "text": "For one thing, the edges of the rigidly formed grains and smaller defects within the crystal structure reflect and disperse light that hits them. But when the quartz is heated high enough the extra energy makes the molecules vibrate",
+      "explanation": "这里的 disperse 表示“使（光）分散、散射”。句子意思是：晶体结构中规则颗粒的边缘和较小缺陷会反射并散射照到它们的光。",
+      "focusWords": [
+        "disperse"
+      ],
+      "source": {
+        "text": "玻璃为何是透明的? ——马克·米奥多尼克",
+        "url": "https://www.youtube.com/watch?v=VwRLIt6jgdM"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=VwRLIt6jgdM",
+        "timestamp": 63
+      }
+    }
+  ]
+}

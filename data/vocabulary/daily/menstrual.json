@@ -1,0 +1,30 @@
+{
+  "word": "menstrual",
+  "createdAt": "2026-05-28",
+  "reviews": [
+    {
+      "date": "2026-05-29",
+      "score": 1
+    },
+    {
+      "date": "2026-05-30",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "月经的；经期的"
+  ],
+  "examples": [
+    {
+      "text": "On top of that, talking about menstrual cramps can feel awkward or even taboo, leading many people to feel that they have to simply put up with the pain. But regularly suffering from severe cramping is far from benign. Some experts believe that repeated exposure to pain can cause the nervous system to become more sensitive,",
+      "explanation": "这里的 menstrual 用在 menstrual cramps 中，表示“月经的；经期的”。menstrual cramps 指“痛经、经期痉挛”。整句前半部分是在说：谈论痛经常常会让人觉得尴尬，甚至像禁忌话题一样。",
+      "focusWords": [
+        "menstrual"
+      ],
+      "source": {
+        "text": "Linkual Log",
+        "url": "http://log.shujie.cc/?tab=vocabulary&cat=daily&word=benign"
+      }
+    }
+  ]
+}

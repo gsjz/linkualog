@@ -1,0 +1,38 @@
+{
+  "word": "amorphous",
+  "createdAt": "2026-05-28",
+  "reviews": [
+    {
+      "date": "2026-05-28",
+      "score": 0
+    },
+    {
+      "date": "2026-05-29",
+      "score": 1
+    },
+    {
+      "date": "2026-05-30",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "无定形的；没有固定形状或规则结构的（如 amorphous solid 指“非晶态固体”）"
+  ],
+  "examples": [
+    {
+      "text": "they are less and less able to move into an ordered position, and the result is what is called an amorphous solid. A solid material with the chaotic structure of a liquid, which allows the molecules to freely fill in any gaps.",
+      "explanation": "这里的 amorphous 用来形容 solid，意思是“无定形的、结构不规则的”。整句话在说明：分子越来越无法排列成有序结构，结果就形成了所谓的“非晶态固体”，也就是外表是固体，但内部结构更接近液体那样杂乱。",
+      "focusWords": [
+        "amorphous"
+      ],
+      "source": {
+        "text": "玻璃为何是透明的? ——马克·米奥多尼克",
+        "url": "https://www.youtube.com/watch?v=VwRLIt6jgdM"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=VwRLIt6jgdM",
+        "timestamp": 90
+      }
+    }
+  ]
+}

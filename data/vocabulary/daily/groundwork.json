@@ -1,0 +1,30 @@
+{
+  "word": "groundwork",
+  "createdAt": "2026-05-27",
+  "reviews": [
+    {
+      "date": "2026-05-29",
+      "score": 2
+    }
+  ],
+  "definitions": [
+    "基础；根基；准备工作；奠基性工作"
+  ],
+  "examples": [
+    {
+      "text": "This invention laid the groundwork for what we now call the internet.",
+      "explanation": "这里的 laid the groundwork for 表示“为……奠定基础”。整句意思是：这项发明为我们今天所说的互联网奠定了基础。groundwork 在这里指基础性的准备或奠基性工作。",
+      "focusWords": [
+        "groundwork"
+      ],
+      "source": {
+        "text": "The Internet: IP Addresses & DNS",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=5o8CwafCxnU",
+        "timestamp": 36
+      }
+    }
+  ]
+}

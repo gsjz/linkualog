@@ -5,6 +5,10 @@
     {
       "date": "2026-04-20",
       "score": 5
+    },
+    {
+      "date": "2026-05-30",
+      "score": 2
     }
   ],
   "definitions": [
@@ -12,8 +16,8 @@
   ],
   "examples": [
     {
-      "text": "Earth was now the stage of something grand, \na complexity acceleration machine going at full speed. Millions of new species emerged and \nvanished. Life was beaten down over and over, but every time it came back stronger. Resettling \nniches filled with corpses of the ones that came before. Most of these beings are hidden in \ntime forever, we only know their faint echoes. Until a few million years ago an animal \nlooked at the night sky. It looked at its",
-      "explanation": "",
+      "text": "Earth was now the stage of something grand, a complexity acceleration machine going at full speed. Millions of new species emerged and vanished. Life was beaten down over and over, but every time it came back stronger. Resettling niches filled with corpses of the ones that came before.",
+      "explanation": "这里的 niches 指“生态位、生存位置”。整句意思是：生命一次次被打击后又重新兴盛，占据了那些因旧物种灭绝而空出来的生态位。这个例句对应 niche 的生物学含义，很适合作为“生态位”来记忆。",
       "focusWords": [
         "niches"
       ],

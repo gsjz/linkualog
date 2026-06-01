@@ -1,0 +1,34 @@
+{
+  "word": "grain",
+  "createdAt": "2026-05-28",
+  "reviews": [
+    {
+      "date": "2026-05-29",
+      "score": 1
+    },
+    {
+      "date": "2026-05-30",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "颗粒；细粒（如沙粒、谷粒等）"
+  ],
+  "examples": [
+    {
+      "text": "into a regular crystalline form known as quartz. Quartz is commonly found in sand, where it often makes up most of the grains and is the main ingredient in most type of glass. Of course, you probably noticed that glass",
+      "explanation": "这里的 grains 指“细小颗粒”，在语境中就是沙子里的颗粒。句子意思是：石英常见于沙子中，往往构成了大部分沙粒。",
+      "focusWords": [
+        "grain"
+      ],
+      "source": {
+        "text": "玻璃为何是透明的? ——马克·米奥多尼克",
+        "url": "https://www.youtube.com/watch?v=VwRLIt6jgdM"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=VwRLIt6jgdM",
+        "timestamp": 48
+      }
+    }
+  ]
+}

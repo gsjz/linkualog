@@ -9,15 +9,20 @@
     {
       "date": "2026-05-03",
       "score": 3
+    },
+    {
+      "date": "2026-05-29",
+      "score": 3
     }
   ],
   "definitions": [
-    "adj. 极度渴望的"
+    "adj. 极度渴望的",
+    "adj. 非常需要的；不顾一切的；绝望的"
   ],
   "examples": [
     {
-      "text": "to survive. We are all still bound to \nour nature that made us so successful. We still tell stories, are hungry \nfor food, greedy for resources, desperate to be accepted by our peers. We are \nscared by the dangers that lurk in the dark, imagined and real ones. We are still brutal to \neach other and the animals we hold power over. We are still territorial and possessive, \nwe fear losing what we have, and we fear",
-      "explanation": "adj. 极度渴望的",
+      "text": "We still tell stories, are hungry for food, greedy for resources, desperate to be accepted by our peers.",
+      "explanation": "这里的 desperate to be accepted 表示“极度渴望被同伴接纳”。desperate 后常接 to do，强调一种很强烈、近乎迫切的愿望。",
       "focusWords": [
         "desperate"
       ],

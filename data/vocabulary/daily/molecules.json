@@ -1,0 +1,34 @@
+{
+  "word": "molecules",
+  "createdAt": "2026-05-28",
+  "reviews": [
+    {
+      "date": "2026-05-29",
+      "score": 3
+    },
+    {
+      "date": "2026-06-01",
+      "score": 4
+    }
+  ],
+  "definitions": [
+    "分子（由原子组成的最小物质单位之一）"
+  ],
+  "examples": [
+    {
+      "text": "silicon and oxygen. These react together to form silicon dioxide, whose molecules arrange themselves into a regular crystalline form known as quartz. Quartz is commonly found in sand,",
+      "explanation": "这里的 molecules 指“分子”。句子意思是：二氧化硅形成后，它的分子会按规则排列，构成一种叫石英的晶体结构。重点是理解 molecules 在材料结构语境中表示“构成物质的分子”。",
+      "focusWords": [
+        "molecules"
+      ],
+      "source": {
+        "text": "玻璃为何是透明的? ——马克·米奥多尼克",
+        "url": "https://www.youtube.com/watch?v=VwRLIt6jgdM"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=VwRLIt6jgdM",
+        "timestamp": 40
+      }
+    }
+  ]
+}

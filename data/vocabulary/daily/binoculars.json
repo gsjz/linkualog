@@ -1,0 +1,34 @@
+{
+  "word": "binoculars",
+  "createdAt": "2026-05-28",
+  "reviews": [
+    {
+      "date": "2026-05-28",
+      "score": 1
+    },
+    {
+      "date": "2026-05-29",
+      "score": 2
+    }
+  ],
+  "definitions": [
+    "双筒望远镜；望远镜（通常指 binoculars）"
+  ],
+  "examples": [
+    {
+      "text": "Take a look out your window, put on your glasses if you wear them. You might want to grab a pair of binoculars, too, or a magnifying lens. Now, what do you see?",
+      "explanation": "这里的 binoculars 指“双筒望远镜”。句子是在让你看看窗外，如果需要可以戴上眼镜，甚至拿一副双筒望远镜或一个放大镜来观察。grab a pair of binoculars 表示“拿上一副双筒望远镜”。",
+      "focusWords": [
+        "binoculars"
+      ],
+      "source": {
+        "text": "玻璃为何是透明的? ——马克·米奥多尼克",
+        "url": "https://www.youtube.com/watch?v=VwRLIt6jgdM"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=VwRLIt6jgdM",
+        "timestamp": 11
+      }
+    }
+  ]
+}

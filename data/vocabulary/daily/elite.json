@@ -1,0 +1,30 @@
+{
+  "word": "elite",
+  "createdAt": "2026-05-27",
+  "reviews": [
+    {
+      "date": "2026-05-29",
+      "score": 2
+    }
+  ],
+  "definitions": [
+    "精英的；精锐的；上层的（elite）"
+  ],
+  "examples": [
+    {
+      "text": "Your agent is about to infiltrate a life or death poker game in a hidden back room of the grand casino. You’re on the trail of an elite society of assassins, each of whom carries a signature playing card corresponding to their role. You’ve received intel from a 100% reliable source about how they operate.",
+      "explanation": "这里的 elite 用来修饰 society，表示“精英的、上层的、精锐的”。an elite society of assassins 可理解为“一个由顶尖杀手组成的精英组织”。",
+      "focusWords": [
+        "elite"
+      ],
+      "source": {
+        "text": "Can you solve the secret assassin society riddle? - Alex Rosenthal",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=XkHJyqZqjxE",
+        "timestamp": 14
+      }
+    }
+  ]
+}
