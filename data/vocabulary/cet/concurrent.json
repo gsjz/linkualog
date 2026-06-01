@@ -1,0 +1,21 @@
+{
+  "word": "concurrent",
+  "createdAt": "2026-06-01",
+  "reviews": [],
+  "definitions": [
+    "同时发生的；并存的（常与 with 连用，表示与……同时发生）"
+  ],
+  "examples": [
+    {
+      "text": "They identified two new potential explanations: the first being the tremendous decline in marriage among men without college degrees since the 1960s; and the second, being the increase in women participating in the workforce that was concurrent with the decline in marriage.",
+      "explanation": "这里 concurrent with the decline in marriage 表示“与婚姻率下降同时发生”。整句意思是：女性更多参与劳动力市场这一趋势，与婚姻减少是并行发生的。",
+      "focusWords": [
+        "concurrent"
+      ],
+      "source": {
+        "text": "CET6 23 12 2 听力",
+        "url": ""
+      }
+    }
+  ]
+}

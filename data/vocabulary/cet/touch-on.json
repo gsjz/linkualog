@@ -5,14 +5,18 @@
     {
       "date": "2026-05-07",
       "score": 2
+    },
+    {
+      "date": "2026-05-29",
+      "score": 3
     }
   ],
   "definitions": [
-    "vt. 涉及"
+    "谈到；涉及"
   ],
   "examples": [
     {
-      "text": "10. What did Kate Atkinson's books touch on? 凯特·阿特金森的作品涉及哪些方面的内容？",
+      "text": "What did Kate Atkinson's books touch on? ",
       "explanation": "凯特·阿特金森的作品涉及哪些方面的内容？",
       "focusWords": [
         "touch on"

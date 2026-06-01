@@ -1,0 +1,21 @@
+{
+  "word": "ritual",
+  "createdAt": "2026-06-01",
+  "reviews": [],
+  "definitions": [
+    "仪式；惯例，例行做法（尤指反复出现、几乎成习惯的行为）"
+  ],
+  "examples": [
+    {
+      "text": "Now, it’s become something of a ritual to debate the value of a college degree, but as Current Population Survey data show, there has been a sharp decline in employment among men without college degrees compared with those who have them.",
+      "explanation": "这里的 ritual 不是指正式宗教“仪式”，而是比喻“惯例、例行公事般的做法”。句子意思是：如今，围绕大学学位价值展开争论，几乎已经成了一种固定会上演的惯例。",
+      "focusWords": [
+        "ritual"
+      ],
+      "source": {
+        "text": "CET6 23 12 2 听力",
+        "url": ""
+      }
+    }
+  ]
+}

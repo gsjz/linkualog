@@ -5,9 +5,15 @@
     {
       "date": "2026-04-21",
       "score": 4
+    },
+    {
+      "date": "2026-05-30",
+      "score": 3
     }
   ],
-  "definitions": [],
+  "definitions": [
+    "邮轮；乘船巡游，尤指度假性航行"
+  ],
   "examples": [
     {
       "text": "It’s home to the second-busiest cruise ship port in the world and is a gateway to the cosmos.",

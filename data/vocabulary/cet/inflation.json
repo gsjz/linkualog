@@ -1,0 +1,19 @@
+{
+  "word": "inflation",
+  "createdAt": "2026-06-01",
+  "reviews": [],
+  "definitions": [],
+  "examples": [
+    {
+      "text": "While the authors of the paper found truth in this explanation, they assert that low wages can’t be the only factor, as wages for men without college degrees, adjusting for inflation, haven’t changed much since the 1960s, making it hard to see why fewer men seem willing to accept those wages.",
+      "explanation": "",
+      "focusWords": [
+        "inflation"
+      ],
+      "source": {
+        "text": "CET6 23 12 2 听力",
+        "url": ""
+      }
+    }
+  ]
+}
