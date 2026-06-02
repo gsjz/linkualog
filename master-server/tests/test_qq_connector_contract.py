@@ -375,6 +375,137 @@ class QQConnectorContractTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(merged["examples"]), 2)
         self.assertIn("irritating", merged["mergedFrom"])
 
+    def test_manual_merge_can_merge_into_existing_entry_across_categories(self):
+        source_path = self.vocab_dir / "daily" / "irritating.json"
+        target_path = self.vocab_dir / "cet" / "irritate.json"
+        source_path.parent.mkdir(parents=True, exist_ok=True)
+        target_path.parent.mkdir(parents=True, exist_ok=True)
+        source_path.write_text(
+            """{
+  "word": "irritating",
+  "createdAt": "2026-04-20",
+  "reviews": [{"date": "2026-04-21", "score": 1}],
+  "definitions": ["令人恼火的"],
+  "examples": [
+    {
+      "text": "The noise is irritating.",
+      "explanation": "噪音令人烦躁。",
+      "focusWords": ["irritating"]
+    }
+  ]
+}
+""",
+            encoding="utf-8",
+        )
+        target_path.write_text(
+            """{
+  "word": "irritate",
+  "createdAt": "2026-04-19",
+  "reviews": [],
+  "definitions": ["使恼怒；刺激"],
+  "examples": []
+}
+""",
+            encoding="utf-8",
+        )
+
+        result = review_routes.manual_merge_vocab(
+            review_routes.ManualVocabMergeRequest(
+                source_category="daily",
+                source_filename="irritating.json",
+                target_category="cet",
+                target_word="irritate",
+                delete_source=True,
+                create_target_if_missing=True,
+            )
+        )
+
+        self.assertEqual(result["status"], "success")
+        self.assertEqual(result["target_category"], "cet")
+        self.assertEqual(result["target_file"], "irritate.json")
+        self.assertFalse(result["target_created"])
+        self.assertTrue(result["source_deleted"])
+        self.assertFalse(source_path.exists())
+        merged = review_vocabulary.load_vocab_file(str(target_path))
+        self.assertEqual(merged["word"], "irritate")
+        self.assertIn("令人恼火的", merged["definitions"])
+        self.assertEqual(len(merged["examples"]), 1)
+        self.assertIn("irritating", merged["mergedFrom"])
+
+    def test_manual_merge_can_create_target_word_without_creating_category(self):
+        source_path = self.vocab_dir / "daily" / "hoped.json"
+        target_path = self.vocab_dir / "daily" / "hope.json"
+        source_path.parent.mkdir(parents=True, exist_ok=True)
+        source_path.write_text(
+            """{
+  "word": "hoped",
+  "createdAt": "2026-04-20",
+  "reviews": [],
+  "definitions": ["hope 的过去式"],
+  "examples": [
+    {
+      "text": "They hoped for rain.",
+      "explanation": "他们希望下雨。",
+      "focusWords": ["hoped"]
+    }
+  ]
+}
+""",
+            encoding="utf-8",
+        )
+
+        result = review_routes.manual_merge_vocab(
+            review_routes.ManualVocabMergeRequest(
+                source_category="daily",
+                source_filename="hoped.json",
+                target_category="daily",
+                target_word="hope",
+                delete_source=True,
+                create_target_if_missing=True,
+            )
+        )
+
+        self.assertEqual(result["status"], "success")
+        self.assertEqual(result["target_file"], "hope.json")
+        self.assertTrue(result["target_created"])
+        self.assertTrue(result["source_deleted"])
+        self.assertFalse(source_path.exists())
+        self.assertTrue(target_path.exists())
+        merged = review_vocabulary.load_vocab_file(str(target_path))
+        self.assertEqual(merged["word"], "hope")
+        self.assertIn("hope 的过去式", merged["definitions"])
+        self.assertIn("hoped", merged["mergedFrom"])
+
+    def test_manual_merge_does_not_create_target_category(self):
+        source_path = self.vocab_dir / "daily" / "hoped.json"
+        source_path.parent.mkdir(parents=True, exist_ok=True)
+        source_path.write_text(
+            """{
+  "word": "hoped",
+  "createdAt": "2026-04-20",
+  "reviews": [],
+  "definitions": ["hope 的过去式"],
+  "examples": []
+}
+""",
+            encoding="utf-8",
+        )
+
+        with self.assertRaisesRegex(Exception, "404"):
+            review_routes.manual_merge_vocab(
+                review_routes.ManualVocabMergeRequest(
+                    source_category="daily",
+                    source_filename="hoped.json",
+                    target_category="missing",
+                    target_word="hope",
+                    delete_source=True,
+                    create_target_if_missing=True,
+                )
+            )
+
+        self.assertTrue(source_path.exists())
+        self.assertFalse((self.vocab_dir / "missing").exists())
+
     def test_apply_split_creates_target_entries_and_removes_source(self):
         source_path = self.vocab_dir / "cet" / "assortment-of-ailments.json"
         source_path.parent.mkdir(parents=True, exist_ok=True)
@@ -509,6 +640,44 @@ class QQConnectorContractTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(merged["word"], "ailment")
         self.assertEqual(len(merged["examples"]), 2)
         self.assertEqual(merged["splitFrom"][0]["file"], "assortment-of-ailments.json")
+
+    def test_review_visualization_includes_recently_added_entries(self):
+        category_dir = self.vocab_dir / "daily"
+        category_dir.mkdir(parents=True, exist_ok=True)
+        today = date.today()
+
+        entries = {
+            "newest.json": {
+                "word": "newest",
+                "createdAt": today.isoformat(),
+                "reviews": [],
+                "definitions": [],
+                "examples": [],
+            },
+            "older.json": {
+                "word": "older",
+                "createdAt": (today - timedelta(days=12)).isoformat(),
+                "reviews": [],
+                "definitions": [],
+                "examples": [],
+            },
+            "undated.json": {
+                "word": "undated",
+                "reviews": [],
+                "definitions": [],
+                "examples": [],
+            },
+        }
+        for filename, payload in entries.items():
+            review_vocabulary.save_vocab_file(str(category_dir / filename), payload)
+
+        result = review_routes.review_visualization(category="daily")
+        selected_words = [item["word"] for item in result["selected"]["recently_added"]]
+        category_words = [item["word"] for item in result["category_summaries"]["daily"]["recently_added"]]
+
+        self.assertEqual(selected_words, ["newest", "older"])
+        self.assertEqual(category_words, ["newest", "older"])
+        self.assertEqual(result["selected"]["recently_added"][0]["created_at"], today.isoformat())
 
     def test_review_recommend_respects_frontend_tuning_preferences(self):
         category_dir = self.vocab_dir / "daily"

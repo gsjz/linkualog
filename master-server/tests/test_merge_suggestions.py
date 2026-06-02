@@ -127,6 +127,32 @@ class MergeSuggestionTests(unittest.TestCase):
             ["an assortment of", "ailment"],
         )
 
+    def test_file_cleaning_normalizes_entry_merge_to_rename(self):
+        normalized = _normalize_file_cleaning_result(
+            {
+                "entry": [
+                    {
+                        "action": "merge",
+                        "suggested_word": "hope",
+                        "confidence": 0.93,
+                        "reason": "hoped 应归并到 hope",
+                    },
+                ]
+            }
+        )
+
+        self.assertEqual(
+            normalized["entry"],
+            [
+                {
+                    "action": "rename",
+                    "suggested_word": "hope",
+                    "reason": "hoped 应归并到 hope",
+                    "confidence": 0.93,
+                }
+            ],
+        )
+
     def test_file_cleaning_flags_missing_definitions(self):
         result = analyze_file_cleaning_suggestions(
             "ailment.json",

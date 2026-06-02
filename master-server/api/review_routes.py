@@ -115,6 +115,17 @@ class MergeApplyRequest(BaseModel):
     create_target_if_missing: bool = False
 
 
+class ManualVocabMergeRequest(BaseModel):
+    source_category: str
+    source_filename: str
+    target_category: str
+    target_word: str = ""
+    target_filename: str = ""
+    delete_source: bool = True
+    create_target_if_missing: bool = True
+    source_data: dict | None = None
+
+
 class SplitApplyRequest(BaseModel):
     category: str
     source_filename: str
@@ -147,6 +158,10 @@ def _normalize_vocab_word(word: str) -> str:
     text = re.sub(r"\.json$", "", text, flags=re.IGNORECASE)
     text = re.sub(r"[\s_]+", "-", text)
     return text.strip("-")
+
+
+def _normalize_vocab_display_word(word: str) -> str:
+    return _WS_RE.sub(" ", str(word or "")).strip()
 
 
 def _build_vocab_filename(word: str) -> str:
@@ -955,6 +970,7 @@ def review_visualization(category: str | None = None):
             category_today_feature_counts = Counter()
             category_daily_review_counts = Counter()
             category_latest_entries = []
+            category_recently_added_entries = []
 
             try:
                 files = list_vocab_files(category_name)
@@ -968,6 +984,7 @@ def review_visualization(category: str | None = None):
                     "review_status": [],
                     "today_feature_share": [],
                     "latest_reviews": [],
+                    "recently_added": [],
                     "error": str(exc),
                 }
                 continue
@@ -1043,10 +1060,19 @@ def review_visualization(category: str | None = None):
 
                 if latest_review:
                     category_latest_entries.append(entry_summary)
+                if created_at:
+                    category_recently_added_entries.append(entry_summary)
 
             category_latest_entries.sort(
                 key=lambda item: (
                     str(item.get("latest_review", {}).get("date") or ""),
+                    str(item.get("word") or ""),
+                ),
+                reverse=True,
+            )
+            category_recently_added_entries.sort(
+                key=lambda item: (
+                    str(item.get("created_at") or ""),
                     str(item.get("word") or ""),
                 ),
                 reverse=True,
@@ -1075,6 +1101,7 @@ def review_visualization(category: str | None = None):
                 "today_feature_share": _build_feature_share_items(category_today_feature_counts, category_counts["today_reviewed"]),
                 "feature_share": _build_feature_share_items(category_feature_counts, category_counts["total"]),
                 "latest_reviews": category_latest_entries[:8],
+                "recently_added": category_recently_added_entries[:8],
             }
 
             for key, value in category_counts.items():
@@ -1097,6 +1124,7 @@ def review_visualization(category: str | None = None):
         selected_today_feature_counts = Counter()
         due_entries = []
         latest_selected_reviews = []
+        recently_added_entries = []
 
         for item in selected_entries:
             flags = item.get("feature_flags") if isinstance(item.get("feature_flags"), dict) else {}
@@ -1111,6 +1139,8 @@ def review_visualization(category: str | None = None):
                 due_entries.append(item)
             if item.get("latest_review"):
                 latest_selected_reviews.append(item)
+            if item.get("created_at"):
+                recently_added_entries.append(item)
 
         due_entries.sort(
             key=lambda item: (
@@ -1121,6 +1151,13 @@ def review_visualization(category: str | None = None):
         latest_selected_reviews.sort(
             key=lambda item: (
                 str(item.get("latest_review", {}).get("date") or ""),
+                str(item.get("word") or ""),
+            ),
+            reverse=True,
+        )
+        recently_added_entries.sort(
+            key=lambda item: (
+                str(item.get("created_at") or ""),
                 str(item.get("word") or ""),
             ),
             reverse=True,
@@ -1203,6 +1240,7 @@ def review_visualization(category: str | None = None):
                 ),
                 "due_entries": due_entries[:10],
                 "latest_reviews": latest_selected_reviews[:10],
+                "recently_added": recently_added_entries[:10],
             },
             "category_summaries": category_summaries,
             "meta": {
@@ -1571,6 +1609,85 @@ def apply_merge(req: MergeApplyRequest):
             "create_target_if_missing": req.create_target_if_missing,
             "target_created": target_created,
             "target_data": merged_payload,
+        }
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@router.post("/api/vocabulary/merge/manual")
+def manual_merge_vocab(req: ManualVocabMergeRequest):
+    try:
+        source_category = _require_category(req.source_category)
+        target_category = _require_category(req.target_category)
+        source_path, existing_source = load_vocab_entry(source_category, req.source_filename)
+        source_file = os.path.basename(source_path)
+        source_word = _normalize_vocab_display_word(
+            existing_source.get("word") or os.path.splitext(source_file)[0]
+        ) or os.path.splitext(source_file)[0]
+
+        target_word = _normalize_vocab_display_word(req.target_word)
+        target_filename = _normalize_json_filename(req.target_filename) if req.target_filename else ""
+        if target_word:
+            target_filename = _build_vocab_filename(target_word)
+        elif target_filename:
+            target_word = os.path.splitext(target_filename)[0]
+        else:
+            raise ValueError("target_word 或 target_filename 不能为空")
+
+        source_payload = _normalize_vocab_payload(
+            req.source_data if isinstance(req.source_data, dict) else existing_source,
+            fallback_word=source_word,
+            fallback_created_at=str(existing_source.get("createdAt", "")),
+        )
+
+        target_path = resolve_vocab_file_for_write(target_category, target_filename)
+        same_target = os.path.abspath(source_path) == os.path.abspath(target_path)
+        if same_target:
+            raise ValueError("不能将词条合并到自身")
+
+        target_exists = os.path.exists(target_path)
+        if target_exists:
+            target_payload = load_vocab_file(target_path)
+            target_fallback_word = str(target_payload.get("word") or os.path.splitext(target_filename)[0]).strip()
+        elif req.create_target_if_missing:
+            target_payload = {}
+            target_fallback_word = target_word or os.path.splitext(target_filename)[0]
+        else:
+            raise FileNotFoundError(f"词条文件不存在: {target_filename}")
+
+        merged_payload = _merge_vocab_payload(
+            target_payload=target_payload,
+            source_payload=source_payload,
+            target_fallback_word=target_fallback_word,
+        )
+        if not target_exists and target_word:
+            merged_payload["word"] = target_word
+
+        save_vocab_file(target_path, merged_payload)
+
+        source_deleted = False
+        if req.delete_source:
+            try:
+                os.remove(source_path)
+                source_deleted = True
+            except FileNotFoundError:
+                source_deleted = False
+
+        return {
+            "status": "success",
+            "source_category": source_category,
+            "source_file": source_file,
+            "source_word": source_word,
+            "target_category": target_category,
+            "target_file": os.path.basename(target_path),
+            "target_word": str(merged_payload.get("word") or target_word or target_fallback_word).strip(),
+            "target_created": not target_exists,
+            "source_deleted": source_deleted,
+            "data": merged_payload,
         }
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
