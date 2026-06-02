@@ -8,10 +8,9 @@ const DEFAULT_UI_CONFIG = {
   defaultFoldedKeys: 'extracted_text,bbox',
 };
 const PAGES = [
-  { id: 'llm', label: '1. LLM' },
-  { id: 'runtime', label: '2. 服务' },
-  { id: 'review', label: '3. Review' },
-  { id: 'ui', label: '4. 界面' },
+  { id: 'llm', label: 'API' },
+  { id: 'review', label: '参数' },
+  { id: 'ui', label: '界面' },
 ];
 
 function readLocalUiConfig() {
@@ -50,7 +49,6 @@ export default function ConfigForm({ onClose }) {
     model: DEFAULT_MODEL,
     api_key: '',
     hasKey: false,
-    log_level: 'INFO',
     review_llm_timeout_seconds: 75,
     review_folder_merge_llm_timeout_seconds: 90,
     review_folder_merge_llm_max_tokens: 900,
@@ -131,7 +129,6 @@ export default function ConfigForm({ onClose }) {
       provider: config.provider,
       model: config.model,
       api_key: config.api_key,
-      log_level: String(config.log_level || 'INFO').trim().toUpperCase(),
       review_llm_timeout_seconds: numberValue(config.review_llm_timeout_seconds, 75),
       review_folder_merge_llm_timeout_seconds: numberValue(config.review_folder_merge_llm_timeout_seconds, 90),
       review_folder_merge_llm_max_tokens: numberValue(config.review_folder_merge_llm_max_tokens, 900),
@@ -253,9 +250,6 @@ export default function ConfigForm({ onClose }) {
           <div className="config-modal-body">
             {page === 'llm' ? (
               <>
-                <div className="config-info-box">
-                  OCR 下划线词坐标已默认开启，不再提供实验开关。
-                </div>
                 <label style={labelStyle}>
                   接口地址 (Provider API)
                   <input type="text" value={config.provider} onChange={(e) => setField('provider', e.target.value)} style={inputStyle(loading)} required disabled={loading || saving || resetting} />
@@ -277,20 +271,6 @@ export default function ConfigForm({ onClose }) {
                     style={inputStyle(loading)}
                     disabled={loading || saving || resetting}
                   />
-                </label>
-              </>
-            ) : null}
-
-            {page === 'runtime' ? (
-              <>
-                <label style={labelStyle}>
-                  日志级别
-                  <select value={config.log_level} onChange={(e) => setField('log_level', e.target.value)} style={inputStyle(loading)} disabled={loading || saving || resetting}>
-                    <option value="DEBUG">DEBUG</option>
-                    <option value="INFO">INFO</option>
-                    <option value="WARNING">WARNING</option>
-                    <option value="ERROR">ERROR</option>
-                  </select>
                 </label>
               </>
             ) : null}
@@ -377,7 +357,7 @@ export default function ConfigForm({ onClose }) {
                   />
                 </label>
                 <div className="config-info-box">
-                  这一页保存的是浏览器本地界面偏好，不需要重启服务。
+                  这一页保存的是浏览器本地界面偏好，立即生效。
                 </div>
               </>
             ) : null}
