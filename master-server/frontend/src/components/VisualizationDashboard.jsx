@@ -184,7 +184,22 @@ function TrendBars({ items = [], title, valueKey = 'count', labelKey = 'date' })
   );
 }
 
-function EntryList({ title, entries = [], emptyText }) {
+function getEntryMeta(entry, metaMode) {
+  if (metaMode === 'created') {
+    return {
+      label: '添加时间',
+      value: entry.created_at || '未记录',
+    };
+  }
+  return {
+    label: entry.review_status_label || entry.mastery_label,
+    value: entry.latest_review ? `${entry.latest_review.date} · ${entry.latest_review.score}/5` : (entry.next_review_date || '未复习'),
+  };
+}
+
+function EntryList({ title, entries = [], emptyText, onOpenVocabularyEntry = null, metaMode = 'review' }) {
+  const canOpen = typeof onOpenVocabularyEntry === 'function';
+
   return (
     <section className="visual-panel visual-entry-panel">
       <div className="visual-panel-header">
@@ -195,18 +210,37 @@ function EntryList({ title, entries = [], emptyText }) {
         <UiIcon name="list" size={18} />
       </div>
       <div className="visual-entry-list">
-        {entries.length ? entries.map((entry) => (
-          <div className="visual-entry" key={`${entry.category}/${entry.file}`}>
-            <div>
-              <strong>{entry.word}</strong>
-              <span>{entry.category} / {entry.file}</span>
+        {entries.length ? entries.map((entry) => {
+          const meta = getEntryMeta(entry, metaMode);
+          return (
+            <div className="visual-entry" key={`${entry.category}/${entry.file}`}>
+              <div className="visual-entry-main">
+                <div className="visual-entry-word-row">
+                  <strong>{entry.word}</strong>
+                  <button
+                    type="button"
+                    className="visual-entry-jump"
+                    onClick={() => onOpenVocabularyEntry?.({
+                      category: entry.category,
+                      word: entry.word,
+                      fileKey: entry.file,
+                    })}
+                    disabled={!canOpen}
+                    title={`跳转到 ${entry.category} / ${entry.file}`}
+                    aria-label={`跳转到 ${entry.word}`}
+                  >
+                    <UiIcon name="external-link" size={15} />
+                  </button>
+                </div>
+                <span>{entry.category} / {entry.file}</span>
+              </div>
+              <div className="visual-entry-meta">
+                <span>{meta.label}</span>
+                <em>{meta.value}</em>
+              </div>
             </div>
-            <div className="visual-entry-meta">
-              <span>{entry.review_status_label || entry.mastery_label}</span>
-              <em>{entry.latest_review ? `${entry.latest_review.date} · ${entry.latest_review.score}/5` : (entry.next_review_date || '未复习')}</em>
-            </div>
-          </div>
-        )) : (
+          );
+        }) : (
           <div className="visual-empty">{emptyText}</div>
         )}
       </div>
@@ -253,7 +287,7 @@ function CategoryRank({ items = [], selectedCategory = '', onSelect }) {
   );
 }
 
-export default function VisualizationDashboard({ categories = [], defaultCategory = '' }) {
+export default function VisualizationDashboard({ categories = [], defaultCategory = '', onOpenVocabularyEntry = null }) {
   const [selectedCategory, setSelectedCategory] = useState(String(defaultCategory || '').trim());
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -361,9 +395,26 @@ export default function VisualizationDashboard({ categories = [], defaultCategor
             />
           </div>
 
-          <div className="visual-grid visual-grid-wide">
-            <EntryList title="优先复习" entries={selected.due_entries || []} emptyText="当前范围没有到期或新词条" />
-            <EntryList title="最近复习" entries={selected.latest_reviews || []} emptyText="当前范围暂无复习记录" />
+          <div className="visual-grid visual-grid-entry">
+            <EntryList
+              title="优先复习"
+              entries={selected.due_entries || []}
+              emptyText="当前范围没有到期或新词条"
+              onOpenVocabularyEntry={onOpenVocabularyEntry}
+            />
+            <EntryList
+              title="最近复习"
+              entries={selected.latest_reviews || []}
+              emptyText="当前范围暂无复习记录"
+              onOpenVocabularyEntry={onOpenVocabularyEntry}
+            />
+            <EntryList
+              title="最近添加"
+              entries={selected.recently_added || []}
+              emptyText="当前范围暂无添加记录"
+              onOpenVocabularyEntry={onOpenVocabularyEntry}
+              metaMode="created"
+            />
           </div>
         </div>
       ) : null}

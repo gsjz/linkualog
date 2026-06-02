@@ -571,6 +571,7 @@ function App() {
           >
             <VisualizationDashboard
               categories={categories}
+              onOpenVocabularyEntry={handleOpenVocabularyEntry}
             />
           </div>
         </div>

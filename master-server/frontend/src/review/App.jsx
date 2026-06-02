@@ -12,6 +12,7 @@ import {
   fetchRecommendedWord,
   fetchVocabDetail,
   getReviewAdvice,
+  manualMergeVocab,
   renameVocabDetail,
   runFileRefine,
   saveConfig,
@@ -84,6 +85,10 @@ function normalizeWordFilename(word) {
     .replace(/[\s_]+/g, '-')
     .replace(/^-+|-+$/g, '');
   return normalized ? `${normalized}.json` : '';
+}
+
+function filenameToWord(filename) {
+  return String(filename || '').trim().replace(/\.json$/i, '');
 }
 
 function deepClone(value) {
@@ -598,6 +603,19 @@ function normalizeLlmAction(value) {
   return String(value || '').trim().toLowerCase();
 }
 
+function normalizeEntryAction(value) {
+  const action = normalizeLlmAction(value).replace(/-/g, '_');
+  return ({
+    merge: 'rename',
+    merge_to: 'rename',
+    merge_into: 'rename',
+    converge: 'rename',
+    retitle: 'rename',
+    headword: 'rename',
+    lemmatize: 'rename',
+  }[action] || action);
+}
+
 function parseIndex(value) {
   const index = parseInt(value, 10);
   if (!Number.isInteger(index) || index < 0) return null;
@@ -682,7 +700,7 @@ function isActionableEntrySuggestion(item) {
     return false;
   }
 
-  const action = normalizeLlmAction(item.action);
+  const action = normalizeEntryAction(item.action);
   if (action === 'rename') {
     return Boolean(String(item.suggested_word || '').trim());
   }
@@ -793,7 +811,7 @@ function countActionableLlmItems(llmData) {
   let total = 0;
 
   for (const item of entry) {
-    if (normalizeLlmAction(item?.action) === 'rename' && isActionableEntrySuggestion(item)) total += 1;
+    if (normalizeEntryAction(item?.action) === 'rename' && isActionableEntrySuggestion(item)) total += 1;
   }
   for (const item of defs) {
     if (isActionableDefinitionSuggestion(item)) total += 1;
@@ -811,7 +829,7 @@ function buildFullyAutoAppliedDraft(baseDraft, cleanData) {
 
   const entrySuggestions = Array.isArray(cleanData?.llm?.entry) ? cleanData.llm.entry : [];
   const renameSuggestion = entrySuggestions.find((item) => (
-    normalizeLlmAction(item?.action) === 'rename'
+    normalizeEntryAction(item?.action) === 'rename'
     && isActionableEntrySuggestion(item)
   ));
   if (renameSuggestion) {
@@ -883,10 +901,133 @@ function buildFullyAutoAppliedDraft(baseDraft, cleanData) {
   return next;
 }
 
+function ManualMergePanel({
+  activeWord,
+  categories,
+  entries,
+  currentCategory,
+  currentFilename,
+  loading,
+  hasDraft,
+  onManualMerge,
+}) {
+  const [manualTargetCategory, setManualTargetCategory] = useState(currentCategory || '');
+  const [manualTargetWord, setManualTargetWord] = useState('');
+
+  const normalizedManualTargetCategory = normalizeCategoryValue(manualTargetCategory || currentCategory);
+  const normalizedManualTargetWord = collapseWhitespace(manualTargetWord);
+  const manualTargetFilename = normalizeWordFilename(normalizedManualTargetWord);
+  const manualTargetIsCurrentCategory = normalizedManualTargetCategory === normalizeCategoryValue(currentCategory);
+  const manualTargetExistsInCurrentCategory = manualTargetIsCurrentCategory && Boolean(manualTargetFilename) && entries.some((item) => (
+    normalizeFilename(item.file).toLowerCase() === manualTargetFilename.toLowerCase()
+  ));
+  const manualTargetSameEntry = manualTargetIsCurrentCategory
+    && normalizeFilename(currentFilename).toLowerCase() === manualTargetFilename.toLowerCase();
+  const manualTargetStatus = manualTargetExistsInCurrentCategory ? 'existing' : 'new';
+  const manualTargetBadgeLabel = ({
+    existing: '已有目标',
+    new: manualTargetIsCurrentCategory ? '新建单词' : '跨目录确认',
+  }[manualTargetStatus]);
+  const manualTargetBadgeClass = ({
+    existing: 'high',
+    new: 'medium',
+  }[manualTargetStatus]);
+  const manualMergeDisabled = !hasDraft
+    || loading
+    || !normalizedManualTargetCategory
+    || !normalizedManualTargetWord
+    || !manualTargetFilename
+    || manualTargetSameEntry;
+  const manualTargetSuggestions = entries
+    .filter((item) => normalizeFilename(item.file).toLowerCase() !== normalizeFilename(currentFilename).toLowerCase()
+      || !manualTargetIsCurrentCategory)
+    .slice(0, 180);
+
+  return (
+    <section className="manual-merge-panel" aria-label="手动合并词条">
+      <div className="manual-merge-head">
+        <h4>手动合并</h4>
+        <span className={`badge ${manualTargetBadgeClass}`}>
+          {manualTargetBadgeLabel}
+        </span>
+      </div>
+
+      <div className="manual-merge-preview">
+        <span>当前</span>
+        <strong>{formatCategoryLabel(currentCategory)} / {currentFilename || '-'}</strong>
+        <span>目标</span>
+        <strong>
+          {normalizedManualTargetCategory && manualTargetFilename
+            ? `${formatCategoryLabel(normalizedManualTargetCategory)} / ${manualTargetFilename}`
+            : '未设置'}
+        </strong>
+      </div>
+
+      <div className="manual-merge-grid">
+        <label>
+          目标目录
+          <select
+            value={manualTargetCategory}
+            onChange={(event) => setManualTargetCategory(event.target.value)}
+            disabled={loading || !categories.length}
+          >
+            {!categories.includes(manualTargetCategory) ? (
+              <option value={manualTargetCategory}>{manualTargetCategory || '选择目录'}</option>
+            ) : null}
+            {categories.map((item) => (
+              <option key={item} value={item}>{item}</option>
+            ))}
+          </select>
+        </label>
+
+        <label>
+          目标单词
+          <input
+            className="field"
+            value={manualTargetWord}
+            onChange={(event) => setManualTargetWord(event.target.value)}
+            placeholder={activeWord ? `例: ${activeWord.replace(/s$/i, '')}` : '输入已有或新建单词'}
+            disabled={loading}
+            list="manual-merge-target-words"
+          />
+          <datalist id="manual-merge-target-words">
+            {manualTargetSuggestions.map((item) => (
+              <option key={`${normalizedManualTargetCategory}-${item.file}`} value={item.word || filenameToWord(item.file)} />
+            ))}
+          </datalist>
+        </label>
+      </div>
+
+      <div className="manual-merge-foot">
+        {manualTargetSameEntry ? <p className="manual-merge-warning">目标不能是当前词条。</p> : <span />}
+        <button
+          type="button"
+          className="primary"
+          onClick={() => onManualMerge({
+            targetCategory: normalizedManualTargetCategory,
+            targetWord: normalizedManualTargetWord,
+            targetFilename: manualTargetFilename,
+            targetExists: manualTargetExistsInCurrentCategory,
+          })}
+          disabled={manualMergeDisabled}
+        >
+          {loading ? '合并中...' : '合并到目标'}
+        </button>
+      </div>
+    </section>
+  );
+}
+
 function EditorPanel({
   draft,
   dirty,
   saving,
+  activeWord,
+  categories,
+  entries,
+  currentCategory,
+  currentFilename,
+  manualMergeLoading,
   onWordChange,
   onDefinitionChange,
   onDefinitionAdd,
@@ -900,6 +1041,7 @@ function EditorPanel({
   onReplaceDraft,
   onReset,
   onSave,
+  onManualMerge,
 }) {
   const [rawText, setRawText] = useState('');
   const [rawDirty, setRawDirty] = useState(false);
@@ -915,6 +1057,18 @@ function EditorPanel({
 
   return (
     <div className="panel-body list-body editor-panel">
+      <ManualMergePanel
+        key={`manual-merge-${currentCategory}-${currentFilename}`}
+        activeWord={activeWord}
+        categories={categories}
+        entries={entries}
+        currentCategory={currentCategory}
+        currentFilename={currentFilename}
+        loading={manualMergeLoading}
+        hasDraft={Boolean(draft)}
+        onManualMerge={onManualMerge}
+      />
+
       <section className="editor-section">
         <div className="editor-title-row">
           <h4>词条主信息</h4>
@@ -1241,7 +1395,7 @@ function OrganizePanel({
   const llmNotes = Array.isArray(cleanData?.llm?.global_notes)
     ? cleanData.llm.global_notes.map((item) => String(item || '').trim()).filter(Boolean)
     : [];
-  const autoEntryCount = llmEntry.filter((item) => normalizeLlmAction(item.action) === 'rename').length;
+  const autoEntryCount = llmEntry.filter((item) => normalizeEntryAction(item.action) === 'rename').length;
   const totalAutoCount = autoEntryCount + llmDefinitions.length + llmExamples.length;
   const fileSuggestionCount = llmEntry.length + llmDefinitions.length + llmExamples.length;
   const totalSuggestionCount = fileSuggestionCount + llmNotes.length;
@@ -1263,7 +1417,7 @@ function OrganizePanel({
   const formatActionLabel = (action) => ({
     append: '新增',
     drop: '删除',
-    rename: '重命名',
+    rename: '重命名/合并',
     replace: '替换',
     replace_all: '重写',
     rewrite: '改写',
@@ -1334,7 +1488,7 @@ function OrganizePanel({
   };
 
   const renderEntryCard = (item, index) => {
-    const action = normalizeLlmAction(item.action);
+    const action = normalizeEntryAction(item.action);
     const entries = Array.isArray(item.suggested_entries) ? item.suggested_entries : [];
     const splitActionKey = suggestionItemKey(`entry-split:${analysisToken}`, item, index);
     const renameActionKey = suggestionItemKey(`entry-rename:${analysisToken}`, item, index);
@@ -1351,14 +1505,14 @@ function OrganizePanel({
                 onClick={() => onApplyLlmSuggestion('entry', item)}
                 disabled={!hasDraft || Boolean(renameApplyingKey)}
               >
-                改草稿
+                写入编辑草稿
               </button>
               <button
                 className="primary"
                 onClick={() => onApplyEntryRenameAndSave(item, renameActionKey)}
                 disabled={!hasDraft || savingDraft || Boolean(renameApplyingKey)}
               >
-                {renameApplyingKey === renameActionKey ? '重命名中...' : '重命名保存'}
+                {renameApplyingKey === renameActionKey ? '保存中...' : '直接保存/合并'}
               </button>
             </div>
           ) : action === 'split' ? (
@@ -2190,6 +2344,7 @@ export default function App({
   const [savingMarked, setSavingMarked] = useState(false);
   const [splitApplyingKey, setSplitApplyingKey] = useState('');
   const [renameApplyingKey, setRenameApplyingKey] = useState('');
+  const [manualMergeLoading, setManualMergeLoading] = useState(false);
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
   const [ttsVoiceLabel, setTtsVoiceLabel] = useState('');
@@ -2762,12 +2917,12 @@ export default function App({
     if (!draft || !item) return;
     if (kind === 'entry') {
       if (!isActionableEntrySuggestion(item)) return;
-      const action = normalizeLlmAction(item.action);
+      const action = normalizeEntryAction(item.action);
       if (action !== 'rename') return;
       const suggestedWord = collapseWhitespace(item.suggested_word);
       if (!suggestedWord) return;
       updateDraft((base) => applyEntryRenameToDraft(base, suggestedWord));
-      showNotice('已应用词条重命名建议到草稿');
+      showNotice('已将词条合并/重命名建议写入编辑草稿');
       return;
     }
     if (kind === 'definition' && !isActionableDefinitionSuggestion(item)) return;
@@ -2786,7 +2941,7 @@ export default function App({
 
   const handleApplyEntryRenameAndSave = async (item, actionKey = '') => {
     if (!draft || !hasSelection || !isActionableEntrySuggestion(item)) return;
-    if (normalizeLlmAction(item.action) !== 'rename') return;
+    if (normalizeEntryAction(item.action) !== 'rename') return;
 
     const suggestedWord = collapseWhitespace(item.suggested_word);
     if (!suggestedWord) return;
@@ -2842,7 +2997,7 @@ export default function App({
 
   const handleApplySplit = async (item, actionKey = '') => {
     if (!hasSelection || !draft || !isActionableEntrySuggestion(item)) return;
-    if (normalizeLlmAction(item.action) !== 'split') return;
+    if (normalizeEntryAction(item.action) !== 'split') return;
 
     setSplitApplyingKey(actionKey || 'split');
     try {
@@ -2888,6 +3043,119 @@ export default function App({
       showError(err.message);
     } finally {
       setSplitApplyingKey('');
+    }
+  };
+
+  const handleManualMerge = async ({
+    targetCategory,
+    targetWord,
+    targetFilename,
+    targetExists,
+  } = {}) => {
+    if (!hasSelection || !draft) return;
+
+    const finalTargetCategory = normalizeCategoryValue(targetCategory);
+    const finalTargetWord = collapseWhitespace(targetWord);
+    const finalTargetFilename = normalizeFilename(targetFilename || normalizeWordFilename(finalTargetWord));
+    if (!finalTargetCategory || !finalTargetWord || !finalTargetFilename) {
+      showError('目标目录和目标单词不能为空');
+      return;
+    }
+
+    if (finalTargetCategory === apiCategory && finalTargetFilename.toLowerCase() === filename.toLowerCase()) {
+      showError('目标不能是当前词条');
+      return;
+    }
+
+    setManualMergeLoading(true);
+    try {
+      setError('');
+      let finalTargetExists = Boolean(targetExists);
+      if (finalTargetCategory !== apiCategory) {
+        const res = await fetchFiles(finalTargetCategory);
+        const list = (Array.isArray(res?.entries) && res.entries.length
+          ? res.entries
+          : (res.files || []).map((item) => ({ file: item, word: filenameToWord(item), marked: false })))
+          .map((item) => normalizeManualEntry(item))
+          .filter((item) => item.file);
+        finalTargetExists = list.some((item) => (
+          normalizeFilename(item.file).toLowerCase() === finalTargetFilename.toLowerCase()
+        ));
+      }
+
+      const sourceLabel = `${formatCategoryLabel(apiCategory)} / ${filename}`;
+      const targetLabel = `${formatCategoryLabel(finalTargetCategory)} / ${finalTargetFilename}`;
+      const confirmMessage = finalTargetExists
+        ? [
+            `确定将当前词条合并到已有词条吗？`,
+            '',
+            `当前: ${sourceLabel}`,
+            `目标: ${targetLabel}`,
+            '',
+            '合并后会删除当前源词条，目标词条保留为主词条。',
+          ].join('\n')
+        : [
+            `确定新建目标单词并合并当前词条吗？`,
+            '',
+            `当前: ${sourceLabel}`,
+            `新建: ${targetLabel}`,
+            '',
+            '系统会先创建目标单词，再把当前词条的释义、例句和复习记录合并进去，并删除当前源词条。',
+          ].join('\n');
+
+      if (!window.confirm(confirmMessage)) return;
+
+      const payload = sanitizeDraftForSave(draft, filenameToWord(filename));
+      const res = await manualMergeVocab({
+        sourceCategory: apiCategory,
+        sourceFilename: filename,
+        targetCategory: finalTargetCategory,
+        targetWord: finalTargetWord,
+        targetFilename: finalTargetFilename,
+        deleteSource: true,
+        createTargetIfMissing: true,
+        sourceData: payload,
+      });
+      const savedCategory = normalizeCategoryValue(res.target_category || finalTargetCategory);
+      const savedFilename = normalizeFilename(res.target_file || finalTargetFilename);
+      const savedData = res.data || res.target_data || null;
+
+      setCleanData(null);
+      setReviewData(null);
+      setDraftDirty(false);
+      pendingSelectionRef.current = { category: savedCategory, filename: savedFilename };
+
+      if (savedCategory !== apiCategory) {
+        setFilename('');
+        resetEntryState();
+        setCategory(savedCategory);
+      } else {
+        if (savedData) {
+          hydrateDetailAndDraft(savedData);
+        } else {
+          resetEntryState();
+        }
+        setFilename(savedFilename);
+        void refreshFiles();
+      }
+
+      showNotice(res.target_created
+        ? `已新建并合并到 ${targetLabel}`
+        : `已合并到已有词条 ${targetLabel}`);
+
+      if (typeof onVocabularyChange === 'function') {
+        onVocabularyChange({
+          ...res,
+          category: savedCategory,
+          file: savedFilename,
+          target_file: savedFilename,
+          data: savedData,
+        });
+      }
+    } catch (err) {
+      showError(err.message);
+    } finally {
+      setManualMergeLoading(false);
     }
   };
 
@@ -3206,6 +3474,12 @@ export default function App({
         draft={draft}
         dirty={draftDirty}
         saving={savingDraft}
+        activeWord={activeWord}
+        categories={categories}
+        entries={entries}
+        currentCategory={apiCategory}
+        currentFilename={filename}
+        manualMergeLoading={manualMergeLoading}
         onWordChange={(value) => updateDraft((base) => ({ ...base, word: value }))}
         onDefinitionChange={(index, value) => updateDraft((base) => {
           const definitions = Array.isArray(base.definitions) ? [...base.definitions] : [];
@@ -3356,6 +3630,7 @@ export default function App({
         onReplaceDraft={(value) => updateDraft(() => deepClone(value || {}))}
         onReset={handleDraftReset}
         onSave={handleDraftSave}
+        onManualMerge={handleManualMerge}
       />
     </div>
   );
@@ -3553,6 +3828,7 @@ export default function App({
 
               <div ref={organizePanelRef} className="overlay-focus-panel overlay-focus-organize">
                 <OrganizePanel
+                  key={`organize-${apiCategory}-${filename}`}
                   cleanData={cleanData}
                   draft={draft}
                   loading={loadingClean}

@@ -115,6 +115,34 @@ export const applyMergeSuggestion = async (
   });
 };
 
+export const manualMergeVocab = async ({
+  sourceCategory,
+  sourceFilename,
+  targetCategory,
+  targetWord,
+  targetFilename = '',
+  deleteSource = true,
+  createTargetIfMissing = true,
+  sourceData = null,
+}) => {
+  const finalSourceCategory = requireCategory(sourceCategory);
+  const finalTargetCategory = requireCategory(targetCategory);
+  return requestJson('/api/vocabulary/merge/manual', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      source_category: finalSourceCategory,
+      source_filename: sourceFilename,
+      target_category: finalTargetCategory,
+      target_word: targetWord,
+      target_filename: targetFilename,
+      delete_source: deleteSource,
+      create_target_if_missing: createTargetIfMissing,
+      source_data: sourceData,
+    }),
+  });
+};
+
 export const applySplitSuggestion = async (
   category,
   sourceFilename,
