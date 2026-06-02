@@ -2,11 +2,13 @@
   "word": "lucrative",
   "createdAt": "2026-06-01",
   "reviews": [],
-  "definitions": [],
+  "definitions": [
+    "赚钱的；利润高的；报酬丰厚的"
+  ],
   "examples": [
     {
       "text": "As the wage gap has grown between those with college degrees and those without, economists have suggested that men aren’t as interested in taking some of the less lucrative jobs.",
-      "explanation": "",
+      "explanation": "这里的 lucrative 用来形容 jobs，表示“赚钱多的、报酬丰厚的”。less lucrative jobs 就是“收入没那么高的工作”。整句意思是：随着有大学学历和没有大学学历的人之间的工资差距扩大，经济学家认为，男性对一些收入较低的工作不再那么感兴趣。",
       "focusWords": [
         "lucrative"
       ],

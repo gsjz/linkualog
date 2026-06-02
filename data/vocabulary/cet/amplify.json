@@ -1,0 +1,27 @@
+{
+  "word": "amplify",
+  "createdAt": "2026-06-01",
+  "reviews": [
+    {
+      "date": "2026-06-02",
+      "score": 1
+    }
+  ],
+  "definitions": [
+    "放大，扩大（声音、信号、效果等）",
+    "增强，加剧（问题、情绪、影响等）"
+  ],
+  "examples": [
+    {
+      "text": "However, the authors of the paper argue that there are other factors amplifying the problem.",
+      "explanation": "这里的 amplifying 表示“使问题变得更严重、被进一步放大”。整句意思是：然而，论文作者认为，还有其他因素在加剧这个问题。",
+      "focusWords": [
+        "amplify"
+      ],
+      "source": {
+        "text": "CET6 23 12 2 听力",
+        "url": ""
+      }
+    }
+  ]
+}

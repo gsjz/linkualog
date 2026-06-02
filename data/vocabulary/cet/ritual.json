@@ -1,7 +1,12 @@
 {
   "word": "ritual",
   "createdAt": "2026-06-01",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-06-02",
+      "score": 1
+    }
+  ],
   "definitions": [
     "仪式；惯例，例行做法（尤指反复出现、几乎成习惯的行为）"
   ],
