@@ -76,6 +76,9 @@ export default function VocabQueueWidget({
   const [mWord, setMWord] = useState('');
   const [mContext, setMContext] = useState('');
   const [mSource, setMSource] = useState('');
+  const [mContextLocked, setMContextLocked] = useState(false);
+  const [mSourceLocked, setMSourceLocked] = useState(false);
+  const [mIntentionalBlank, setMIntentionalBlank] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(() => (
     normalizedControlledCategory ?? readStoredActiveVocabularyCategory()
   ));
@@ -224,11 +227,12 @@ export default function VocabQueueWidget({
         setSelectedCategory(requestedCategory);
         setCategoryError('');
       }
-      const { word, context, source, fetchLlm, focusPositions } = e.detail;
+      const { word, context, source, fetchLlm, focusPositions, intentionalBlank } = e.detail;
       const newTask = {
         id: createQueueTaskId(),
         word, context, source, fetchLlm,
         focusPositions: Array.isArray(focusPositions) ? focusPositions : [],
+        intentionalBlank: Boolean(intentionalBlank),
         category,
         status: 'pending',
         error: null
@@ -258,7 +262,8 @@ export default function VocabQueueWidget({
       pendingTask.fetchLlm,
       'all',
       pendingTask.category,
-      pendingTask.focusPositions
+      pendingTask.focusPositions,
+      pendingTask.intentionalBlank
     )
       .then(() => {
         if (!isMountedRef.current) return;
@@ -286,12 +291,15 @@ export default function VocabQueueWidget({
       id: createQueueTaskId(),
       word: mWord, context: mContext, source: mSource, fetchLlm: false,
       focusPositions: [],
+      intentionalBlank: mIntentionalBlank,
       category,
       status: 'pending', error: null
     };
     setTasks(prev => [newTask, ...prev]);
     setCategoryError('');
-    setMWord(''); setMContext(''); setMSource('');
+    setMWord('');
+    if (!mContextLocked) setMContext('');
+    if (!mSourceLocked) setMSource('');
   };
 
   const handleRetry = (id) => setTasks(prev => prev.map(t => t.id === id ? { ...t, status: 'pending', error: null } : t));
@@ -400,7 +408,7 @@ export default function VocabQueueWidget({
                 </div>
                 <div className="queue-task-context" style={{ color: 'var(--ms-text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: '8px' }}>{t.context}</div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span className="queue-task-mode" style={{ fontSize: '11px', background: 'rgba(255, 255, 255, 0.9)', padding: '4px 8px', borderRadius: '4px', border: '1px solid rgba(213, 221, 208, 0.72)', color: 'var(--ms-text-muted)' }}>{t.fetchLlm ? '解析' : '仅保存'}</span>
+                  <span className="queue-task-mode" style={{ fontSize: '11px', background: 'rgba(255, 255, 255, 0.9)', padding: '4px 8px', borderRadius: '4px', border: '1px solid rgba(213, 221, 208, 0.72)', color: 'var(--ms-text-muted)' }}>{t.intentionalBlank ? '留白保存' : t.fetchLlm ? '解析' : '仅保存'}</span>
                   <div className="queue-task-actions" style={{ display: 'flex', gap: '8px' }}>
                     {t.status === 'failed' && <button className="queue-inline-action" onClick={() => handleRetry(t.id)} style={{ padding: '2px 8px', fontSize: '12px', background: 'var(--ms-text)', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>重试</button>}
                   </div>
@@ -419,13 +427,45 @@ export default function VocabQueueWidget({
             <input className="queue-field-input" required value={mWord} onChange={e => setMWord(e.target.value)} style={{ padding: '8px 10px', border: '1px solid var(--ms-border)', borderRadius: '6px', background: 'rgba(255, 255, 255, 0.92)' }} placeholder="abandon" />
           </div>
           <div className="queue-field" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <label style={{ fontSize: '13px', fontWeight: '500' }}>语境</label>
-            <textarea className="queue-field-input queue-field-textarea" required value={mContext} onChange={e => setMContext(e.target.value)} style={{ padding: '8px 10px', border: '1px solid var(--ms-border)', borderRadius: '6px', height: '72px', resize: 'vertical', background: 'rgba(255, 255, 255, 0.92)' }} placeholder="完整句子" />
+            <div className="queue-field-head">
+              <label style={{ fontSize: '13px', fontWeight: '500' }}>语境</label>
+              <button
+                type="button"
+                className={`queue-lock-button${mContextLocked ? ' is-active' : ''}`}
+                onClick={() => setMContextLocked((locked) => !locked)}
+                aria-label={mContextLocked ? '取消锁定语境' : '锁定语境'}
+                aria-pressed={mContextLocked}
+                title={mContextLocked ? '取消锁定语境' : '锁定语境'}
+              >
+                <UiIcon name={mContextLocked ? 'lock' : 'unlock'} size={13} />
+              </button>
+            </div>
+            <textarea className="queue-field-input queue-field-textarea" required={!mIntentionalBlank} value={mContext} onChange={e => setMContext(e.target.value)} style={{ padding: '8px 10px', border: '1px solid var(--ms-border)', borderRadius: '6px', height: '72px', resize: 'vertical', background: 'rgba(255, 255, 255, 0.92)' }} placeholder={mIntentionalBlank ? '可留空' : '完整句子'} />
           </div>
           <div className="queue-field" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <label style={{ fontSize: '13px', fontWeight: '500' }}>来源</label>
+            <div className="queue-field-head">
+              <label style={{ fontSize: '13px', fontWeight: '500' }}>来源</label>
+              <button
+                type="button"
+                className={`queue-lock-button${mSourceLocked ? ' is-active' : ''}`}
+                onClick={() => setMSourceLocked((locked) => !locked)}
+                aria-label={mSourceLocked ? '取消锁定来源' : '锁定来源'}
+                aria-pressed={mSourceLocked}
+                title={mSourceLocked ? '取消锁定来源' : '锁定来源'}
+              >
+                <UiIcon name={mSourceLocked ? 'lock' : 'unlock'} size={13} />
+              </button>
+            </div>
             <input className="queue-field-input" value={mSource} onChange={e => setMSource(e.target.value)} style={{ padding: '8px 10px', border: '1px solid var(--ms-border)', borderRadius: '6px', background: 'rgba(255, 255, 255, 0.92)' }} placeholder="可选" />
           </div>
+          <label className="queue-check-option">
+            <input
+              type="checkbox"
+              checked={mIntentionalBlank}
+              onChange={(e) => setMIntentionalBlank(e.target.checked)}
+            />
+            <span>这句话被刻意留白</span>
+          </label>
           <button type="submit" className="master-primary-button queue-submit-button" style={{ marginTop: 'auto' }}>加入队列</button>
         </form>
       )}

@@ -145,7 +145,16 @@ const requireVocabularyCategory = (category) => {
   return normalized;
 };
 
-export const addVocabulary = async (word, context, source = '', fetchLlm = false, fetchType = 'all', category = '', focusPositions = []) => {
+export const addVocabulary = async (
+  word,
+  context,
+  source = '',
+  fetchLlm = false,
+  fetchType = 'all',
+  category = '',
+  focusPositions = [],
+  intentionalBlank = false,
+) => {
   const finalCategory = requireVocabularyCategory(category);
   const res = await fetch(`${BACKEND_URL}/api/vocabulary/add`, {
     method: 'POST',
@@ -158,6 +167,7 @@ export const addVocabulary = async (word, context, source = '', fetchLlm = false
       fetch_type: fetchType,
       category: finalCategory,
       focus_positions: Array.isArray(focusPositions) ? focusPositions : [],
+      intentional_blank: Boolean(intentionalBlank),
     })
   });
   return handleResponse(res);

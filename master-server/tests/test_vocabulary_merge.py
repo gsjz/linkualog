@@ -80,6 +80,54 @@ class VocabularyMergeTests(unittest.TestCase):
                 self.assertEqual(len(merged["examples"]), 1)
                 self.assertEqual(merged["examples"][0]["source"]["text"], "剑桥 5 1 阅读3")
 
+    def test_intentional_blank_marks_new_and_existing_examples(self):
+        context = "The answer option is ____ in this cloze sentence."
+
+        with TemporaryDirectory() as tmp_dir:
+            with patch.object(vocabulary, "VOCAB_DIR", str(Path(tmp_dir))):
+                first = vocabulary.merge_or_create_vocab(
+                    word="gamma",
+                    context=context,
+                    source_name="CET6 23 12 3 完形",
+                    category="cet",
+                    intentional_blank=True,
+                )
+
+                self.assertTrue(first["examples"][0]["intentionalBlank"])
+
+                vocabulary.merge_or_create_vocab(
+                    word="delta",
+                    context=context,
+                    source_name="CET6 23 12 3 完形",
+                    category="cet",
+                )
+                merged = vocabulary.merge_or_create_vocab(
+                    word="delta",
+                    context=context,
+                    source_name="CET6 23 12 3 完形",
+                    category="cet",
+                    intentional_blank=True,
+                )
+
+                self.assertEqual(len(merged["examples"]), 1)
+                self.assertTrue(merged["examples"][0]["intentionalBlank"])
+
+    def test_intentional_blank_can_store_empty_example_text(self):
+        with TemporaryDirectory() as tmp_dir:
+            with patch.object(vocabulary, "VOCAB_DIR", str(Path(tmp_dir))):
+                merged = vocabulary.merge_or_create_vocab(
+                    word="epsilon",
+                    context="",
+                    source_name="CET6 23 12 3 完形",
+                    category="cet",
+                    intentional_blank=True,
+                )
+
+                self.assertEqual(len(merged["examples"]), 1)
+                self.assertEqual(merged["examples"][0]["text"], "")
+                self.assertEqual(merged["examples"][0]["explanation"], "")
+                self.assertTrue(merged["examples"][0]["intentionalBlank"])
+
 
 if __name__ == "__main__":
     unittest.main()

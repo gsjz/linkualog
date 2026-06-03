@@ -1323,6 +1323,7 @@ def suggest_file_cleaning_with_llm(
         "不要把 definitions 或 explanation 改写成纯英文笔记、词根说明或过长段落。"
         "如果原始内容已经清晰且中文信息充分，就不要为了统一风格硬改。"
         "例句规则：默认优先 keep；只有在原句明显冗余、语病明显、截断错误或含有无关噪音时，才使用 trim / rewrite。"
+        "如果 example 带有 intentionalBlank: true 或 intentional_blank: true，说明它是完型填空等场景的刻意留白例句；必须保留，不要因为空白、占位符或缺词而建议 drop。"
         "如果某个 example 的 explanation 为空，但 text 有效，必须为该 index 返回 examples 建议：action 使用 rewrite，填写 suggested_explanation；不要填写 suggested_text，除非原 text 本身也必须修改。"
         "如果只是 explanation 需要修改，就不要顺手改 suggested_text。"
         "如果需要改 suggested_text，必须尽量做最小改动：保留原句核心措辞、语气、时态、主语和事实，不要擅自换同义表达、补背景、扩写细节、改写成更地道但更远离原文的新句子。"

@@ -521,6 +521,8 @@ class VocabAddRequest(BaseModel):
     fetch_type: str = "all" 
     category: str = ""
     focus_positions: list[int] = []
+    intentional_blank: bool = False
+    intentionalBlank: bool = False
     llm_result: dict = {}  
     youtube: dict = {}    
 
@@ -560,6 +562,7 @@ def add_vocabulary(req: VocabAddRequest):
             llm_generated_data=llm_result, 
             category=req.category,
             focus_positions=req.focus_positions,
+            intentional_blank=req.intentional_blank or req.intentionalBlank,
             youtube=req.youtube 
         )
         return {"status": "success", "data": final_data}

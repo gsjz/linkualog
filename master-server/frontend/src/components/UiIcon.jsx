@@ -157,6 +157,26 @@ export default function UiIcon({ name, size = 18 }) {
     );
   }
 
+  if (name === 'lock') {
+    return (
+      <svg {...commonProps}>
+        <rect x="5" y="10" width="14" height="10" rx="2" />
+        <path d="M8 10V7.5a4 4 0 0 1 8 0V10" />
+        <path d="M12 14v2.5" />
+      </svg>
+    );
+  }
+
+  if (name === 'unlock') {
+    return (
+      <svg {...commonProps}>
+        <rect x="5" y="10" width="14" height="10" rx="2" />
+        <path d="M8 10V7.5a4 4 0 0 1 7.4-2.1" />
+        <path d="M12 14v2.5" />
+      </svg>
+    );
+  }
+
   if (name === 'play') {
     return (
       <svg {...commonProps}>

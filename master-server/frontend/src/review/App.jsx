@@ -559,6 +559,12 @@ function sanitizeDraftForSave(draft, fallbackWord) {
       const example = { ...item };
       example.text = String(example.text || '');
       example.explanation = String(example.explanation || '');
+      if (isIntentionalBlankExample(example)) {
+        example.intentionalBlank = true;
+      } else {
+        delete example.intentionalBlank;
+      }
+      delete example.intentional_blank;
 
       const focusWords = Array.isArray(example.focusWords)
         ? example.focusWords
@@ -695,6 +701,27 @@ function isActionableExampleSuggestion(item) {
   return Boolean(suggestedText || suggestedExplanation);
 }
 
+function isIntentionalBlankExample(example) {
+  if (!example || typeof example !== 'object') {
+    return false;
+  }
+  return example.intentionalBlank === true || example.intentional_blank === true;
+}
+
+function isProtectedExampleDropSuggestion(item, examples) {
+  if (!Array.isArray(examples)) {
+    return false;
+  }
+  if (normalizeLlmAction(item?.action) !== 'drop') {
+    return false;
+  }
+  const index = parseIndex(item?.index);
+  if (index === null || index >= examples.length) {
+    return false;
+  }
+  return isIntentionalBlankExample(examples[index]);
+}
+
 function isActionableEntrySuggestion(item) {
   if (!item || typeof item !== 'object') {
     return false;
@@ -804,10 +831,11 @@ function suggestionItemKey(prefix, item, index) {
   return `${prefix}:${type}:${singleIndex}:${indices}:${index}`;
 }
 
-function countActionableLlmItems(llmData) {
+function countActionableLlmItems(llmData, draft = null) {
   const entry = Array.isArray(llmData?.entry) ? llmData.entry : [];
   const defs = Array.isArray(llmData?.definitions) ? llmData.definitions : [];
   const exs = Array.isArray(llmData?.examples) ? llmData.examples : [];
+  const currentExamples = Array.isArray(draft?.examples) ? draft.examples : null;
   let total = 0;
 
   for (const item of entry) {
@@ -817,7 +845,7 @@ function countActionableLlmItems(llmData) {
     if (isActionableDefinitionSuggestion(item)) total += 1;
   }
   for (const item of exs) {
-    if (isActionableExampleSuggestion(item)) total += 1;
+    if (isActionableExampleSuggestion(item) && !isProtectedExampleDropSuggestion(item, currentExamples)) total += 1;
   }
   return total;
 }
@@ -858,6 +886,9 @@ function buildFullyAutoAppliedDraft(baseDraft, cleanData) {
     if (index === null || index >= next.examples.length) continue;
 
     if (action === 'drop') {
+      if (isIntentionalBlankExample(next.examples[index])) {
+        continue;
+      }
       exampleRemove.add(index);
       continue;
     }
@@ -1142,6 +1173,7 @@ function EditorPanel({
             const youtube = normalizeExampleYoutube(example);
             const youtubeLink = youtube.url ? buildYouTubeLink(youtube.url, youtube.timestamp) : '';
             const hasYoutube = Boolean(youtube.url);
+            const intentionalBlank = isIntentionalBlankExample(example);
 
             return (
               <div className="example-editor-card" key={`example-${index}`}>
@@ -1193,11 +1225,20 @@ function EditorPanel({
                   <summary className="editor-disclosure">
                     <span>来源与跳转</span>
                     <span className="editor-disclosure-meta">
-                      {hasExplanation ? '已填解析' : '未填解析'} · {hasSource ? '有来源' : '无来源'} · {hasYoutube ? `YouTube ${formatYouTubeLabel(youtube.timestamp)}` : '无 YouTube'}
+                      {hasExplanation ? '已填解析' : '未填解析'} · {hasSource ? '有来源' : '无来源'} · {hasYoutube ? `YouTube ${formatYouTubeLabel(youtube.timestamp)}` : '无 YouTube'}{intentionalBlank ? ' · 留白保护' : ''}
                     </span>
                   </summary>
 
                   <div className="editor-section-body">
+                    <label className="inline-check">
+                      <input
+                        type="checkbox"
+                        checked={intentionalBlank}
+                        onChange={(event) => onExampleChange(index, 'intentionalBlank', event.target.checked)}
+                      />
+                      <span>这句话被刻意留白</span>
+                    </label>
+
                     <label>
                       explanation
                       <textarea
@@ -1390,7 +1431,10 @@ function OrganizePanel({
     ? cleanData.llm.definitions.filter((item) => isActionableDefinitionSuggestion(item))
     : [];
   const llmExamples = Array.isArray(cleanData?.llm?.examples)
-    ? cleanData.llm.examples.filter((item) => isActionableExampleSuggestion(item))
+    ? cleanData.llm.examples.filter((item) => (
+      isActionableExampleSuggestion(item)
+      && !isProtectedExampleDropSuggestion(item, currentExamples)
+    ))
     : [];
   const llmNotes = Array.isArray(cleanData?.llm?.global_notes)
     ? cleanData.llm.global_notes.map((item) => String(item || '').trim()).filter(Boolean)
@@ -2926,7 +2970,10 @@ export default function App({
       return;
     }
     if (kind === 'definition' && !isActionableDefinitionSuggestion(item)) return;
-    if (kind === 'example' && !isActionableExampleSuggestion(item)) return;
+    if (
+      kind === 'example'
+      && (!isActionableExampleSuggestion(item) || isProtectedExampleDropSuggestion(item, draft.examples))
+    ) return;
 
     const llmPayload = kind === 'definition'
       ? { definitions: [item], examples: [] }
@@ -3162,7 +3209,7 @@ export default function App({
   const handleApplyAllSuggestions = () => {
     if (!draft) return;
 
-    const autoLlmCount = countActionableLlmItems(cleanData?.llm || null);
+    const autoLlmCount = countActionableLlmItems(cleanData?.llm || null, draft);
     const totalAutoCount = autoLlmCount;
     if (!totalAutoCount) {
       showNotice('当前没有可自动应用的建议');
@@ -3176,7 +3223,7 @@ export default function App({
   const handleApplyAllAndSave = async () => {
     if (!draft || !hasSelection) return;
 
-    const autoLlmCount = countActionableLlmItems(cleanData?.llm || null);
+    const autoLlmCount = countActionableLlmItems(cleanData?.llm || null, draft);
     const totalAutoCount = autoLlmCount;
     if (!totalAutoCount) {
       showNotice('当前没有可自动应用的建议');
@@ -3546,6 +3593,13 @@ export default function App({
             } else {
               delete example.youtube;
             }
+          } else if (field === 'intentionalBlank') {
+            if (value) {
+              example.intentionalBlank = true;
+            } else {
+              delete example.intentionalBlank;
+            }
+            delete example.intentional_blank;
           } else {
             example[field] = value;
             if (field === 'text' && Array.isArray(example.focusPositions)) {

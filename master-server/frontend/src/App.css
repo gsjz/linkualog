@@ -1282,6 +1282,61 @@
   color: var(--ms-text-faint) !important;
 }
 
+.vocab-queue .queue-field-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 24px;
+}
+
+.vocab-queue .queue-lock-button {
+  display: inline-flex;
+  width: 26px;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 !important;
+  border: 1px solid var(--ms-border) !important;
+  border-radius: 4px !important;
+  background: #fff !important;
+  color: var(--ms-text-faint) !important;
+  cursor: pointer;
+}
+
+.vocab-queue .queue-lock-button:hover,
+.vocab-queue .queue-lock-button:focus-visible {
+  color: var(--ms-text) !important;
+  border-color: var(--ms-text-muted) !important;
+}
+
+.vocab-queue .queue-lock-button.is-active {
+  color: #fff !important;
+  border-color: var(--ms-text) !important;
+  background: var(--ms-text) !important;
+}
+
+.vocab-queue .queue-check-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 30px;
+  color: var(--ms-text-muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.vocab-queue .queue-check-option input {
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  accent-color: var(--ms-text);
+}
+
+.vocab-queue .queue-check-option span {
+  min-width: 0;
+}
+
 .vocab-queue .queue-fab {
   border-radius: var(--ms-radius) !important;
   border: 1px solid var(--ms-text) !important;

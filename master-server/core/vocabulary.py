@@ -216,12 +216,15 @@ def merge_or_create_vocab(
     llm_generated_data: dict = None,
     category: str = "",
     focus_positions: list[int] = None,
-    youtube: dict = None
+    youtube: dict = None,
+    intentional_blank: bool = False,
 ) -> dict:
     if llm_generated_data is None:
         llm_generated_data = {}
     category = require_vocab_subdir(category)
     sanitized_focus_positions = _sanitize_focus_positions(focus_positions if focus_positions is not None else [])
+    context = str(context or "")
+    should_store_example = bool(context) or intentional_blank
     normalized_source_name = _normalize_source_name(source_name)
     normalized_source_url = str(source_url or "").strip()
         
@@ -231,20 +234,20 @@ def merge_or_create_vocab(
     extracted_explanation = ""
     focus_words = [word]
     
-    if "examples" in llm_generated_data and isinstance(llm_generated_data["examples"], list):
+    if context and "examples" in llm_generated_data and isinstance(llm_generated_data["examples"], list):
         for llm_ex in llm_generated_data["examples"]:
-            if not context or llm_ex.get("text") == context:
+            if llm_ex.get("text") == context:
                 extracted_explanation = llm_ex.get("explanation", "")
                 if "focusWords" in llm_ex:
                     focus_words = llm_ex.get("focusWords", [word])
                 break
                 
-    if not extracted_explanation:
+    if context and not extracted_explanation:
         extracted_explanation = llm_generated_data.get("explanation", llm_generated_data.get("context_translation", ""))
 
     if existing_data:
         existing_data.pop("pronunciation", None)
-        if context:
+        if should_store_example:
             existing_examples = existing_data.setdefault("examples", [])
             matched_ex = next((ex for ex in existing_examples if ex.get("text") == context), None)
             
@@ -255,6 +258,8 @@ def merge_or_create_vocab(
                     matched_ex["focusWords"] = focus_words
                 if sanitized_focus_positions:
                     matched_ex["focusPositions"] = sanitized_focus_positions
+                if intentional_blank:
+                    matched_ex["intentionalBlank"] = True
                 _update_example_source(matched_ex, normalized_source_name, normalized_source_url)
                 
                 if youtube and not matched_ex.get("youtube"):
@@ -271,6 +276,8 @@ def merge_or_create_vocab(
                 }
                 if sanitized_focus_positions:
                     new_ex["focusPositions"] = sanitized_focus_positions
+                if intentional_blank:
+                    new_ex["intentionalBlank"] = True
                 if youtube:
                     new_ex["youtube"] = youtube
                 existing_examples.append(new_ex)
@@ -293,9 +300,11 @@ def merge_or_create_vocab(
                 "text": normalized_source_name,
                 "url": normalized_source_url
             }
-        } if context else None
+        } if should_store_example else None
         if new_example and sanitized_focus_positions:
             new_example["focusPositions"] = sanitized_focus_positions
+        if new_example and intentional_blank:
+            new_example["intentionalBlank"] = True
         
         if new_example and youtube:
             new_example["youtube"] = youtube

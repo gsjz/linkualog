@@ -109,6 +109,21 @@
   color: var(--ink-soft);
 }
 
+.review-scope label.inline-check {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink);
+}
+
+.review-scope label.inline-check input {
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  accent-color: var(--brand);
+}
+
 .review-scope select,
 .review-scope input:not([type="checkbox"]),
 .review-scope textarea {
