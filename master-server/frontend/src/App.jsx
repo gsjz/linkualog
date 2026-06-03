@@ -10,6 +10,7 @@ import './App.css';
 const COMPACT_LAYOUT_MEDIA_QUERY = '(max-width: 1180px)';
 const DESKTOP_MINIMAL_MODE_KEY = 'linkualogDesktopMinimalMode';
 const VALID_TABS = new Set(['tasks', 'vocabulary', 'visualization']);
+const DEFAULT_TAB = 'visualization';
 const MOBILE_TOOLS_PANEL_ID = 'master-mobile-tools-panel';
 const ADD_VOCAB_CATEGORY_KEY = 'addVocabularyCategory';
 const ADD_VOCAB_CATEGORY_EVENT = 'add-vocabulary-category-updated';
@@ -90,7 +91,7 @@ const safeDecodePathPart = (value) => {
 
 const readUrlState = () => {
   const fallback = {
-    tab: 'tasks',
+    tab: DEFAULT_TAB,
     hasMinimal: false,
     minimal: false,
     category: '',
@@ -133,8 +134,8 @@ const writeUrlState = ({ tab, minimal, category, word }) => {
   if (typeof window === 'undefined') return;
 
   const params = new URLSearchParams();
-  const normalizedTab = normalizeTab(tab) || 'tasks';
-  if (normalizedTab !== 'tasks') params.set('tab', normalizedTab);
+  const normalizedTab = normalizeTab(tab) || DEFAULT_TAB;
+  if (normalizedTab !== DEFAULT_TAB) params.set('tab', normalizedTab);
   if (minimal) params.set('minimal', '1');
 
   const normalizedCategory = normalizeUrlPart(category);
@@ -309,7 +310,7 @@ function App() {
   const handleBrandReset = useCallback(() => {
     setShowConfig(false);
     setMobileToolsOpen(false);
-    setCurrentTab('tasks');
+    setCurrentTab(DEFAULT_TAB);
     setPreferDesktopMinimalMode(false);
     setVocabularyRouteState({
       category: '',
@@ -380,14 +381,14 @@ function App() {
 
           <div className="master-tabs">
             <button
-              onClick={() => handleTabChange('tasks')}
-              aria-label="打开上传文件"
-              className={`master-tab${currentTab === 'tasks' ? ' active' : ''}`}
+              onClick={() => handleTabChange('visualization')}
+              aria-label="打开可视化"
+              className={`master-tab${currentTab === 'visualization' ? ' active' : ''}`}
             >
               <span className="master-tab-icon">
-                <UiIcon name="upload" size={17} />
+                <UiIcon name="chart" size={17} />
               </span>
-              <span className="master-tab-label">{usesCompactLayout ? '上传' : '上传中心'}</span>
+              <span className="master-tab-label">可视化</span>
             </button>
             <button
               onClick={() => handleTabChange('vocabulary')}
@@ -400,14 +401,14 @@ function App() {
               <span className="master-tab-label">{usesCompactLayout ? '词库' : '我的生词本'}</span>
             </button>
             <button
-              onClick={() => handleTabChange('visualization')}
-              aria-label="打开可视化"
-              className={`master-tab${currentTab === 'visualization' ? ' active' : ''}`}
+              onClick={() => handleTabChange('tasks')}
+              aria-label="打开上传文件"
+              className={`master-tab${currentTab === 'tasks' ? ' active' : ''}`}
             >
               <span className="master-tab-icon">
-                <UiIcon name="chart" size={17} />
+                <UiIcon name="upload" size={17} />
               </span>
-              <span className="master-tab-label">可视化</span>
+              <span className="master-tab-label">{usesCompactLayout ? '上传' : '上传中心'}</span>
             </button>
             <button
               type="button"
