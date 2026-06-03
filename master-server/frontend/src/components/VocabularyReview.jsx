@@ -44,6 +44,11 @@ const ENTRY_FILTER_OPTIONS = [
   { value: 'all', label: '全部词条', compactLabel: '全部' },
   { value: 'unmarked', label: '未标记', compactLabel: '未标' },
 ];
+const MANUAL_SORT_OPTIONS = [
+  { value: 'name', label: '词名' },
+  { value: 'recent', label: '最近' },
+  { value: 'oldest', label: '最早' },
+];
 const ALL_RECOMMEND_SCOPE = '__all_recommend_scope__';
 const DEFAULT_RECOMMENDATION_PREFERENCES = {
   due_weight: 2.2,
@@ -111,6 +116,7 @@ const normalizeVocabularyEntry = (entry, fallbackCategory = '') => {
   const file = String(entry?.file || (key ? `${key}.json` : '')).trim();
   const word = String(entry?.word || key || '').trim();
   const category = String(entry?.category || fallbackCategory || '').trim();
+  const createdAt = String(entry?.createdAt || entry?.created_at || '').trim();
   return {
     id: buildVocabularyEntryId(category, file || key || word),
     key,
@@ -118,7 +124,38 @@ const normalizeVocabularyEntry = (entry, fallbackCategory = '') => {
     word: word || key,
     category,
     marked: Boolean(entry?.marked),
+    createdAt,
+    created_at: createdAt,
   };
+};
+
+const getEntryCreatedAt = (entry) => String(entry?.createdAt || entry?.created_at || '').trim();
+
+const compareEntriesByName = (left, right) => (
+  String(left?.word || '').localeCompare(String(right?.word || ''), undefined, { sensitivity: 'base' })
+  || String(left?.category || '').localeCompare(String(right?.category || ''), undefined, { sensitivity: 'base' })
+  || String(left?.file || '').localeCompare(String(right?.file || ''), undefined, { sensitivity: 'base' })
+);
+
+const sortManualEntries = (items, sortOrder = 'name') => {
+  const sorted = [...items];
+  if (sortOrder === 'recent' || sortOrder === 'oldest') {
+    sorted.sort((left, right) => {
+      const leftDate = getEntryCreatedAt(left);
+      const rightDate = getEntryCreatedAt(right);
+      if (leftDate || rightDate) {
+        if (!leftDate) return 1;
+        if (!rightDate) return -1;
+        const dateCompare = leftDate.localeCompare(rightDate);
+        if (dateCompare) return sortOrder === 'recent' ? -dateCompare : dateCompare;
+      }
+      return compareEntriesByName(left, right);
+    });
+    return sorted;
+  }
+
+  sorted.sort(compareEntriesByName);
+  return sorted;
 };
 
 const getRecommendationFileName = (item) => {
@@ -480,6 +517,7 @@ export default function VocabularyReview({
   ));
   const [wordQuery, setWordQuery] = useState('');
   const [entryFilter, setEntryFilter] = useState(() => ((mobileSimple || compactDesktop || randomSelectionMode) ? 'all' : 'marked'));
+  const [manualSortOrder, setManualSortOrder] = useState('name');
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [mobileInfoOpen, setMobileInfoOpen] = useState(false);
   const [desktopContentDefaultCollapsed, setDesktopContentDefaultCollapsed] = useState(() => getStoredDesktopContentDefaultCollapsed());
@@ -668,10 +706,7 @@ export default function VocabularyReview({
         if (entriesRequestRef.current !== requestId) return;
         const mergedEntries = groupedEntries
           .flat()
-          .sort((a, b) => (
-            String(a.word || '').localeCompare(String(b.word || ''), undefined, { sensitivity: 'base' })
-            || String(a.category || '').localeCompare(String(b.category || ''), undefined, { sensitivity: 'base' })
-          ));
+          .sort(compareEntriesByName);
         setEntries(mergedEntries);
         setEntriesCategory(normalizedCategory);
         return;
@@ -1002,10 +1037,7 @@ export default function VocabularyReview({
           };
           return next;
         }
-        return [...filtered, nextEntry].sort((a, b) => (
-          String(a.word || '').localeCompare(String(b.word || ''), undefined, { sensitivity: 'base' })
-          || String(a.category || '').localeCompare(String(b.category || ''), undefined, { sensitivity: 'base' })
-        ));
+        return [...filtered, nextEntry].sort(compareEntriesByName);
       });
 
       setSelectedEntryId(nextEntry.id);
@@ -1052,12 +1084,18 @@ export default function VocabularyReview({
     if (entryFilter === 'unmarked') return !entry.marked;
     return true;
   }), [entries, entryFilter]);
-  const visibleEntries = useMemo(() => filteredEntries.filter((entry) => {
-    if (!normalizedWordQuery) return true;
-    return [entry.word, entry.key, entry.file]
+  const visibleEntries = useMemo(() => {
+    const searchedEntries = filteredEntries.filter((entry) => {
+      if (!normalizedWordQuery) return true;
+      return [entry.word, entry.key, entry.file]
       .map((item) => String(item || '').toLowerCase())
       .some((item) => item.includes(normalizedWordQuery));
-  }), [filteredEntries, normalizedWordQuery]);
+    });
+
+    return randomSelectionMode
+      ? searchedEntries
+      : sortManualEntries(searchedEntries, manualSortOrder);
+  }, [filteredEntries, manualSortOrder, normalizedWordQuery, randomSelectionMode]);
 
   const handleDrawRandomEntry = useCallback((pool = visibleEntries) => {
     const picked = pickRandomEntry(pool, selectedEntryId);
@@ -1503,6 +1541,26 @@ export default function VocabularyReview({
     );
   };
 
+  const renderManualSortPill = (option) => {
+    const selected = manualSortOrder === option.value;
+    return (
+      <button
+        key={option.value}
+        type="button"
+        className={`vocab-review-filter-pill${selected ? ' is-active' : ''}`}
+        onClick={() => setManualSortOrder(option.value)}
+        aria-pressed={selected}
+        aria-label={`按${option.label}排序`}
+        title={`按${option.label}排序`}
+      >
+        <span className="vocab-review-filter-pill-check">
+          <UiIcon name="check" size={11} />
+        </span>
+        <span className="vocab-review-filter-pill-label">{option.label}</span>
+      </button>
+    );
+  };
+
   const reviewFilterControlsNode = (
     <>
       <label className="vocab-review-floating-field vocab-review-sidebar-category-field">
@@ -1523,6 +1581,15 @@ export default function VocabularyReview({
     </>
   );
 
+  const manualSortControlsNode = !randomSelectionMode ? (
+    <div className="vocab-review-floating-field vocab-review-manual-sort-field">
+      <span className="vocab-review-field-label">排序</span>
+      <div className="vocab-review-floating-filter-grid" role="group" aria-label="手动词池排序">
+        {MANUAL_SORT_OPTIONS.map(renderManualSortPill)}
+      </div>
+    </div>
+  ) : null;
+
   const desktopPoolControlsNode = (
     <div
       className="vocab-review-sidebar-pool-controls"
@@ -1536,17 +1603,20 @@ export default function VocabularyReview({
     >
       {reviewFilterControlsNode}
       {!randomSelectionMode ? (
-        <label className="vocab-review-floating-field">
-          <span className="vocab-review-field-label">搜索</span>
-          <input
-            className="vocab-review-search-input"
-            type="search"
-            placeholder="筛选单词或文件名"
-            value={wordQuery}
-            onChange={(e) => setWordQuery(e.target.value)}
-            style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--ms-border)', borderRadius: '6px', fontSize: '13px', outline: 'none', background: '#fff', color: 'var(--ms-text)' }}
-          />
-        </label>
+        <>
+          {manualSortControlsNode}
+          <label className="vocab-review-floating-field">
+            <span className="vocab-review-field-label">搜索</span>
+            <input
+              className="vocab-review-search-input"
+              type="search"
+              placeholder="筛选单词或文件名"
+              value={wordQuery}
+              onChange={(e) => setWordQuery(e.target.value)}
+              style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--ms-border)', borderRadius: '6px', fontSize: '13px', outline: 'none', background: '#fff', color: 'var(--ms-text)' }}
+            />
+          </label>
+        </>
       ) : null}
     </div>
   );
@@ -1752,6 +1822,8 @@ export default function VocabularyReview({
         />
       </label>
 
+      {manualSortControlsNode}
+
       <div className="vocab-review-mobile-pool-summary">
         <span>{selectedCategoryLabel}</span>
         <strong>{visibleEntries.length}{normalizedWordQuery ? ` / ${filteredEntries.length}` : ''}</strong>
@@ -1773,6 +1845,7 @@ export default function VocabularyReview({
             <span className="vocab-review-mobile-pool-word">{entry.word}</span>
             <span className="vocab-review-mobile-pool-meta">
               {formatCategoryLabel(entry.category)} / {entry.file}
+              {getEntryCreatedAt(entry) ? ` / ${getEntryCreatedAt(entry)}` : ''}
               {entry.marked ? ' / 标记' : ''}
             </span>
           </button>
@@ -1823,6 +1896,7 @@ export default function VocabularyReview({
             </div>
             <div style={{ fontSize: '12px', color: 'var(--ms-text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {formatCategoryLabel(entry.category)} / {entry.file}
+              {getEntryCreatedAt(entry) ? ` / ${getEntryCreatedAt(entry)}` : ''}
             </div>
           </div>
         </li>

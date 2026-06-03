@@ -582,11 +582,14 @@ def list_vocabulary(category: str = ""):
         for filename, word_key in zip(files, words):
             payload = load_vocab(word_key, category) or {}
             display_word = str(payload.get("word") or word_key).strip() or word_key
+            created_at = str(payload.get("createdAt") or "").strip()
             entries.append({
                 "key": word_key,
                 "file": filename,
                 "word": display_word,
                 "marked": bool(payload.get("marked", False)),
+                "created_at": created_at,
+                "createdAt": created_at,
             })
         return {"status": "success", "category": category, "words": words, "files": files, "entries": entries}
     except ValueError as e:
