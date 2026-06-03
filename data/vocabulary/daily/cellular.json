@@ -1,0 +1,25 @@
+{
+  "word": "cellular",
+  "createdAt": "2026-06-02",
+  "reviews": [],
+  "definitions": [
+    "细胞的；由细胞组成的（如 cellular processes 表示“细胞过程”）"
+  ],
+  "examples": [
+    {
+      "text": "Mitochondria produce adenosine triphosphate, or ATP, the main energy source for all cellular processes, plus mitochondria regulate many different cell activities and play an important role in programmed cell death.",
+      "explanation": "这里的 cellular 是形容词，表示“细胞的”。cellular processes 指“细胞内进行的各种过程”。整句意思是：线粒体会产生三磷酸腺苷（ATP），这是所有细胞过程的主要能量来源；此外，线粒体还会调节许多不同的细胞活动，并在程序性细胞死亡中起重要作用。",
+      "focusWords": [
+        "cellular"
+      ],
+      "source": {
+        "text": "我们身体为何会老化？ - 莫妮咔 玛抐斯妮",
+        "url": "https://www.youtube.com/watch?v=GASaqPv0t0g"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=GASaqPv0t0g",
+        "timestamp": 127
+      }
+    }
+  ]
+}

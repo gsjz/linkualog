@@ -1,0 +1,23 @@
+{
+  "word": "Organelles",
+  "createdAt": "2026-06-02",
+  "reviews": [],
+  "definitions": [],
+  "examples": [
+    {
+      "text": "These occur naturally when the body's DNA replicates, but also in non-dividing cells. Organelles called mitochondria are especially prone to this damage. Mitochondria produce adenosine triphosphate, or ATP,",
+      "explanation": "",
+      "focusWords": [
+        "Organelles"
+      ],
+      "source": {
+        "text": "我们身体为何会老化？ - 莫妮咔 玛抐斯妮",
+        "url": "https://www.youtube.com/watch?v=GASaqPv0t0g"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=GASaqPv0t0g",
+        "timestamp": 117
+      }
+    }
+  ]
+}

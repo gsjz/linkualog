@@ -1,0 +1,30 @@
+{
+  "word": "counteract",
+  "createdAt": "2026-06-02",
+  "reviews": [
+    {
+      "date": "2026-06-02",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "抵消；对抗；阻碍（某事的效果）"
+  ],
+  "examples": [
+    {
+      "text": "But what does aging really mean and how does it counteract the body's efforts to stay alive?",
+      "explanation": "这里的 counteract 表示“抵消、对抗”。整句是在问：衰老究竟意味着什么？它又是如何对抗身体维持生命的努力的？也就是“衰老会怎样削弱身体想要继续正常运作、活下去的能力”。",
+      "focusWords": [
+        "counteract"
+      ],
+      "source": {
+        "text": "我们身体为何会老化？ - 莫妮咔 玛抐斯妮",
+        "url": "https://www.youtube.com/watch?v=GASaqPv0t0g"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=GASaqPv0t0g",
+        "timestamp": 46
+      }
+    }
+  ]
+}

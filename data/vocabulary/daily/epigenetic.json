@@ -1,0 +1,25 @@
+{
+  "word": "epigenetic",
+  "createdAt": "2026-06-02",
+  "reviews": [],
+  "definitions": [
+    "表观遗传的（指不改变 DNA 序列、但会影响基因表达的）"
+  ],
+  "examples": [
+    {
+      "text": "Other changes are known to occur in the expression patterns of genes, also known as epigenetic alterations, that affect the body's tissues and cells.",
+      "explanation": "这里的 epigenetic alterations 指“表观遗传变化”，也就是不改变基因本身序列、但会影响基因如何被表达的变化。句子意思是：基因表达模式还会发生其他变化，这些变化会影响人体的组织和细胞。",
+      "focusWords": [
+        "epigenetic"
+      ],
+      "source": {
+        "text": "我们身体为何会老化？ - 莫妮咔 玛抐斯妮",
+        "url": "https://www.youtube.com/watch?v=GASaqPv0t0g"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=GASaqPv0t0g",
+        "timestamp": 149
+      }
+    }
+  ]
+}

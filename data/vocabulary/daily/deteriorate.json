@@ -1,0 +1,30 @@
+{
+  "word": "deteriorate",
+  "createdAt": "2026-06-02",
+  "reviews": [
+    {
+      "date": "2026-06-02",
+      "score": 1
+    }
+  ],
+  "definitions": [
+    "恶化；变坏；退化（指状况、健康、质量等变得更差）"
+  ],
+  "examples": [
+    {
+      "text": "If mitochondrial function declines, then cells and, later on, whole organs, deteriorate, too.",
+      "explanation": "这里的 deteriorate 表示“恶化、退化、变差”。句子意思是：如果线粒体功能下降，那么细胞，之后连整个器官，也会随之恶化。",
+      "focusWords": [
+        "deteriorate"
+      ],
+      "source": {
+        "text": "我们身体为何会老化？ - 莫妮咔 玛抐斯妮",
+        "url": "https://www.youtube.com/watch?v=GASaqPv0t0g"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=GASaqPv0t0g",
+        "timestamp": 141
+      }
+    }
+  ]
+}

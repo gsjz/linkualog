@@ -1,0 +1,23 @@
+{
+  "word": "senescent",
+  "createdAt": "2026-06-02",
+  "reviews": [],
+  "definitions": [],
+  "examples": [
+    {
+      "text": "cells stop replicating and die, slowing the body's ability to renew itself. With age, cells increasingly grow senescent, too, a process that halts the cell cycle in times of risk, like when cancer cells are proliferating.",
+      "explanation": "",
+      "focusWords": [
+        "senescent"
+      ],
+      "source": {
+        "text": "我们身体为何会老化？ - 莫妮咔 玛抐斯妮",
+        "url": "https://www.youtube.com/watch?v=GASaqPv0t0g"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=GASaqPv0t0g",
+        "timestamp": 203
+      }
+    }
+  ]
+}

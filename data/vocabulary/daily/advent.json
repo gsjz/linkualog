@@ -1,0 +1,23 @@
+{
+  "word": "advent",
+  "createdAt": "2026-06-03",
+  "reviews": [],
+  "definitions": [],
+  "examples": [
+    {
+      "text": "every few years as the soil became depleted. It was only with the advent of techniques like irrigation and soil tilling about 5,000 years ago",
+      "explanation": "",
+      "focusWords": [
+        "advent"
+      ],
+      "source": {
+        "text": "城市化与未来的城市 - 万斯·凯特",
+        "url": "https://www.youtube.com/watch?v=fKnAJCSGSdk"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=fKnAJCSGSdk",
+        "timestamp": 60
+      }
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "word": "accomplish",
+  "createdAt": "2026-06-02",
+  "reviews": [
+    {
+      "date": "2026-06-02",
+      "score": 1
+    }
+  ],
+  "definitions": [
+    "实现；完成（尤指较难的事情或目标）"
+  ],
+  "examples": [
+    {
+      "text": "But in reality, living to this age or beyond is a feat that very few, maybe even no humans, are likely to accomplish. Human bodies just aren't built for extreme aging. Our capacity is set at about 90 years.",
+      "explanation": "这里的 accomplish 表示“实现、做到”。句子意思是：活到这个年龄甚至更久，是一件极少数人、甚至可能没有人类能做到的事。",
+      "focusWords": [
+        "accomplish"
+      ],
+      "source": {
+        "text": "我们身体为何会老化？ - 莫妮咔 玛抐斯妮",
+        "url": "https://www.youtube.com/watch?v=GASaqPv0t0g"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=GASaqPv0t0g",
+        "timestamp": 34
+      }
+    }
+  ]
+}
