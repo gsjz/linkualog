@@ -1,0 +1,27 @@
+{
+  "word": "sprawl",
+  "createdAt": "2026-06-02",
+  "reviews": [
+    {
+      "date": "2026-06-02",
+      "score": 1
+    }
+  ],
+  "definitions": [
+    "v./n. 蔓延；杂乱无序地扩展；四肢摊开地坐（或躺）"
+  ],
+  "examples": [
+    {
+      "text": "",
+      "explanation": "",
+      "focusWords": [
+        "sprawl"
+      ],
+      "source": {
+        "text": "CET6 23 12 3 完形",
+        "url": ""
+      },
+      "intentionalBlank": true
+    }
+  ]
+}

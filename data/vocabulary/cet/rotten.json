@@ -1,0 +1,27 @@
+{
+  "word": "rotten",
+  "createdAt": "2026-06-02",
+  "reviews": [
+    {
+      "date": "2026-06-02",
+      "score": 1
+    }
+  ],
+  "definitions": [
+    "腐烂的；变质的；糟糕的，恶劣的；不诚实的，靠不住的"
+  ],
+  "examples": [
+    {
+      "text": "",
+      "explanation": "",
+      "focusWords": [
+        "rotten"
+      ],
+      "source": {
+        "text": "CET6 23 12 3 完形",
+        "url": ""
+      },
+      "intentionalBlank": true
+    }
+  ]
+}
