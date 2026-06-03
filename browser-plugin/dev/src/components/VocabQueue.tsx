@@ -1,34 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { GM_getValue, GM_setValue } from '$';
 import { ConfigService } from '../services/configService';
 import { fetchLlmStream } from '../services/llmApi';
 import { requestJson } from '../services/jsonApi';
-
-export interface VocabTask {
-  id: string;
-  word: string;
-  context: string;
-  source: string;
-  source_url?: string;
-  youtube?: { url: string; timestamp: number };
-  date: string; 
-  category: string;
-  status: 'idle' | 'fetching_llm' | 'sending' | 'success' | 'failed';
-  error: string | null;
-  rawJson?: string;
-  llmResult?: VocabLlmResult;
-}
-
-interface VocabLlmResult {
-  definitions?: string[];
-  examples?: Array<{
-    text?: string;
-    explanation?: string;
-    focusWords?: string[];
-  }>;
-  explanation?: string;
-  context_translation?: string;
-}
+import {
+  QUEUE_CHANGED_EVENT,
+  QUEUE_REQUEST_COUNT_EVENT,
+  QUEUE_STORAGE_KEY,
+  QUEUE_TOGGLE_EVENT,
+  canSendTask,
+  clearStoredQueue,
+  emitQueueCount,
+  enqueueVocabTask,
+  hasUsableLlmResult,
+  getLlmExplanation,
+  readStoredQueue,
+  sanitizeLlmResult,
+  VocabLlmResult,
+  VocabTask,
+  writeStoredQueue,
+} from '../services/vocabQueueStore';
 
 const VOCAB_LLM_SYSTEM_PROMPT = `你是一个专业的英文翻译和词典 API 引擎。
 请根据目标词或短语及其上下文，生成适合写入生词本的 JSON。
@@ -53,10 +43,6 @@ JSON 格式：
   ]
 }`;
 
-const QUEUE_STORAGE_KEY = 'linkual_vocab_queue';
-export const QUEUE_COUNT_EVENT = 'linkual_vocab_queue_count';
-export const QUEUE_TOGGLE_EVENT = 'linkual_vocab_queue_toggle';
-export const QUEUE_REQUEST_COUNT_EVENT = 'linkual_vocab_queue_request_count';
 const QUEUE_SYNC_INTERVAL_MS = 1800;
 
 const parseLlmJson = (rawText: string): unknown => {
@@ -65,65 +51,6 @@ const parseLlmJson = (rawText: string): unknown => {
   const candidate = fenced ? fenced[1] : (trimmed.match(/\{[\s\S]*\}/)?.[0] || trimmed);
   return JSON.parse(candidate);
 };
-
-const sanitizeLlmResult = (value: unknown): VocabLlmResult => {
-  if (!value || typeof value !== 'object') return {};
-
-  const raw = value as Record<string, unknown>;
-  const result: VocabLlmResult = {};
-
-  if (Array.isArray(raw.definitions)) {
-    const definitions = raw.definitions
-      .map(item => String(item || '').trim())
-      .filter(Boolean);
-    if (definitions.length > 0) result.definitions = definitions;
-  }
-
-  if (Array.isArray(raw.examples)) {
-    const examples = raw.examples
-      .filter(item => item && typeof item === 'object')
-      .map((item) => {
-        const rawExample = item as Record<string, unknown>;
-        const example: NonNullable<VocabLlmResult['examples']>[number] = {};
-        const text = String(rawExample.text || '').trim();
-        const explanation = String(rawExample.explanation || '').trim();
-        const focusWords = Array.isArray(rawExample.focusWords)
-          ? rawExample.focusWords.map(word => String(word || '').trim()).filter(Boolean)
-          : [];
-
-        if (text) example.text = text;
-        if (explanation) example.explanation = explanation;
-        if (focusWords.length > 0) example.focusWords = focusWords;
-        return example;
-      })
-      .filter(example => example.text || example.explanation || example.focusWords?.length);
-
-    if (examples.length > 0) result.examples = examples;
-  }
-
-  const explanation = String(raw.explanation || '').trim();
-  if (explanation) result.explanation = explanation;
-
-  const contextTranslation = String(raw.context_translation || '').trim();
-  if (contextTranslation) result.context_translation = contextTranslation;
-
-  return result;
-};
-
-const getLlmExplanation = (result?: VocabLlmResult) => (
-  result?.examples?.find(example => example.explanation)?.explanation
-  || result?.explanation
-  || result?.context_translation
-  || ''
-);
-
-const hasUsableLlmResult = (result?: VocabLlmResult) => Boolean(
-  result?.definitions?.length
-  || result?.examples?.length
-  || getLlmExplanation(result)
-);
-
-const canSendTask = (task: VocabTask) => task.status === 'idle' || task.status === 'failed';
 
 const LlmResultPreview: React.FC<{ result?: VocabLlmResult }> = ({ result }) => {
   if (!hasUsableLlmResult(result)) return null;
@@ -144,78 +71,48 @@ const LlmResultPreview: React.FC<{ result?: VocabLlmResult }> = ({ result }) => 
   );
 };
 
-const sanitizeTask = (task: VocabTask): VocabTask => {
-  const sanitizedResult = sanitizeLlmResult(task.llmResult);
-  return {
-    ...task,
-    source_url: typeof task.source_url === 'string' ? task.source_url : '',
-    llmResult: hasUsableLlmResult(sanitizedResult) ? sanitizedResult : undefined,
-  };
-};
-
-const readStoredQueue = (): VocabTask[] => {
-  try {
-    if (typeof GM_getValue !== 'undefined') {
-      const saved = GM_getValue(QUEUE_STORAGE_KEY);
-      if (typeof saved === 'string' && saved) return JSON.parse(saved).map(sanitizeTask);
-      if (Array.isArray(saved)) return saved.map(sanitizeTask);
-    }
-  } catch (e) {}
-
-  try {
-    const saved = localStorage.getItem(QUEUE_STORAGE_KEY);
-    if (saved) return JSON.parse(saved).map(sanitizeTask);
-  } catch (e) {}
-
-  return [];
-};
-
-const writeStoredQueue = (tasks: VocabTask[]) => {
-  const serialized = JSON.stringify(tasks);
-
-  try {
-    if (typeof GM_setValue !== 'undefined') {
-      GM_setValue(QUEUE_STORAGE_KEY, serialized);
-    }
-  } catch (e) {}
-
-  try {
-    localStorage.setItem(QUEUE_STORAGE_KEY, serialized);
-  } catch (e) {}
-};
-
-const clearStoredQueue = () => writeStoredQueue([]);
-
-const emitQueueCount = (tasks: VocabTask[]) => {
-  window.dispatchEvent(new CustomEvent(QUEUE_COUNT_EVENT, {
-    detail: { pendingCount: tasks.filter(t => t.status !== 'success').length },
-  }));
-};
-
 const VocabQueue: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isBulkSending, setIsBulkSending] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState(ConfigService.get('lan_action') as string || 'Video_Sync');
-  const [themeColor, setThemeColor] = useState(ConfigService.get('theme_color') as string || '#6a1b9a');
 
   const [tasks, setTasks] = useState<VocabTask[]>(readStoredQueue);
 
-  useEffect(() => {
-    writeStoredQueue(tasks);
-    emitQueueCount(tasks);
-  }, [tasks]);
+  const updateStoredTasks = (updater: (prev: VocabTask[]) => VocabTask[]) => {
+    setTasks(prev => {
+      const storedTasks = readStoredQueue();
+      const baseTasks = JSON.stringify(prev) === JSON.stringify(storedTasks) ? prev : storedTasks;
+      const nextTasks = updater(baseTasks);
+      const envelope = writeStoredQueue(nextTasks);
+      emitQueueCount(envelope.tasks);
+      return envelope.tasks;
+    });
+  };
 
   useEffect(() => {
-    const syncQueue = () => setTasks(readStoredQueue());
+    const syncQueue = () => {
+      const storedTasks = readStoredQueue();
+      setTasks(prev => JSON.stringify(prev) === JSON.stringify(storedTasks) ? prev : storedTasks);
+      emitQueueCount(storedTasks);
+    };
     const syncAcrossTabs = (e: StorageEvent) => {
       if (e.key === QUEUE_STORAGE_KEY) syncQueue();
     };
     const toggleQueue = () => setIsOpen(prev => !prev);
     const reportCount = () => emitQueueCount(readStoredQueue());
+    const enqueueFromEvent = (event: Event) => {
+      const detail = (event as CustomEvent).detail || {};
+      try {
+        enqueueVocabTask(detail);
+      } catch (err) {
+        console.error('[Linkual] 加入制卡队列失败:', err);
+      }
+    };
 
     window.addEventListener('storage', syncAcrossTabs);
     window.addEventListener(QUEUE_TOGGLE_EVENT, toggleQueue);
     window.addEventListener(QUEUE_REQUEST_COUNT_EVENT, reportCount);
+    window.addEventListener(QUEUE_CHANGED_EVENT, syncQueue);
+    window.addEventListener('linkual-add-vocab', enqueueFromEvent);
     const interval = window.setInterval(syncQueue, QUEUE_SYNC_INTERVAL_MS);
 
     reportCount();
@@ -224,37 +121,11 @@ const VocabQueue: React.FC = () => {
       window.removeEventListener('storage', syncAcrossTabs);
       window.removeEventListener(QUEUE_TOGGLE_EVENT, toggleQueue);
       window.removeEventListener(QUEUE_REQUEST_COUNT_EVENT, reportCount);
+      window.removeEventListener(QUEUE_CHANGED_EVENT, syncQueue);
+      window.removeEventListener('linkual-add-vocab', enqueueFromEvent);
       window.clearInterval(interval);
     };
   }, []);
-
-  useEffect(() => {
-    const handleConfigUpdate = () => {
-      setSelectedCategory(ConfigService.get('lan_action') as string || 'Video_Sync');
-      setThemeColor(ConfigService.get('theme_color') as string || '#6a1b9a');
-    };
-    window.addEventListener('linkual_settings_updated', handleConfigUpdate);
-    return () => window.removeEventListener('linkual_settings_updated', handleConfigUpdate);
-  }, []);
-
-  useEffect(() => {
-    const handleEvent = (e: any) => {
-      const { word, context, source, source_url, youtube } = e.detail;
-      
-      const dateObj = new Date();
-      const systemDate = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
-      
-      const newTask: VocabTask = {
-        id: Date.now() + Math.random().toString(36).substring(2, 9),
-        word, context, source, source_url: source_url || youtube?.url || window.location.href, youtube, date: systemDate,
-        category: selectedCategory, 
-        status: 'idle', error: null
-      };
-      setTasks(prev => [newTask, ...prev]);
-    };
-    window.addEventListener('linkual-add-vocab', handleEvent);
-    return () => window.removeEventListener('linkual-add-vocab', handleEvent);
-  }, [selectedCategory]);
 
   const handleFetchLlm = (taskId: string) => {
     const task = tasks.find(t => t.id === taskId);
@@ -269,7 +140,7 @@ const VocabQueue: React.FC = () => {
        return;
     }
 
-    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: 'fetching_llm', error: null, rawJson: '' } : t));
+    updateStoredTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: 'fetching_llm', error: null, rawJson: '' } : t));
 
     let generatedJsonStr = '';
     fetchLlmStream({
@@ -279,10 +150,10 @@ const VocabQueue: React.FC = () => {
       timeoutSec: 30,
       onData: (chunk) => {
         generatedJsonStr += chunk;
-        setTasks(prev => prev.map(t => t.id === taskId ? { ...t, rawJson: generatedJsonStr } : t));
+        updateStoredTasks(prev => prev.map(t => t.id === taskId ? { ...t, rawJson: generatedJsonStr } : t));
       },
       onError: (err) => {
-        setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: 'failed', error: err } : t));
+        updateStoredTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: 'failed', error: err } : t));
       },
       onDone: () => {
         let parsed: VocabLlmResult = {};
@@ -290,16 +161,16 @@ const VocabQueue: React.FC = () => {
           parsed = sanitizeLlmResult(parseLlmJson(generatedJsonStr));
         } catch(e) {
           const message = e instanceof Error ? e.message : String(e);
-          setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: 'failed', error: `LLM 返回 JSON 解析失败: ${message}`, rawJson: generatedJsonStr } : t));
+          updateStoredTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: 'failed', error: `LLM 返回 JSON 解析失败: ${message}`, rawJson: generatedJsonStr } : t));
           return;
         }
 
         if (!hasUsableLlmResult(parsed)) {
-          setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: 'failed', error: 'LLM 未返回可用释义 JSON', rawJson: generatedJsonStr } : t));
+          updateStoredTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: 'failed', error: 'LLM 未返回可用释义 JSON', rawJson: generatedJsonStr } : t));
           return;
         }
 
-        setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: 'idle', llmResult: parsed, rawJson: generatedJsonStr } : t));
+        updateStoredTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: 'idle', llmResult: parsed, rawJson: generatedJsonStr } : t));
       }
     });
   };
@@ -334,41 +205,42 @@ const VocabQueue: React.FC = () => {
     const sendingTask = tasks.find(t => t.id === taskId);
     if (!sendingTask || !canSendTask(sendingTask)) return;
 
-    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: 'sending', error: null } : t));
+    updateStoredTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: 'sending', error: null } : t));
 
     sendTaskToServer(sendingTask)
     .then(() => {
       console.info('[Linkual] 生词发送成功:', sendingTask.word);
       if (deleteOnSuccess) {
-        setTasks(prev => prev.filter(t => t.id !== taskId));
+        updateStoredTasks(prev => prev.filter(t => t.id !== taskId));
       } else {
-        setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: 'success' } : t));
+        updateStoredTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: 'success' } : t));
       }
     })
     .catch((err: unknown) => {
       const message = err instanceof Error ? err.message : '请求异常';
       console.error('[Linkual] 生词发送失败:', message, { task: sendingTask });
-      setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: 'failed', error: message } : t));
+      updateStoredTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: 'failed', error: message } : t));
     });
   };
 
   const handleSendAllAndDelete = async () => {
-    const tasksToSend = tasks.filter(canSendTask);
+    const tasksToSend = readStoredQueue().filter(canSendTask);
     if (tasksToSend.length === 0 || isBulkSending) return;
+    const sendingTaskIds = new Set(tasksToSend.map(task => task.id));
 
     setIsBulkSending(true);
-    setTasks(prev => prev.map(t => canSendTask(t) ? { ...t, status: 'sending', error: null } : t));
+    updateStoredTasks(prev => prev.map(t => sendingTaskIds.has(t.id) ? { ...t, status: 'sending', error: null } : t));
 
     try {
       for (const task of tasksToSend) {
         try {
           await sendTaskToServer(task);
           console.info('[Linkual] 生词发送成功:', task.word);
-          setTasks(prev => prev.filter(t => t.id !== task.id));
+          updateStoredTasks(prev => prev.filter(t => t.id !== task.id));
         } catch (err: unknown) {
           const message = err instanceof Error ? err.message : '请求异常';
           console.error('[Linkual] 生词发送失败:', message, { task });
-          setTasks(prev => prev.map(t => t.id === task.id ? { ...t, status: 'failed', error: message } : t));
+          updateStoredTasks(prev => prev.map(t => t.id === task.id ? { ...t, status: 'failed', error: message } : t));
         }
       }
     } finally {
@@ -377,7 +249,7 @@ const VocabQueue: React.FC = () => {
   };
 
   const handleDeleteTask = (taskId: string) => {
-    setTasks(prev => prev.filter(t => t.id !== taskId));
+    updateStoredTasks(prev => prev.filter(t => t.id !== taskId));
   };
 
   const handleClearAll = () => {

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Linkual Log
 // @namespace    npm/vite-plugin-monkey
-// @version      0.0.24
+// @version      0.0.25
 // @author       Sergio Gao
 // @icon         https://vitejs.dev/logo.svg
 // @downloadURL  https://raw.githubusercontent.com/gsjz/linkualog/main/browser-plugin/user/linkualog.user.js
@@ -12736,6 +12736,185 @@
       });
     }
   };
+  const QUEUE_STORAGE_KEY = "linkual_vocab_queue";
+  const QUEUE_COUNT_EVENT = "linkual_vocab_queue_count";
+  const QUEUE_TOGGLE_EVENT = "linkual_vocab_queue_toggle";
+  const QUEUE_REQUEST_COUNT_EVENT = "linkual_vocab_queue_request_count";
+  const QUEUE_CHANGED_EVENT = "linkual_vocab_queue_changed";
+  const QUEUE_STORAGE_SCHEMA = "linkual_vocab_queue";
+  let lastQueueUpdatedAt = 0;
+  const sanitizeLlmResult = (value) => {
+    if (!value || typeof value !== "object") return {};
+    const raw = value;
+    const result = {};
+    if (Array.isArray(raw.definitions)) {
+      const definitions = raw.definitions.map((item) => String(item || "").trim()).filter(Boolean);
+      if (definitions.length > 0) result.definitions = definitions;
+    }
+    if (Array.isArray(raw.examples)) {
+      const examples = raw.examples.filter((item) => item && typeof item === "object").map((item) => {
+        const rawExample = item;
+        const example = {};
+        const text = String(rawExample.text || "").trim();
+        const explanation2 = String(rawExample.explanation || "").trim();
+        const focusWords = Array.isArray(rawExample.focusWords) ? rawExample.focusWords.map((word) => String(word || "").trim()).filter(Boolean) : [];
+        if (text) example.text = text;
+        if (explanation2) example.explanation = explanation2;
+        if (focusWords.length > 0) example.focusWords = focusWords;
+        return example;
+      }).filter((example) => {
+        var _a;
+        return example.text || example.explanation || ((_a = example.focusWords) == null ? void 0 : _a.length);
+      });
+      if (examples.length > 0) result.examples = examples;
+    }
+    const explanation = String(raw.explanation || "").trim();
+    if (explanation) result.explanation = explanation;
+    const contextTranslation = String(raw.context_translation || "").trim();
+    if (contextTranslation) result.context_translation = contextTranslation;
+    return result;
+  };
+  const getLlmExplanation = (result) => {
+    var _a, _b;
+    return ((_b = (_a = result == null ? void 0 : result.examples) == null ? void 0 : _a.find((example) => example.explanation)) == null ? void 0 : _b.explanation) || (result == null ? void 0 : result.explanation) || (result == null ? void 0 : result.context_translation) || "";
+  };
+  const hasUsableLlmResult = (result) => {
+    var _a, _b;
+    return Boolean(
+      ((_a = result == null ? void 0 : result.definitions) == null ? void 0 : _a.length) || ((_b = result == null ? void 0 : result.examples) == null ? void 0 : _b.length) || getLlmExplanation(result)
+    );
+  };
+  const canSendTask = (task) => task.status === "idle" || task.status === "failed";
+  const sanitizeTask = (task) => {
+    const sanitizedResult = sanitizeLlmResult(task.llmResult);
+    return {
+      ...task,
+      source_url: typeof task.source_url === "string" ? task.source_url : "",
+      llmResult: hasUsableLlmResult(sanitizedResult) ? sanitizedResult : void 0
+    };
+  };
+  const parseQueueSnapshot = (rawValue) => {
+    if (rawValue === null || rawValue === void 0 || rawValue === "") return null;
+    let parsed = rawValue;
+    if (typeof rawValue === "string") {
+      parsed = JSON.parse(rawValue);
+    }
+    if (Array.isArray(parsed)) {
+      return {
+        tasks: parsed.map(sanitizeTask),
+        updatedAt: 0
+      };
+    }
+    if (!parsed || typeof parsed !== "object") return null;
+    const envelope = parsed;
+    if (!Array.isArray(envelope.tasks)) return null;
+    const updatedAt = Number(envelope.updatedAt || 0);
+    return {
+      tasks: envelope.tasks.map(sanitizeTask),
+      updatedAt: Number.isFinite(updatedAt) ? updatedAt : 0
+    };
+  };
+  const readStoredQueueSnapshot = () => {
+    const snapshots = [];
+    try {
+      if (typeof _GM_getValue !== "undefined") {
+        const snapshot = parseQueueSnapshot(_GM_getValue(QUEUE_STORAGE_KEY));
+        if (snapshot) snapshots.push(snapshot);
+      }
+    } catch (e) {
+    }
+    try {
+      const snapshot = parseQueueSnapshot(localStorage.getItem(QUEUE_STORAGE_KEY));
+      if (snapshot) snapshots.push(snapshot);
+    } catch (e) {
+    }
+    if (snapshots.length === 0) return { tasks: [], updatedAt: 0 };
+    return snapshots.reduce((latest, snapshot) => {
+      if (snapshot.updatedAt > latest.updatedAt) return snapshot;
+      if (snapshot.updatedAt === latest.updatedAt && snapshot.tasks.length > latest.tasks.length) return snapshot;
+      return latest;
+    });
+  };
+  const readStoredQueue = () => readStoredQueueSnapshot().tasks;
+  const getNextUpdatedAt = (baseUpdatedAt = 0) => {
+    const next = Math.max(Date.now(), lastQueueUpdatedAt + 1, baseUpdatedAt + 1);
+    lastQueueUpdatedAt = next;
+    return next;
+  };
+  const writeStoredQueue = (tasks) => {
+    const latest = readStoredQueueSnapshot();
+    const envelope = {
+      schema: QUEUE_STORAGE_SCHEMA,
+      version: 1,
+      updatedAt: getNextUpdatedAt(latest.updatedAt),
+      tasks: tasks.map(sanitizeTask)
+    };
+    const serialized = JSON.stringify(envelope);
+    let wrote = false;
+    try {
+      if (typeof _GM_setValue !== "undefined") {
+        _GM_setValue(QUEUE_STORAGE_KEY, serialized);
+        wrote = true;
+      }
+    } catch (e) {
+    }
+    try {
+      localStorage.setItem(QUEUE_STORAGE_KEY, serialized);
+      wrote = true;
+    } catch (e) {
+    }
+    if (!wrote) {
+      throw new Error("队列写入失败");
+    }
+    return envelope;
+  };
+  const clearStoredQueue = () => {
+    const envelope = writeStoredQueue([]);
+    emitQueueCount(envelope.tasks);
+    window.dispatchEvent(new CustomEvent(QUEUE_CHANGED_EVENT, {
+      detail: { tasks: envelope.tasks, updatedAt: envelope.updatedAt }
+    }));
+  };
+  const emitQueueCount = (tasks) => {
+    window.dispatchEvent(new CustomEvent(QUEUE_COUNT_EVENT, {
+      detail: { pendingCount: tasks.filter((t) => t.status !== "success").length }
+    }));
+  };
+  const emitQueueChanged = (tasks, updatedAt) => {
+    emitQueueCount(tasks);
+    window.dispatchEvent(new CustomEvent(QUEUE_CHANGED_EVENT, {
+      detail: { tasks, updatedAt }
+    }));
+  };
+  const createVocabTask = (input) => {
+    var _a;
+    const dateObj = /* @__PURE__ */ new Date();
+    const systemDate = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, "0")}-${String(dateObj.getDate()).padStart(2, "0")}`;
+    const word = String(input.word || "").trim();
+    const context = String(input.context || "").trim();
+    const source = String(input.source || "").trim();
+    if (!word) throw new Error("词块不能为空");
+    return {
+      id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+      word,
+      context,
+      source,
+      source_url: input.source_url || ((_a = input.youtube) == null ? void 0 : _a.url) || window.location.href,
+      youtube: input.youtube,
+      date: systemDate,
+      category: input.category || ConfigService.get("lan_action") || "Video_Sync",
+      status: "idle",
+      error: null
+    };
+  };
+  const enqueueVocabTask = (input) => {
+    const task = createVocabTask(input);
+    const current = readStoredQueue();
+    const nextTasks = [task, ...current];
+    const envelope = writeStoredQueue(nextTasks);
+    emitQueueChanged(envelope.tasks, envelope.updatedAt);
+    return task;
+  };
   const MAX_SELECTION_LENGTH = 50;
   const SELECTION_BOX_MARGIN = 12;
   const TOUCH_SELECTION_RECENCY_MS = 3e3;
@@ -12927,14 +13106,16 @@
       for (let i = startIdx; i <= endIdx; i++) {
         contextBlock += allSubs[i].text + " ";
       }
-      window.dispatchEvent(new CustomEvent("linkual-add-vocab", {
-        detail: {
+      try {
+        enqueueVocabTask({
           word,
           context: contextBlock.trim(),
           source: videoTitle == null ? void 0 : videoTitle.trim(),
           youtube: { url: cleanUrl, timestamp: Math.floor(data.start) }
-        }
-      }));
+        });
+      } catch (err) {
+        console.error("[Linkual] 加入制卡队列失败:", err);
+      }
       setSelectionBox(null);
       (_b = window.getSelection()) == null ? void 0 : _b.removeAllRanges();
     };
@@ -13361,10 +13542,6 @@ JSON 格式：
     }
   ]
 }`;
-  const QUEUE_STORAGE_KEY = "linkual_vocab_queue";
-  const QUEUE_COUNT_EVENT = "linkual_vocab_queue_count";
-  const QUEUE_TOGGLE_EVENT = "linkual_vocab_queue_toggle";
-  const QUEUE_REQUEST_COUNT_EVENT = "linkual_vocab_queue_request_count";
   const QUEUE_SYNC_INTERVAL_MS = 1800;
   const parseLlmJson = (rawText) => {
     var _a;
@@ -13373,48 +13550,6 @@ JSON 格式：
     const candidate = fenced ? fenced[1] : ((_a = trimmed.match(/\{[\s\S]*\}/)) == null ? void 0 : _a[0]) || trimmed;
     return JSON.parse(candidate);
   };
-  const sanitizeLlmResult = (value) => {
-    if (!value || typeof value !== "object") return {};
-    const raw = value;
-    const result = {};
-    if (Array.isArray(raw.definitions)) {
-      const definitions = raw.definitions.map((item) => String(item || "").trim()).filter(Boolean);
-      if (definitions.length > 0) result.definitions = definitions;
-    }
-    if (Array.isArray(raw.examples)) {
-      const examples = raw.examples.filter((item) => item && typeof item === "object").map((item) => {
-        const rawExample = item;
-        const example = {};
-        const text = String(rawExample.text || "").trim();
-        const explanation2 = String(rawExample.explanation || "").trim();
-        const focusWords = Array.isArray(rawExample.focusWords) ? rawExample.focusWords.map((word) => String(word || "").trim()).filter(Boolean) : [];
-        if (text) example.text = text;
-        if (explanation2) example.explanation = explanation2;
-        if (focusWords.length > 0) example.focusWords = focusWords;
-        return example;
-      }).filter((example) => {
-        var _a;
-        return example.text || example.explanation || ((_a = example.focusWords) == null ? void 0 : _a.length);
-      });
-      if (examples.length > 0) result.examples = examples;
-    }
-    const explanation = String(raw.explanation || "").trim();
-    if (explanation) result.explanation = explanation;
-    const contextTranslation = String(raw.context_translation || "").trim();
-    if (contextTranslation) result.context_translation = contextTranslation;
-    return result;
-  };
-  const getLlmExplanation = (result) => {
-    var _a, _b;
-    return ((_b = (_a = result == null ? void 0 : result.examples) == null ? void 0 : _a.find((example) => example.explanation)) == null ? void 0 : _b.explanation) || (result == null ? void 0 : result.explanation) || (result == null ? void 0 : result.context_translation) || "";
-  };
-  const hasUsableLlmResult = (result) => {
-    var _a, _b;
-    return Boolean(
-      ((_a = result == null ? void 0 : result.definitions) == null ? void 0 : _a.length) || ((_b = result == null ? void 0 : result.examples) == null ? void 0 : _b.length) || getLlmExplanation(result)
-    );
-  };
-  const canSendTask = (task) => task.status === "idle" || task.status === "failed";
   const LlmResultPreview = ({ result }) => {
     var _a;
     if (!hasUsableLlmResult(result)) return null;
@@ -13427,108 +13562,55 @@ JSON 格式：
       ] }) : null
     ] });
   };
-  const sanitizeTask = (task) => {
-    const sanitizedResult = sanitizeLlmResult(task.llmResult);
-    return {
-      ...task,
-      source_url: typeof task.source_url === "string" ? task.source_url : "",
-      llmResult: hasUsableLlmResult(sanitizedResult) ? sanitizedResult : void 0
-    };
-  };
-  const readStoredQueue = () => {
-    try {
-      if (typeof _GM_getValue !== "undefined") {
-        const saved = _GM_getValue(QUEUE_STORAGE_KEY);
-        if (typeof saved === "string" && saved) return JSON.parse(saved).map(sanitizeTask);
-        if (Array.isArray(saved)) return saved.map(sanitizeTask);
-      }
-    } catch (e) {
-    }
-    try {
-      const saved = localStorage.getItem(QUEUE_STORAGE_KEY);
-      if (saved) return JSON.parse(saved).map(sanitizeTask);
-    } catch (e) {
-    }
-    return [];
-  };
-  const writeStoredQueue = (tasks) => {
-    const serialized = JSON.stringify(tasks);
-    try {
-      if (typeof _GM_setValue !== "undefined") {
-        _GM_setValue(QUEUE_STORAGE_KEY, serialized);
-      }
-    } catch (e) {
-    }
-    try {
-      localStorage.setItem(QUEUE_STORAGE_KEY, serialized);
-    } catch (e) {
-    }
-  };
-  const clearStoredQueue = () => writeStoredQueue([]);
-  const emitQueueCount = (tasks) => {
-    window.dispatchEvent(new CustomEvent(QUEUE_COUNT_EVENT, {
-      detail: { pendingCount: tasks.filter((t) => t.status !== "success").length }
-    }));
-  };
   const VocabQueue = () => {
     const [isOpen, setIsOpen] = reactExports.useState(false);
     const [isBulkSending, setIsBulkSending] = reactExports.useState(false);
-    const [selectedCategory, setSelectedCategory] = reactExports.useState(ConfigService.get("lan_action") || "Video_Sync");
-    const [themeColor, setThemeColor] = reactExports.useState(ConfigService.get("theme_color") || "#6a1b9a");
     const [tasks, setTasks] = reactExports.useState(readStoredQueue);
+    const updateStoredTasks = (updater) => {
+      setTasks((prev) => {
+        const storedTasks = readStoredQueue();
+        const baseTasks = JSON.stringify(prev) === JSON.stringify(storedTasks) ? prev : storedTasks;
+        const nextTasks = updater(baseTasks);
+        const envelope = writeStoredQueue(nextTasks);
+        emitQueueCount(envelope.tasks);
+        return envelope.tasks;
+      });
+    };
     reactExports.useEffect(() => {
-      writeStoredQueue(tasks);
-      emitQueueCount(tasks);
-    }, [tasks]);
-    reactExports.useEffect(() => {
-      const syncQueue = () => setTasks(readStoredQueue());
+      const syncQueue = () => {
+        const storedTasks = readStoredQueue();
+        setTasks((prev) => JSON.stringify(prev) === JSON.stringify(storedTasks) ? prev : storedTasks);
+        emitQueueCount(storedTasks);
+      };
       const syncAcrossTabs = (e) => {
         if (e.key === QUEUE_STORAGE_KEY) syncQueue();
       };
       const toggleQueue = () => setIsOpen((prev) => !prev);
       const reportCount = () => emitQueueCount(readStoredQueue());
+      const enqueueFromEvent = (event) => {
+        const detail = event.detail || {};
+        try {
+          enqueueVocabTask(detail);
+        } catch (err) {
+          console.error("[Linkual] 加入制卡队列失败:", err);
+        }
+      };
       window.addEventListener("storage", syncAcrossTabs);
       window.addEventListener(QUEUE_TOGGLE_EVENT, toggleQueue);
       window.addEventListener(QUEUE_REQUEST_COUNT_EVENT, reportCount);
+      window.addEventListener(QUEUE_CHANGED_EVENT, syncQueue);
+      window.addEventListener("linkual-add-vocab", enqueueFromEvent);
       const interval = window.setInterval(syncQueue, QUEUE_SYNC_INTERVAL_MS);
       reportCount();
       return () => {
         window.removeEventListener("storage", syncAcrossTabs);
         window.removeEventListener(QUEUE_TOGGLE_EVENT, toggleQueue);
         window.removeEventListener(QUEUE_REQUEST_COUNT_EVENT, reportCount);
+        window.removeEventListener(QUEUE_CHANGED_EVENT, syncQueue);
+        window.removeEventListener("linkual-add-vocab", enqueueFromEvent);
         window.clearInterval(interval);
       };
     }, []);
-    reactExports.useEffect(() => {
-      const handleConfigUpdate = () => {
-        setSelectedCategory(ConfigService.get("lan_action") || "Video_Sync");
-        setThemeColor(ConfigService.get("theme_color") || "#6a1b9a");
-      };
-      window.addEventListener("linkual_settings_updated", handleConfigUpdate);
-      return () => window.removeEventListener("linkual_settings_updated", handleConfigUpdate);
-    }, []);
-    reactExports.useEffect(() => {
-      const handleEvent = (e) => {
-        const { word, context, source, source_url, youtube } = e.detail;
-        const dateObj = /* @__PURE__ */ new Date();
-        const systemDate = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, "0")}-${String(dateObj.getDate()).padStart(2, "0")}`;
-        const newTask = {
-          id: Date.now() + Math.random().toString(36).substring(2, 9),
-          word,
-          context,
-          source,
-          source_url: source_url || (youtube == null ? void 0 : youtube.url) || window.location.href,
-          youtube,
-          date: systemDate,
-          category: selectedCategory,
-          status: "idle",
-          error: null
-        };
-        setTasks((prev) => [newTask, ...prev]);
-      };
-      window.addEventListener("linkual-add-vocab", handleEvent);
-      return () => window.removeEventListener("linkual-add-vocab", handleEvent);
-    }, [selectedCategory]);
     const handleFetchLlm = (taskId) => {
       const task = tasks.find((t) => t.id === taskId);
       if (!task) return;
@@ -13539,7 +13621,7 @@ JSON 格式：
         alert("请先在设置中配置 API Key");
         return;
       }
-      setTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, status: "fetching_llm", error: null, rawJson: "" } : t));
+      updateStoredTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, status: "fetching_llm", error: null, rawJson: "" } : t));
       let generatedJsonStr = "";
       fetchLlmStream({
         apiUrl,
@@ -13551,10 +13633,10 @@ JSON 格式：
         timeoutSec: 30,
         onData: (chunk) => {
           generatedJsonStr += chunk;
-          setTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, rawJson: generatedJsonStr } : t));
+          updateStoredTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, rawJson: generatedJsonStr } : t));
         },
         onError: (err) => {
-          setTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, status: "failed", error: err } : t));
+          updateStoredTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, status: "failed", error: err } : t));
         },
         onDone: () => {
           let parsed = {};
@@ -13562,14 +13644,14 @@ JSON 格式：
             parsed = sanitizeLlmResult(parseLlmJson(generatedJsonStr));
           } catch (e) {
             const message = e instanceof Error ? e.message : String(e);
-            setTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, status: "failed", error: `LLM 返回 JSON 解析失败: ${message}`, rawJson: generatedJsonStr } : t));
+            updateStoredTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, status: "failed", error: `LLM 返回 JSON 解析失败: ${message}`, rawJson: generatedJsonStr } : t));
             return;
           }
           if (!hasUsableLlmResult(parsed)) {
-            setTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, status: "failed", error: "LLM 未返回可用释义 JSON", rawJson: generatedJsonStr } : t));
+            updateStoredTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, status: "failed", error: "LLM 未返回可用释义 JSON", rawJson: generatedJsonStr } : t));
             return;
           }
-          setTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, status: "idle", llmResult: parsed, rawJson: generatedJsonStr } : t));
+          updateStoredTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, status: "idle", llmResult: parsed, rawJson: generatedJsonStr } : t));
         }
       });
     };
@@ -13599,35 +13681,36 @@ JSON 格式：
     const handleSend = (taskId, deleteOnSuccess) => {
       const sendingTask = tasks.find((t) => t.id === taskId);
       if (!sendingTask || !canSendTask(sendingTask)) return;
-      setTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, status: "sending", error: null } : t));
+      updateStoredTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, status: "sending", error: null } : t));
       sendTaskToServer(sendingTask).then(() => {
         console.info("[Linkual] 生词发送成功:", sendingTask.word);
         if (deleteOnSuccess) {
-          setTasks((prev) => prev.filter((t) => t.id !== taskId));
+          updateStoredTasks((prev) => prev.filter((t) => t.id !== taskId));
         } else {
-          setTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, status: "success" } : t));
+          updateStoredTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, status: "success" } : t));
         }
       }).catch((err) => {
         const message = err instanceof Error ? err.message : "请求异常";
         console.error("[Linkual] 生词发送失败:", message, { task: sendingTask });
-        setTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, status: "failed", error: message } : t));
+        updateStoredTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, status: "failed", error: message } : t));
       });
     };
     const handleSendAllAndDelete = async () => {
-      const tasksToSend = tasks.filter(canSendTask);
+      const tasksToSend = readStoredQueue().filter(canSendTask);
       if (tasksToSend.length === 0 || isBulkSending) return;
+      const sendingTaskIds = new Set(tasksToSend.map((task) => task.id));
       setIsBulkSending(true);
-      setTasks((prev) => prev.map((t) => canSendTask(t) ? { ...t, status: "sending", error: null } : t));
+      updateStoredTasks((prev) => prev.map((t) => sendingTaskIds.has(t.id) ? { ...t, status: "sending", error: null } : t));
       try {
         for (const task of tasksToSend) {
           try {
             await sendTaskToServer(task);
             console.info("[Linkual] 生词发送成功:", task.word);
-            setTasks((prev) => prev.filter((t) => t.id !== task.id));
+            updateStoredTasks((prev) => prev.filter((t) => t.id !== task.id));
           } catch (err) {
             const message = err instanceof Error ? err.message : "请求异常";
             console.error("[Linkual] 生词发送失败:", message, { task });
-            setTasks((prev) => prev.map((t) => t.id === task.id ? { ...t, status: "failed", error: message } : t));
+            updateStoredTasks((prev) => prev.map((t) => t.id === task.id ? { ...t, status: "failed", error: message } : t));
           }
         }
       } finally {
@@ -13635,7 +13718,7 @@ JSON 格式：
       }
     };
     const handleDeleteTask = (taskId) => {
-      setTasks((prev) => prev.filter((t) => t.id !== taskId));
+      updateStoredTasks((prev) => prev.filter((t) => t.id !== taskId));
     };
     const handleClearAll = () => {
       if (window.confirm("确定清空当前队列中所有的缓存词卡吗？")) {
@@ -14533,15 +14616,18 @@ JSON 格式：
         setMessage("词块不能为空");
         return;
       }
-      window.dispatchEvent(new CustomEvent("linkual-add-vocab", {
-        detail: {
+      try {
+        enqueueVocabTask({
           word: finalWord,
           context: finalContext,
           source: source || getSourceTitle(),
           source_url: sourceUrl || getPageUrl()
-        }
-      }));
-      window.dispatchEvent(new Event(QUEUE_REQUEST_COUNT_EVENT));
+        });
+      } catch (err) {
+        setStatus("error");
+        setMessage(err instanceof Error ? err.message : "加入失败");
+        return;
+      }
       setStatus("success");
       setMessage("已加入队列");
       setSelectionMode("word");

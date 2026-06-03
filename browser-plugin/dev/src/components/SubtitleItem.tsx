@@ -3,6 +3,7 @@ import { fetchLlmStream } from '../services/llmApi';
 import { IVideoAdapter } from '../adapters/BaseAdapter';
 import { Subtitle } from '../types';
 import { ConfigService } from '../services/configService';
+import { enqueueVocabTask } from '../services/vocabQueueStore';
 
 interface SubtitleItemProps {
   data: Subtitle; 
@@ -251,14 +252,16 @@ const SubtitleItem: React.FC<SubtitleItemProps> = ({ data, index, allSubs, isAct
       contextBlock += allSubs[i].text + " ";
     }
 
-    window.dispatchEvent(new CustomEvent('linkual-add-vocab', {
-      detail: {
+    try {
+      enqueueVocabTask({
         word: word,
         context: contextBlock.trim(),
         source: videoTitle?.trim(),
         youtube: { url: cleanUrl, timestamp: Math.floor(data.start) }
-      }
-    }));
+      });
+    } catch (err) {
+      console.error('[Linkual] 加入制卡队列失败:', err);
+    }
     
     setSelectionBox(null);
     window.getSelection()?.removeAllRanges();

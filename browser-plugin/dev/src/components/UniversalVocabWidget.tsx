@@ -1,6 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { QUEUE_COUNT_EVENT, QUEUE_REQUEST_COUNT_EVENT, QUEUE_TOGGLE_EVENT } from './VocabQueue';
 import { ConfigService } from '../services/configService';
+import {
+  QUEUE_COUNT_EVENT,
+  QUEUE_REQUEST_COUNT_EVENT,
+  QUEUE_TOGGLE_EVENT,
+  enqueueVocabTask,
+} from '../services/vocabQueueStore';
 
 interface UniversalVocabWidgetProps {
   onOpenSettings: () => void;
@@ -596,15 +601,18 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
       return;
     }
 
-    window.dispatchEvent(new CustomEvent('linkual-add-vocab', {
-      detail: {
+    try {
+      enqueueVocabTask({
         word: finalWord,
         context: finalContext,
         source: source || getSourceTitle(),
         source_url: sourceUrl || getPageUrl(),
-      },
-    }));
-    window.dispatchEvent(new Event(QUEUE_REQUEST_COUNT_EVENT));
+      });
+    } catch (err) {
+      setStatus('error');
+      setMessage(err instanceof Error ? err.message : '加入失败');
+      return;
+    }
 
     setStatus('success');
     setMessage('已加入队列');
