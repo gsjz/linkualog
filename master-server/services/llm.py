@@ -67,26 +67,102 @@ def _normalize_ratio(value):
     return None
 
 
-def _normalize_bbox(raw_bbox):
+def _coerce_float(value):
+    try:
+        numeric = float(value)
+    except (TypeError, ValueError):
+        return None
+    if numeric < 0:
+        return None
+    return numeric
+
+
+def _normalize_scaled_number(value, scale: float):
+    numeric = _coerce_float(value)
+    if numeric is None:
+        return None
+    if scale <= 0:
+        return None
+    return numeric / scale
+
+
+def normalize_unit_bbox(raw_bbox):
     if not isinstance(raw_bbox, dict):
         return None
 
-    left = _normalize_ratio(raw_bbox.get("l", raw_bbox.get("left", raw_bbox.get("x"))))
-    top = _normalize_ratio(raw_bbox.get("t", raw_bbox.get("top", raw_bbox.get("y"))))
-    width = _normalize_ratio(raw_bbox.get("w", raw_bbox.get("width")))
-    height = _normalize_ratio(raw_bbox.get("h", raw_bbox.get("height")))
+    raw_left = raw_bbox.get("l", raw_bbox.get("left", raw_bbox.get("x", raw_bbox.get("x1"))))
+    raw_top = raw_bbox.get("t", raw_bbox.get("top", raw_bbox.get("y", raw_bbox.get("y1"))))
+    raw_width = raw_bbox.get("w", raw_bbox.get("width"))
+    raw_height = raw_bbox.get("h", raw_bbox.get("height"))
+    raw_right = raw_bbox.get("r", raw_bbox.get("right", raw_bbox.get("x2")))
+    raw_bottom = raw_bbox.get("bottom", raw_bbox.get("btm", raw_bbox.get("y2")))
+
+    numeric_values = [
+        _coerce_float(value)
+        for value in (raw_left, raw_top, raw_width, raw_height, raw_right, raw_bottom)
+    ]
+    numeric_values = [value for value in numeric_values if value is not None]
+    if not numeric_values:
+        return None
+
+    # LLMs sometimes return 0-100 or 0-1000 coordinates even when asked for 0-1.
+    # Pick one shared scale for the whole box; per-field scaling makes 0-1000
+    # widths under 100 look like huge percentages.
+    if any(value > 100 for value in numeric_values):
+        scale = 1000.0
+    elif any(value > 1 for value in numeric_values):
+        scale = 100.0
+    else:
+        scale = 1.0
+
+    left = _normalize_scaled_number(raw_left, scale)
+    top = _normalize_scaled_number(raw_top, scale)
+    width = _normalize_scaled_number(raw_width, scale)
+    height = _normalize_scaled_number(raw_height, scale)
+    right = _normalize_scaled_number(raw_right, scale)
+    bottom = _normalize_scaled_number(raw_bottom, scale)
+
+    if width is None and left is not None and right is not None:
+        width = right - left
+    if height is None and top is not None and bottom is not None:
+        height = bottom - top
 
     if None in (left, top, width, height):
         return None
     if width <= 0 or height <= 0:
         return None
 
+    left = max(0.0, min(1.0, left))
+    top = max(0.0, min(1.0, top))
+    width = max(0.0, min(1.0 - left, width))
+    height = max(0.0, min(1.0 - top, height))
+    if width <= 0 or height <= 0:
+        return None
+
     return {
-        "left": max(0.0, min(1.0, left)),
-        "top": max(0.0, min(1.0, top)),
-        "width": max(0.0, min(1.0, width)),
-        "height": max(0.0, min(1.0, height)),
+        "left": left,
+        "top": top,
+        "width": width,
+        "height": height,
     }
+
+
+def _normalize_bbox(raw_bbox):
+    return normalize_unit_bbox(raw_bbox)
+
+
+def _map_crop_bbox_to_page(local_bbox: dict, page_region: dict):
+    normalized_local = normalize_unit_bbox(local_bbox)
+    normalized_region = normalize_unit_bbox(page_region)
+    if not normalized_local or not normalized_region:
+        return None
+
+    return normalize_unit_bbox({
+        "left": normalized_region["left"] + normalized_local["left"] * normalized_region["width"],
+        "top": normalized_region["top"] + normalized_local["top"] * normalized_region["height"],
+        "width": normalized_local["width"] * normalized_region["width"],
+        "height": normalized_local["height"] * normalized_region["height"],
+    })
 
 
 def _restore_marked_item(item):
@@ -168,6 +244,62 @@ def _build_image_prompt(experimental_coordinates: bool) -> str:
         + 'JSON 结构：{ "extracted_text": "带换行的提取文字...", "marked_text": [ { "word": "用笔迹划出的词...", "context": "词所在的语义完整句子..." } ] }'
     )
 
+
+def _build_region_prompt(page_text: str = "") -> str:
+    page_excerpt = re.sub(r"\s+", " ", str(page_text or "")).strip()[:5000]
+    reference_block = f"全页 OCR 参考（只用于补全上下文，不能返回框外词）：{page_excerpt}\n" if page_excerpt else ""
+    return (
+        "你是一个专业的 OCR 和英文学习词条识别引擎。"
+        "你会看到用户在完整页面上框选出的局部截图；只处理这张局部截图内实际可见的英文文本。"
+        "目标是补充完整页面识别时漏掉的词条。"
+        "如果局部内有手写下划线、圈画、高亮或其他用户后加标记，优先只返回这些明确标记覆盖的英文词或最小短语。"
+        "如果没有明确标记，则返回局部内适合加入生词本的英文词或固定短语，跳过冠词、介词、连词、代词、纯数字和过于普通的功能词。"
+        "不要返回框外的词；不要把整行、整句或相邻单词一起塞进 word。"
+        "word 必须是局部截图中可见的精确词边界，不带前后标点；短语必须是自然固定搭配。"
+        "context 必须优先给出完整句子；如果局部截图截断了句子，可以参考全页 OCR 文本补全，但返回的 word 仍必须出现在局部截图内。"
+        "每个 bbox 都必须相对局部截图本身归一化，l/t/w/h 范围 0 到 1。"
+        "bbox 必须尽量紧贴 word 的字母主体，可含极少左右余量；不要覆盖整行、整句、相邻词或大片空白。"
+        "如果无法可靠定位某个词的坐标，可以保留该词条并把 b 设为 null。"
+        "最多返回 12 个词条，按局部截图阅读顺序输出。"
+        "必须严格输出纯 JSON，不要包含 Markdown 或解释。"
+        "为了减少 token，所有 JSON 键名必须使用单字符简写："
+        '{ "t": "局部截图 OCR 文本...", "m": [ { "w": "词条", "c": "完整上下文句子", "b": { "l": 0.12, "t": 0.34, "w": 0.08, "h": 0.02 } } ] }'
+        + reference_block
+    )
+
+
+def crop_image_region(image_bytes: bytes, region: dict) -> tuple[bytes, dict, tuple[int, int]]:
+    if Image is None or ImageOps is None:
+        raise RuntimeError("Pillow 未安装，无法裁剪局部图片")
+
+    normalized_region = normalize_unit_bbox(region)
+    if not normalized_region:
+        raise ValueError("局部识别矩形无效")
+
+    img = Image.open(io.BytesIO(image_bytes))
+    img = ImageOps.exif_transpose(img)
+    if img.mode in ("RGBA", "P", "CMYK"):
+        img = img.convert("RGB")
+
+    image_width, image_height = img.size
+    left_px = int(round(normalized_region["left"] * image_width))
+    top_px = int(round(normalized_region["top"] * image_height))
+    right_px = int(round((normalized_region["left"] + normalized_region["width"]) * image_width))
+    bottom_px = int(round((normalized_region["top"] + normalized_region["height"]) * image_height))
+
+    left_px = max(0, min(image_width - 1, left_px))
+    top_px = max(0, min(image_height - 1, top_px))
+    right_px = max(left_px + 1, min(image_width, right_px))
+    bottom_px = max(top_px + 1, min(image_height, bottom_px))
+
+    if right_px - left_px < 8 or bottom_px - top_px < 8:
+        raise ValueError("局部识别矩形太小")
+
+    cropped = img.crop((left_px, top_px, right_px, bottom_px))
+    output = io.BytesIO()
+    cropped.save(output, format="JPEG", quality=90)
+    return output.getvalue(), normalized_region, cropped.size
+
 def test_llm_connection(api_url: str, api_key: str, model_name: str) -> bool:
     """
     发送极短的提示词测试 LLM 的连通性和配置有效性。
@@ -242,7 +374,7 @@ def process_image(image_bytes: bytes, filename: str, content_type: str, experime
     print(f"收到图片: {filename}, 准备进行预处理...")
 
     try:
-        processed_bytes = optimize_image(image_bytes)
+        processed_bytes = optimize_image(image_bytes, max_size=2600 if experimental_coordinates else 2000)
         image_mime = "image/jpeg"
     except Exception as e:
         print(f"⚠️ 图片预处理失败，尝试直接发送原图: {e}")
@@ -308,6 +440,104 @@ def process_image(image_bytes: bytes, filename: str, content_type: str, experime
                 time.sleep(2) 
             else:
                 raise Exception(f"请求大模型处理图片失败: {e}")
+
+
+def process_image_region(image_bytes: bytes, filename: str, content_type: str, region: dict, page_text: str = "") -> dict:
+    """裁剪用户选择的局部区域并调用 LLM 识别，返回坐标已映射回整页的词条。"""
+    config = get_config_data()
+    api_key = config.get("api_key")
+
+    if not api_key:
+        raise ValueError("未找到 API Key，请先配置")
+
+    api_url = config.get("provider")
+    request_url = resolve_chat_completions_url(api_url)
+    model_name = config.get("model")
+    if not api_url or not model_name:
+        raise ValueError("LLM provider/model 未配置")
+
+    cropped_bytes, normalized_region, crop_size = crop_image_region(image_bytes, region)
+    base64_image = base64.b64encode(cropped_bytes).decode("utf-8")
+
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+    }
+
+    payload = {
+        "model": model_name,
+        "max_tokens": 3072,
+        "temperature": 0.1,
+        "top_p": 0.35,
+        "messages": [
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": _build_region_prompt(page_text),
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/jpeg;base64,{base64_image}",
+                        },
+                    },
+                ],
+            },
+        ],
+    }
+
+    for attempt in range(3):
+        try:
+            response = requests.post(request_url, headers=headers, json=payload, timeout=90)
+            response.raise_for_status()
+
+            result_data = response.json()
+            llm_reply = _extract_message_content(result_data["choices"][0]["message"]["content"])
+            llm_reply = _clean_llm_json_text(llm_reply)
+            parsed_reply = _parse_image_reply(llm_reply)
+
+            mapped_marks = []
+            for mark in parsed_reply.get("marked_text", []):
+                if not isinstance(mark, dict):
+                    continue
+                next_mark = {
+                    "word": str(mark.get("word") or "").strip(),
+                    "context": str(mark.get("context") or "").strip(),
+                }
+                if not next_mark["word"]:
+                    continue
+
+                local_bbox = mark.get("bbox")
+                if local_bbox:
+                    page_bbox = _map_crop_bbox_to_page(local_bbox, normalized_region)
+                    if page_bbox:
+                        next_mark["bbox"] = page_bbox
+                        next_mark["localBbox"] = local_bbox
+
+                mapped_marks.append(next_mark)
+
+            print(f"✅ LLM 局部识别成功 ({filename})")
+            return {
+                "raw": llm_reply,
+                "parsed": {
+                    "extracted_text": parsed_reply.get("extracted_text", ""),
+                    "marked_text": mapped_marks,
+                },
+                "meta": {
+                    "source_type": "local-region",
+                    "source_region": normalized_region,
+                    "crop_size": {"width": crop_size[0], "height": crop_size[1]},
+                    "content_type": content_type or "image/jpeg",
+                },
+            }
+        except Exception as e:
+            print(f"⚠️ 第 {attempt + 1} 次局部识别请求失败: {e}")
+            if attempt < 2:
+                time.sleep(1)
+            else:
+                raise Exception(f"请求大模型处理局部图片失败: {e}")
 
 
 def process_word_definition(word: str) -> dict:

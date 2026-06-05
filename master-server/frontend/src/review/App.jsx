@@ -17,6 +17,7 @@ import {
   runFileRefine,
   saveConfig,
   saveVocabDetail,
+  suggestVocabRelations,
   submitReviewScore,
 } from './api/client';
 
@@ -34,12 +35,13 @@ const scoreLabels = {
 
 const ENTRY_FILTER_OPTIONS = [
   { value: 'marked', label: '标记词条' },
+  { value: 'needs_processing', label: '待处理' },
   { value: 'all', label: '全部词条' },
   { value: 'unmarked', label: '未标记' },
 ];
 
 const recommendationMarkFilterFromEntryFilter = (value) => (
-  value === 'marked' || value === 'unmarked' ? value : 'all'
+  value === 'marked' || value === 'unmarked' || value === 'needs_processing' ? value : 'all'
 );
 
 const RECOMMENDATION_WEIGHT_OPTIONS = [
@@ -106,7 +108,218 @@ function normalizeManualEntry(entryLike) {
     file,
     word: collapseWhitespace(entryLike?.word || fallbackWord) || fallbackWord,
     marked: Boolean(entryLike?.marked),
+    needsProcessing: Boolean(entryLike?.needsProcessing || entryLike?.needs_processing),
   };
+}
+
+const VOCAB_RELATION_KEYS = [
+  'relations',
+  'graphEdges',
+  'graph_edges',
+  'edges',
+  'links',
+  'related',
+  'seeAlso',
+  'see_also',
+];
+
+function normalizeRelationType(value) {
+  const normalized = String(value || 'related')
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, '_')
+    .replace(/[^a-z0-9_]+/g, '')
+    .replace(/^_+|_+$/g, '');
+  return normalized || 'related';
+}
+
+function relationTargetFromValue(value, fallbackCategory = '') {
+  if (typeof value === 'string') {
+    const raw = value.trim();
+    if (!raw) return null;
+    if (raw.includes('/')) {
+      const parts = raw.split('/');
+      const targetWordOrFile = parts.pop() || '';
+      const category = parts.join('/').trim() || fallbackCategory;
+      if (targetWordOrFile.toLowerCase().endsWith('.json')) {
+        const file = normalizeFilename(targetWordOrFile);
+        return {
+          category,
+          file,
+          word: filenameToWord(file),
+        };
+      }
+      return {
+        category,
+        file: normalizeWordFilename(targetWordOrFile),
+        word: collapseWhitespace(targetWordOrFile),
+      };
+    }
+    return {
+      category: fallbackCategory,
+      file: normalizeWordFilename(raw),
+      word: collapseWhitespace(raw),
+    };
+  }
+
+  if (!value || typeof value !== 'object') {
+    return null;
+  }
+
+  const nested = value.target || value.to || value.entry || value.node;
+  if (nested && (typeof nested === 'string' || typeof nested === 'object')) {
+    const target = relationTargetFromValue(nested, fallbackCategory);
+    if (target) return target;
+  }
+
+  const category = collapseWhitespace(
+    value.category
+    || value.target_category
+    || value.targetCategory
+    || value.dir
+    || value.folder
+    || fallbackCategory,
+  );
+  const word = collapseWhitespace(
+    value.word
+    || value.target_word
+    || value.targetWord
+    || value.label
+    || '',
+  );
+  const file = normalizeFilename(
+    value.file
+    || value.filename
+    || value.target_file
+    || value.targetFile
+    || (word ? normalizeWordFilename(word) : ''),
+  );
+
+  if (!category || !file) return null;
+  return {
+    category,
+    file,
+    word: word || filenameToWord(file),
+  };
+}
+
+function relationEntryId(target) {
+  if (!target || typeof target !== 'object') return '';
+  const category = collapseWhitespace(target.category);
+  const file = normalizeFilename(target.file);
+  return category && file ? `${category}/${file}` : '';
+}
+
+function normalizeRelationItem(item, fallbackCategory = '', sourceTarget = null, allowIncomplete = false) {
+  let target = relationTargetFromValue(item, fallbackCategory);
+  if (!target && allowIncomplete && item && typeof item === 'object') {
+    const rawTarget = item.target && typeof item.target === 'object' ? item.target : item;
+    const word = collapseWhitespace(rawTarget.word || rawTarget.target_word || rawTarget.targetWord || rawTarget.label || '');
+    const file = normalizeFilename(rawTarget.file || rawTarget.filename || rawTarget.target_file || rawTarget.targetFile || '');
+    target = {
+      category: collapseWhitespace(rawTarget.category || rawTarget.target_category || rawTarget.targetCategory || fallbackCategory),
+      file: file || (word ? normalizeWordFilename(word) : ''),
+      word: word || (file ? filenameToWord(file) : ''),
+    };
+  }
+  if (!target) return null;
+  if (sourceTarget && relationEntryId(target) && relationEntryId(target) === relationEntryId(sourceTarget)) {
+    return null;
+  }
+
+  const relation = {
+    type: normalizeRelationType(item?.type || item?.relation || 'related'),
+    target,
+  };
+  const reason = collapseWhitespace(item?.reason || item?.note || '');
+  const source = collapseWhitespace(item?.source || item?.origin || '');
+  if (reason) relation.reason = reason;
+  if (source) relation.source = source;
+  if (item?.confidence !== undefined && item?.confidence !== null && item?.confidence !== '') {
+    const confidence = Number(item.confidence);
+    if (Number.isFinite(confidence)) {
+      relation.confidence = Math.max(0, Math.min(1, confidence));
+    }
+  }
+  return relation;
+}
+
+function normalizeDraftRelationsForEdit(draft, fallbackCategory = '', currentFilename = '', options = {}) {
+  if (!draft || typeof draft !== 'object') return [];
+  const includeIncomplete = Boolean(options.includeIncomplete);
+  const sourceTarget = currentFilename
+    ? {
+        category: fallbackCategory,
+        file: normalizeFilename(currentFilename),
+        word: collapseWhitespace(draft.word || filenameToWord(currentFilename)),
+      }
+    : null;
+  const values = [];
+  VOCAB_RELATION_KEYS.forEach((key) => {
+    if (Array.isArray(draft[key])) {
+      values.push(...draft[key]);
+    }
+  });
+
+  const seen = new Set();
+  const normalized = [];
+  values.forEach((item, index) => {
+    const relation = normalizeRelationItem(item, fallbackCategory, sourceTarget, includeIncomplete);
+    if (!relation) return;
+    const id = relationEntryId(relation.target);
+    const key = id ? `${id}|${relation.type}` : `incomplete-${index}`;
+    if (!id && !includeIncomplete) return;
+    if (id && seen.has(key)) return;
+    if (id) seen.add(key);
+    normalized.push(relation);
+  });
+  return normalized;
+}
+
+function createEmptyRelation(fallbackCategory = '') {
+  return {
+    type: 'related',
+    target: {
+      category: fallbackCategory,
+      file: '',
+      word: '',
+    },
+    reason: '',
+  };
+}
+
+function upsertRelationList(relations, rawRelation, fallbackCategory = '', currentFilename = '', sourceWord = '') {
+  const draftLike = {
+    word: sourceWord,
+    relations,
+  };
+  const current = normalizeDraftRelationsForEdit(draftLike, fallbackCategory, currentFilename, { includeIncomplete: true });
+  const sourceTarget = currentFilename
+    ? {
+        category: fallbackCategory,
+        file: normalizeFilename(currentFilename),
+        word: collapseWhitespace(sourceWord || filenameToWord(currentFilename)),
+      }
+    : null;
+  const relation = normalizeRelationItem(rawRelation, fallbackCategory, sourceTarget);
+  if (!relation) return current;
+
+  const key = `${relationEntryId(relation.target)}|${relation.type}`;
+  const index = current.findIndex((item) => `${relationEntryId(item.target)}|${item.type}` === key);
+  if (index >= 0) {
+    current[index] = {
+      ...current[index],
+      ...relation,
+      target: {
+        ...current[index].target,
+        ...relation.target,
+      },
+      reason: relation.reason || current[index].reason || '',
+      source: relation.source || current[index].source || '',
+    };
+    return current;
+  }
+  return [...current, relation];
 }
 
 function normalizeDefinitionKey(value) {
@@ -534,8 +747,10 @@ function pickPreferredVoice(voices, lang) {
   return voices.find((voice) => String(voice?.lang || '').toLowerCase().startsWith('en')) || null;
 }
 
-function sanitizeDraftForSave(draft, fallbackWord) {
+function sanitizeDraftForSave(draft, fallbackWord, context = {}) {
   const next = deepClone(draft) || {};
+  const fallbackCategory = normalizeCategoryValue(context?.category || '');
+  const currentFilename = normalizeFilename(context?.filename || '');
 
   next.word = String(next.word || fallbackWord || '').trim() || fallbackWord || '';
   next.createdAt = String(next.createdAt || '').trim() || TODAY;
@@ -601,6 +816,30 @@ function sanitizeDraftForSave(draft, fallbackWord) {
 
       return example;
     });
+
+  const normalizedRelations = normalizeDraftRelationsForEdit(next, fallbackCategory, currentFilename);
+  VOCAB_RELATION_KEYS.forEach((key) => {
+    if (key !== 'relations') {
+      delete next[key];
+    }
+  });
+  if (normalizedRelations.length) {
+    next.relations = normalizedRelations.map((relation) => {
+      const item = {
+        type: relation.type,
+        target: {
+          category: relation.target.category,
+          file: relation.target.file,
+          word: relation.target.word,
+        },
+      };
+      if (relation.reason) item.reason = relation.reason;
+      if (relation.source) item.source = relation.source;
+      return item;
+    });
+  } else {
+    delete next.relations;
+  }
 
   return next;
 }
@@ -1387,6 +1626,214 @@ function EditorPanel({
   );
 }
 
+function ConnectionPanel({
+  draft,
+  dirty,
+  saving,
+  categories,
+  entries,
+  currentCategory,
+  currentFilename,
+  relationSuggestions,
+  relationSuggestLoading,
+  relationSuggestError,
+  relationSuggestMeta,
+  onRunRelationSuggest,
+  onApplyRelationSuggestion,
+  onRelationChange,
+  onRelationAdd,
+  onRelationRemove,
+  onReset,
+  onSave,
+}) {
+  const relations = normalizeDraftRelationsForEdit(draft, currentCategory, currentFilename, { includeIncomplete: true });
+  const relationOptions = entries.map((item) => item.word || filenameToWord(item.file)).filter(Boolean);
+  const suggestions = Array.isArray(relationSuggestions) ? relationSuggestions : [];
+  const candidateCount = Number(relationSuggestMeta?.candidate_count || 0);
+  const skippedCount = Array.isArray(relationSuggestMeta?.skipped)
+    ? relationSuggestMeta.skipped.length
+    : Number(relationSuggestMeta?.skipped || 0);
+
+  if (!draft) {
+    return (
+      <div className="panel connection-panel">
+        <div className="panel-header">
+          <div className="panel-heading">
+            <h3>连接</h3>
+            <div className="panel-caption">词条关系与双向跳转</div>
+          </div>
+          <div className="panel-header-actions">
+            <span className="badge medium">待选择</span>
+          </div>
+        </div>
+        <div className="panel-body list-body connection-body">
+          <div className="empty">请选择词条后建立连接。</div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="panel connection-panel">
+      <div className="panel-header">
+        <div className="panel-heading">
+          <h3>连接</h3>
+          <div className="panel-caption">
+            {currentCategory ? `${formatCategoryLabel(currentCategory)} / ${currentFilename || '当前词条'}` : '词条关系与双向跳转'}
+          </div>
+        </div>
+        <div className="panel-header-actions">
+          <span className={`badge ${relations.length ? 'high' : 'medium'}`}>
+            {relations.length ? `${relations.length} edges` : '无连接'}
+          </span>
+          {dirty ? <span className="dirty-dot">未保存</span> : <span className="saved-dot">已同步</span>}
+        </div>
+      </div>
+
+      <div className="panel-body list-body connection-body">
+        <section className="editor-section relation-editor-section">
+          <div className="editor-title-row">
+            <div>
+              <h4>手动连边</h4>
+              <div className="editor-subtitle">保存后会同步写入目标词条的反向边。</div>
+            </div>
+            <div className="relation-editor-actions">
+              <button type="button" className="ghost" onClick={onRunRelationSuggest} disabled={relationSuggestLoading || !draft}>
+                <UiIcon name="wand" size={14} />
+                <span>{relationSuggestLoading ? '建议中...' : 'LLM 建议连边'}</span>
+              </button>
+              <button type="button" className="ghost" onClick={onRelationAdd}>
+                <UiIcon name="external-link" size={14} />
+                <span>新增边</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="relation-list">
+            {relations.length === 0 ? <div className="empty">暂无连接。可以手动新增，也可以让 LLM 给出候选边。</div> : null}
+            {relations.map((relation, index) => {
+              const target = relation.target || {};
+              const relationPath = `${target.category || currentCategory || ''}/${target.file || normalizeWordFilename(target.word) || ''}`;
+              return (
+                <div className="relation-editor-card" key={`relation-${index}`}>
+                  <div className="relation-card-head">
+                    <strong>{target.word || filenameToWord(target.file) || '未选择目标'}</strong>
+                    <button type="button" className="danger" onClick={() => onRelationRemove(index)}>删除</button>
+                  </div>
+
+                  <div className="editor-grid relation-grid">
+                    <label>
+                      type
+                      <input
+                        className="field"
+                        value={relation.type || 'related'}
+                        onChange={(event) => onRelationChange(index, 'type', event.target.value)}
+                        placeholder="related / split / phrase"
+                      />
+                    </label>
+                    <label>
+                      目标目录
+                      <select
+                        className="field"
+                        value={target.category || currentCategory || ''}
+                        onChange={(event) => onRelationChange(index, 'target.category', event.target.value)}
+                      >
+                        {!categories.includes(target.category || currentCategory || '') ? (
+                          <option value={target.category || currentCategory || ''}>{target.category || currentCategory || '选择目录'}</option>
+                        ) : null}
+                        {categories.map((item) => (
+                          <option key={item} value={item}>{item}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      目标单词
+                      <input
+                        className="field"
+                        value={target.word || filenameToWord(target.file)}
+                        onChange={(event) => onRelationChange(index, 'target.word', event.target.value)}
+                        list="relation-target-words"
+                        placeholder="hazard a guess"
+                      />
+                    </label>
+                    <label>
+                      目标文件
+                      <input
+                        className="field"
+                        value={target.file || normalizeWordFilename(target.word)}
+                        onChange={(event) => onRelationChange(index, 'target.file', event.target.value)}
+                        placeholder="hazard-a-guess.json"
+                      />
+                    </label>
+                  </div>
+
+                  <label>
+                    reason
+                    <textarea
+                      className="field textarea relation-reason-field"
+                      value={relation.reason || ''}
+                      onChange={(event) => onRelationChange(index, 'reason', event.target.value)}
+                      placeholder="说明两个词条为什么应该连边"
+                    />
+                  </label>
+
+                  <div className="relation-path-preview">
+                    <span>跳转目标</span>
+                    <strong>{relationPath}</strong>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <datalist id="relation-target-words">
+            {relationOptions.map((item) => <option key={item} value={item} />)}
+          </datalist>
+        </section>
+
+        <section className="editor-section relation-editor-section">
+          <div className="editor-title-row">
+            <div>
+              <h4>LLM 连边建议</h4>
+              <div className="editor-subtitle">
+                {candidateCount ? `${candidateCount} 个候选词条` : '从当前词条与候选词条中推断关系'}
+                {skippedCount ? ` · 跳过 ${skippedCount}` : ''}
+              </div>
+            </div>
+          </div>
+
+          {relationSuggestError ? <div className="error">{relationSuggestError}</div> : null}
+
+          <div className="relation-suggestion-list">
+            {suggestions.length === 0 ? <div className="empty">暂无建议。点击“LLM 建议连边”生成候选关系。</div> : null}
+            {suggestions.map((suggestion, index) => {
+              const target = suggestion.target || {};
+              return (
+                <div className="relation-editor-card relation-suggestion-card" key={`${relationEntryId(target)}-${suggestion.type}-${index}`}>
+                  <div className="relation-card-head">
+                    <strong>{target.word || filenameToWord(target.file)} · {suggestion.type || 'related'}</strong>
+                    <button type="button" className="primary" onClick={() => onApplyRelationSuggestion(suggestion)}>应用</button>
+                  </div>
+                  <div className="relation-suggestion-meta">
+                    <span>{target.category || currentCategory} / {target.file}</span>
+                    {suggestion.confidence !== undefined ? <span>confidence {Number(suggestion.confidence).toFixed(2)}</span> : null}
+                    {suggestion.source ? <span>{suggestion.source}</span> : null}
+                  </div>
+                  {suggestion.reason ? <div className="muted">{suggestion.reason}</div> : null}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        <div className="editor-footer">
+          <button type="button" className="ghost" onClick={onReset} disabled={!dirty || saving}>重置草稿</button>
+          <button type="button" className="primary" onClick={onSave} disabled={!dirty || saving}>{saving ? '保存中...' : '保存到 data'}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function OrganizePanel({
   cleanData,
   draft,
@@ -1449,6 +1896,19 @@ function OrganizePanel({
       ? '当前草稿'
       : '已保存文件'
     : '待分析';
+  const cacheStatus = String(cleanData?.cache?.status || '').trim();
+  const cacheLabel = cacheStatus === 'hit'
+    ? '命中缓存'
+    : cacheStatus === 'stored'
+      ? '已写入缓存'
+      : cacheStatus === 'miss'
+        ? '缓存未命中'
+        : '';
+  const runLabel = loading
+    ? '整理中'
+    : cacheStatus === 'hit'
+      ? '重新生成'
+      : '整理当前词';
   const analysisToken = [
     analyzedFrom,
     cleanData?.file || '',
@@ -1487,9 +1947,9 @@ function OrganizePanel({
 
   const renderOrganizeActions = () => (
     <div className="organize-actions organize-actions-current">
-      <button className="primary organize-run-current" onClick={onRun} disabled={loading || !hasDraft} title="整理当前词" aria-label="整理当前词">
+      <button className="primary organize-run-current" onClick={onRun} disabled={loading || !hasDraft} title={runLabel} aria-label={runLabel}>
         <UiIcon name="search" size={15} />
-        <span>{loading ? '整理中' : '整理当前词'}</span>
+        <span>{runLabel}</span>
       </button>
       <button className="ghost" onClick={onApplyAllSuggestions} disabled={!hasDraft || !cleanData || totalAutoCount === 0} title="应用建议到草稿" aria-label="应用建议到草稿">
         <UiIcon name="check" size={15} />
@@ -1751,6 +2211,7 @@ function OrganizePanel({
           </div>
         </div>
         <div className="panel-header-actions">
+          {cacheLabel ? <span className="badge medium">{cacheLabel}</span> : null}
           <span className={`badge ${totalAutoCount ? 'high' : 'medium'}`}>
             {cleanData ? `${totalAutoCount} 可批量` : '待整理'}
           </span>
@@ -2356,7 +2817,7 @@ export default function App({
   const [entries, setEntries] = useState([]);
   const [filename, setFilename] = useState('');
   const [fileQuery, setFileQuery] = useState('');
-  const [entryFilter, setEntryFilter] = useState('marked');
+  const [entryFilter, setEntryFilter] = useState(() => (overlayMode ? 'needs_processing' : 'marked'));
 
   const [recommendScope, setRecommendScope] = useState(ALL_SCOPE);
   const [recommendation, setRecommendation] = useState(null);
@@ -2375,6 +2836,9 @@ export default function App({
 
   const [cleanData, setCleanData] = useState(null);
   const [reviewData, setReviewData] = useState(null);
+  const [relationSuggestions, setRelationSuggestions] = useState([]);
+  const [relationSuggestMeta, setRelationSuggestMeta] = useState(null);
+  const [relationSuggestError, setRelationSuggestError] = useState('');
 
   const [reviewDate, setReviewDate] = useState(TODAY);
   const [editorSyncToken, setEditorSyncToken] = useState(0);
@@ -2383,6 +2847,7 @@ export default function App({
   const [loadingFiles, setLoadingFiles] = useState(false);
   const [loadingRecommendation, setLoadingRecommendation] = useState(false);
   const [loadingClean, setLoadingClean] = useState(false);
+  const [loadingRelationSuggest, setLoadingRelationSuggest] = useState(false);
   const [loadingReview, setLoadingReview] = useState(false);
   const [savingDraft, setSavingDraft] = useState(false);
   const [savingMarked, setSavingMarked] = useState(false);
@@ -2398,6 +2863,7 @@ export default function App({
   const savedRecommendPreferenceKeyRef = useRef('');
   const recommendPreferenceSaveTimerRef = useRef(null);
   const editorPanelRef = useRef(null);
+  const connectionPanelRef = useRef(null);
   const organizePanelRef = useRef(null);
   const reviewPanelRef = useRef(null);
   const handledAutoRefineTokenRef = useRef('');
@@ -2408,6 +2874,7 @@ export default function App({
 
   const filterCounts = useMemo(() => ({
     marked: entries.filter((item) => item.marked).length,
+    needs_processing: entries.filter((item) => item.needsProcessing).length,
     all: entries.length,
     unmarked: entries.filter((item) => !item.marked).length,
   }), [entries]);
@@ -2420,6 +2887,7 @@ export default function App({
   const filteredEntries = useMemo(() => {
     const filteredByMark = entries.filter((item) => {
       if (entryFilter === 'marked') return item.marked;
+      if (entryFilter === 'needs_processing') return item.needsProcessing;
       if (entryFilter === 'unmarked') return !item.marked;
       return true;
     });
@@ -2467,6 +2935,9 @@ export default function App({
     setDraftDirty(false);
     setCleanData(null);
     setReviewData(null);
+    setRelationSuggestions([]);
+    setRelationSuggestMeta(null);
+    setRelationSuggestError('');
   };
 
   const updateDraft = (updater) => {
@@ -2477,6 +2948,15 @@ export default function App({
     });
     setDraftDirty(true);
   };
+
+  const sanitizeCurrentDraft = useCallback((value, fallbackWord, targetFilename = filename) => sanitizeDraftForSave(
+    value,
+    fallbackWord,
+    {
+      category: apiCategory,
+      filename: targetFilename,
+    },
+  ), [apiCategory, filename]);
 
   useEffect(() => {
     if (!notice) return undefined;
@@ -2944,18 +3424,138 @@ export default function App({
     setLoadingClean(true);
     try {
       setError('');
-      const analysisDraft = draft ? sanitizeDraftForSave(draft, filename.replace(/\.json$/i, '')) : null;
-      const res = await runFileRefine(apiCategory, filename, ORGANIZE_CURRENT_WORD_INCLUDE_LLM, analysisDraft);
+      const analysisDraft = draftDirty && draft
+        ? sanitizeCurrentDraft(draft, filename.replace(/\.json$/i, ''))
+        : null;
+      const shouldRefreshCache = !analysisDraft && cleanData?.cache?.status === 'hit';
+      const res = await runFileRefine(
+        apiCategory,
+        filename,
+        ORGANIZE_CURRENT_WORD_INCLUDE_LLM,
+        analysisDraft,
+        { useCache: !analysisDraft, refreshCache: shouldRefreshCache },
+      );
       setCleanData(res);
       if (res?.analyzed_from === 'draft') {
         showNotice('已基于当前草稿生成清洗建议');
+      } else if (res?.cache?.status === 'hit') {
+        showNotice('已加载预生成建议');
+      } else if (res?.cache?.status === 'stored' && shouldRefreshCache) {
+        showNotice('已重新生成建议');
       }
     } catch (err) {
       showError(err.message);
     } finally {
       setLoadingClean(false);
     }
-  }, [apiCategory, draft, filename, hasSelection]);
+  }, [apiCategory, cleanData?.cache?.status, draft, draftDirty, filename, hasSelection, sanitizeCurrentDraft]);
+
+  const handleRelationChange = (index, field, value) => {
+    updateDraft((base) => {
+      const relations = normalizeDraftRelationsForEdit(base, apiCategory, filename, { includeIncomplete: true });
+      if (index < 0 || index >= relations.length) return { ...base, relations };
+      const nextRelation = deepClone(relations[index]) || createEmptyRelation(apiCategory);
+      const target = { ...(nextRelation.target || {}) };
+
+      if (field === 'type') {
+        nextRelation.type = value;
+      } else if (field === 'reason') {
+        nextRelation.reason = value;
+      } else if (field === 'target.category') {
+        target.category = value;
+      } else if (field === 'target.word') {
+        const word = collapseWhitespace(value);
+        target.word = word;
+        const matched = entries.find((item) => (
+          collapseWhitespace(item.word).toLowerCase() === word.toLowerCase()
+          || item.file.toLowerCase() === normalizeFilename(word).toLowerCase()
+        ));
+        if (matched && (!target.category || target.category === apiCategory)) {
+          target.category = apiCategory;
+          target.file = matched.file;
+          target.word = matched.word || word;
+        } else if (!target.file || target.file === normalizeWordFilename(relations[index]?.target?.word)) {
+          target.file = normalizeWordFilename(word);
+        }
+      } else if (field === 'target.file') {
+        target.file = normalizeFilename(value);
+        if (!target.word) {
+          target.word = filenameToWord(target.file);
+        }
+      }
+
+      nextRelation.target = {
+        category: collapseWhitespace(target.category || apiCategory),
+        file: normalizeFilename(target.file || normalizeWordFilename(target.word)),
+        word: collapseWhitespace(target.word || filenameToWord(target.file)),
+      };
+      relations[index] = nextRelation;
+      return { ...base, relations };
+    });
+  };
+
+  const handleRelationAdd = () => {
+    updateDraft((base) => {
+      const relations = normalizeDraftRelationsForEdit(base, apiCategory, filename, { includeIncomplete: true });
+      return {
+        ...base,
+        relations: [...relations, createEmptyRelation(apiCategory)],
+      };
+    });
+  };
+
+  const handleRelationRemove = (index) => {
+    updateDraft((base) => {
+      const relations = normalizeDraftRelationsForEdit(base, apiCategory, filename, { includeIncomplete: true });
+      if (index < 0 || index >= relations.length) return { ...base, relations };
+      relations.splice(index, 1);
+      return { ...base, relations };
+    });
+  };
+
+  const handleApplyRelationSuggestion = (suggestion) => {
+    if (!draft || !suggestion) return;
+    updateDraft((base) => {
+      const relations = upsertRelationList(
+        base.relations,
+        suggestion,
+        apiCategory,
+        filename,
+        base.word || filenameToWord(filename),
+      );
+      return { ...base, relations };
+    });
+    showNotice('已将连边建议写入编辑草稿');
+  };
+
+  const handleRunRelationSuggest = async () => {
+    if (!hasSelection || !draft) return;
+    setLoadingRelationSuggest(true);
+    setRelationSuggestError('');
+    setRelationSuggestions([]);
+    setRelationSuggestMeta(null);
+    try {
+      const payload = sanitizeCurrentDraft(draft, filename.replace(/\.json$/i, ''));
+      const res = await suggestVocabRelations(apiCategory, filename, payload, 12);
+      setRelationSuggestions(Array.isArray(res?.suggestions) ? res.suggestions : []);
+      setRelationSuggestMeta(res?.meta || null);
+      if (res?.llm_error) {
+        setRelationSuggestError(res.llm_error);
+      }
+      if (Array.isArray(res?.suggestions) && res.suggestions.length) {
+        showNotice(`已生成 ${res.suggestions.length} 条连边建议`);
+      } else if (res?.llm_error) {
+        showError(`连边 LLM 建议失败: ${res.llm_error}`);
+      } else {
+        showNotice('没有发现新的连边建议');
+      }
+    } catch (err) {
+      setRelationSuggestError(err.message);
+      showError(err.message);
+    } finally {
+      setLoadingRelationSuggest(false);
+    }
+  };
 
   const handleApplyLlmSuggestion = (kind, item) => {
     if (!draft || !item) return;
@@ -2994,19 +3594,15 @@ export default function App({
     if (!suggestedWord) return;
 
     const expectedFilename = normalizeWordFilename(suggestedWord);
-    if (expectedFilename && expectedFilename.toLowerCase() === filename.toLowerCase()) {
-      updateDraft((base) => applyEntryRenameToDraft(base, suggestedWord));
-      showNotice('当前文件名已匹配该词条，已应用到草稿');
-      return;
-    }
-
     setRenameApplyingKey(actionKey || 'rename');
     setSavingDraft(true);
     try {
       setError('');
       const renamedDraft = applyEntryRenameToDraft(draft, suggestedWord);
-      const payload = sanitizeDraftForSave(renamedDraft, suggestedWord);
-      const res = await renameVocabDetail(apiCategory, filename, suggestedWord, payload);
+      const payload = sanitizeCurrentDraft(renamedDraft, suggestedWord, expectedFilename || filename);
+      const res = expectedFilename && expectedFilename.toLowerCase() === filename.toLowerCase()
+        ? await saveVocabDetail(apiCategory, filename, payload)
+        : await renameVocabDetail(apiCategory, filename, suggestedWord, payload);
       const savedFilename = res.file || res.target_file || expectedFilename || filename;
       const savedData = res.data || payload;
 
@@ -3049,7 +3645,7 @@ export default function App({
     setSplitApplyingKey(actionKey || 'split');
     try {
       setError('');
-      const payload = sanitizeDraftForSave(draft, filename.replace(/\.json$/i, ''));
+      const payload = sanitizeCurrentDraft(draft, filename.replace(/\.json$/i, ''));
       const res = await applySplitSuggestion(
         apiCategory,
         filename,
@@ -3152,7 +3748,7 @@ export default function App({
 
       if (!window.confirm(confirmMessage)) return;
 
-      const payload = sanitizeDraftForSave(draft, filenameToWord(filename));
+      const payload = sanitizeCurrentDraft(draft, filenameToWord(filename));
       const res = await manualMergeVocab({
         sourceCategory: apiCategory,
         sourceFilename: filename,
@@ -3234,7 +3830,7 @@ export default function App({
     try {
       setError('');
       const nextDraft = buildFullyAutoAppliedDraft(draft, cleanData);
-      const payload = sanitizeDraftForSave(nextDraft, filename.replace(/\.json$/i, ''));
+      const payload = sanitizeCurrentDraft(nextDraft, filename.replace(/\.json$/i, ''));
       const nextWord = collapseWhitespace(payload.word || '');
       const currentWord = collapseWhitespace(detail?.word || filename.replace(/\.json$/i, ''));
       const res = nextWord && nextWord.toLowerCase() !== currentWord.toLowerCase()
@@ -3276,7 +3872,7 @@ export default function App({
     setSavingDraft(true);
     try {
       setError('');
-      const payload = sanitizeDraftForSave(draft, filename.replace(/\.json$/i, ''));
+      const payload = sanitizeCurrentDraft(draft, filename.replace(/\.json$/i, ''));
       const nextWord = collapseWhitespace(payload.word || '');
       const currentWord = collapseWhitespace(detail?.word || filename.replace(/\.json$/i, ''));
       const res = nextWord && nextWord.toLowerCase() !== currentWord.toLowerCase()
@@ -3458,6 +4054,8 @@ export default function App({
     const normalizedFocus = String(focus || '').trim().toLowerCase();
     const targetRef = normalizedFocus === 'review' && !overlayMode
       ? reviewPanelRef
+      : normalizedFocus === 'connection' || normalizedFocus === 'connect'
+        ? connectionPanelRef
       : normalizedFocus === 'editor'
         ? editorPanelRef
         : organizePanelRef;
@@ -3689,9 +4287,36 @@ export default function App({
     </div>
   );
 
-  const overlayFocus = String(launchRequest?.focus || '').trim().toLowerCase() === 'editor'
+  const renderConnectionSurface = () => (
+    <ConnectionPanel
+      key={`connection-${editorSyncToken}`}
+      draft={draft}
+      dirty={draftDirty}
+      saving={savingDraft}
+      categories={categories}
+      entries={entries}
+      currentCategory={apiCategory}
+      currentFilename={filename}
+      relationSuggestions={relationSuggestions}
+      relationSuggestLoading={loadingRelationSuggest}
+      relationSuggestError={relationSuggestError}
+      relationSuggestMeta={relationSuggestMeta}
+      onRunRelationSuggest={handleRunRelationSuggest}
+      onApplyRelationSuggestion={handleApplyRelationSuggestion}
+      onRelationChange={handleRelationChange}
+      onRelationAdd={handleRelationAdd}
+      onRelationRemove={handleRelationRemove}
+      onReset={handleDraftReset}
+      onSave={handleDraftSave}
+    />
+  );
+
+  const requestedFocus = String(launchRequest?.focus || '').trim().toLowerCase();
+  const overlayFocus = requestedFocus === 'editor'
     ? 'editor'
-    : 'organize';
+    : requestedFocus === 'connection' || requestedFocus === 'connect'
+      ? 'connection'
+      : 'organize';
 
   return (
     <div className={`review-scope page workspace-page${embedded ? ' embedded' : ''}${overlayMode ? ' overlay-mode' : ''}`}>
@@ -3879,6 +4504,10 @@ export default function App({
                   />
                 </div>
               ) : null}
+
+              <div ref={connectionPanelRef} className="overlay-focus-panel overlay-focus-connection">
+                {renderConnectionSurface()}
+              </div>
 
               <div ref={organizePanelRef} className="overlay-focus-panel overlay-focus-organize">
                 <OrganizePanel

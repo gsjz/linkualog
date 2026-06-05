@@ -13,6 +13,7 @@ import {
   regenerateTaskPage,
   renameTask,
   updateTaskPageParsedResult,
+  recognizeTaskPageRegion,
   getVocabularyCategories,
   getVocabularyDetail,
   getVocabularyList,
@@ -25,6 +26,7 @@ const dispatchVocabTask = (word, context, taskName, fetchLlm, focusPositions = [
 };
 
 const clampNumber = (value, min, max) => Math.min(max, Math.max(min, value));
+const LOCAL_REGION_SOURCE_TYPE = 'local-region';
 const TOKEN_REGEX = /[\p{L}\p{N}_]+|[^\s]/gu;
 const CATEGORY_LABELS = {
   cet: 'CET',
@@ -40,9 +42,92 @@ const formatCategoryLabel = (category) => {
   return CATEGORY_LABELS[normalized] || normalized;
 };
 
+const normalizeClientBbox = (rawBbox) => {
+  if (!rawBbox || typeof rawBbox !== 'object') return null;
+
+  const readNumber = (...keys) => {
+    for (const key of keys) {
+      if (rawBbox[key] === undefined || rawBbox[key] === null || rawBbox[key] === '') continue;
+      const numeric = Number(rawBbox[key]);
+      if (Number.isFinite(numeric) && numeric >= 0) return numeric;
+    }
+    return null;
+  };
+
+  const numericValues = ['left', 'top', 'width', 'height', 'l', 't', 'w', 'h', 'x', 'y', 'x1', 'y1', 'right', 'bottom', 'x2', 'y2', 'r', 'btm']
+    .map((key) => {
+      const numeric = Number(rawBbox[key]);
+      return Number.isFinite(numeric) && numeric >= 0 ? numeric : null;
+    })
+    .filter((value) => value !== null);
+  if (!numericValues.length) return null;
+
+  const scale = numericValues.some((value) => value > 100)
+    ? 1000
+    : numericValues.some((value) => value > 1)
+      ? 100
+      : 1;
+
+  let left = readNumber('left', 'l', 'x', 'x1');
+  let top = readNumber('top', 't', 'y', 'y1');
+  let width = readNumber('width', 'w');
+  let height = readNumber('height', 'h');
+  const right = readNumber('right', 'r', 'x2');
+  const bottom = readNumber('bottom', 'btm', 'y2');
+
+  left = left === null ? null : left / scale;
+  top = top === null ? null : top / scale;
+  width = width === null ? null : width / scale;
+  height = height === null ? null : height / scale;
+  const scaledRight = right === null ? null : right / scale;
+  const scaledBottom = bottom === null ? null : bottom / scale;
+
+  if (width === null && left !== null && scaledRight !== null) width = scaledRight - left;
+  if (height === null && top !== null && scaledBottom !== null) height = scaledBottom - top;
+  if ([left, top, width, height].some((value) => value === null || !Number.isFinite(value))) return null;
+  if (width <= 0 || height <= 0) return null;
+
+  left = clampNumber(left, 0, 1);
+  top = clampNumber(top, 0, 1);
+  width = clampNumber(width, 0, 1 - left);
+  height = clampNumber(height, 0, 1 - top);
+  if (width <= 0 || height <= 0) return null;
+
+  return {
+    left: Number(left.toFixed(4)),
+    top: Number(top.toFixed(4)),
+    width: Number(width.toFixed(4)),
+    height: Number(height.toFixed(4)),
+  };
+};
+
+const isUsableRegion = (region) => Boolean(region && region.width >= 0.01 && region.height >= 0.01);
+
+const isLocalRegionMark = (mark) => (
+  mark?.sourceType === LOCAL_REGION_SOURCE_TYPE
+  || mark?.source_type === LOCAL_REGION_SOURCE_TYPE
+  || mark?.source?.type === LOCAL_REGION_SOURCE_TYPE
+  || mark?.sourceLabel === '局部识别'
+  || Boolean(mark?.sourceRegion || mark?.source_region || mark?.source?.region)
+);
+
+const getMarkSourceLabel = (mark) => {
+  if (isLocalRegionMark(mark)) return '局部识别';
+  const label = String(mark?.sourceLabel || mark?.source_label || mark?.source?.label || '').trim();
+  return label;
+};
+
 const cloneMark = (mark) => ({
   ...mark,
   bbox: mark?.bbox ? { ...mark.bbox } : null,
+  localBbox: mark?.localBbox ? { ...mark.localBbox } : null,
+  sourceRegion: mark?.sourceRegion ? { ...mark.sourceRegion } : null,
+  source: mark?.source
+    ? {
+      ...mark.source,
+      region: mark.source.region ? { ...mark.source.region } : mark.source.region,
+    }
+    : mark?.source,
 });
 
 const tokenizeContext = (text) => String(text || '')
@@ -95,6 +180,7 @@ const buildSimilarityBigrams = (value) => {
 };
 
 const RESULT_VIEW_STORAGE_KEY = 'taskResultViewMode';
+const SELECTED_TASK_STORAGE_KEY = 'taskVisualizerSelectedTaskId';
 const ACTIVE_VOCAB_CATEGORY_KEY = 'activeVocabCategory';
 const ACTIVE_VOCAB_CATEGORY_EVENT = 'active-vocab-category-updated';
 const ADD_VOCAB_CATEGORY_KEY = 'addVocabularyCategory';
@@ -250,16 +336,25 @@ function getSerializableFocusPositions(mark) {
 
 const sanitizeMarkForContent = (mark) => {
   const focusPositions = getSerializableFocusPositions(mark);
+  const sourceLabel = getMarkSourceLabel(mark);
   return {
     word: mark.word || '',
     context: mark.context || '',
     bbox: mark.bbox ? { ...mark.bbox } : null,
+    ...(mark.localBbox ? { localBbox: { ...mark.localBbox } } : {}),
+    ...(isLocalRegionMark(mark) ? { sourceType: LOCAL_REGION_SOURCE_TYPE } : {}),
+    ...(sourceLabel ? { sourceLabel } : {}),
+    ...(mark.sourceRegionId ? { sourceRegionId: mark.sourceRegionId } : {}),
+    ...(mark.sourceRegion ? { sourceRegion: { ...mark.sourceRegion } } : {}),
+    ...(mark.source ? { source: cloneMark(mark).source } : {}),
+    ...(Number.isInteger(mark.localRegionIndex) ? { localRegionIndex: mark.localRegionIndex } : {}),
     ...(focusPositions.length > 0 ? { focusPositions } : {}),
   };
 };
 
 const toShortMark = (mark) => {
   const focusPositions = getSerializableFocusPositions(mark);
+  const sourceLabel = getMarkSourceLabel(mark);
   return {
     w: mark.word || '',
     c: mark.context || '',
@@ -271,6 +366,31 @@ const toShortMark = (mark) => {
         h: mark.bbox.height,
       }
       : null,
+    ...(mark.localBbox
+      ? {
+        lb: {
+          l: mark.localBbox.left,
+          t: mark.localBbox.top,
+          w: mark.localBbox.width,
+          h: mark.localBbox.height,
+        },
+      }
+      : {}),
+    ...(isLocalRegionMark(mark) ? { st: LOCAL_REGION_SOURCE_TYPE, sourceType: LOCAL_REGION_SOURCE_TYPE } : {}),
+    ...(sourceLabel ? { sl: sourceLabel, sourceLabel } : {}),
+    ...(mark.sourceRegionId ? { sri: mark.sourceRegionId, sourceRegionId: mark.sourceRegionId } : {}),
+    ...(mark.sourceRegion
+      ? {
+        sr: {
+          l: mark.sourceRegion.left,
+          t: mark.sourceRegion.top,
+          w: mark.sourceRegion.width,
+          h: mark.sourceRegion.height,
+        },
+        sourceRegion: { ...mark.sourceRegion },
+      }
+      : {}),
+    ...(mark.source ? { source: cloneMark(mark).source } : {}),
     ...(focusPositions.length > 0 ? { fp: focusPositions, fps: focusPositions } : {}),
   };
 };
@@ -506,17 +626,6 @@ const parseLegacyTaskResult = (result) => {
 const getOverlayMarks = (content) => {
   if (!content || typeof content !== 'object') return [];
 
-  const normalizeBbox = (rawBbox) => {
-    if (!rawBbox || typeof rawBbox !== 'object') return null;
-    if (Number.isFinite(rawBbox.left) && Number.isFinite(rawBbox.top) && Number.isFinite(rawBbox.width) && Number.isFinite(rawBbox.height)) {
-      return rawBbox;
-    }
-    if (Number.isFinite(rawBbox.l) && Number.isFinite(rawBbox.t) && Number.isFinite(rawBbox.w) && Number.isFinite(rawBbox.h)) {
-      return { left: rawBbox.l, top: rawBbox.t, width: rawBbox.w, height: rawBbox.h };
-    }
-    return null;
-  };
-
   const sourceMarks = Array.isArray(content.marked_text)
     ? content.marked_text
     : Array.isArray(content.m)
@@ -529,7 +638,14 @@ const getOverlayMarks = (content) => {
       word: item.word || item.w || `标记 ${index + 1}`,
       source_word: item.word || item.w || `标记 ${index + 1}`,
       context: item.context || item.c || '',
-      bbox: normalizeBbox(item.bbox || item.b),
+      bbox: normalizeClientBbox(item.bbox || item.b),
+      localBbox: normalizeClientBbox(item.localBbox || item.local_bbox || item.lb),
+      sourceType: item.sourceType || item.source_type || item.st || item.source?.type || '',
+      sourceLabel: item.sourceLabel || item.source_label || item.sl || item.source?.label || '',
+      sourceRegionId: item.sourceRegionId || item.source_region_id || item.sri || item.source?.regionId || '',
+      sourceRegion: normalizeClientBbox(item.sourceRegion || item.source_region || item.sr || item.source?.region),
+      source: item.source && typeof item.source === 'object' ? { ...item.source } : undefined,
+      localRegionIndex: Number.isInteger(item.localRegionIndex) ? item.localRegionIndex : undefined,
       focusPositions: Array.isArray(item.focusPositions)
         ? item.focusPositions
         : Array.isArray(item.fp)
@@ -538,14 +654,36 @@ const getOverlayMarks = (content) => {
       local_start: Number.isInteger(item.local_start) ? item.local_start : undefined,
       local_end: Number.isInteger(item.local_end) ? item.local_end : undefined,
     }))
-    .filter((item) => item.bbox && Number.isFinite(item.bbox.left) && Number.isFinite(item.bbox.top) && Number.isFinite(item.bbox.width) && Number.isFinite(item.bbox.height));
+    .filter((item) => (
+      item.bbox
+      && Number.isFinite(item.bbox.left)
+      && Number.isFinite(item.bbox.top)
+      && Number.isFinite(item.bbox.width)
+      && Number.isFinite(item.bbox.height)
+    ) || isUsableRegion(item.sourceRegion));
 };
 
-const ImageOverlayPreview = ({ src, alt, overlayMarks, showOverlay, selectedMarkId = '', onSelectMark, onMoveMark, onHeightChange }) => {
+const ImageOverlayPreview = ({
+  src,
+  alt,
+  overlayMarks,
+  showOverlay,
+  selectedMarkId = '',
+  onSelectMark,
+  onMoveMark,
+  onHeightChange,
+  regionSelectionMode = false,
+  pendingRegion = null,
+  selectedRegion = null,
+  onRegionChange,
+  onRegionCommit,
+  isRecognizingRegion = false,
+}) => {
   const [hasImageError, setHasImageError] = useState(false);
   const previewRootRef = useRef(null);
   const imageWrapRef = useRef(null);
   const dragRef = useRef(null);
+  const regionDragRef = useRef(null);
   const onHeightChangeRef = useRef(onHeightChange);
 
   useEffect(() => {
@@ -553,7 +691,36 @@ const ImageOverlayPreview = ({ src, alt, overlayMarks, showOverlay, selectedMark
   }, [onHeightChange]);
 
   useEffect(() => {
+    const getClientPoint = (event) => {
+      const touch = event.touches?.[0] || event.changedTouches?.[0];
+      if (touch) return { clientX: touch.clientX, clientY: touch.clientY };
+      return { clientX: event.clientX, clientY: event.clientY };
+    };
+
     const handleMouseMove = (e) => {
+      if (regionDragRef.current && imageWrapRef.current && onRegionChange) {
+        if (typeof e.preventDefault === 'function') e.preventDefault();
+        const point = getClientPoint(e);
+        const rect = imageWrapRef.current.getBoundingClientRect();
+        if (!rect.width || !rect.height) return;
+
+        const currentX = clampNumber((point.clientX - rect.left) / rect.width, 0, 1);
+        const currentY = clampNumber((point.clientY - rect.top) / rect.height, 0, 1);
+        const startX = regionDragRef.current.startX;
+        const startY = regionDragRef.current.startY;
+        const left = Math.min(startX, currentX);
+        const top = Math.min(startY, currentY);
+        const width = Math.abs(currentX - startX);
+        const height = Math.abs(currentY - startY);
+        onRegionChange({
+          left: Number(left.toFixed(4)),
+          top: Number(top.toFixed(4)),
+          width: Number(width.toFixed(4)),
+          height: Number(height.toFixed(4)),
+        });
+        return;
+      }
+
       if (!dragRef.current || !imageWrapRef.current || !onMoveMark) return;
       const rect = imageWrapRef.current.getBoundingClientRect();
       if (!rect.width || !rect.height) return;
@@ -570,16 +737,25 @@ const ImageOverlayPreview = ({ src, alt, overlayMarks, showOverlay, selectedMark
     };
 
     const handleMouseUp = () => {
+      if (regionDragRef.current) {
+        regionDragRef.current = null;
+        if (onRegionCommit) onRegionCommit();
+        return;
+      }
       dragRef.current = null;
     };
 
     window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('touchmove', handleMouseMove, { passive: false });
     window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('touchend', handleMouseUp);
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('touchmove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('touchend', handleMouseUp);
     };
-  }, [onMoveMark]);
+  }, [onMoveMark, onRegionChange, onRegionCommit]);
 
   useEffect(() => {
     if (!previewRootRef.current) return undefined;
@@ -609,6 +785,9 @@ const ImageOverlayPreview = ({ src, alt, overlayMarks, showOverlay, selectedMark
   if (hasImageError) return <span className="task-image-preview-error" style={{ color: 'var(--ms-text-faint)', fontSize: '12px' }}>图片不可用</span>;
 
   const hasSelected = Boolean(selectedMarkId);
+  const selectedMark = overlayMarks.find((mark) => mark.id === selectedMarkId) || null;
+  const activeSourceRegion = isUsableRegion(selectedMark?.sourceRegion) ? selectedMark.sourceRegion : null;
+  const drawRegion = pendingRegion || selectedRegion || null;
 
   return (
     <div ref={previewRootRef} className="task-image-preview" style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -616,10 +795,45 @@ const ImageOverlayPreview = ({ src, alt, overlayMarks, showOverlay, selectedMark
         <div
           className="task-image-frame"
           ref={imageWrapRef}
+          onMouseDown={(e) => {
+            if (!regionSelectionMode || !onRegionChange) return;
+            e.preventDefault();
+            e.stopPropagation();
+            const rect = imageWrapRef.current?.getBoundingClientRect();
+            if (!rect?.width || !rect?.height) return;
+            const startX = clampNumber((e.clientX - rect.left) / rect.width, 0, 1);
+            const startY = clampNumber((e.clientY - rect.top) / rect.height, 0, 1);
+            regionDragRef.current = { startX, startY };
+            onRegionChange({
+              left: Number(startX.toFixed(4)),
+              top: Number(startY.toFixed(4)),
+              width: 0,
+              height: 0,
+            });
+          }}
+          onTouchStart={(e) => {
+            if (!regionSelectionMode || !onRegionChange) return;
+            e.preventDefault();
+            e.stopPropagation();
+            const touch = e.touches?.[0];
+            const rect = imageWrapRef.current?.getBoundingClientRect();
+            if (!touch || !rect?.width || !rect?.height) return;
+            const startX = clampNumber((touch.clientX - rect.left) / rect.width, 0, 1);
+            const startY = clampNumber((touch.clientY - rect.top) / rect.height, 0, 1);
+            regionDragRef.current = { startX, startY };
+            onRegionChange({
+              left: Number(startX.toFixed(4)),
+              top: Number(startY.toFixed(4)),
+              width: 0,
+              height: 0,
+            });
+          }}
           style={{
             position: 'relative',
             width: '100%',
             margin: '0 auto',
+            cursor: regionSelectionMode ? 'crosshair' : 'default',
+            touchAction: regionSelectionMode ? 'none' : 'auto',
           }}
         >
           <img
@@ -634,10 +848,33 @@ const ImageOverlayPreview = ({ src, alt, overlayMarks, showOverlay, selectedMark
             onError={() => setHasImageError(true)}
           />
 
+          {activeSourceRegion && (
+            <div className="task-image-region-layer" style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+              <div
+                title="局部识别来源区域"
+                style={{
+                  position: 'absolute',
+                  left: `${activeSourceRegion.left * 100}%`,
+                  top: `${activeSourceRegion.top * 100}%`,
+                  width: `${activeSourceRegion.width * 100}%`,
+                  height: `${activeSourceRegion.height * 100}%`,
+                  border: '2px dashed rgba(14, 116, 144, 0.95)',
+                  background: 'rgba(6, 182, 212, 0.12)',
+                  borderRadius: '4px',
+                  boxSizing: 'border-box',
+                  zIndex: 2,
+                }}
+              />
+            </div>
+          )}
+
           {showOverlay && overlayMarks.length > 0 && (
             <div className="task-image-overlay-layer" style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
               {overlayMarks.map((mark) => {
                 const isSelected = selectedMarkId === mark.id;
+                const isLocal = isLocalRegionMark(mark);
+                const markBox = mark.bbox || (isSelected && isUsableRegion(mark.sourceRegion) ? mark.sourceRegion : null);
+                if (!markBox) return null;
                 return (
                   <div
                     key={mark.id}
@@ -664,12 +901,16 @@ const ImageOverlayPreview = ({ src, alt, overlayMarks, showOverlay, selectedMark
                       pointerEvents: 'auto',
                       cursor: onMoveMark ? 'move' : 'pointer',
                       position: 'absolute',
-                      left: `${mark.bbox.left * 100}%`,
-                      top: `${mark.bbox.top * 100}%`,
-                      width: `${mark.bbox.width * 100}%`,
-                      height: `${mark.bbox.height * 100}%`,
-                      border: isSelected ? '2px solid rgba(127, 29, 29, 0.95)' : '2px solid rgba(239, 68, 68, 0.35)',
-                      background: isSelected ? 'rgba(239, 68, 68, 0.26)' : 'rgba(239, 68, 68, 0.08)',
+                      left: `${markBox.left * 100}%`,
+                      top: `${markBox.top * 100}%`,
+                      width: `${markBox.width * 100}%`,
+                      height: `${markBox.height * 100}%`,
+                      border: isLocal
+                        ? (isSelected ? '2px solid rgba(14, 116, 144, 0.95)' : '2px solid rgba(14, 116, 144, 0.42)')
+                        : (isSelected ? '2px solid rgba(127, 29, 29, 0.95)' : '2px solid rgba(239, 68, 68, 0.35)'),
+                      background: isLocal
+                        ? (isSelected ? 'rgba(6, 182, 212, 0.24)' : 'rgba(6, 182, 212, 0.08)')
+                        : (isSelected ? 'rgba(239, 68, 68, 0.26)' : 'rgba(239, 68, 68, 0.08)'),
                       borderRadius: '4px',
                       boxSizing: 'border-box',
                       opacity: hasSelected ? (isSelected ? 1 : 0.25) : 0.72,
@@ -681,12 +922,39 @@ const ImageOverlayPreview = ({ src, alt, overlayMarks, showOverlay, selectedMark
               })}
             </div>
           )}
+
+          {drawRegion && (
+            <div className="task-image-draft-region-layer" style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+              <div
+                title={regionSelectionMode ? '正在标记局部识别区域' : '待识别局部区域'}
+                style={{
+                  position: 'absolute',
+                  left: `${drawRegion.left * 100}%`,
+                  top: `${drawRegion.top * 100}%`,
+                  width: `${drawRegion.width * 100}%`,
+                  height: `${drawRegion.height * 100}%`,
+                  border: '2px solid rgba(8, 145, 178, 0.95)',
+                  background: 'rgba(8, 145, 178, 0.14)',
+                  borderRadius: '4px',
+                  boxSizing: 'border-box',
+                  zIndex: 5,
+                }}
+              />
+            </div>
+          )}
+
+          {regionSelectionMode && (
+            <div className="task-image-region-hint" style={{ position: 'absolute', left: '8px', top: '8px', zIndex: 6, pointerEvents: 'none', padding: '4px 8px', borderRadius: '4px', border: '1px solid rgba(14, 116, 144, 0.35)', background: 'rgba(255, 255, 255, 0.94)', color: '#0e7490', fontSize: '12px', fontWeight: 600 }}>
+              拖拽标记局部区域
+            </div>
+          )}
         </div>
       </div>
 
       <div className="task-image-preview-meta" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', fontSize: '12px', color: 'var(--ms-text-muted)' }}>
         <span>{alt}</span>
         <span>{overlayMarks.length ? `坐标标记 ${overlayMarks.length} 个` : '原图预览'}</span>
+        {isRecognizingRegion ? <span style={{ color: '#0e7490' }}>局部识别中…</span> : null}
       </div>
 
       {overlayMarks.length > 0 && (
@@ -1172,6 +1440,8 @@ const ExperimentalMarkView = ({
     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
       {marks.map((mark, index) => {
         const isSelected = selectedMarkId === mark.id;
+        const isLocal = isLocalRegionMark(mark);
+        const sourceLabel = getMarkSourceLabel(mark);
         const { tokens } = normalizeRangeForMark(mark);
         const focusPositions = getExplicitFocusPositions(mark, tokens.length);
         const selectedSet = new Set(focusPositions);
@@ -1185,11 +1455,43 @@ const ExperimentalMarkView = ({
               else delete itemRefs.current[mark.id];
             }}
             onClick={() => onSelectMark && onSelectMark(mark.id, true)}
-            style={{ padding: '12px', border: '1px solid', borderColor: isSelected ? 'var(--ms-text)' : 'var(--ms-border)', borderRadius: '6px', background: isSelected ? 'var(--ms-surface-muted)' : '#ffffff', cursor: 'pointer' }}
+            style={{
+              padding: '12px',
+              border: '1px solid',
+              borderColor: isSelected
+                ? (isLocal ? '#0e7490' : 'var(--ms-text)')
+                : (isLocal ? 'rgba(14, 116, 144, 0.36)' : 'var(--ms-border)'),
+              borderRadius: '6px',
+              background: isSelected
+                ? (isLocal ? 'rgba(6, 182, 212, 0.08)' : 'var(--ms-surface-muted)')
+                : '#ffffff',
+              cursor: 'pointer',
+            }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', marginBottom: '6px', alignItems: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', minWidth: 0 }}>
                 <strong style={{ color: 'var(--ms-text)', fontSize: '14px' }}>{index + 1}. {mark.word}</strong>
+                {sourceLabel ? (
+                  <span
+                    className={`task-mark-source-tag${isLocal ? ' is-local-region' : ''}`}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      height: '22px',
+                      padding: '0 8px',
+                      borderRadius: '4px',
+                      border: '1px solid',
+                      borderColor: isLocal ? 'rgba(14, 116, 144, 0.36)' : 'var(--ms-border)',
+                      background: isLocal ? 'rgba(6, 182, 212, 0.1)' : 'var(--ms-surface-muted)',
+                      color: isLocal ? '#0e7490' : 'var(--ms-text-muted)',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {sourceLabel}
+                  </span>
+                ) : null}
                 {isSelected ? (
                   <SimilarVocabularyMatches
                     word={mark.word}
@@ -1292,6 +1594,7 @@ export default function TaskVisualizer({
   const [taskToolsOpen, setTaskToolsOpen] = useState(false);
 
   const [historyTasks, setHistoryTasks] = useState([]);
+  const [tasksListLoaded, setTasksListLoaded] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState(null);
   const [taskData, setTaskData] = useState(null);
 
@@ -1306,6 +1609,10 @@ export default function TaskVisualizer({
   const [selectedMarkByPage, setSelectedMarkByPage] = useState({});
   const [selectedMarkSignalByPage, setSelectedMarkSignalByPage] = useState({});
   const [editedMarksByPage, setEditedMarksByPage] = useState({});
+  const [regionModeByPage, setRegionModeByPage] = useState({});
+  const [draftRegionByPage, setDraftRegionByPage] = useState({});
+  const [selectedRegionByPage, setSelectedRegionByPage] = useState({});
+  const [recognizingRegionByPage, setRecognizingRegionByPage] = useState({});
   const [layoutHeightByPage, setLayoutHeightByPage] = useState({});
   const [currentVocabCategory, setCurrentVocabCategory] = useState(readStoredActiveVocabularyCategory);
   const [currentVocabEntries, setCurrentVocabEntries] = useState([]);
@@ -1326,6 +1633,7 @@ export default function TaskVisualizer({
   const [isRightPanelCollapsed, setIsRightPanelCollapsed] = useState(() => localStorage.getItem('taskRightPanelCollapsed') === '1');
   const saveTimersRef = useRef({});
   const selectedTaskIdRef = useRef(selectedTaskId);
+  const taskRestoredRef = useRef(false);
 
   const foldedKeysConfig = (localStorage.getItem('defaultFoldedKeys') !== null
     ? localStorage.getItem('defaultFoldedKeys')
@@ -1339,6 +1647,7 @@ export default function TaskVisualizer({
     try {
       const data = await getAllTasks();
       if (data.tasks) setHistoryTasks(data.tasks);
+      setTasksListLoaded(true);
     } catch {
       // ignore
     }
@@ -1352,10 +1661,11 @@ export default function TaskVisualizer({
 
   useEffect(() => {
     if (simpleCreateOnly) return;
+    if (!tasksListLoaded) return;
     if (!historyTasks.length && !selectedTaskId && pageMode !== 'create') {
       setPageMode('create');
     }
-  }, [historyTasks.length, pageMode, selectedTaskId, simpleCreateOnly]);
+  }, [historyTasks.length, pageMode, selectedTaskId, simpleCreateOnly, tasksListLoaded]);
 
   useEffect(() => {
     if (isActive) return;
@@ -1548,21 +1858,50 @@ export default function TaskVisualizer({
     setSelectedMarkByPage({});
     setSelectedMarkSignalByPage({});
     setEditedMarksByPage({});
+    setRegionModeByPage({});
+    setDraftRegionByPage({});
+    setSelectedRegionByPage({});
+    setRecognizingRegionByPage({});
     setLayoutHeightByPage({});
     setSavingPages({});
     setExistingTaskNameSuggestion(null);
     setExistingTaskNameSuggestionError('');
 
-    const data = await getTaskStatus(taskId);
-    setTaskData(data);
-    setEditingTaskName(data?.name || '');
+    try {
+      const data = await getTaskStatus(taskId);
+      localStorage.setItem(SELECTED_TASK_STORAGE_KEY, taskId);
+      setTaskData(data);
+      setEditingTaskName(data?.name || '');
+    } catch (error) {
+      localStorage.removeItem(SELECTED_TASK_STORAGE_KEY);
+      setSelectedTaskId(null);
+      setTaskData(null);
+      setEditingTaskName('');
+      throw error;
+    }
   };
+
+  useEffect(() => {
+    if (simpleCreateOnly || !tasksListLoaded || selectedTaskId || taskRestoredRef.current) return;
+    taskRestoredRef.current = true;
+    const storedTaskId = String(localStorage.getItem(SELECTED_TASK_STORAGE_KEY) || '').trim();
+    if (!storedTaskId) return;
+
+    const taskStillExists = historyTasks.some((task) => String(task?.id || '') === storedTaskId);
+    if (!taskStillExists) {
+      localStorage.removeItem(SELECTED_TASK_STORAGE_KEY);
+      return;
+    }
+
+    void handleSelectTask(storedTaskId).catch(() => {});
+  }, [historyTasks, selectedTaskId, simpleCreateOnly, tasksListLoaded]);
 
   const handleDeleteTask = async () => {
     if (!selectedTaskId) return;
     if (window.confirm('确定要永久删除该任务及记录吗？')) {
       clearAllSaveTimers();
       await deleteTask(selectedTaskId);
+      localStorage.removeItem(SELECTED_TASK_STORAGE_KEY);
       setSelectedTaskId(null);
       setTaskData(null);
       setEditingTaskName('');
@@ -1571,6 +1910,10 @@ export default function TaskVisualizer({
       setSelectedMarkByPage({});
       setSelectedMarkSignalByPage({});
       setEditedMarksByPage({});
+      setRegionModeByPage({});
+      setDraftRegionByPage({});
+      setSelectedRegionByPage({});
+      setRecognizingRegionByPage({});
       setLayoutHeightByPage({});
       setSavingPages({});
       fetchTasksList();
@@ -1623,6 +1966,26 @@ export default function TaskVisualizer({
         return next;
       });
       setSavingPages((prev) => {
+        const next = { ...prev };
+        delete next[index];
+        return next;
+      });
+      setRegionModeByPage((prev) => {
+        const next = { ...prev };
+        delete next[index];
+        return next;
+      });
+      setDraftRegionByPage((prev) => {
+        const next = { ...prev };
+        delete next[index];
+        return next;
+      });
+      setSelectedRegionByPage((prev) => {
+        const next = { ...prev };
+        delete next[index];
+        return next;
+      });
+      setRecognizingRegionByPage((prev) => {
         const next = { ...prev };
         delete next[index];
         return next;
@@ -1689,6 +2052,100 @@ export default function TaskVisualizer({
 
   const handleToggleFocusToken = (pageIndex, fallbackMarks, pageContent, markId, tokenIndex) => {
     updatePageMark(pageIndex, fallbackMarks, pageContent, markId, (mark) => toggleFocusTokenSelection(mark, tokenIndex));
+  };
+
+  const normalizeDraftRegion = (region) => {
+    const normalized = normalizeClientBbox(region);
+    if (!normalized) return null;
+    return normalized;
+  };
+
+  const handleToggleRegionMode = (pageIndex) => {
+    setRegionModeByPage((prev) => ({ ...prev, [pageIndex]: !prev[pageIndex] }));
+  };
+
+  const handleDraftRegionChange = (pageIndex, region) => {
+    const normalized = normalizeDraftRegion(region);
+    setDraftRegionByPage((prev) => ({ ...prev, [pageIndex]: normalized || region }));
+  };
+
+  const handleDraftRegionCommit = (pageIndex) => {
+    setDraftRegionByPage((prevDrafts) => {
+      const normalized = normalizeDraftRegion(prevDrafts[pageIndex]);
+      if (!isUsableRegion(normalized)) {
+        setSelectedRegionByPage((prevSelected) => {
+          const next = { ...prevSelected };
+          delete next[pageIndex];
+          return next;
+        });
+        return { ...prevDrafts, [pageIndex]: null };
+      }
+      setSelectedRegionByPage((prevSelected) => ({ ...prevSelected, [pageIndex]: normalized }));
+      return { ...prevDrafts, [pageIndex]: null };
+    });
+  };
+
+  const handleClearRegion = (pageIndex) => {
+    setDraftRegionByPage((prev) => {
+      const next = { ...prev };
+      delete next[pageIndex];
+      return next;
+    });
+    setSelectedRegionByPage((prev) => {
+      const next = { ...prev };
+      delete next[pageIndex];
+      return next;
+    });
+  };
+
+  const handleRecognizeRegion = async (pageIndex) => {
+    if (!selectedTaskId) return;
+    const region = normalizeDraftRegion(selectedRegionByPage[pageIndex]);
+    if (!isUsableRegion(region)) {
+      alert('请先在左侧图片上拖出一个局部识别矩形。');
+      return;
+    }
+
+    setRecognizingRegionByPage((prev) => ({ ...prev, [pageIndex]: true }));
+    try {
+      const result = await recognizeTaskPageRegion(selectedTaskId, pageIndex, region);
+      const nextParsedResult = (result && typeof result.parsed_result === 'object')
+        ? result.parsed_result
+        : null;
+      if (!nextParsedResult) throw new Error('局部识别未返回页面结果');
+
+      setTaskData((prev) => {
+        if (!prev || !Array.isArray(prev.sub_tasks)) return prev;
+        const sub = prev.sub_tasks[pageIndex];
+        if (!sub) return prev;
+        const nextSubTasks = [...prev.sub_tasks];
+        nextSubTasks[pageIndex] = { ...sub, parsed_result: nextParsedResult };
+        return { ...prev, sub_tasks: nextSubTasks };
+      });
+
+      const nextMarks = getOverlayMarks(nextParsedResult).map(cloneMark);
+      setEditedMarksByPage((prev) => ({ ...prev, [pageIndex]: nextMarks }));
+      const appendedMarks = nextMarks.filter((mark) => mark.sourceRegionId && mark.sourceRegionId === result.region_id);
+      const firstNewMark = appendedMarks[0] || nextMarks[nextMarks.length - 1];
+      if (firstNewMark?.id) {
+        handleSelectMark(pageIndex, firstNewMark.id, true);
+      }
+      setRegionModeByPage((prev) => ({ ...prev, [pageIndex]: false }));
+      setSelectedRegionByPage((prev) => {
+        const next = { ...prev };
+        delete next[pageIndex];
+        return next;
+      });
+      setDraftRegionByPage((prev) => {
+        const next = { ...prev };
+        delete next[pageIndex];
+        return next;
+      });
+    } catch (error) {
+      alert(`局部识别失败: ${error instanceof Error ? error.message : '未知错误'}`);
+    } finally {
+      setRecognizingRegionByPage((prev) => ({ ...prev, [pageIndex]: false }));
+    }
   };
 
   const handleChooseFiles = (e) => {
@@ -2194,6 +2651,12 @@ export default function TaskVisualizer({
                 const displayContent = buildContentWithEditedMarks(item.content, pageMarks);
                 const measuredRowHeight = layoutHeightByPage[idx];
                 const pageTone = getTaskStatusTone(item.status);
+                const regionModeActive = Boolean(regionModeByPage[idx]);
+                const selectedRegion = selectedRegionByPage[idx] || null;
+                const draftRegion = draftRegionByPage[idx] || null;
+                const activeRegion = normalizeClientBbox(draftRegion) || normalizeClientBbox(selectedRegion);
+                const isRecognizingRegion = Boolean(recognizingRegionByPage[idx]);
+                const canRecognizeRegion = item.status !== 'processing' && isUsableRegion(normalizeClientBbox(selectedRegion));
 
                 return (
                   <div key={idx} className="result-item-container" style={{ marginBottom: '24px', border: '1px solid #e4e4e7', borderRadius: '6px', overflow: 'hidden' }}>
@@ -2205,7 +2668,41 @@ export default function TaskVisualizer({
                         {savingPages[idx] && <span className="task-status-chip task-status-chip-success" style={{ color: 'var(--ms-success)', background: 'var(--ms-success-soft)', padding: '2px 8px', borderRadius: '4px' }}>保存中…</span>}
                         {item.error && <span className="task-status-chip task-status-chip-error" style={{ color: 'var(--ms-danger)', background: 'var(--ms-danger-soft)', padding: '2px 8px', borderRadius: '4px', maxWidth: '320px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={item.error}>原因: {item.error}</span>}
                       </div>
-                      <button className="task-secondary-button" onClick={() => handleRegenerate(idx)} disabled={isRegenerating || item.status === 'processing'} style={{ padding: '4px 10px', border: '1px solid #e4e4e7', borderRadius: '4px', background: '#fff', fontSize: '12px', cursor: (isRegenerating || item.status === 'processing') ? 'not-allowed' : 'pointer', color: (isRegenerating || item.status === 'processing') ? '#a1a1aa' : '#09090b' }}>{isRegenerating ? '请求中...' : '重新生成'}</button>
+                      <div className="task-page-action-row" style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                        <button
+                          type="button"
+                          className={`task-secondary-button task-icon-text-button${regionModeActive ? ' is-active' : ''}`}
+                          onClick={() => handleToggleRegionMode(idx)}
+                          disabled={item.status === 'processing' || isRecognizingRegion}
+                          title="在左侧图片上拖拽矩形，专门识别该局部区域"
+                          style={{ padding: '4px 10px', border: '1px solid #e4e4e7', borderRadius: '4px', background: regionModeActive ? 'var(--ms-surface-muted)' : '#fff', fontSize: '12px', cursor: (item.status === 'processing' || isRecognizingRegion) ? 'not-allowed' : 'pointer', color: '#09090b', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                        >
+                          <UiIcon name="target" size={14} />
+                          <span>{regionModeActive ? '标记中' : '局部框'}</span>
+                        </button>
+                        <button
+                          type="button"
+                          className="task-secondary-button"
+                          onClick={() => handleRecognizeRegion(idx)}
+                          disabled={!canRecognizeRegion || isRecognizingRegion}
+                          title={activeRegion ? `识别选区 (${activeRegion.left.toFixed(3)}, ${activeRegion.top.toFixed(3)})` : '先拖出局部识别矩形'}
+                          style={{ padding: '4px 10px', border: '1px solid #e4e4e7', borderRadius: '4px', background: '#fff', fontSize: '12px', cursor: (!canRecognizeRegion || isRecognizingRegion) ? 'not-allowed' : 'pointer', color: (!canRecognizeRegion || isRecognizingRegion) ? '#a1a1aa' : '#09090b' }}
+                        >
+                          {isRecognizingRegion ? '识别中...' : '识别选区'}
+                        </button>
+                        {activeRegion ? (
+                          <button
+                            type="button"
+                            className="task-secondary-button"
+                            onClick={() => handleClearRegion(idx)}
+                            disabled={isRecognizingRegion}
+                            style={{ padding: '4px 10px', border: '1px solid #e4e4e7', borderRadius: '4px', background: '#fff', fontSize: '12px', cursor: isRecognizingRegion ? 'not-allowed' : 'pointer', color: '#09090b' }}
+                          >
+                            清除选区
+                          </button>
+                        ) : null}
+                        <button className="task-secondary-button" onClick={() => handleRegenerate(idx)} disabled={isRegenerating || item.status === 'processing'} style={{ padding: '4px 10px', border: '1px solid #e4e4e7', borderRadius: '4px', background: '#fff', fontSize: '12px', cursor: (isRegenerating || item.status === 'processing') ? 'not-allowed' : 'pointer', color: (isRegenerating || item.status === 'processing') ? '#a1a1aa' : '#09090b' }}>{isRegenerating ? '请求中...' : '重新生成'}</button>
+                      </div>
                     </div>
 
                     <div className="result-layout" style={{ display: 'flex', alignItems: 'flex-start', height: measuredRowHeight ? `${measuredRowHeight}px` : 'auto' }}>
@@ -2221,6 +2718,12 @@ export default function TaskVisualizer({
                           selectedMarkId={selectedMarkId}
                           onSelectMark={(markId, force) => handleSelectMark(idx, markId, force)}
                           onMoveMark={(markId, nextPosition) => handleMoveMark(idx, pageMarks, item.content, markId, nextPosition)}
+                          regionSelectionMode={regionModeActive}
+                          pendingRegion={draftRegion}
+                          selectedRegion={selectedRegion}
+                          onRegionChange={(region) => handleDraftRegionChange(idx, region)}
+                          onRegionCommit={() => handleDraftRegionCommit(idx)}
+                          isRecognizingRegion={isRecognizingRegion}
                           onHeightChange={(height) => {
                             const normalized = Math.max(260, Math.ceil(height));
                             setLayoutHeightByPage((prev) => (prev[idx] === normalized ? prev : { ...prev, [idx]: normalized }));

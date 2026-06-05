@@ -3,12 +3,13 @@ import unittest
 from datetime import date, timedelta
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
 
 from fastapi import BackgroundTasks
 from starlette.datastructures import UploadFile
 
 from api import review_routes, routes
-from core import config, review_vocabulary, storage, tasks, vocabulary
+from core import config, refine_cache, review_vocabulary, storage, tasks, vocabulary
 
 
 class QQConnectorContractTests(unittest.IsolatedAsyncioTestCase):
@@ -20,6 +21,7 @@ class QQConnectorContractTests(unittest.IsolatedAsyncioTestCase):
         self.vocab_dir = self.base_dir / "data"
         self.tasks_file = self.base_dir / "local_data_runtime" / "tasks_db.json"
         self.lock_file = self.tasks_file.with_suffix(".json.lock")
+        self.refine_cache_dir = self.base_dir / "local_data_runtime" / "refine_cache"
 
         self.original_storage_dir = storage.STORAGE_DIR
         self.original_vocab_dir = vocabulary.VOCAB_DIR
@@ -27,6 +29,7 @@ class QQConnectorContractTests(unittest.IsolatedAsyncioTestCase):
         self.original_tasks_file = tasks.TASKS_FILE
         self.original_lock_file = tasks.LOCK_FILE
         self.original_config_file = config.CONFIG_FILE
+        self.original_refine_cache_dir = refine_cache.REFINE_CACHE_DIR
 
         storage.STORAGE_DIR = str(self.storage_dir)
         vocabulary.VOCAB_DIR = str(self.vocab_dir)
@@ -34,6 +37,7 @@ class QQConnectorContractTests(unittest.IsolatedAsyncioTestCase):
         tasks.TASKS_FILE = str(self.tasks_file)
         tasks.LOCK_FILE = str(self.lock_file)
         config.CONFIG_FILE = self.base_dir / "local_data_runtime" / "llm_config.json"
+        refine_cache.REFINE_CACHE_DIR = self.refine_cache_dir
 
         self.storage_dir.mkdir(parents=True, exist_ok=True)
         self.vocab_dir.mkdir(parents=True, exist_ok=True)
@@ -46,6 +50,7 @@ class QQConnectorContractTests(unittest.IsolatedAsyncioTestCase):
         tasks.TASKS_FILE = self.original_tasks_file
         tasks.LOCK_FILE = self.original_lock_file
         config.CONFIG_FILE = self.original_config_file
+        refine_cache.REFINE_CACHE_DIR = self.original_refine_cache_dir
         self.tempdir.cleanup()
         super().tearDown()
 
@@ -90,6 +95,80 @@ class QQConnectorContractTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(vocab_path.exists())
         loaded = vocabulary.load_vocab("qqe2e-session", "daily")
         self.assertEqual(len(loaded["examples"]), 2)
+
+    def test_list_vocabulary_marks_entries_needing_processing(self):
+        category_dir = self.vocab_dir / "daily"
+        category_dir.mkdir(parents=True, exist_ok=True)
+
+        review_vocabulary.save_vocab_file(
+            str(category_dir / "complete.json"),
+            {
+                "word": "complete",
+                "createdAt": "2026-05-01",
+                "reviews": [],
+                "definitions": ["完整的；完成的"],
+                "examples": [
+                    {
+                        "text": "This entry is complete.",
+                        "explanation": "这里表示词条内容完整。",
+                    }
+                ],
+            },
+        )
+        review_vocabulary.save_vocab_file(
+            str(category_dir / "missing-definition.json"),
+            {
+                "word": "missing-definition",
+                "createdAt": "2026-05-02",
+                "reviews": [],
+                "definitions": [],
+                "examples": [
+                    {
+                        "text": "This entry has no definition.",
+                        "explanation": "这里缺少释义。",
+                    }
+                ],
+            },
+        )
+        review_vocabulary.save_vocab_file(
+            str(category_dir / "missing-explanation.json"),
+            {
+                "word": "missing-explanation",
+                "createdAt": "2026-05-03",
+                "reviews": [],
+                "definitions": ["缺少解释"],
+                "examples": [
+                    {
+                        "text": "This example has no explanation.",
+                        "explanation": "",
+                    }
+                ],
+            },
+        )
+        review_vocabulary.save_vocab_file(
+            str(category_dir / "intentional-blank.json"),
+            {
+                "word": "intentional-blank",
+                "createdAt": "2026-05-04",
+                "reviews": [],
+                "definitions": ["故意留空"],
+                "examples": [
+                    {
+                        "text": "The answer option is ____.",
+                        "explanation": "",
+                        "intentionalBlank": True,
+                    }
+                ],
+            },
+        )
+
+        result = routes.list_vocabulary("daily")
+        by_word = {item["word"]: item for item in result["entries"]}
+
+        self.assertFalse(by_word["complete"]["needsProcessing"])
+        self.assertTrue(by_word["missing-definition"]["needsProcessing"])
+        self.assertTrue(by_word["missing-explanation"]["needsProcessing"])
+        self.assertFalse(by_word["intentional-blank"]["needsProcessing"])
 
     async def test_upload_resource_supports_collected_mode_for_qq_upload(self):
         background_tasks = BackgroundTasks()
@@ -816,6 +895,413 @@ class QQConnectorContractTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(unmarked_result["recommended"]["marked"])
         self.assertEqual(unmarked_result["meta"]["candidate_count"], 1)
         self.assertEqual(unmarked_result["meta"]["mark_filter"], "unmarked")
+
+    def test_review_recommend_filters_entries_needing_processing(self):
+        category_dir = self.vocab_dir / "daily"
+        category_dir.mkdir(parents=True, exist_ok=True)
+        today = date.today()
+
+        review_vocabulary.save_vocab_file(
+            str(category_dir / "ready.json"),
+            {
+                "word": "ready",
+                "createdAt": today.isoformat(),
+                "reviews": [],
+                "definitions": ["准备好的"],
+                "examples": [
+                    {
+                        "text": "This entry is ready.",
+                        "explanation": "这里表示词条内容已经可用。",
+                    }
+                ],
+            },
+        )
+        review_vocabulary.save_vocab_file(
+            str(category_dir / "needs-processing.json"),
+            {
+                "word": "needs-processing",
+                "createdAt": today.isoformat(),
+                "reviews": [],
+                "definitions": ["待处理"],
+                "examples": [
+                    {
+                        "text": "This entry needs an explanation.",
+                        "explanation": "",
+                    }
+                ],
+            },
+        )
+
+        result = review_routes.review_recommend(
+            review_routes.ReviewRecommendRequest(
+                category="daily",
+                limit=5,
+                mark_filter="needs_processing",
+            )
+        )
+
+        self.assertEqual(result["recommended"]["word"], "needs-processing")
+        self.assertTrue(result["recommended"]["needsProcessing"])
+        self.assertEqual(result["meta"]["candidate_count"], 1)
+        self.assertEqual(result["meta"]["mark_filter"], "needs_processing")
+
+    def test_refine_file_uses_cached_llm_for_unchanged_file(self):
+        category_dir = self.vocab_dir / "daily"
+        category_dir.mkdir(parents=True, exist_ok=True)
+        review_vocabulary.save_vocab_file(
+            str(category_dir / "cached.json"),
+            {
+                "word": "cached",
+                "createdAt": "2026-05-01",
+                "reviews": [],
+                "definitions": ["缓存的"],
+                "examples": [
+                    {
+                        "text": "This entry can use cached suggestions.",
+                        "explanation": "这里表示可以使用缓存建议。",
+                    }
+                ],
+            },
+        )
+
+        llm_payload = {
+            "entry": [],
+            "definitions": [
+                {
+                    "action": "append",
+                    "reason": "test",
+                    "suggested": "缓存测试释义",
+                }
+            ],
+            "examples": [],
+            "global_notes": [],
+        }
+        with patch.object(review_routes, "suggest_file_cleaning_with_llm", return_value=llm_payload) as mocked_llm:
+            first = review_routes.refine_file(
+                review_routes.FileRefineRequest(category="daily", filename="cached.json")
+            )
+            second = review_routes.refine_file(
+                review_routes.FileRefineRequest(category="daily", filename="cached.json")
+            )
+
+        self.assertEqual(mocked_llm.call_count, 1)
+        self.assertEqual(first["cache"]["status"], "stored")
+        self.assertEqual(second["cache"]["status"], "hit")
+        self.assertEqual(second["llm"], llm_payload)
+
+    def test_refine_file_cache_changes_after_saved_content_changes(self):
+        category_dir = self.vocab_dir / "daily"
+        category_dir.mkdir(parents=True, exist_ok=True)
+        review_vocabulary.save_vocab_file(
+            str(category_dir / "mutable.json"),
+            {
+                "word": "mutable",
+                "createdAt": "2026-05-01",
+                "reviews": [],
+                "definitions": ["可变的"],
+                "examples": [],
+            },
+        )
+
+        llm_payload = {"entry": [], "definitions": [], "examples": [], "global_notes": []}
+        with patch.object(review_routes, "suggest_file_cleaning_with_llm", return_value=llm_payload) as mocked_llm:
+            first = review_routes.refine_file(
+                review_routes.FileRefineRequest(category="daily", filename="mutable.json")
+            )
+            review_routes.save_vocab(
+                review_routes.VocabSaveRequest(
+                    category="daily",
+                    filename="mutable.json",
+                    data={
+                        "word": "mutable",
+                        "createdAt": "2026-05-01",
+                        "reviews": [],
+                        "definitions": ["可变的", "容易变化的"],
+                        "examples": [],
+                    },
+                )
+            )
+            second = review_routes.refine_file(
+                review_routes.FileRefineRequest(category="daily", filename="mutable.json")
+            )
+
+        self.assertEqual(mocked_llm.call_count, 2)
+        self.assertEqual(first["cache"]["status"], "stored")
+        self.assertEqual(second["cache"]["status"], "stored")
+        self.assertNotEqual(first["cache"]["content_hash"], second["cache"]["content_hash"])
+
+    def test_refine_file_cache_survives_non_analysis_metadata_changes(self):
+        category_dir = self.vocab_dir / "daily"
+        category_dir.mkdir(parents=True, exist_ok=True)
+        review_vocabulary.save_vocab_file(
+            str(category_dir / "metadata-only.json"),
+            {
+                "word": "metadata-only",
+                "createdAt": "2026-05-01",
+                "reviews": [],
+                "marked": False,
+                "definitions": ["只影响元数据"],
+                "examples": [
+                    {
+                        "text": "Metadata changes should not alter refine suggestions.",
+                        "explanation": "这里表示元数据变化不应改变整理建议。",
+                    }
+                ],
+            },
+        )
+
+        llm_payload = {"entry": [], "definitions": [], "examples": [], "global_notes": []}
+        with patch.object(review_routes, "suggest_file_cleaning_with_llm", return_value=llm_payload) as mocked_llm:
+            first = review_routes.refine_file(
+                review_routes.FileRefineRequest(category="daily", filename="metadata-only.json")
+            )
+            review_routes.save_vocab(
+                review_routes.VocabSaveRequest(
+                    category="daily",
+                    filename="metadata-only.json",
+                    data={
+                        "word": "metadata-only",
+                        "createdAt": "2026-05-01",
+                        "reviews": [{"date": "2026-05-02", "score": 4}],
+                        "marked": True,
+                        "definitions": ["只影响元数据"],
+                        "examples": [
+                            {
+                                "text": "Metadata changes should not alter refine suggestions.",
+                                "explanation": "这里表示元数据变化不应改变整理建议。",
+                            }
+                        ],
+                    },
+                )
+            )
+            second = review_routes.refine_file(
+                review_routes.FileRefineRequest(category="daily", filename="metadata-only.json")
+            )
+
+        self.assertEqual(mocked_llm.call_count, 1)
+        self.assertEqual(first["cache"]["status"], "stored")
+        self.assertEqual(second["cache"]["status"], "hit")
+        self.assertEqual(first["cache"]["content_hash"], second["cache"]["content_hash"])
+
+    def test_prefetch_file_refine_writes_and_reuses_cache(self):
+        category_dir = self.vocab_dir / "daily"
+        category_dir.mkdir(parents=True, exist_ok=True)
+        for word in ["alpha", "beta"]:
+            review_vocabulary.save_vocab_file(
+                str(category_dir / f"{word}.json"),
+                {
+                    "word": word,
+                    "createdAt": "2026-05-01",
+                    "reviews": [],
+                    "definitions": [f"{word} definition"],
+                    "examples": [],
+                },
+            )
+
+        llm_payload = {"entry": [], "definitions": [], "examples": [], "global_notes": []}
+        with patch.object(review_routes, "suggest_file_cleaning_with_llm", return_value=llm_payload) as mocked_llm:
+            first = review_routes.prefetch_file_refine(
+                review_routes.FileRefinePrefetchRequest(
+                    category="daily",
+                    filenames=["alpha.json", "beta.json"],
+                    limit=2,
+                )
+            )
+            second = review_routes.prefetch_file_refine(
+                review_routes.FileRefinePrefetchRequest(
+                    category="daily",
+                    filenames=["alpha.json", "beta.json"],
+                    limit=2,
+                )
+            )
+
+        self.assertEqual(mocked_llm.call_count, 2)
+        self.assertEqual(first["processed"], 2)
+        self.assertEqual(first["counts"].get("stored"), 2)
+        self.assertEqual(second["counts"].get("hit"), 2)
+
+    def test_add_vocabulary_invalidates_cached_refine_suggestions(self):
+        category_dir = self.vocab_dir / "daily"
+        category_dir.mkdir(parents=True, exist_ok=True)
+        review_vocabulary.save_vocab_file(
+            str(category_dir / "cache-add.json"),
+            {
+                "word": "cache-add",
+                "createdAt": "2026-05-01",
+                "reviews": [],
+                "definitions": ["新增入口缓存失效测试"],
+                "examples": [
+                    {
+                        "text": "This entry has an existing example.",
+                        "explanation": "这里表示已有例句。",
+                    }
+                ],
+            },
+        )
+
+        llm_payload = {"entry": [], "definitions": [], "examples": [], "global_notes": []}
+        with patch.object(review_routes, "suggest_file_cleaning_with_llm", return_value=llm_payload) as mocked_llm:
+            first = review_routes.refine_file(
+                review_routes.FileRefineRequest(category="daily", filename="cache-add.json")
+            )
+            routes.add_vocabulary(
+                routes.VocabAddRequest(
+                    word="cache-add",
+                    context="This new example should invalidate cached suggestions.",
+                    source="cache invalidation test",
+                    fetch_llm=False,
+                    fetch_type="all",
+                    category="daily",
+                    focus_positions=[],
+                    llm_result={
+                        "examples": [
+                            {
+                                "text": "This new example should invalidate cached suggestions.",
+                                "explanation": "这里表示新增例句会让缓存失效。",
+                            }
+                        ],
+                    },
+                    youtube={},
+                )
+            )
+            second = review_routes.refine_file(
+                review_routes.FileRefineRequest(category="daily", filename="cache-add.json")
+            )
+
+        self.assertEqual(mocked_llm.call_count, 2)
+        self.assertEqual(first["cache"]["status"], "stored")
+        self.assertEqual(second["cache"]["status"], "stored")
+        self.assertNotEqual(first["cache"]["content_hash"], second["cache"]["content_hash"])
+
+    def test_refine_file_does_not_cache_partial_llm_errors(self):
+        category_dir = self.vocab_dir / "daily"
+        category_dir.mkdir(parents=True, exist_ok=True)
+        review_vocabulary.save_vocab_file(
+            str(category_dir / "partial-error.json"),
+            {
+                "word": "partial-error",
+                "createdAt": "2026-05-01",
+                "reviews": [],
+                "definitions": ["部分失败缓存测试"],
+                "examples": [
+                    {
+                        "text": "This example has no explanation yet.",
+                        "explanation": "",
+                    }
+                ],
+            },
+        )
+
+        llm_payload = {"entry": [], "definitions": [], "examples": [], "global_notes": []}
+        generated_examples = [
+            {
+                "index": 0,
+                "action": "rewrite",
+                "suggested_explanation": "这里表示例句还没有解释。",
+                "reason": "补充缺失解释。",
+            }
+        ]
+        with (
+            patch.object(review_routes, "suggest_file_cleaning_with_llm", return_value=llm_payload) as mocked_llm,
+            patch.object(
+                review_routes,
+                "suggest_missing_example_explanations_with_llm",
+                side_effect=[RuntimeError("temporary failure"), generated_examples],
+            ),
+            patch.object(review_routes.logger, "exception"),
+        ):
+            first = review_routes.refine_file(
+                review_routes.FileRefineRequest(category="daily", filename="partial-error.json")
+            )
+            second = review_routes.refine_file(
+                review_routes.FileRefineRequest(category="daily", filename="partial-error.json")
+            )
+
+        self.assertEqual(mocked_llm.call_count, 2)
+        self.assertEqual(first["cache"]["status"], "error")
+        self.assertIn("temporary failure", first["llm_error"])
+        self.assertEqual(second["cache"]["status"], "stored")
+        self.assertIsNone(second["llm_error"])
+        self.assertEqual(second["llm"]["examples"], generated_examples)
+
+    def test_refine_file_ignores_existing_cached_llm_errors(self):
+        category_dir = self.vocab_dir / "daily"
+        category_dir.mkdir(parents=True, exist_ok=True)
+        review_vocabulary.save_vocab_file(
+            str(category_dir / "old-error-cache.json"),
+            {
+                "word": "old-error-cache",
+                "createdAt": "2026-05-01",
+                "reviews": [],
+                "definitions": ["旧错误缓存测试"],
+                "examples": [
+                    {
+                        "text": "This entry should retry old cached failures.",
+                        "explanation": "这里表示旧错误缓存应被忽略。",
+                    }
+                ],
+            },
+        )
+
+        cache_meta = refine_cache.build_refine_cache_key(
+            "daily",
+            "old-error-cache.json",
+            review_vocabulary.load_vocab_file(str(category_dir / "old-error-cache.json")),
+        )
+        refine_cache.save_refine_cache(
+            cache_meta,
+            {"entry": [], "definitions": [], "examples": [], "global_notes": []},
+            "old failure",
+        )
+
+        llm_payload = {
+            "entry": [],
+            "definitions": [{"action": "append", "suggested": "重新生成成功"}],
+            "examples": [],
+            "global_notes": [],
+        }
+        with patch.object(review_routes, "suggest_file_cleaning_with_llm", return_value=llm_payload) as mocked_llm:
+            result = review_routes.refine_file(
+                review_routes.FileRefineRequest(category="daily", filename="old-error-cache.json")
+            )
+
+        self.assertEqual(mocked_llm.call_count, 1)
+        self.assertEqual(result["cache"]["status"], "stored")
+        self.assertIsNone(result["llm_error"])
+        self.assertEqual(result["llm"], llm_payload)
+
+    def test_list_vocabulary_marks_refine_cached_entries(self):
+        category_dir = self.vocab_dir / "daily"
+        category_dir.mkdir(parents=True, exist_ok=True)
+        payload = {
+            "word": "cached-marker",
+            "createdAt": "2026-05-01",
+            "reviews": [],
+            "definitions": ["红点缓存标记测试"],
+            "examples": [
+                {
+                    "text": "This entry already has cached refine suggestions.",
+                    "explanation": "这里表示已有整理建议缓存。",
+                }
+            ],
+        }
+        review_vocabulary.save_vocab_file(str(category_dir / "cached-marker.json"), payload)
+        cache_meta = refine_cache.build_refine_cache_key("daily", "cached-marker.json", payload)
+        refine_cache.save_refine_cache(
+            cache_meta,
+            {
+                "entry": [],
+                "definitions": [{"action": "append", "suggested": "缓存标记"}],
+                "examples": [],
+                "global_notes": [],
+            },
+        )
+
+        result = routes.list_vocabulary("daily")
+        by_file = {item["file"]: item for item in result["entries"]}
+
+        self.assertTrue(by_file["cached-marker.json"]["refineCached"])
+        self.assertTrue(by_file["cached-marker.json"]["refine_cached"])
 
     def test_review_recommend_uses_saved_server_preferences_by_default(self):
         category_dir = self.vocab_dir / "daily"

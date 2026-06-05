@@ -7,10 +7,12 @@ import {
   getVocabularyCategories,
   getVocabularyDetail,
   getVocabularyList,
+  getReviewVisualization,
   saveConfig,
   saveVocabularyDetail,
   submitReviewScore,
 } from '../api/client';
+import { RelationGraphPanel } from './VisualizationDashboard.jsx';
 
 const REVIEW_CATEGORY_KEY = 'vocabReviewCategory';
 const DESKTOP_CONTENT_COLLAPSED_KEY = 'vocabReviewDesktopContentDefaultCollapsed';
@@ -41,6 +43,7 @@ const SCORE_SHORT_LABELS = {
 };
 const ENTRY_FILTER_OPTIONS = [
   { value: 'marked', label: '标记词条', compactLabel: '标记' },
+  { value: 'needs_processing', label: '待处理', compactLabel: '待处理' },
   { value: 'all', label: '全部词条', compactLabel: '全部' },
   { value: 'unmarked', label: '未标记', compactLabel: '未标' },
 ];
@@ -124,8 +127,152 @@ const normalizeVocabularyEntry = (entry, fallbackCategory = '') => {
     word: word || key,
     category,
     marked: Boolean(entry?.marked),
+    needsProcessing: Boolean(entry?.needsProcessing || entry?.needs_processing),
+    needs_processing: Boolean(entry?.needsProcessing || entry?.needs_processing),
+    refineCached: Boolean(entry?.refineCached || entry?.refine_cached),
+    refine_cached: Boolean(entry?.refineCached || entry?.refine_cached),
     createdAt,
     created_at: createdAt,
+  };
+};
+
+const buildRelationNodeLookupKey = (category, value) => {
+  const categoryKey = String(category || '').trim().toLowerCase();
+  const fileKey = buildVocabularyWordKey(value);
+  return categoryKey && fileKey ? `${categoryKey}::${fileKey}` : '';
+};
+
+const sortRelationNodesForFocus = (focusNodeId) => (left, right) => {
+  if (left?.id === focusNodeId) return -1;
+  if (right?.id === focusNodeId) return 1;
+  return String(left?.word || left?.file || '').localeCompare(
+    String(right?.word || right?.file || ''),
+    undefined,
+    { sensitivity: 'base' },
+  );
+};
+
+const buildFocusedRelationGraph = (graph, entry, fallbackCategory = '') => {
+  const nodes = Array.isArray(graph?.nodes) ? graph.nodes : [];
+  const edges = Array.isArray(graph?.edges) ? graph.edges : [];
+  if (!entry || !nodes.length) return null;
+
+  const entryCategory = String(entry?.category || fallbackCategory || '').trim();
+  const candidateKeys = new Set([
+    entry?.file,
+    entry?.key,
+    entry?.word,
+    normalizeVocabularyLaunchWord(entry?.file || entry?.key || entry?.word),
+  ].map((value) => buildRelationNodeLookupKey(entryCategory, value)).filter(Boolean));
+
+  let focusNode = nodes.find((node) => (
+    candidateKeys.has(buildRelationNodeLookupKey(node?.category, node?.file || node?.word))
+  ));
+
+  if (!focusNode && entryCategory) {
+    const wordKey = buildVocabularyWordKey(entry?.word || entry?.key || entry?.file);
+    focusNode = nodes.find((node) => (
+      String(node?.category || '').trim() === entryCategory
+      && buildVocabularyWordKey(node?.word || node?.file) === wordKey
+    ));
+  }
+
+  const focusNodeId = String(focusNode?.id || '').trim();
+  if (!focusNodeId) return null;
+
+  const directEdges = edges.filter((edge) => {
+    const source = String(edge?.source || '').trim();
+    const target = String(edge?.target || '').trim();
+    return source === focusNodeId || target === focusNodeId;
+  });
+
+  const nodeById = new Map(nodes
+    .map((node) => [String(node?.id || '').trim(), node])
+    .filter(([id]) => id));
+  const includedIds = new Set([focusNodeId]);
+  directEdges.forEach((edge) => {
+    const source = String(edge?.source || '').trim();
+    const target = String(edge?.target || '').trim();
+    if (source) includedIds.add(source);
+    if (target) includedIds.add(target);
+  });
+
+  const componentNodes = [...includedIds]
+    .map((id) => nodeById.get(id))
+    .filter(Boolean)
+    .sort(sortRelationNodesForFocus(focusNodeId));
+  const liveIds = new Set(componentNodes.map((node) => String(node?.id || '').trim()).filter(Boolean));
+  const componentEdges = edges.filter((edge) => (
+    liveIds.has(String(edge?.source || '').trim())
+    && liveIds.has(String(edge?.target || '').trim())
+  ));
+  if (!componentNodes.length) return null;
+
+  return {
+    focusNodeId,
+    hasEdges: componentEdges.length > 0,
+    graph: {
+      scope: {
+        category: entryCategory || String(focusNode?.category || '').trim(),
+        label: `${focusNode.word || entry.word || '当前词'} 关联`,
+      },
+      nodes: componentNodes,
+      edges: componentEdges,
+      components: [
+        {
+          id: `focus-${focusNodeId}`,
+          nodes: componentNodes,
+          edges: componentEdges,
+          node_count: componentNodes.length,
+          edge_count: componentEdges.length,
+          categories: [...new Set(componentNodes
+            .map((node) => String(node?.category || '').trim())
+            .filter(Boolean))].sort(),
+        },
+      ],
+      component_count: 1,
+      connected_node_count: componentNodes.length,
+    },
+  };
+};
+
+const buildPendingRelationGraph = (entry, fallbackCategory = '', pending = false) => {
+  if (!entry) return null;
+  const entryCategory = String(entry?.category || fallbackCategory || '').trim();
+  const rawFile = String(entry?.file || entry?.key || entry?.word || '').trim();
+  const file = rawFile.endsWith('.json') ? rawFile : `${rawFile || 'current'}.json`;
+  const word = String(entry?.word || normalizeVocabularyLaunchWord(file) || rawFile || '当前词').trim();
+  const focusNodeId = `${entryCategory || 'current'}:${file}`;
+  const node = {
+    id: focusNodeId,
+    category: entryCategory,
+    file,
+    word,
+  };
+  return {
+    focusNodeId,
+    hasEdges: false,
+    pending,
+    graph: {
+      scope: {
+        category: entryCategory,
+        label: `${word} 关联`,
+      },
+      nodes: [node],
+      edges: [],
+      components: [
+        {
+          id: `pending-${focusNodeId}`,
+          nodes: [node],
+          edges: [],
+          node_count: 1,
+          edge_count: 0,
+          categories: entryCategory ? [entryCategory] : [],
+        },
+      ],
+      component_count: 1,
+      connected_node_count: 1,
+    },
   };
 };
 
@@ -207,6 +354,8 @@ const buildRecommendationQueue = (res, pool = [], limit = 8) => {
       file: targetEntry.file,
       word: targetEntry.word,
       marked: Boolean(poolEntry.marked || item.marked),
+      needsProcessing: Boolean(poolEntry.needsProcessing || item.needsProcessing || item.needs_processing),
+      needs_processing: Boolean(poolEntry.needsProcessing || item.needsProcessing || item.needs_processing),
     };
   }).filter(Boolean).slice(0, limit);
 };
@@ -358,7 +507,7 @@ const normalizeVocabularyListResponse = (data, normalizedCategory) => {
 };
 
 const recommendationMarkFilterFromEntryFilter = (value) => (
-  value === 'marked' || value === 'unmarked' ? value : 'all'
+  value === 'marked' || value === 'unmarked' || value === 'needs_processing' ? value : 'all'
 );
 
 const formatYouTubeLabel = (timestamp) => {
@@ -496,6 +645,8 @@ const getReviewToneStyle = (score) => {
 
 export default function VocabularyReview({
   onSelectionChange = null,
+  onVisibleScopeChange = null,
+  prefetchedRefineRequest = null,
   launchRequest = null,
   entryUpdateRequest = null,
   mobileSimple = false,
@@ -533,6 +684,8 @@ export default function VocabularyReview({
   const [recommendationQueue, setRecommendationQueue] = useState([]);
   const [recommendExcludeKeys, setRecommendExcludeKeys] = useState([]);
   const [recommendScope, setRecommendScope] = useState(ALL_RECOMMEND_SCOPE);
+  const [relationGraphData, setRelationGraphData] = useState(null);
+  const [relationGraphLoading, setRelationGraphLoading] = useState(false);
   const [recommendPreferences, setRecommendPreferences] = useState(() => (
     normalizeRecommendationPreferences(DEFAULT_RECOMMENDATION_PREFERENCES)
   ));
@@ -542,6 +695,7 @@ export default function VocabularyReview({
   const entriesRequestRef = useRef(0);
   const detailRequestRef = useRef(0);
   const handledEntryUpdateTokenRef = useRef('');
+  const handledPrefetchedRefineTokenRef = useRef('');
   const handledLaunchRequestKeyRef = useRef('');
   const recommendPreferenceHydratedRef = useRef(false);
   const recommendPreferenceDirtyRef = useRef(false);
@@ -552,9 +706,15 @@ export default function VocabularyReview({
   const recommendPreferenceSaveRequestRef = useRef(0);
   const recommendationQueueRequestRef = useRef(0);
   const recommendationRefreshRequestRef = useRef(0);
+  const relationGraphRequestRef = useRef(0);
   const autoRecommendationPoolKeyRef = useRef('');
+  const randomSelectionModeRef = useRef(randomSelectionMode);
   const infoButtonRef = useRef(null);
   const [mobileInfoPanelPosition, setMobileInfoPanelPosition] = useState(null);
+  const desktopOverviewLeftRef = useRef(null);
+  const [desktopOverviewLeftHeight, setDesktopOverviewLeftHeight] = useState(0);
+
+  randomSelectionModeRef.current = randomSelectionMode;
 
   const updateMobileInfoPanelPosition = useCallback(() => {
     if (typeof window === 'undefined') return;
@@ -875,6 +1035,39 @@ export default function VocabularyReview({
   }, [mobileInfoOpen, updateMobileInfoPanelPosition]);
 
   useEffect(() => {
+    if (mobileSimple) {
+      setDesktopOverviewLeftHeight(0);
+      return undefined;
+    }
+
+    const node = desktopOverviewLeftRef.current;
+    if (!node) return undefined;
+
+    let frame = 0;
+    const updateHeight = () => {
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => {
+        const rect = node.getBoundingClientRect();
+        const nextHeight = Math.max(0, Math.round(rect.height || 0));
+        setDesktopOverviewLeftHeight((current) => (
+          Math.abs(current - nextHeight) > 1 ? nextHeight : current
+        ));
+      });
+    };
+
+    updateHeight();
+    const observer = new ResizeObserver(updateHeight);
+    observer.observe(node);
+    window.addEventListener('resize', updateHeight);
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      observer.disconnect();
+      window.removeEventListener('resize', updateHeight);
+    };
+  }, [detailData, desktopDefinitionsCollapsed, mobileSimple]);
+
+  useEffect(() => {
     queueMicrotask(() => {
       void loadCategories();
     });
@@ -1014,6 +1207,8 @@ export default function VocabularyReview({
       file: targetFile.endsWith('.json') ? targetFile : `${targetFile}.json`,
       word: entryUpdateRequest.data?.word || entryUpdateRequest.word || targetFile,
       marked: Boolean(entryUpdateRequest.data?.marked),
+      refineCached: false,
+      refine_cached: false,
       category: targetCategory,
     }, targetCategory);
     const browsingAllCategories = isAllCategoriesValue(selectedCategory);
@@ -1053,6 +1248,31 @@ export default function VocabularyReview({
     });
   }, [entryUpdateRequest, loadEntries, selectedCategory]);
 
+  useEffect(() => {
+    const updateToken = String(prefetchedRefineRequest?.token || '');
+    if (!updateToken || handledPrefetchedRefineTokenRef.current === updateToken) return;
+    handledPrefetchedRefineTokenRef.current = updateToken;
+
+    const targetCategory = String(prefetchedRefineRequest.category || '').trim();
+    const files = new Set((Array.isArray(prefetchedRefineRequest.files) ? prefetchedRefineRequest.files : [])
+      .map((file) => String(file || '').trim())
+      .filter(Boolean));
+    if (!targetCategory || !files.size) return;
+
+    setEntries((prev) => prev.map((item) => (
+      String(item.category || '').trim() === targetCategory && files.has(String(item.file || '').trim())
+        ? { ...item, refineCached: true, refine_cached: true }
+        : item
+    )));
+    setSelectedEntrySnapshot((prev) => (
+      prev
+      && String(prev.category || '').trim() === targetCategory
+      && files.has(String(prev.file || '').trim())
+        ? { ...prev, refineCached: true, refine_cached: true }
+        : prev
+    ));
+  }, [prefetchedRefineRequest]);
+
   const playAudio = (text, type = 2) => {
     if (!('speechSynthesis' in window)) {
       alert('您的浏览器不支持语音朗读功能');
@@ -1073,14 +1293,54 @@ export default function VocabularyReview({
 
   const selectedEntry = entries.find((item) => item.id === selectedEntryId)
     || (selectedEntrySnapshot?.id === selectedEntryId ? selectedEntrySnapshot : null);
+  const relationGraphRefreshToken = String(entryUpdateRequest?.token || '');
+  const relationGraphFetchScope = useMemo(() => {
+    if (!selectedEntry && !detailCategory) return null;
+    if (isAllCategoriesValue(selectedCategory)) return '';
+    return String(detailCategory || selectedEntry?.category || selectedCategory || '').trim();
+  }, [detailCategory, selectedCategory, selectedEntry?.category, selectedEntry]);
+  const focusedRelationGraph = useMemo(() => (
+    buildFocusedRelationGraph(relationGraphData?.graph, selectedEntry, detailCategory)
+  ), [detailCategory, relationGraphData?.graph, selectedEntry]);
+
+  useEffect(() => {
+    if (relationGraphFetchScope === null) {
+      relationGraphRequestRef.current += 1;
+      setRelationGraphData(null);
+      setRelationGraphLoading(false);
+      return undefined;
+    }
+
+    const requestId = relationGraphRequestRef.current + 1;
+    relationGraphRequestRef.current = requestId;
+    setRelationGraphLoading(true);
+
+    getReviewVisualization(relationGraphFetchScope)
+      .then((data) => {
+        if (relationGraphRequestRef.current !== requestId) return;
+        setRelationGraphData(data);
+        setRelationGraphLoading(false);
+      })
+      .catch((error) => {
+        if (relationGraphRequestRef.current !== requestId) return;
+        console.error('加载词条关系图失败', error);
+        setRelationGraphData(null);
+        setRelationGraphLoading(false);
+      });
+
+    return undefined;
+  }, [relationGraphFetchScope, relationGraphRefreshToken]);
+
   const normalizedWordQuery = String(wordQuery || '').trim().toLowerCase();
   const filterCounts = {
     marked: entries.filter((item) => item.marked).length,
+    needs_processing: entries.filter((item) => item.needsProcessing).length,
     all: entries.length,
     unmarked: entries.filter((item) => !item.marked).length,
   };
   const filteredEntries = useMemo(() => entries.filter((entry) => {
     if (entryFilter === 'marked') return entry.marked;
+    if (entryFilter === 'needs_processing') return entry.needsProcessing;
     if (entryFilter === 'unmarked') return !entry.marked;
     return true;
   }), [entries, entryFilter]);
@@ -1096,6 +1356,18 @@ export default function VocabularyReview({
       ? searchedEntries
       : sortManualEntries(searchedEntries, manualSortOrder);
   }, [filteredEntries, manualSortOrder, normalizedWordQuery, randomSelectionMode]);
+
+  useEffect(() => {
+    if (typeof onVisibleScopeChange !== 'function') return;
+    onVisibleScopeChange({
+      entries: visibleEntries,
+      selectedEntry,
+      selectedCategory,
+      entryFilter,
+      wordQuery,
+      totalCount: entries.length,
+    });
+  }, [entries.length, entryFilter, onVisibleScopeChange, selectedCategory, selectedEntry, visibleEntries, wordQuery]);
 
   const handleDrawRandomEntry = useCallback((pool = visibleEntries) => {
     const picked = pickRandomEntry(pool, selectedEntryId);
@@ -1123,6 +1395,27 @@ export default function VocabularyReview({
       category: targetCategory,
     }, targetCategory);
     void handleSelectEntry(targetEntry, isAllCategoriesValue(selectedCategory) ? selectedCategory : targetCategory, entries);
+  }, [entries, handleSelectEntry, selectedCategory]);
+
+  const handleOpenRelationEntry = useCallback((request) => {
+    const targetCategory = String(request?.category || '').trim();
+    const targetFile = normalizeVocabularyLaunchWord(
+      request?.fileKey || request?.filename || request?.file || request?.word,
+    );
+    if (!targetCategory || !targetFile) return;
+
+    const targetEntry = normalizeVocabularyEntry({
+      key: targetFile,
+      file: targetFile.endsWith('.json') ? targetFile : `${targetFile}.json`,
+      word: request?.word || targetFile,
+      category: targetCategory,
+    }, targetCategory);
+
+    void handleSelectEntry(
+      targetEntry,
+      isAllCategoriesValue(selectedCategory) ? selectedCategory : targetCategory,
+      entries,
+    );
   }, [entries, handleSelectEntry, selectedCategory]);
 
   const handleRecommendPreferencesChange = useCallback((patch) => {
@@ -1243,13 +1536,14 @@ export default function VocabularyReview({
     const currentEntryCategory = detailCategory || resolveEntryCategory(currentEntry, selectedCategory);
     if (!detailData || !currentEntry?.file || !currentEntryCategory) return;
 
+    const shouldAdvanceForThisScore = randomSelectionModeRef.current;
     setSavingReviewScore(true);
     let shouldAdvance = false;
     try {
       await submitReviewScore(currentEntryCategory, currentEntry.file, score, getTodayLocalDateString());
       const res = await getVocabularyDetail(currentEntry.key || currentEntry.file || currentEntry.word, currentEntryCategory);
       if (res?.data) setDetailData(res.data);
-      shouldAdvance = randomSelectionMode;
+      shouldAdvance = shouldAdvanceForThisScore && randomSelectionModeRef.current;
     } catch (error) {
       console.error('记录熟练度失败', error);
       alert('记录熟练度失败');
@@ -1259,7 +1553,7 @@ export default function VocabularyReview({
         queueMicrotask(() => handleRecommendationNext(visibleEntries));
       }
     }
-  }, [detailCategory, detailData, entries, handleRecommendationNext, randomSelectionMode, resolveEntryCandidate, resolveEntryCategory, selectedCategory, selectedEntry, visibleEntries]);
+  }, [detailCategory, detailData, entries, handleRecommendationNext, resolveEntryCandidate, resolveEntryCategory, selectedCategory, selectedEntry, visibleEntries]);
 
   useEffect(() => {
     if (!mobileSimple || !randomSelectionMode) return;
@@ -1304,6 +1598,10 @@ export default function VocabularyReview({
   useEffect(() => {
     if (!randomSelectionMode) {
       setRecommendSettingsOpen(false);
+      recommendationRefreshRequestRef.current += 1;
+      recommendationQueueRequestRef.current += 1;
+      setLoadingRecommendation(false);
+      setLoadingRecommendationQueue(false);
     }
     setRecommendExcludeKeys([]);
     setRecommendation(null);
@@ -1575,7 +1873,7 @@ export default function VocabularyReview({
         </select>
       </label>
 
-      <div className="vocab-review-floating-filter-grid" role="group" aria-label="词池筛选">
+      <div className="vocab-review-floating-filter-grid vocab-review-entry-filter-grid" role="group" aria-label="词池筛选">
         {ENTRY_FILTER_OPTIONS.map(renderEntryFilterPill)}
       </div>
     </>
@@ -1847,6 +2145,7 @@ export default function VocabularyReview({
               {formatCategoryLabel(entry.category)} / {entry.file}
               {getEntryCreatedAt(entry) ? ` / ${getEntryCreatedAt(entry)}` : ''}
               {entry.marked ? ' / 标记' : ''}
+              {entry.refineCached ? ' / 已预处理' : ''}
             </span>
           </button>
         ))}
@@ -1897,6 +2196,7 @@ export default function VocabularyReview({
             <div style={{ fontSize: '12px', color: 'var(--ms-text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {formatCategoryLabel(entry.category)} / {entry.file}
               {getEntryCreatedAt(entry) ? ` / ${getEntryCreatedAt(entry)}` : ''}
+              {entry.refineCached ? ' / 已预处理' : ''}
             </div>
           </div>
         </li>
@@ -2036,73 +2336,196 @@ export default function VocabularyReview({
     </div>
   ) : null;
 
+  const pendingRelationGraph = useMemo(() => (
+    buildPendingRelationGraph(selectedEntry, detailCategory, relationGraphLoading)
+  ), [detailCategory, relationGraphLoading, selectedEntry]);
+  const visibleRelationGraph = focusedRelationGraph || (!mobileSimple ? pendingRelationGraph : null);
+  const shouldShowRelationGraph = Boolean(
+    detailData
+    && visibleRelationGraph
+    && (!mobileSimple || visibleRelationGraph.hasEdges)
+  );
+  const definitionsMasked = desktopDefinitionsCollapsed;
+  const definitionMaskActionLabel = definitionsMasked ? '显示释义' : '遮蔽释义';
+  const relationGraphNode = shouldShowRelationGraph ? (
+    <div className={`vocab-review-relation-graph-frame${visibleRelationGraph.pending ? ' is-pending' : ''}`}>
+      <RelationGraphPanel
+        graph={visibleRelationGraph.graph}
+        title="连线"
+        compact
+        className="vocab-review-relation-graph"
+        focusNodeId={visibleRelationGraph.focusNodeId}
+        currentNodeId={visibleRelationGraph.focusNodeId}
+        onOpenVocabularyEntry={handleOpenRelationEntry}
+        openNodeOnClick={!visibleRelationGraph.pending}
+        fitContainerHeight={!mobileSimple}
+      />
+      {visibleRelationGraph.pending ? (
+        <div className="vocab-review-relation-graph-loading" aria-hidden="true" />
+      ) : null}
+    </div>
+  ) : null;
+
+  const desktopDefinitionCard = !mobileSimple ? (
+    <div className={`vocab-review-sections vocab-review-card vocab-review-definition-card vocab-review-desktop-disclosure-card${definitionsMasked ? ' is-masked' : ''}`} style={{ ...metaCardStyle, padding: '0', gap: '0' }}>
+      <div className="vocab-review-desktop-disclosure-toggle">
+        <strong>释义</strong>
+        <span className="vocab-review-desktop-disclosure-meta">{definitions.length}</span>
+        <button
+          type="button"
+          className="vocab-review-definition-mask-toggle"
+          onClick={() => setDesktopDefinitionsCollapsed((collapsed) => !collapsed)}
+          aria-pressed={definitionsMasked}
+          aria-label={definitionMaskActionLabel}
+          title={definitionMaskActionLabel}
+        >
+          <UiIcon name={definitionsMasked ? 'lock' : 'unlock'} size={13} />
+          <span>{definitionsMasked ? '显示' : '遮蔽'}</span>
+        </button>
+      </div>
+      <div className={`vocab-review-desktop-disclosure-body vocab-review-definition-maskable${definitionsMasked ? ' is-masked' : ''}`}>
+        {definitions.length ? (
+          <ul className="vocab-review-definition-list" style={{ paddingLeft: '20px', margin: 0, fontSize: '15px', lineHeight: '1.8' }}>
+            {definitions.map((definition, index) => (
+              <li key={`${definition}-${index}`} className="vocab-review-definition-item" style={{ marginBottom: '8px' }}>{definition}</li>
+            ))}
+          </ul>
+        ) : (
+          <div style={{ color: '#a1a1aa', fontSize: '14px' }}>暂无释义</div>
+        )}
+      </div>
+    </div>
+  ) : null;
+
   const detailNode = detailData ? (
     <div className="vocab-review-shell">
-      <div className="vocab-review-hero" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
-        <div className="vocab-review-hero-body">
-          <div className="vocab-review-word-line" style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-            <h1 className="vocab-review-hero-title" style={{ fontSize: 'clamp(28px, 4vw, 34px)', margin: 0, color: 'var(--ms-text)', lineHeight: 1.04, wordBreak: 'break-word' }}>{detailData.word}</h1>
-            <button
-              className="vocab-review-audio-button"
-              onClick={() => playAudio(detailData.word, 2)}
-              title="朗读单词"
-              style={{ cursor: 'pointer', color: 'var(--ms-text)' }}
-            >
-              <UiIcon name="volume" size={18} />
-            </button>
-            <button
-              type="button"
-              className="vocab-review-audio-button"
-              onClick={openYoudao}
-              disabled={!youdaoUrl}
-              title="打开有道词典"
-              aria-label="打开有道词典"
-              style={{ cursor: youdaoUrl ? 'pointer' : 'not-allowed', color: 'var(--ms-text)' }}
-            >
-              <UiIcon name="dictionary-link" size={17} />
-            </button>
-            {mobileSimple ? (
-              <button
-                ref={infoButtonRef}
-                type="button"
-                className={`vocab-review-info-button${mobileInfoOpen ? ' is-active' : ''}`}
-                onClick={toggleMobileInfo}
-                aria-label="打开复习记录"
-                aria-expanded={mobileInfoOpen}
-                title="复习记录"
-              >
-                <UiIcon name="info" size={15} />
-              </button>
-            ) : null}
+      {!mobileSimple ? (
+        <div className="vocab-review-desktop-overview">
+          <div className="vocab-review-desktop-overview-left" ref={desktopOverviewLeftRef}>
+            <div className="vocab-review-hero" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
+              <div className="vocab-review-hero-body">
+                <div className="vocab-review-word-line" style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                  <h1 className="vocab-review-hero-title" style={{ fontSize: 'clamp(28px, 4vw, 34px)', margin: 0, color: 'var(--ms-text)', lineHeight: 1.04, wordBreak: 'break-word' }}>{detailData.word}</h1>
+                  <button
+                    className="vocab-review-audio-button"
+                    onClick={() => playAudio(detailData.word, 2)}
+                    title="朗读单词"
+                    style={{ cursor: 'pointer', color: 'var(--ms-text)' }}
+                  >
+                    <UiIcon name="volume" size={18} />
+                  </button>
+                  <button
+                    type="button"
+                    className="vocab-review-audio-button"
+                    onClick={openYoudao}
+                    disabled={!youdaoUrl}
+                    title="打开有道词典"
+                    aria-label="打开有道词典"
+                    style={{ cursor: youdaoUrl ? 'pointer' : 'not-allowed', color: 'var(--ms-text)' }}
+                  >
+                    <UiIcon name="dictionary-link" size={17} />
+                  </button>
+                </div>
+                <div className="vocab-review-hero-meta" style={{ marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <span className="vocab-review-chip vocab-review-category-chip" style={chipStyle()}>
+                    <UiIcon name="folder" size={12} />
+                    <span>{detailCategoryLabel}</span>
+                  </span>
+                  <span className="vocab-review-chip" style={chipStyle()}>
+                    <UiIcon name="file" size={12} />
+                    <span>释义 {definitions.length}</span>
+                  </span>
+                  <span className="vocab-review-chip" style={chipStyle()}>
+                    <UiIcon name="list" size={12} />
+                    <span>例句 {examples.length}</span>
+                  </span>
+                  <span className="vocab-review-chip" style={chipStyle()}>
+                    <UiIcon name="history" size={12} />
+                    <span>复习 {reviews.length}</span>
+                  </span>
+                  {latestReview ? (
+                    <span className="vocab-review-chip vocab-review-chip-tone" style={{ ...chipStyle(), ...latestReviewTone }}>
+                      <UiIcon name="star" size={12} />
+                      <span>{normalizeReviewScore(latestReview.score)}/5</span>
+                    </span>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+            {desktopDefinitionCard}
           </div>
-          <div className="vocab-review-hero-meta" style={{ marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <span className="vocab-review-chip vocab-review-category-chip" style={chipStyle()}>
-              <UiIcon name="folder" size={12} />
-              <span>{detailCategoryLabel}</span>
-            </span>
-            <span className="vocab-review-chip" style={chipStyle()}>
-              <UiIcon name="file" size={12} />
-              <span>释义 {definitions.length}</span>
-            </span>
-            <span className="vocab-review-chip" style={chipStyle()}>
-              <UiIcon name="list" size={12} />
-              <span>例句 {examples.length}</span>
-            </span>
-            <span className="vocab-review-chip" style={chipStyle()}>
-              <UiIcon name="history" size={12} />
-              <span>复习 {reviews.length}</span>
-            </span>
-            {latestReview ? (
-              <span className="vocab-review-chip vocab-review-chip-tone" style={{ ...chipStyle(), ...latestReviewTone }}>
-                <UiIcon name="star" size={12} />
-                <span>{normalizeReviewScore(latestReview.score)}/5</span>
-              </span>
-            ) : null}
+          <div
+            className="vocab-review-desktop-overview-graph"
+            style={desktopOverviewLeftHeight ? { '--vocab-review-overview-left-height': `${desktopOverviewLeftHeight}px` } : undefined}
+          >
+            {relationGraphNode}
           </div>
         </div>
-
-        {!mobileSimple ? <div className="vocab-review-hero-actions" aria-hidden="true" /> : null}
-      </div>
+      ) : (
+        <div className="vocab-review-hero" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
+          <div className="vocab-review-hero-body">
+            <div className="vocab-review-word-line" style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+              <h1 className="vocab-review-hero-title" style={{ fontSize: 'clamp(28px, 4vw, 34px)', margin: 0, color: 'var(--ms-text)', lineHeight: 1.04, wordBreak: 'break-word' }}>{detailData.word}</h1>
+              <button
+                className="vocab-review-audio-button"
+                onClick={() => playAudio(detailData.word, 2)}
+                title="朗读单词"
+                style={{ cursor: 'pointer', color: 'var(--ms-text)' }}
+              >
+                <UiIcon name="volume" size={18} />
+              </button>
+              <button
+                type="button"
+                className="vocab-review-audio-button"
+                onClick={openYoudao}
+                disabled={!youdaoUrl}
+                title="打开有道词典"
+                aria-label="打开有道词典"
+                style={{ cursor: youdaoUrl ? 'pointer' : 'not-allowed', color: 'var(--ms-text)' }}
+              >
+                <UiIcon name="dictionary-link" size={17} />
+              </button>
+              {mobileSimple ? (
+                <button
+                  ref={infoButtonRef}
+                  type="button"
+                  className={`vocab-review-info-button${mobileInfoOpen ? ' is-active' : ''}`}
+                  onClick={toggleMobileInfo}
+                  aria-label="打开复习记录"
+                  aria-expanded={mobileInfoOpen}
+                  title="复习记录"
+                >
+                  <UiIcon name="info" size={15} />
+                </button>
+              ) : null}
+            </div>
+            <div className="vocab-review-hero-meta" style={{ marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <span className="vocab-review-chip vocab-review-category-chip" style={chipStyle()}>
+                <UiIcon name="folder" size={12} />
+                <span>{detailCategoryLabel}</span>
+              </span>
+              <span className="vocab-review-chip" style={chipStyle()}>
+                <UiIcon name="file" size={12} />
+                <span>释义 {definitions.length}</span>
+              </span>
+              <span className="vocab-review-chip" style={chipStyle()}>
+                <UiIcon name="list" size={12} />
+                <span>例句 {examples.length}</span>
+              </span>
+              <span className="vocab-review-chip" style={chipStyle()}>
+                <UiIcon name="history" size={12} />
+                <span>复习 {reviews.length}</span>
+              </span>
+              {latestReview ? (
+                <span className="vocab-review-chip vocab-review-chip-tone" style={{ ...chipStyle(), ...latestReviewTone }}>
+                  <UiIcon name="star" size={12} />
+                  <span>{normalizeReviewScore(latestReview.score)}/5</span>
+                </span>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      )}
 
       {mobileSimple ? (
         <div className="vocab-review-card vocab-review-score-card" style={{ ...metaCardStyle, display: 'grid', gap: '14px' }}>
@@ -2154,32 +2577,6 @@ export default function VocabularyReview({
 
       {!mobileSimple ? (
         <div className="vocab-review-desktop-main-column vocab-review-desktop-detail-stack">
-          <div className={`vocab-review-sections vocab-review-card vocab-review-definition-card vocab-review-desktop-disclosure-card${desktopDefinitionsCollapsed ? ' is-collapsed' : ''}`} style={{ ...metaCardStyle, padding: '0', gap: '0' }}>
-            <button
-              type="button"
-              className="vocab-review-desktop-disclosure-toggle"
-              onClick={() => setDesktopDefinitionsCollapsed((collapsed) => !collapsed)}
-              aria-expanded={!desktopDefinitionsCollapsed}
-            >
-              <span>释义</span>
-              <span className="vocab-review-desktop-disclosure-meta">{definitions.length}</span>
-              <UiIcon name={desktopDefinitionsCollapsed ? 'chevron-down' : 'chevron-up'} size={14} />
-            </button>
-            {!desktopDefinitionsCollapsed ? (
-              <div className="vocab-review-desktop-disclosure-body">
-                {definitions.length ? (
-                  <ul className="vocab-review-definition-list" style={{ paddingLeft: '20px', margin: 0, fontSize: '15px', lineHeight: '1.8' }}>
-                    {definitions.map((definition, index) => (
-                      <li key={`${definition}-${index}`} className="vocab-review-definition-item" style={{ marginBottom: '8px' }}>{definition}</li>
-                    ))}
-                  </ul>
-                ) : (
-                  <div style={{ color: '#a1a1aa', fontSize: '14px' }}>暂无释义</div>
-                )}
-              </div>
-            ) : null}
-          </div>
-
           <div className="vocab-review-sections vocab-review-examples-section vocab-review-desktop-examples-card" style={{ gap: '0' }}>
             <div className="vocab-review-desktop-examples-header">
               <span>例句</span>
@@ -2296,24 +2693,34 @@ export default function VocabularyReview({
         </div>
       ) : (
         <>
+          {relationGraphNode}
+
           <div className="vocab-review-sections vocab-review-card vocab-review-definition-card" style={{ ...metaCardStyle, gap: '12px' }}>
-            <details>
-              <summary className="vocab-review-disclosure-summary">
-                <span>释义 {definitions.length}</span>
-                <span className="vocab-review-disclosure-hint">点按展开</span>
-              </summary>
-              <div style={{ marginTop: '14px' }}>
-                {definitions.length ? (
-                  <ul className="vocab-review-definition-list" style={{ paddingLeft: '20px', margin: 0, fontSize: '15px', lineHeight: '1.8' }}>
-                    {definitions.map((definition, index) => (
-                      <li key={`${definition}-${index}`} className="vocab-review-definition-item" style={{ marginBottom: '8px' }}>{definition}</li>
-                    ))}
-                  </ul>
-                ) : (
-                  <div style={{ color: '#a1a1aa', fontSize: '14px' }}>暂无释义</div>
-                )}
-              </div>
-            </details>
+            <div className="vocab-review-disclosure-summary">
+              <span>释义 {definitions.length}</span>
+              <button
+                type="button"
+                className="vocab-review-definition-mask-toggle"
+                onClick={() => setDesktopDefinitionsCollapsed((collapsed) => !collapsed)}
+                aria-pressed={definitionsMasked}
+                aria-label={definitionMaskActionLabel}
+                title={definitionMaskActionLabel}
+              >
+                <UiIcon name={definitionsMasked ? 'lock' : 'unlock'} size={13} />
+                <span>{definitionsMasked ? '显示' : '遮蔽'}</span>
+              </button>
+            </div>
+            <div className={`vocab-review-definition-maskable${definitionsMasked ? ' is-masked' : ''}`}>
+              {definitions.length ? (
+                <ul className="vocab-review-definition-list" style={{ paddingLeft: '20px', margin: 0, fontSize: '15px', lineHeight: '1.8' }}>
+                  {definitions.map((definition, index) => (
+                    <li key={`${definition}-${index}`} className="vocab-review-definition-item" style={{ marginBottom: '8px' }}>{definition}</li>
+                  ))}
+                </ul>
+              ) : (
+                <div style={{ color: '#a1a1aa', fontSize: '14px' }}>暂无释义</div>
+              )}
+            </div>
           </div>
 
           <div className="vocab-review-sections vocab-review-examples-section" style={{ gap: '16px' }}>

@@ -123,6 +123,15 @@ export const updateTaskPageParsedResult = async (taskId, index, parsedResult) =>
   return handleResponse(res);
 };
 
+export const recognizeTaskPageRegion = async (taskId, index, region) => {
+  const res = await fetch(`${BACKEND_URL}/api/task/${taskId}/page/${index}/recognize_region`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ region }),
+  });
+  return handleResponse(res);
+};
+
 export const getVocabularyCategories = async () => {
   const res = await fetch(`${BACKEND_URL}/api/vocabulary/categories`);
   return handleResponse(res);
@@ -183,6 +192,21 @@ export const getVocabularyDetail = async (word, category = '') => {
   return handleResponse(res);
 };
 
+export const prefetchVocabularyRefine = async (category, filenames = [], options = {}) => {
+  const finalCategory = requireVocabularyCategory(category);
+  const res = await fetch(`${BACKEND_URL}/api/refine/file/prefetch`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      category: finalCategory,
+      filenames: Array.isArray(filenames) ? filenames : [],
+      limit: options?.limit ?? 20,
+      refresh_cache: Boolean(options?.refreshCache),
+    }),
+  });
+  return handleResponse(res);
+};
+
 export const saveVocabularyDetail = async (category, filename, data) => {
   const finalCategory = requireVocabularyCategory(category);
   const res = await fetch(`${BACKEND_URL}/api/vocabulary/save`, {
@@ -214,7 +238,7 @@ export const submitReviewScore = async (category, filename, score, reviewDate) =
 };
 
 export const fetchRecommendedWord = async (category = '', excludeKeys = [], limit = 5, preferences = {}, markFilter = 'all') => {
-  const normalizedMarkFilter = ['marked', 'unmarked'].includes(String(markFilter || '').trim())
+  const normalizedMarkFilter = ['marked', 'unmarked', 'needs_processing'].includes(String(markFilter || '').trim())
     ? String(markFilter || '').trim()
     : 'all';
   const res = await fetch(`${BACKEND_URL}/api/review/recommend`, {

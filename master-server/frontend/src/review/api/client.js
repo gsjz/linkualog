@@ -164,7 +164,7 @@ export const applySplitSuggestion = async (
   });
 };
 
-export const runFileRefine = async (category, filename, includeLlm = true, data = null) => {
+export const runFileRefine = async (category, filename, includeLlm = true, data = null, options = {}) => {
   const finalCategory = requireCategory(category);
   return requestJson('/api/refine/file', {
     method: 'POST',
@@ -174,6 +174,22 @@ export const runFileRefine = async (category, filename, includeLlm = true, data 
       filename,
       include_llm: includeLlm,
       data,
+      use_cache: options?.useCache !== false,
+      refresh_cache: Boolean(options?.refreshCache),
+    }),
+  });
+};
+
+export const prefetchFileRefine = async (category, filenames = [], options = {}) => {
+  const finalCategory = requireCategory(category);
+  return requestJson('/api/refine/file/prefetch', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      category: finalCategory,
+      filenames: Array.isArray(filenames) ? filenames : [],
+      limit: options?.limit ?? 20,
+      refresh_cache: Boolean(options?.refreshCache),
     }),
   });
 };
@@ -187,6 +203,20 @@ export const saveVocabDetail = async (category, filename, data) => {
       category: finalCategory,
       filename,
       data,
+    }),
+  });
+};
+
+export const suggestVocabRelations = async (category, filename, data = null, limit = 12) => {
+  const finalCategory = requireCategory(category);
+  return requestJson('/api/vocabulary/relations/suggest', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      category: finalCategory,
+      filename,
+      data,
+      limit,
     }),
   });
 };
@@ -234,7 +264,7 @@ export const submitReviewScore = async (category, filename, score, reviewDate) =
 };
 
 export const fetchRecommendedWord = async (category = '', excludeKeys = [], limit = 5, preferences = {}, markFilter = 'all') => {
-  const normalizedMarkFilter = ['marked', 'unmarked'].includes(String(markFilter || '').trim())
+  const normalizedMarkFilter = ['marked', 'unmarked', 'needs_processing'].includes(String(markFilter || '').trim())
     ? String(markFilter || '').trim()
     : 'all';
   return requestJson('/api/review/recommend', {

@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import re
 import socket
 import threading
@@ -1178,6 +1179,244 @@ def _normalize_file_cleaning_result(raw_result) -> dict:
         "definitions": _normalize_definition_suggestions(raw_result.get("definitions")),
         "examples": _normalize_example_suggestions(raw_result.get("examples")),
         "global_notes": _normalize_text_list(raw_result.get("global_notes")),
+    }
+
+
+def _normalize_relation_filename(value: str) -> str:
+    raw = _safe_string(value)
+    if not raw:
+        return ""
+    name = os.path.basename(raw)
+    if not name.lower().endswith(".json"):
+        name = f"{name}.json"
+    return name
+
+
+def _relation_filename_from_word(word: str) -> str:
+    normalized = _safe_string(word).lower()
+    normalized = re.sub(r"\.json$", "", normalized, flags=re.IGNORECASE)
+    normalized = re.sub(r"[\s_]+", "-", normalized)
+    normalized = re.sub(r"[^a-z0-9'\-]+", "", normalized)
+    normalized = normalized.strip("-")
+    return f"{normalized}.json" if normalized else ""
+
+
+def _normalize_relation_type(value: str) -> str:
+    relation_type = _safe_string(value).lower()
+    relation_type = re.sub(r"[\s\-]+", "_", relation_type)
+    relation_type = re.sub(r"[^a-z0-9_]+", "", relation_type).strip("_")
+    return relation_type[:40] or "related"
+
+
+def _candidate_relation_id(category: str, file_name: str) -> str:
+    return f"{_safe_string(category)}/{_normalize_relation_filename(file_name)}"
+
+
+def _normalize_relation_suggestions(raw_result, candidates: list[dict], limit: int = 12) -> list[dict]:
+    if isinstance(raw_result, list):
+        raw_items = raw_result
+    elif isinstance(raw_result, dict):
+        raw_items = (
+            raw_result.get("suggestions")
+            or raw_result.get("relations")
+            or raw_result.get("edges")
+            or raw_result.get("links")
+            or []
+        )
+    else:
+        raw_items = []
+
+    candidate_by_id = {}
+    candidate_by_file = {}
+    candidate_by_word = {}
+    ambiguous_words = set()
+    for candidate in candidates if isinstance(candidates, list) else []:
+        if not isinstance(candidate, dict):
+            continue
+        category = _safe_string(candidate.get("category"))
+        file_name = _normalize_relation_filename(candidate.get("file") or candidate.get("filename"))
+        word = _safe_string(candidate.get("word") or os.path.splitext(file_name)[0])
+        if not category or not file_name:
+            continue
+
+        normalized = {
+            "category": category,
+            "file": file_name,
+            "word": word or os.path.splitext(file_name)[0],
+        }
+        ref_id = _candidate_relation_id(category, file_name)
+        candidate_by_id[ref_id] = normalized
+        candidate_by_file[file_name] = normalized if file_name not in candidate_by_file else None
+
+        word_key = _safe_string(word).lower()
+        if word_key:
+            existed = candidate_by_word.get(word_key)
+            if existed and existed != ref_id:
+                ambiguous_words.add(word_key)
+            else:
+                candidate_by_word[word_key] = ref_id
+    for word_key in ambiguous_words:
+        candidate_by_word.pop(word_key, None)
+
+    normalized_items = []
+    seen = set()
+    for raw_item in raw_items if isinstance(raw_items, list) else []:
+        if not isinstance(raw_item, dict):
+            continue
+
+        raw_target = (
+            raw_item.get("target")
+            or raw_item.get("to")
+            or raw_item.get("entry")
+            or raw_item
+        )
+        if isinstance(raw_target, dict):
+            category = _safe_string(
+                raw_target.get("category")
+                or raw_target.get("target_category")
+                or raw_target.get("targetCategory")
+                or raw_item.get("category")
+                or raw_item.get("target_category")
+                or raw_item.get("targetCategory")
+            )
+            file_name = _normalize_relation_filename(
+                raw_target.get("file")
+                or raw_target.get("filename")
+                or raw_target.get("target_file")
+                or raw_target.get("targetFile")
+                or raw_item.get("target_file")
+                or raw_item.get("targetFile")
+            )
+            word = _safe_string(
+                raw_target.get("word")
+                or raw_target.get("target_word")
+                or raw_target.get("targetWord")
+                or raw_target.get("label")
+                or raw_item.get("target_word")
+                or raw_item.get("targetWord")
+            )
+        else:
+            category = _safe_string(raw_item.get("category") or raw_item.get("target_category"))
+            file_name = _normalize_relation_filename(raw_item.get("target_file") or raw_item.get("file"))
+            word = _safe_string(raw_item.get("target_word") or raw_item.get("word") or raw_target)
+
+        if not file_name and word:
+            file_name = _relation_filename_from_word(word)
+
+        candidate = None
+        if category and file_name:
+            candidate = candidate_by_id.get(_candidate_relation_id(category, file_name))
+        if candidate is None and file_name:
+            candidate = candidate_by_file.get(file_name)
+        if candidate is None and word:
+            candidate_id = candidate_by_word.get(word.lower())
+            candidate = candidate_by_id.get(candidate_id) if candidate_id else None
+        if not candidate:
+            continue
+
+        relation_type = _normalize_relation_type(
+            raw_item.get("type")
+            or raw_item.get("relation")
+            or raw_item.get("edge_type")
+            or raw_item.get("kind")
+            or "related"
+        )
+        confidence = raw_item.get("confidence")
+        try:
+            confidence = max(0.0, min(1.0, float(confidence)))
+        except (TypeError, ValueError):
+            confidence = 0.72
+
+        key = (_candidate_relation_id(candidate["category"], candidate["file"]), relation_type)
+        if key in seen:
+            continue
+        seen.add(key)
+
+        normalized_item = {
+            "type": relation_type,
+            "target": candidate,
+            "reason": _first_non_empty_text(raw_item.get("reason"), raw_item.get("note"), raw_item.get("why")),
+            "confidence": round(confidence, 3),
+            "source": "llm",
+        }
+        normalized_items.append(normalized_item)
+        if len(normalized_items) >= max(1, int(limit or 12)):
+            break
+
+    return normalized_items
+
+
+def suggest_vocab_relations_with_llm(
+    source: dict,
+    candidates: list[dict],
+    existing_relations: list[dict] | None = None,
+    limit: int = 12,
+) -> dict:
+    normalized_limit = max(1, min(int(limit or 12), 30))
+    compact_candidates = []
+    for candidate in candidates if isinstance(candidates, list) else []:
+        if not isinstance(candidate, dict):
+            continue
+        compact_candidates.append(
+            {
+                "category": _safe_string(candidate.get("category")),
+                "file": _normalize_relation_filename(candidate.get("file") or candidate.get("filename")),
+                "word": _safe_string(candidate.get("word")),
+                "definitions": _normalize_text_list(candidate.get("definitions"))[:3],
+                "examples": candidate.get("examples") if isinstance(candidate.get("examples"), list) else [],
+                "signals": candidate.get("signals") if isinstance(candidate.get("signals"), list) else [],
+            }
+        )
+
+    if not compact_candidates:
+        return {"suggestions": [], "notes": ["没有可用于连边分析的候选词条"]}
+
+    compact_source = {
+        "category": _safe_string(source.get("category")),
+        "file": _normalize_relation_filename(source.get("file") or source.get("filename")),
+        "word": _safe_string(source.get("word")),
+        "definitions": _normalize_text_list(source.get("definitions"))[:5],
+        "examples": source.get("examples") if isinstance(source.get("examples"), list) else [],
+    }
+    compact_existing = []
+    for relation in existing_relations if isinstance(existing_relations, list) else []:
+        if not isinstance(relation, dict):
+            continue
+        target = relation.get("target") if isinstance(relation.get("target"), dict) else {}
+        compact_existing.append(
+            {
+                "type": _normalize_relation_type(relation.get("type") or "related"),
+                "target": {
+                    "category": _safe_string(target.get("category")),
+                    "file": _normalize_relation_filename(target.get("file")),
+                    "word": _safe_string(target.get("word")),
+                },
+            }
+        )
+
+    prompt = (
+        "你是英文词库关系图助手。请只输出 JSON，不要输出 markdown。"
+        "任务：为当前词条从候选词条中选择应该建立 graph edge 的目标。"
+        "只选择真实、有学习价值的关系；不要因为普通词形相似就连边。"
+        "优先考虑：同一 headword 的不同目录词条、一个词和它的固定短语/习语、拆分自同一词条的学习点、强搭配或语义上需要互相跳转的词条。"
+        "如果当前词条已经有 existing_relations 中的关系，不要重复建议同一 target/type。"
+        "relation type 只能使用简短英文 snake_case，优先使用 related、split、same_word、phrase、variant、collocation。"
+        "输出结构："
+        '{"suggestions":[{"type":"phrase","target":{"category":"daily","file":"hazard-a-guess.json","word":"hazard a guess"},"reason":"中文理由","confidence":0.86}],"notes":["..."]}'
+        f"最多返回 {normalized_limit} 条 suggestions。"
+        f"当前词条: {json.dumps(compact_source, ensure_ascii=False)}\n"
+        f"existing_relations: {json.dumps(compact_existing, ensure_ascii=False)}\n"
+        f"候选词条: {json.dumps(compact_candidates[: max(normalized_limit * 6, 18)], ensure_ascii=False)}"
+    )
+    result = _call_llm_json(
+        prompt,
+        max_tokens=max(700, min(2600, 420 + len(compact_candidates) * 90)),
+        temperature=0.0,
+        request_tag="vocab_relations",
+    )
+    return {
+        "suggestions": _normalize_relation_suggestions(result, compact_candidates, limit=normalized_limit),
+        "notes": _normalize_text_list(result.get("notes") if isinstance(result, dict) else []),
     }
 
 

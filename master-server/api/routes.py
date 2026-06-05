@@ -4,6 +4,7 @@ import traceback
 import re
 import copy
 import subprocess
+import uuid
 from typing import List
 from fastapi import APIRouter, UploadFile, File, Form, BackgroundTasks, HTTPException
 from fastapi.responses import FileResponse
@@ -12,14 +13,25 @@ from pydantic import BaseModel
 from core.config import get_public_config_data, reset_config_data, save_config_data
 from core.storage import save_temp_file
 from core.tasks import load_tasks, save_tasks, create_task
-from services.llm import process_image, process_word_definition, process_context_analysis, recommend_task_name
+from services.llm import (
+    normalize_unit_bbox,
+    process_image,
+    process_image_region,
+    process_word_definition,
+    process_context_analysis,
+    recommend_task_name,
+)
 from core.review_vocabulary import list_categories as list_vocab_categories
+from core.refine_cache import delete_refine_cache_for_entry, has_refine_cache_for_entry
+from core.vocabulary_quality import vocabulary_entry_needs_processing
 from core.vocabulary import (
+    get_vocab_path,
     merge_or_create_vocab,
     list_vocab_filenames,
     list_vocab_source_names,
     load_vocab,
     normalize_vocab_lookup_word,
+    require_vocab_subdir,
 )
 
 router = APIRouter()
@@ -440,6 +452,84 @@ class TaskPageParsedResultRequest(BaseModel):
     parsed_result: dict
 
 
+class LocalRecognitionRequest(BaseModel):
+    region: dict
+
+
+def _extract_page_text(parsed_result) -> str:
+    if not isinstance(parsed_result, dict):
+        return ""
+    extracted_text = parsed_result.get("extracted_text", parsed_result.get("t", ""))
+    return extracted_text if isinstance(extracted_text, str) else str(extracted_text or "")
+
+
+def _ensure_page_parsed_result(sub: dict) -> dict:
+    parsed_result = sub.get("parsed_result")
+    if isinstance(parsed_result, dict):
+        next_result = copy.deepcopy(parsed_result)
+    else:
+        legacy_result = sub.get("result")
+        next_result = {"extracted_text": str(legacy_result or ""), "marked_text": []}
+
+    if not isinstance(next_result.get("marked_text"), list):
+        next_result["marked_text"] = []
+    return next_result
+
+
+def _make_local_region_id(page_index: int, region: dict) -> str:
+    left = round(float(region.get("left", 0)), 4)
+    top = round(float(region.get("top", 0)), 4)
+    width = round(float(region.get("width", 0)), 4)
+    height = round(float(region.get("height", 0)), 4)
+    suffix = uuid.uuid4().hex[:8]
+    return f"page-{page_index}-local-{left}-{top}-{width}-{height}-{suffix}"
+
+
+def _merge_local_region_marks(parsed_result: dict, new_marks: list[dict], source_region: dict, region_id: str) -> dict:
+    next_result = copy.deepcopy(parsed_result)
+    existing_marks = next_result.get("marked_text")
+    if not isinstance(existing_marks, list):
+        existing_marks = []
+
+    normalized_region = normalize_unit_bbox(source_region)
+    source_meta = {
+        "type": "local-region",
+        "label": "局部识别",
+        "regionId": region_id,
+        "region": normalized_region,
+    }
+
+    appended = []
+    for index, mark in enumerate(new_marks):
+        if not isinstance(mark, dict):
+            continue
+        word = str(mark.get("word") or "").strip()
+        if not word:
+            continue
+
+        next_mark = {
+            "word": word,
+            "context": str(mark.get("context") or "").strip(),
+            "sourceType": "local-region",
+            "sourceLabel": "局部识别",
+            "sourceRegionId": region_id,
+            "sourceRegion": normalized_region,
+            "source": source_meta,
+            "localRegionIndex": index,
+        }
+        bbox = normalize_unit_bbox(mark.get("bbox"))
+        if bbox:
+            next_mark["bbox"] = bbox
+        local_bbox = normalize_unit_bbox(mark.get("localBbox"))
+        if local_bbox:
+            next_mark["localBbox"] = local_bbox
+
+        appended.append(next_mark)
+
+    next_result["marked_text"] = existing_marks + appended
+    return next_result
+
+
 @router.post("/api/task_name/recommend")
 def recommend_resource_task_name(req: TaskNameRecommendRequest):
     try:
@@ -483,6 +573,82 @@ def update_task_page_parsed_result(task_id: str, index: int, req: TaskPageParsed
     sub_tasks[index]["parsed_result"] = normalized_result
     save_tasks(tasks)
     return {"status": "success", "parsed_result": normalized_result}
+
+
+@router.post("/api/task/{task_id}/page/{index}/recognize_region")
+def recognize_task_page_region(task_id: str, index: int, req: LocalRecognitionRequest):
+    tasks = load_tasks()
+    task = tasks.get(task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="任务不存在")
+
+    sub_tasks = task.get("sub_tasks", [])
+    if index < 0 or index >= len(sub_tasks):
+        raise HTTPException(status_code=400, detail="参数错误，索引越界")
+
+    sub = sub_tasks[index]
+    image_path = str(sub.get("path") or "").strip()
+    if not image_path or not os.path.exists(image_path):
+        raise HTTPException(status_code=404, detail="页面图片不存在")
+
+    normalized_region = normalize_unit_bbox(req.region)
+    if not normalized_region:
+        raise HTTPException(status_code=400, detail="局部识别矩形无效")
+    if normalized_region["width"] < 0.01 or normalized_region["height"] < 0.01:
+        raise HTTPException(status_code=400, detail="局部识别矩形太小")
+
+    try:
+        with open(image_path, "rb") as f:
+            image_bytes = f.read()
+
+        page_parsed_result = _ensure_page_parsed_result(sub)
+        page_text = _extract_page_text(page_parsed_result)
+        mime = mimetypes.guess_type(image_path)[0] or "image/jpeg"
+        reply = process_image_region(
+            image_bytes,
+            os.path.basename(image_path),
+            mime,
+            normalized_region,
+            page_text=page_text,
+        )
+
+        region_id = _make_local_region_id(index, normalized_region)
+        local_marks = reply.get("parsed", {}).get("marked_text", [])
+        next_parsed_result = _merge_local_region_marks(
+            page_parsed_result,
+            local_marks,
+            normalized_region,
+            region_id,
+        )
+        normalized_result = _normalize_parsed_result_focus(next_parsed_result)
+
+        sub["parsed_result"] = normalized_result
+        sub.setdefault("local_recognition_history", [])
+        sub["local_recognition_history"].append({
+            "regionId": region_id,
+            "region": normalized_region,
+            "count": len(local_marks) if isinstance(local_marks, list) else 0,
+            "meta": reply.get("meta", {}),
+        })
+        save_tasks(tasks)
+
+        appended_marks = [
+            mark for mark in normalized_result.get("marked_text", [])
+            if isinstance(mark, dict) and mark.get("sourceRegionId") == region_id
+        ]
+        return {
+            "status": "success",
+            "region_id": region_id,
+            "region": normalized_region,
+            "marks": appended_marks,
+            "parsed_result": normalized_result,
+            "raw": reply.get("raw", ""),
+            "meta": reply.get("meta", {}),
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/api/task/{task_id}/regenerate")
 def regenerate_task_item(task_id: str, req: RegenerateRequest, background_tasks: BackgroundTasks):
@@ -565,6 +731,16 @@ def add_vocabulary(req: VocabAddRequest):
             intentional_blank=req.intentional_blank or req.intentionalBlank,
             youtube=req.youtube 
         )
+        saved_word = str(final_data.get("word") or req.word or "").strip()
+        if saved_word:
+            try:
+                cache_category = require_vocab_subdir(req.category)
+                cache_filename = os.path.basename(
+                    get_vocab_path(saved_word, cache_category, create_dir=False)
+                )
+                delete_refine_cache_for_entry(cache_category, cache_filename)
+            except Exception:
+                pass
         return {"status": "success", "data": final_data}
     except ValueError as e:
         print(f"❌ 生词处理失败: {str(e)}")
@@ -583,11 +759,17 @@ def list_vocabulary(category: str = ""):
             payload = load_vocab(word_key, category) or {}
             display_word = str(payload.get("word") or word_key).strip() or word_key
             created_at = str(payload.get("createdAt") or "").strip()
+            needs_processing = vocabulary_entry_needs_processing(payload)
+            refine_cached = has_refine_cache_for_entry(category, filename, payload)
             entries.append({
                 "key": word_key,
                 "file": filename,
                 "word": display_word,
                 "marked": bool(payload.get("marked", False)),
+                "needs_processing": needs_processing,
+                "needsProcessing": needs_processing,
+                "refine_cached": refine_cached,
+                "refineCached": refine_cached,
                 "created_at": created_at,
                 "createdAt": created_at,
             })

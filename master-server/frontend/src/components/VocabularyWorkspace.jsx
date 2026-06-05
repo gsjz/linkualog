@@ -1,18 +1,20 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import VocabularyReview from './VocabularyReview.jsx';
 import ReviewWorkspace from '../review/App.jsx';
 import UiIcon from './UiIcon.jsx';
+import { prefetchVocabularyRefine } from '../api/client.js';
 
 const normalizeVocabularyLaunchWord = (value) => String(value || '')
   .trim()
   .replace(/\.json$/i, '');
 
-const REVIEW_WORKSPACE_FOCUS_VALUES = new Set(['clean', 'editor', 'organize']);
+const REVIEW_WORKSPACE_FOCUS_VALUES = new Set(['clean', 'editor', 'organize', 'connection']);
 
 const normalizeWorkspaceFocus = (value) => {
   const normalized = String(value || '').trim().toLowerCase();
   if (normalized === 'review') return 'organize';
+  if (normalized === 'connect') return 'connection';
   return REVIEW_WORKSPACE_FOCUS_VALUES.has(normalized) ? normalized : 'clean';
 };
 
@@ -32,6 +34,7 @@ const buildReviewLaunchRequest = ({ category = '', word = '', focus = 'clean' } 
 const EDITOR_SURFACE_OPTIONS = [
   { key: 'organize', label: '整理', icon: 'wand' },
   { key: 'editor', label: '编辑', icon: 'edit' },
+  { key: 'connection', label: '连接', icon: 'external-link' },
 ];
 
 const STUDY_MODE_OPTIONS = [
@@ -58,16 +61,17 @@ function StudyModeSwitch({ mode, onChange }) {
   );
 }
 
-function EditLaunchButton({ disabled, onOpen }) {
+function EditLaunchButton({ disabled, onOpen, hasReadySuggestion }) {
   return (
     <button
       type="button"
-      className="vocab-mode-switch"
+      className={`vocab-mode-switch${hasReadySuggestion ? ' has-ready-suggestion' : ''}`}
       aria-label="打开编辑面板"
-      title="打开编辑面板"
+      title={hasReadySuggestion ? '已有预生成整理建议' : '打开编辑面板'}
       onClick={onOpen}
       disabled={disabled}
     >
+      {hasReadySuggestion ? <span className="vocab-mode-switch-dot" aria-hidden="true" /> : null}
       <span className="vocab-mode-switch-icon">
         <UiIcon name="edit" size={17} />
       </span>
@@ -88,6 +92,17 @@ export default function VocabularyWorkspace({
   const [editorSurface, setEditorSurface] = useState('');
   const [editorLaunchToken, setEditorLaunchToken] = useState(0);
   const [reviewEntryUpdate, setReviewEntryUpdate] = useState(null);
+  const [prefetchedRefineUpdate, setPrefetchedRefineUpdate] = useState(null);
+  const [visibleScope, setVisibleScope] = useState({
+    entries: [],
+    selectedEntry: null,
+    selectedCategory: '',
+    entryFilter: '',
+    wordQuery: '',
+    totalCount: 0,
+  });
+  const [prefetchingRefine, setPrefetchingRefine] = useState(false);
+  const [prefetchProgress, setPrefetchProgress] = useState({ done: 0, total: 0 });
   const reviewSurfaceMobileSimple = mobileSimple;
 
   const sharedLaunchRequest = useMemo(() => (
@@ -122,6 +137,80 @@ export default function VocabularyWorkspace({
     setEditorLaunchToken((token) => token + 1);
     setEditorSurface('organize');
   };
+  const markRefineCached = useCallback((category, files) => {
+    const normalizedCategory = String(category || '').trim();
+    const fileSet = new Set((Array.isArray(files) ? files : [])
+      .map((file) => String(file || '').trim())
+      .filter(Boolean));
+    if (!normalizedCategory || !fileSet.size) return;
+    const normalizedFiles = [...fileSet];
+
+    setVisibleScope((current) => ({
+      ...current,
+      entries: (Array.isArray(current.entries) ? current.entries : []).map((entry) => (
+        String(entry.category || '').trim() === normalizedCategory && fileSet.has(String(entry.file || '').trim())
+          ? { ...entry, refineCached: true, refine_cached: true }
+          : entry
+      )),
+      selectedEntry: current.selectedEntry
+        && String(current.selectedEntry.category || '').trim() === normalizedCategory
+        && fileSet.has(String(current.selectedEntry.file || '').trim())
+        ? { ...current.selectedEntry, refineCached: true, refine_cached: true }
+        : current.selectedEntry,
+    }));
+    setPrefetchedRefineUpdate({
+      category: normalizedCategory,
+      files: normalizedFiles,
+      token: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    });
+  }, []);
+
+  const handleVisibleScopeChange = useCallback((scope) => {
+    setVisibleScope(scope || {});
+  }, []);
+
+  const handlePrefetchVisibleRefine = useCallback(async () => {
+    const rawEntries = Array.isArray(visibleScope.entries) ? visibleScope.entries : [];
+    const targetsByCategory = new Map();
+    rawEntries
+      .filter((entry) => entry?.needsProcessing && !entry?.refineCached)
+      .slice(0, 50)
+      .forEach((entry) => {
+        const category = String(entry.category || '').trim();
+        const file = String(entry.file || '').trim();
+        if (!category || !file) return;
+        const files = targetsByCategory.get(category) || [];
+        files.push(file);
+        targetsByCategory.set(category, files);
+      });
+
+    const total = [...targetsByCategory.values()].reduce((sum, files) => sum + files.length, 0);
+    if (!total) return;
+
+    setPrefetchingRefine(true);
+    setPrefetchProgress({ done: 0, total });
+    let done = 0;
+    try {
+      for (const [category, files] of targetsByCategory.entries()) {
+        for (const file of files) {
+          try {
+            const res = await prefetchVocabularyRefine(category, [file], { limit: 1 });
+            const item = Array.isArray(res?.results) ? res.results[0] : null;
+            if (item?.status === 'success' && !item.llm_error && ['hit', 'stored'].includes(String(item.cache?.status || ''))) {
+              markRefineCached(category, [item.file || file]);
+            }
+          } catch (error) {
+            console.error('预生成整理建议失败', error);
+          } finally {
+            done += 1;
+            setPrefetchProgress({ done, total });
+          }
+        }
+      }
+    } finally {
+      setPrefetchingRefine(false);
+    }
+  }, [markRefineCached, visibleScope.entries]);
 
   const handleVocabularyEntryChange = (change) => {
     const normalizedCategory = String(change?.category || sharedLaunchRequest?.category || '').trim();
@@ -157,6 +246,18 @@ export default function VocabularyWorkspace({
       setEditorSurface('');
     }
   };
+  const visibleEntries = Array.isArray(visibleScope.entries) ? visibleScope.entries : [];
+  const selectedVisibleEntry = visibleScope.selectedEntry || null;
+  const prefetchTargetCount = visibleEntries.filter((entry) => entry?.needsProcessing && !entry?.refineCached).length;
+  const selectedHasReadySuggestion = Boolean(selectedVisibleEntry?.refineCached);
+  const prefetchLabel = prefetchingRefine
+    ? `预生成 ${prefetchProgress.done}/${prefetchProgress.total}`
+    : '预生成';
+  const editorSurfaceTitle = {
+    organize: '整理建议',
+    editor: '词条编辑',
+    connection: '连接',
+  }[editorSurface] || '词条编辑';
 
   return (
     <div className={`vocab-workspace${compactDesktop ? ' is-compact-desktop' : ''} is-study-mode${overlayLaunchRequest ? ' is-editor-open' : ''}`}>
@@ -169,7 +270,20 @@ export default function VocabularyWorkspace({
         </div>
         <div className="vocab-workspace-actions">
           <StudyModeSwitch mode={studyMode} onChange={setStudyMode} />
-          <EditLaunchButton disabled={!hasSelection} onOpen={openEditorPanel} />
+          <button
+            type="button"
+            className="vocab-mode-switch vocab-prefetch-switch"
+            aria-label="预生成当前范围内的待处理词条"
+            title={`预生成当前范围内的待处理词条${prefetchTargetCount ? ` (${Math.min(prefetchTargetCount, 50)})` : ''}`}
+            onClick={() => void handlePrefetchVisibleRefine()}
+            disabled={prefetchingRefine || prefetchTargetCount <= 0}
+          >
+            <span className="vocab-mode-switch-icon">
+              <UiIcon name="wand" size={17} />
+            </span>
+            <span className="vocab-mode-switch-copy">{prefetchLabel}</span>
+          </button>
+          <EditLaunchButton disabled={!hasSelection} onOpen={openEditorPanel} hasReadySuggestion={selectedHasReadySuggestion} />
         </div>
       </div>
 
@@ -178,10 +292,12 @@ export default function VocabularyWorkspace({
           <VocabularyReview
             launchRequest={sharedLaunchRequest}
             entryUpdateRequest={reviewEntryUpdate}
+            prefetchedRefineRequest={prefetchedRefineUpdate}
             mobileSimple={reviewSurfaceMobileSimple}
             compactDesktop={reviewSurfaceCompactDesktop}
             selectionMode={studyMode}
             onSelectionChange={onSelectionChange}
+            onVisibleScopeChange={handleVisibleScopeChange}
           />
         </section>
 
@@ -197,7 +313,7 @@ export default function VocabularyWorkspace({
               <div className="vocab-editor-panel-header">
                 <div className="vocab-editor-panel-heading">
                   <div className="vocab-editor-panel-title">
-                    {editorSurface === 'organize' ? '整理建议' : '词条编辑'}
+                    {editorSurfaceTitle}
                   </div>
                   <div className="vocab-editor-panel-caption">
                     {sharedLaunchRequest?.word || sharedLaunchRequest?.filename || '当前词条'}

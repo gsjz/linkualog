@@ -4,6 +4,7 @@ from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 from core import vocabulary
+from core.vocabulary_quality import vocabulary_entry_needs_processing
 
 
 class VocabularyMergeTests(unittest.TestCase):
@@ -127,6 +128,37 @@ class VocabularyMergeTests(unittest.TestCase):
                 self.assertEqual(merged["examples"][0]["text"], "")
                 self.assertEqual(merged["examples"][0]["explanation"], "")
                 self.assertTrue(merged["examples"][0]["intentionalBlank"])
+
+    def test_quality_scan_ignores_intentional_blank_example_explanation(self):
+        self.assertFalse(
+            vocabulary_entry_needs_processing(
+                {
+                    "word": "blank",
+                    "definitions": ["空格；留白"],
+                    "examples": [
+                        {
+                            "text": "The answer option is ____.",
+                            "explanation": "",
+                            "intentionalBlank": True,
+                        }
+                    ],
+                }
+            )
+        )
+        self.assertTrue(
+            vocabulary_entry_needs_processing(
+                {
+                    "word": "blank",
+                    "definitions": ["空格；留白"],
+                    "examples": [
+                        {
+                            "text": "The answer option is ____.",
+                            "explanation": "",
+                        }
+                    ],
+                }
+            )
+        )
 
 
 if __name__ == "__main__":
