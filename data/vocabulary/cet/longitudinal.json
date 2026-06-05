@@ -1,0 +1,32 @@
+{
+  "word": "longitudinal",
+  "createdAt": "2026-06-05",
+  "reviews": [],
+  "definitions": [
+    "纵向的；长期追踪的（尤用于研究中，在较长时间内持续观察同一对象）"
+  ],
+  "examples": [
+    {
+      "text": "Researchers use data from a longitudinal study.",
+      "explanation": "这里的 longitudinal study 指“纵向研究、追踪研究”，即在一段较长时间内持续观察同一批对象的研究。句子意思是：研究人员使用了一项纵向研究的数据。",
+      "focusWords": [
+        "longitudinal"
+      ],
+      "source": {
+        "text": "资源解析任务",
+        "url": ""
+      }
+    }
+  ],
+  "relations": [
+    {
+      "type": "related",
+      "target": {
+        "category": "cet",
+        "file": "longevity.json",
+        "word": "longevity"
+      },
+      "source": "manual"
+    }
+  ]
+}

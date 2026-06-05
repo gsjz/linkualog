@@ -2,11 +2,13 @@
   "word": "inflation",
   "createdAt": "2026-06-01",
   "reviews": [],
-  "definitions": [],
+  "definitions": [
+    "通货膨胀；物价上涨（inflation）"
+  ],
   "examples": [
     {
       "text": "While the authors of the paper found truth in this explanation, they assert that low wages can’t be the only factor, as wages for men without college degrees, adjusting for inflation, haven’t changed much since the 1960s, making it hard to see why fewer men seem willing to accept those wages.",
-      "explanation": "",
+      "explanation": "这里的 adjusting for inflation 表示“按通货膨胀因素进行调整 / 扣除通胀影响后”。整句中意思是：如果把物价上涨因素算进去，自20世纪60年代以来，没有大学学历男性的工资其实变化不大。",
       "focusWords": [
         "inflation"
       ],

@@ -1,7 +1,16 @@
 {
   "word": "concurrent",
   "createdAt": "2026-06-01",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-06-05",
+      "score": 2
+    },
+    {
+      "date": "2026-06-06",
+      "score": 2
+    }
+  ],
   "definitions": [
     "同时发生的；并存的（常与 with 连用，表示与……同时发生）"
   ],

@@ -54,5 +54,17 @@
   ],
   "mergedFrom": [
     "intricate habitats"
+  ],
+  "relations": [
+    {
+      "type": "related",
+      "target": {
+        "category": "cet",
+        "file": "elaborate.json",
+        "word": "elaborate"
+      },
+      "reason": "都表示复杂",
+      "source": "manual"
+    }
   ]
 }

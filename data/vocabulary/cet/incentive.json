@@ -2,11 +2,13 @@
   "word": "incentive",
   "createdAt": "2026-06-01",
   "reviews": [],
-  "definitions": [],
+  "definitions": [
+    "激励；刺激；诱因（如：financial incentive 指“经济上的激励/诱因”）"
+  ],
   "examples": [
     {
       "text": "These two changes mean that men might not have families to support, or if they do, their wives might be doing more of the providing, both of which might remove the financial incentive to work.",
-      "explanation": "",
+      "explanation": "这句话里 incentive 表示“激励、诱因”。financial incentive to work 指“促使人去工作的经济动力/金钱上的激励”。整句意思是：这些变化可能让男性不再需要养家，或者即使需要，妻子也可能承担更多收入来源，这两点都可能削弱他们去工作的经济动机。",
       "focusWords": [
         "incentive"
       ],

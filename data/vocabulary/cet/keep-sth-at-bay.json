@@ -5,6 +5,10 @@
     {
       "date": "2026-05-03",
       "score": 4
+    },
+    {
+      "date": "2026-06-05",
+      "score": 4
     }
   ],
   "definitions": [
@@ -30,14 +34,19 @@
     },
     {
       "text": "According to psychology, what do people strive to do following the initial stage of their life? B) Indulge in cultural pursuits while keeping their base impulses at bay.",
-      "explanation": "",
+      "explanation": "这里的 keeping their base impulses at bay 表示“压住/控制住自己最原始的冲动，不让它们主导行为”。整句可理解为：根据心理学，人们在人生最初阶段之后，会努力在追求文化层面的东西的同时，克制自己的基本本能冲动。",
       "focusWords": [
         "keep-sth-at-bay"
       ],
       "source": {
         "text": "CET6 23 12 2 阅读2",
         "url": ""
-      }
+      },
+      "focusPositions": [
+        25,
+        29,
+        30
+      ]
     }
   ]
 }

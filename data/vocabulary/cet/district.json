@@ -20,12 +20,13 @@
     }
   ],
   "definitions": [
-    "an administrative division of a city or town"
+    "an administrative division of a city or town",
+    "（美国等的）地区；行政区；辖区（如法院管辖的地区）"
   ],
   "examples": [
     {
       "text": "In 2018, two long years after Pritchett’s discovery, the federal district court ruled in favor of France.",
-      "explanation": "",
+      "explanation": "这里的 district 不是普通的“街区”，而是“地区、辖区”。federal district court 指“联邦地区法院”，即按联邦司法辖区划分的法院。整句意思是：2018年，也就是在普里切特发现此事两年后，联邦地区法院作出了有利于法国的裁决。",
       "focusWords": [
         "district"
       ],

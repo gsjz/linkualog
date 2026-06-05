@@ -1,0 +1,21 @@
+{
+  "word": "hinder",
+  "createdAt": "2026-06-04",
+  "reviews": [],
+  "definitions": [
+    "阻碍，妨碍；阻止……做某事（常指使进展变慢或变得困难）"
+  ],
+  "examples": [
+    {
+      "text": "This __28__ suggests that the layout and design of cities can hinder or promote healthier lifestyle choices and it is __29__ that urban planners bear this in mind.",
+      "explanation": "这里的 hinder 表示“阻碍、妨碍”。句子意思是：这表明，城市的布局和设计既可能阻碍，也可能促进人们做出更健康的生活方式选择；因此城市规划者应当牢记这一点。hinder 与后面的 promote 构成对比。",
+      "focusWords": [
+        "hinder"
+      ],
+      "source": {
+        "text": "CET6 23 12 3 完形",
+        "url": ""
+      }
+    }
+  ]
+}

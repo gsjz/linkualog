@@ -5,6 +5,10 @@
     {
       "date": "2026-05-06",
       "score": 4
+    },
+    {
+      "date": "2026-06-05",
+      "score": 4
     }
   ],
   "definitions": [
@@ -13,7 +17,7 @@
   "examples": [
     {
       "text": "It’s home to the second-busiest cruise ship port in the world and is a gateway to the cosmos.",
-      "explanation": "",
+      "explanation": "这里的 gateway 表示“通道、门户”，常引申为“通往某地或某领域的入口”。句中 a gateway to the cosmos 可理解为“通往太空的门户”，强调这个地方是进入航天或太空探索的重要入口。",
       "focusWords": [
         "gateway"
       ],

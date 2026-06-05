@@ -1,0 +1,21 @@
+{
+  "word": "lane",
+  "createdAt": "2026-06-04",
+  "reviews": [],
+  "definitions": [
+    "（道路的）车道；（尤指乡间的）小路、小巷"
+  ],
+  "examples": [
+    {
+      "text": "Providing more walkable spaces, better protected bike lanes and more __33__ spaces are important steps. But even smaller changes can be effective.",
+      "explanation": "这里的 lane 指“车道”。bike lanes 表示“自行车道”，protected bike lanes 表示“有保护隔离的自行车道”。整句大意是：提供更适合步行的空间、更安全受保护的自行车道以及更多其他空间，都是重要措施。",
+      "focusWords": [
+        "lane"
+      ],
+      "source": {
+        "text": "CET6 23 12 3 完形",
+        "url": ""
+      }
+    }
+  ]
+}

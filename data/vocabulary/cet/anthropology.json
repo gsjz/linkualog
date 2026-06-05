@@ -7,11 +7,13 @@
       "score": 3
     }
   ],
-  "definitions": [],
+  "definitions": [
+    "人类学（研究人类及其社会、文化、发展等的学科）"
+  ],
   "examples": [
     {
       "text": "Current work in anthropology（人类学）has suggested, however, that this view of the role of competition in human behavior may be incorrect.",
-      "explanation": "",
+      "explanation": "这里的 anthropology 指“人类学”这门学科。整句意思是：然而，人类学领域当前的研究表明，这种关于竞争在人类行为中作用的看法可能是不正确的。",
       "focusWords": [
         "anthropology"
       ],

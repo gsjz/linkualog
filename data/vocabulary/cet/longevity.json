@@ -51,5 +51,16 @@
       ],
       "missing_points": []
     }
+  ],
+  "relations": [
+    {
+      "type": "related",
+      "target": {
+        "category": "cet",
+        "file": "longitudinal.json",
+        "word": "longitudinal"
+      },
+      "source": "manual"
+    }
   ]
 }

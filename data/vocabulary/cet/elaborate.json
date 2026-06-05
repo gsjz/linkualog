@@ -28,7 +28,7 @@
     }
   ],
   "definitions": [
-    "复杂的符号"
+    "复杂的；精心制作的；详尽的"
   ],
   "examples": [
     {
@@ -64,6 +64,18 @@
         "指用于交流的复杂标志/信号系统",
         "结合例句可理解为通过复杂符号进行交流"
       ]
+    }
+  ],
+  "relations": [
+    {
+      "type": "related",
+      "target": {
+        "category": "cet",
+        "file": "intricate.json",
+        "word": "intricate"
+      },
+      "reason": "都表示复杂",
+      "source": "manual"
     }
   ]
 }

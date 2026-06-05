@@ -16,12 +16,12 @@
     }
   ],
   "definitions": [
-    "adj. 沉没的；残骸状态的"
+    "n. 残骸；失事船只（或车辆、飞机等）的残骸"
   ],
   "examples": [
     {
       "text": "Nearly three million vessels lie wrecked on the Earth’s ocean floor—from old canoes to the Titanic—and likely less than one percent have been explored.",
-      "explanation": "",
+      "explanation": "这里 wrecked 是形容词，表示“失事的、沉没后的”。整句意思是：近三百万艘船只以失事沉没的状态躺在地球海底，从古老独木舟到泰坦尼克号，而其中可能不到 1% 被探索过。可借此联想到名词 wreck 表示“残骸、失事船只”。",
       "focusWords": [
         "wreck"
       ],
