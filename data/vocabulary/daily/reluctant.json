@@ -1,0 +1,23 @@
+{
+  "word": "reluctant",
+  "createdAt": "2026-06-05",
+  "reviews": [],
+  "definitions": [],
+  "examples": [
+    {
+      "text": "as an anchor of global security and as an advocate for human freedom. Mindful of the risks and costs of military action, we are naturally reluctant to use force to solve the world’s many challenges. But when our interests and values are at stake, we have a responsibility to act.",
+      "explanation": "",
+      "focusWords": [
+        "reluctant"
+      ],
+      "source": {
+        "text": "President Obama's Speech on Libya (March 28, 2011)",
+        "url": "https://www.youtube.com/watch?v=_hLeJpS3wng"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=_hLeJpS3wng",
+        "timestamp": 90
+      }
+    }
+  ]
+}

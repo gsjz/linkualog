@@ -2,11 +2,13 @@
   "word": "extremities",
   "createdAt": "2026-06-02",
   "reviews": [],
-  "definitions": [],
+  "definitions": [
+    "（物体的）末端，尽头；最远端部位"
+  ],
   "examples": [
     {
       "text": "declines as we age. The DNA in our cells is packaged within chromosomes, each of which has two protective regions at the extremities called telomeres. Those shorten every time cells replicate. When telomeres become too short,",
-      "explanation": "",
+      "explanation": "这里的 extremities 指“末端、尽头”。句中说每条染色体的两端都有起保护作用的区域，这些区域叫端粒（telomeres）。",
       "focusWords": [
         "extremities"
       ],

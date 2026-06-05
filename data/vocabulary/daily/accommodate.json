@@ -1,0 +1,25 @@
+{
+  "word": "accommodate",
+  "createdAt": "2026-06-03",
+  "reviews": [],
+  "definitions": [
+    "容纳；适应，满足……的需要（如 accommodate growth 表示“容纳/应对增长带来的需求”）"
+  ],
+  "examples": [
+    {
+      "text": "in the urban areas of the world's poorest countries. So, how will cities need to change to accommodate this growth? First, the world will need to seek ways to provide adequate food,",
+      "explanation": "这里的 accommodate 表示“容纳”或“适应、应对……的需要”。整句是在说：城市需要如何改变，才能容纳这种人口增长并满足随之而来的需求。",
+      "focusWords": [
+        "accommodate"
+      ],
+      "source": {
+        "text": "城市化与未来的城市 - 万斯·凯特",
+        "url": "https://www.youtube.com/watch?v=fKnAJCSGSdk"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=fKnAJCSGSdk",
+        "timestamp": 178
+      }
+    }
+  ]
+}

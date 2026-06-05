@@ -2,11 +2,13 @@
   "word": "vacant",
   "createdAt": "2026-06-03",
   "reviews": [],
-  "definitions": [],
+  "definitions": [
+    "空着的；未被使用的；（土地、房屋等）闲置的"
+  ],
   "examples": [
     {
       "text": "to vertical farms and skyscrapers, rooftop gardens, or vacant lots in city centers, while power will increasingly come from multiple sources of renewable energy.",
-      "explanation": "",
+      "explanation": "这里的 vacant lots 指“空置的地块/闲置的空地”。在句中，vacant 表示某块土地目前没有被建筑或使用。",
       "focusWords": [
         "vacant"
       ],

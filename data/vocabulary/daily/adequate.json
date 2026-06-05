@@ -2,11 +2,13 @@
   "word": "adequate",
   "createdAt": "2026-06-03",
   "reviews": [],
-  "definitions": [],
+  "definitions": [
+    "足够的；合乎需要的"
+  ],
   "examples": [
     {
       "text": "to accommodate this growth? First, the world will need to seek ways to provide adequate food, sanitation, and education for all people.",
-      "explanation": "",
+      "explanation": "adequate 表示“足够的、合乎需要的”。在句中 adequate food, sanitation, and education 指“足够的食物、卫生条件和教育”，强调这些资源能够满足所有人的基本需要。",
       "focusWords": [
         "adequate"
       ],

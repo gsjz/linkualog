@@ -21,12 +21,12 @@
   ],
   "definitions": [
     "宇宙的；天体的",
-    "宇宙的；宏大的"
+    "宇宙的；宇宙层面的；极重大的"
   ],
   "examples": [
     {
-      "text": "ever be born had been born. And then, on one \nplanet, where the conditions were just right, dead particles and molecules combined to make \nanother jump in complexity. Maybe the laws that govern everything were destined to make life \nhappen. Maybe it was just a cosmic dice throw. But life, now the most complex thing in existence, \nwasted no time and spread to even the tiniest corners. For billions of years cells held on, \nfighting against the elements and each other,",
-      "explanation": "",
+      "text": "ever be born had been born. And then, on one planet, where the conditions were just right, dead particles and molecules combined to make another jump in complexity. Maybe the laws that govern everything were destined to make life happen. Maybe it was just a cosmic dice throw. But life, now the most complex thing in existence, wasted no time and spread to even the tiniest corners. For billions of years cells held on, fighting against the elements and each other,",
+      "explanation": "这里的 cosmic 出现在 cosmic dice throw 中，意思不是单纯“天体的”，而是“宇宙层面的、关乎整个宇宙尺度的”。整句 Maybe it was just a cosmic dice throw 可理解为“也许这只是一次宇宙级的随机一掷”，强调生命出现可能带有巨大的偶然性。",
       "focusWords": [
         "cosmic"
       ],

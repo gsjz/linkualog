@@ -13,16 +13,20 @@
     {
       "date": "2026-06-01",
       "score": 3
+    },
+    {
+      "date": "2026-06-05",
+      "score": 3
     }
   ],
   "definitions": [
-    "(adj.) Relating to or characteristic of nomads.",
-    "(adj.) Moving from place to place rather than settling permanently."
+    "（形容词）游牧的；逐水草而居的",
+    "（形容词）流动的，迁徙不定的；经常搬迁的"
   ],
   "examples": [
     {
       "text": "\"What a wonderful time to be alive! Hey, the Yellow River flooded again and destroyed all your crops. aaand also we're being raided by nomadic tribesmen, aaaand also this period of Chinese history may be entirely mythical, meaning you may not even exist. Well, that would certainly explain the laser eyes.",
-      "explanation": "",
+      "explanation": "这里的 nomadic tribesmen 指“游牧部落的人”。nomadic 形容人群或生活方式时，强调“不定居、四处迁徙”，常见搭配有 nomadic tribe（游牧部落）、nomadic lifestyle（游牧生活方式）。",
       "focusWords": [
         "nomadic"
       ],

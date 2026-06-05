@@ -1,0 +1,25 @@
+{
+  "word": "malleable",
+  "createdAt": "2026-06-03",
+  "reviews": [],
+  "definitions": [
+    "可塑的；易改变的；可适应变化的"
+  ],
+  "examples": [
+    {
+      "text": "focused on local and sustainable production. The future of cities is diverse, malleable, and creative, no longer built around a single industry,",
+      "explanation": "这里的 malleable 形容“未来的城市”不是固定僵化的，而是“可塑的、能随需求与环境变化而调整的”。句中 diverse, malleable, and creative 并列，强调未来城市会更多元、更有弹性、更有创造力。",
+      "focusWords": [
+        "malleable"
+      ],
+      "source": {
+        "text": "城市化与未来的城市 - 万斯·凯特",
+        "url": "https://www.youtube.com/watch?v=fKnAJCSGSdk"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=fKnAJCSGSdk",
+        "timestamp": 224
+      }
+    }
+  ]
+}

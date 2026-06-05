@@ -2,11 +2,13 @@
   "word": "prone",
   "createdAt": "2026-06-02",
   "reviews": [],
-  "definitions": [],
+  "definitions": [
+    "易于…的；有…倾向的（常与 to 连用）"
+  ],
   "examples": [
     {
       "text": "These occur naturally when the body's DNA replicates, but also in non-dividing cells. Organelles called mitochondria are especially prone to this damage. Mitochondria produce adenosine triphosphate, or ATP,",
-      "explanation": "",
+      "explanation": "这里的 prone to this damage 表示“特别容易受到这种损伤”。整句意思是：线粒体尤其容易发生这种损伤。prone 常和 to 连用，表示“易于……的 / 有……倾向的”。",
       "focusWords": [
         "prone"
       ],

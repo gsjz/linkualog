@@ -2,11 +2,13 @@
   "word": "replenish",
   "createdAt": "2026-06-02",
   "reviews": [],
-  "definitions": [],
+  "definitions": [
+    "补充，增添；使恢复到原有数量或水平"
+  ],
   "examples": [
     {
       "text": "halting cell growth and cutting short their ability to replicate. Aging also involves stem cells that reside in many tissues and have the property of dividing without limits to replenish other cells. As we get older, stem cells decrease in number and tend to lose their regenerative potential,",
-      "explanation": "",
+      "explanation": "这里的 replenish 表示“补充、补足”。to replenish other cells 指干细胞通过分裂来补充其他细胞，维持组织中的细胞数量。",
       "focusWords": [
         "replenish"
       ],

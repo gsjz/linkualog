@@ -25,6 +25,21 @@
         "url": "https://www.youtube.com/watch?v=esvycD1O3cM",
         "timestamp": 325
       }
+    },
+    {
+      "text": "That was just the home runs. Any other guesses? Any other baseball fans that want to hazard a guess? AUDIENCE: Jose Iglesias, [INAUDIBLE]. ANDY ANDRES: Good, good.",
+      "explanation": "这里的 hazard a guess 是固定说法，意思是“冒昧猜一下”或“试着猜一猜”。其中 hazard 作动词，不是“危险”的名词义，而是“斗胆提出、冒险说出”的意思。说话者是在邀请观众继续猜答案。",
+      "focusWords": [
+        "hazard"
+      ],
+      "source": {
+        "text": "Sabermetrics 101: Baseball Analytics | Andy Andres | Talks at Google",
+        "url": "https://www.youtube.com/watch?v=wu2twZdrM-E"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=wu2twZdrM-E",
+        "timestamp": 2191
+      }
     }
   ],
   "mergedFrom": [

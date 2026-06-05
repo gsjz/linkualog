@@ -5,6 +5,10 @@
     {
       "date": "2026-05-18",
       "score": 3
+    },
+    {
+      "date": "2026-06-06",
+      "score": 4
     }
   ],
   "definitions": [
@@ -25,6 +29,17 @@
         "url": "https://www.youtube.com/watch?v=esvycD1O3cM",
         "timestamp": 237
       }
+    }
+  ],
+  "relations": [
+    {
+      "type": "related",
+      "target": {
+        "category": "daily",
+        "file": "dictatorship.json",
+        "word": "dictatorship"
+      },
+      "source": "manual"
     }
   ]
 }

@@ -2,11 +2,13 @@
   "word": "fatal",
   "createdAt": "2026-06-02",
   "reviews": [],
-  "definitions": [],
+  "definitions": [
+    "致命的；造成死亡的；灾难性的（尤指导致失败或严重后果的）"
+  ],
   "examples": [
     {
       "text": "As they age, they stop being able to do quality control on proteins, causing the accumulation of damaged and potentially toxic nutrients, leading to excessive metabolic activity that could be fatal for them. Intercellular communication also slows, ultimately undermining the body's functional ability.",
-      "explanation": "",
+      "explanation": "fatal 在这里表示“致命的、可能导致死亡的”。句中说的是：随着衰老，体内会累积受损且可能有毒的物质，导致过度的代谢活动，而这种情况对它们来说可能是致命的。",
       "focusWords": [
         "fatal"
       ],

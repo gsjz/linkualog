@@ -9,6 +9,10 @@
     {
       "date": "2026-05-22",
       "score": 4
+    },
+    {
+      "date": "2026-06-06",
+      "score": 4
     }
   ],
   "definitions": [
@@ -33,5 +37,16 @@
   ],
   "mergedFrom": [
     "dictatorships"
+  ],
+  "relations": [
+    {
+      "type": "related",
+      "target": {
+        "category": "daily",
+        "file": "democratically-elected.json",
+        "word": "democratically elected"
+      },
+      "source": "manual"
+    }
   ]
 }

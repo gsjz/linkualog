@@ -2,11 +2,13 @@
   "word": "advent",
   "createdAt": "2026-06-03",
   "reviews": [],
-  "definitions": [],
+  "definitions": [
+    "出现；到来（尤指重要事物、时代或技术的出现）"
+  ],
   "examples": [
     {
       "text": "every few years as the soil became depleted. It was only with the advent of techniques like irrigation and soil tilling about 5,000 years ago",
-      "explanation": "",
+      "explanation": "with the advent of ... 表示“随着……的出现/到来”。句中 it was only with the advent of techniques like irrigation and soil tilling ... 的意思是：直到像灌溉和翻土这样的技术出现之后，情况才发生改变。这里 advent 强调某种重要技术的出现。",
       "focusWords": [
         "advent"
       ],

@@ -1,14 +1,16 @@
 {
-  "word": "halts",
+  "word": "halt",
   "createdAt": "2026-06-02",
   "reviews": [],
-  "definitions": [],
+  "definitions": [
+    "（使）停止，中止；阻止……继续进行"
+  ],
   "examples": [
     {
       "text": "slowing the body's ability to renew itself. With age, cells increasingly grow senescent, too, a process that halts the cell cycle in times of risk, like when cancer cells are proliferating. But the response also kicks in more as we age,",
-      "explanation": "",
+      "explanation": "这里的 halts 表示“使停止、让……中断”。句子在说：当出现风险时（比如癌细胞正在增殖），细胞衰老这一过程会让细胞周期停下来，防止细胞继续分裂。",
       "focusWords": [
-        "halts"
+        "halt"
       ],
       "source": {
         "text": "我们身体为何会老化？ - 莫妮咔 玛抐斯妮",

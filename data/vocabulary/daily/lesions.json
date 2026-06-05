@@ -2,11 +2,13 @@
   "word": "lesions",
   "createdAt": "2026-06-02",
   "reviews": [],
-  "definitions": [],
+  "definitions": [
+    "损伤；病变；损害（尤指组织、器官或 DNA 的受损部位，lesion）"
+  ],
   "examples": [
     {
       "text": "that play a central role. Firstly, as the years pass, our bodies accumulate genetic damage in the form of DNA lesions. These occur naturally when the body's DNA replicates, but also in non-dividing cells.",
-      "explanation": "",
+      "explanation": "这里的 lesions 指“损伤、受损位点”。DNA lesions 就是“DNA 损伤”，强调 DNA 上出现了受损或异常的部位。句子意思是：随着年龄增长，我们体内会逐渐积累这类遗传损伤。",
       "focusWords": [
         "lesions"
       ],

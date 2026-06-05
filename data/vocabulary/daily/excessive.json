@@ -2,11 +2,13 @@
   "word": "excessive",
   "createdAt": "2026-06-02",
   "reviews": [],
-  "definitions": [],
+  "definitions": [
+    "过度的；过多的；过分的"
+  ],
   "examples": [
     {
       "text": "As they age, they stop being able to do quality control on proteins, causing the accumulation of damaged and potentially toxic nutrients, leading to excessive metabolic activity that could be fatal for them. Intercellular communication also slows, ultimately undermining the body's functional ability.",
-      "explanation": "",
+      "explanation": "这里的 excessive 用来表示“过度的、过多的”。excessive metabolic activity 指“过度的代谢活动”，意思是代谢活动强到不正常，甚至可能带来伤害。",
       "focusWords": [
         "excessive"
       ],

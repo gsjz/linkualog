@@ -13,6 +13,10 @@
     {
       "date": "2026-05-31",
       "score": 4
+    },
+    {
+      "date": "2026-06-05",
+      "score": 4
     }
   ],
   "definitions": [
@@ -20,8 +24,8 @@
   ],
   "examples": [
     {
-      "text": "of the world fills many of us with doom, \nhopelessness and sadness. We feel it too. It is one of the most pervasive stories of \nour time and there is a lot of truth to it. But as Terry Pratchett said, we are the \nstorytelling ape, we think in narratives and live in a network of stories that make up \nour world. So without minimising the darkness, we want to add a story that we find \nhelpful for dealing with the world.",
-      "explanation": "",
+      "text": "of the world fills many of us with doom, hopelessness and sadness. We feel it too. It is one of the most pervasive stories of our time and there is a lot of truth to it. But as Terry Pratchett said, we are the storytelling ape, we think in narratives and live in a network of stories that make up our world. So without minimising the darkness, we want to add a story that we find helpful for dealing with the world.",
+      "explanation": "这里的 narratives 是 narrative 的复数，表示“叙事、故事框架、我们理解世界的说法”。句子意思是：人类会通过各种“叙事”来思考，并生活在由许多故事构成的世界中。该词在这里不是单指文学作品，而是指人们解释现实、组织经验的整体说法。",
       "focusWords": [
         "narratives"
       ],

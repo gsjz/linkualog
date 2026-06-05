@@ -2,11 +2,13 @@
   "word": "intrinsic",
   "createdAt": "2026-06-02",
   "reviews": [],
-  "definitions": [],
+  "definitions": [
+    "固有的；内在的；本身具有的"
+  ],
   "examples": [
     {
       "text": "while for others, it's growing old. Yet finding a strict scientific definition of aging is a challenge. What we can say is that aging occurs when intrinsic processes and interactions with the environment, like sunlight, and toxins in the air, water, and our diets,",
-      "explanation": "",
+      "explanation": "这里的 intrinsic 修饰 processes，表示“内在的、固有的、本身具有的”。intrinsic processes 指“生物体内部自身发生的过程”，与后面的环境因素（如阳光、毒素）形成对比。",
       "focusWords": [
         "intrinsic"
       ],

@@ -12,8 +12,7 @@
     }
   ],
   "definitions": [
-    "乳糖（牛奶中的糖分）",
-    "n. 乳糖（一种存在于乳制品中的糖）"
+    "乳糖（牛奶中的糖分）"
   ],
   "examples": [
     {
@@ -32,8 +31,8 @@
       }
     },
     {
-      "text": "Just check the labels\non sweet products you buy. Glucose, fructose, sucrose, maltose, lactose, dextrose, and starch are all forms of sugar. So are high-fructose corn syrup,",
-      "explanation": "",
+      "text": "Just check the labels on sweet products you buy. Glucose, fructose, sucrose, maltose, lactose, dextrose, and starch are all forms of sugar. So are high-fructose corn syrup,",
+      "explanation": "看看你买的甜食标签就知道了：glucose（葡萄糖）、fructose（果糖）、sucrose（蔗糖）、maltose（麦芽糖）、lactose（乳糖）、dextrose（右旋糖/葡萄糖）和 starch（淀粉）都属于糖类或会被归入糖的来源；高果糖玉米糖浆也是如此。这里的 lactose 指“乳糖”。",
       "focusWords": [
         "lactose"
       ],
