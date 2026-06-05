@@ -13,13 +13,19 @@
     {
       "date": "2026-05-21",
       "score": 4
+    },
+    {
+      "date": "2026-06-05",
+      "score": 4
     }
   ],
-  "definitions": [],
+  "definitions": [
+    "肥料；化肥（fertilizer）"
+  ],
   "examples": [
     {
       "text": "dispensing with the need for fertilizers in Egypt's richest food-growing area.",
-      "explanation": "",
+      "explanation": "这里的 fertilizers 指“肥料、化肥”。整句片段的意思是：\"从而不再需要在埃及最肥沃的粮食种植区使用化肥。\" 其中 dispensing with the need for 表示“免去对……的需求 / 不再需要……”。",
       "focusWords": [
         "fertilizers"
       ],
