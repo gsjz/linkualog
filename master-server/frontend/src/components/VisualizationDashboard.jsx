@@ -18,12 +18,23 @@ const STATUS_COLORS = {
   new: '#8a8f98',
 };
 
-const GRAPH_EDGE_COLORS = {
-  same_category: '#0f766e',
-  cross_category: '#b45309',
+const GRAPH_EDGE_TYPE_COLORS = {
+  related: '#64748b',
+  same_word: '#0f766e',
+  phrase: '#2563eb',
+  variant: '#7c3aed',
+  collocation: '#0891b2',
+  synonym: '#16a34a',
+  antonym: '#dc2626',
+  same_category: '#b45309',
+  same_scene: '#be123c',
 };
+const GRAPH_EDGE_FALLBACK_COLORS = ['#0f766e', '#2563eb', '#b45309', '#7c3aed', '#be123c', '#0891b2', '#4d7c0f', '#dc2626'];
 
 const GRAPH_COMPONENT_COLORS = ['#0f766e', '#3b6f9f', '#b45309', '#7c3aed', '#be123c', '#4d7c0f'];
+const GRAPH_NODE_DOUBLE_CLICK_MS = 420;
+const GRAPH_CURRENT_NODE_FILL = '#fff7ed';
+const GRAPH_CURRENT_NODE_STROKE = '#f97316';
 
 const formatNumber = (value) => new Intl.NumberFormat('zh-CN').format(Number(value) || 0);
 
@@ -302,6 +313,54 @@ function hashString(value) {
   ), 0);
 }
 
+function normalizeGraphEdgeType(value) {
+  return String(value || 'related').trim().toLowerCase().replace(/[\s-]+/g, '_') || 'related';
+}
+
+function getGraphEdgeTypeColor(type) {
+  const normalizedType = normalizeGraphEdgeType(type);
+  if (GRAPH_EDGE_TYPE_COLORS[normalizedType]) return GRAPH_EDGE_TYPE_COLORS[normalizedType];
+  return GRAPH_EDGE_FALLBACK_COLORS[Math.abs(hashString(normalizedType)) % GRAPH_EDGE_FALLBACK_COLORS.length];
+}
+
+function formatGraphEdgeTypeLabel(type) {
+  const normalizedType = normalizeGraphEdgeType(type);
+  return {
+    related: '相关',
+    same_word: '同词',
+    phrase: '短语',
+    variant: '变体',
+    collocation: '搭配',
+    synonym: '近义',
+    antonym: '反义',
+    same_category: '同类',
+    same_scene: '同场景',
+  }[normalizedType] || normalizedType.replace(/_/g, ' ');
+}
+
+function buildGraphEdgeTypeLegend(edges, limit = 6) {
+  const typeCounts = new Map();
+  (Array.isArray(edges) ? edges : []).forEach((edge) => {
+    const type = normalizeGraphEdgeType(edge?.type);
+    typeCounts.set(type, (typeCounts.get(type) || 0) + 1);
+  });
+
+  const items = [...typeCounts.entries()]
+    .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0], undefined, { sensitivity: 'base' }))
+    .slice(0, limit)
+    .map(([type]) => ({
+      type,
+      label: formatGraphEdgeTypeLabel(type),
+      color: getGraphEdgeTypeColor(type),
+    }));
+
+  return items.length ? items : [{
+    type: 'related',
+    label: formatGraphEdgeTypeLabel('related'),
+    color: getGraphEdgeTypeColor('related'),
+  }];
+}
+
 function truncateGraphLabel(value, limit = 16) {
   const text = String(value || '').trim();
   return text.length > limit ? `${text.slice(0, limit - 3)}...` : text;
@@ -381,7 +440,7 @@ function buildRelationGraphModel(components) {
       const source = String(edge?.source || '').trim();
       const target = String(edge?.target || '').trim();
       if (!source || !target || !componentNodeIds.has(source) || !componentNodeIds.has(target)) return;
-      const type = String(edge?.type || 'related').trim() || 'related';
+      const type = normalizeGraphEdgeType(edge?.type);
       const key = `${source}|${target}|${type}`;
       if (edgeByKey.has(key)) return;
       edgeByKey.set(key, {
@@ -685,7 +744,10 @@ function stepForceLayout(nodes, edges, anchors, zones, dimensions, alpha) {
 }
 
 function RelationGraphPreview({ graph = {}, index = 0 }) {
-  const components = Array.isArray(graph?.components) ? graph.components : [];
+  const graphComponents = graph?.components;
+  const components = useMemo(() => (
+    Array.isArray(graphComponents) ? graphComponents : []
+  ), [graphComponents]);
   const model = useMemo(() => buildRelationGraphModel(components), [components]);
   const width = 286;
   const height = 126;
@@ -735,6 +797,7 @@ function RelationGraphPreview({ graph = {}, index = 0 }) {
               y1={source.y}
               x2={target.x}
               y2={target.y}
+              stroke={getGraphEdgeTypeColor(edge.type)}
             />
           );
         })}
@@ -788,6 +851,8 @@ export function RelationGraphPanel({
   openNodeOnClick = false,
   deckMode = false,
   fitContainerHeight = false,
+  onRefreshGraph = null,
+  graphRefreshing = false,
 }) {
   const components = useMemo(() => (
     Array.isArray(graph?.components) ? graph.components : []
@@ -812,6 +877,7 @@ export function RelationGraphPanel({
   const previousFocusNodeIdRef = useRef('');
   const deckViewportRef = useRef(null);
   const pointerSelectionRef = useRef(null);
+  const lastNodeClickRef = useRef({ id: '', time: 0 });
   const [selectedComponentId, setSelectedComponentId] = useState('');
 
   const graphHeight = useMemo(() => {
@@ -836,6 +902,7 @@ export function RelationGraphPanel({
   const deckSummaries = useMemo(() => (
     components.map((component, index) => summarizeGraphComponent(component, index))
   ), [components]);
+  const canRefreshGraph = typeof onRefreshGraph === 'function';
   const selectedComponentIndex = Math.max(0, deckSummaries.findIndex((summary) => summary.id === selectedComponentId));
   const selectedDeckComponent = deckMode && deckSummaries.length
     ? components[selectedComponentIndex] || components[0]
@@ -861,16 +928,17 @@ export function RelationGraphPanel({
   const handleNodeClick = useCallback((node) => {
     const nodeId = String(node?.id || '').trim();
     if (!nodeId) return;
-    const pointerSelection = pointerSelectionRef.current;
-    const alreadySelected = pointerSelection?.id === nodeId
-      ? pointerSelection.wasSelected
-      : selectedNodeId === nodeId;
+    const now = performance.now();
+    const lastClick = lastNodeClickRef.current;
+    const rapidSecondClick = lastClick?.id === nodeId
+      && now - (Number(lastClick.time) || 0) <= GRAPH_NODE_DOUBLE_CLICK_MS;
+    lastNodeClickRef.current = { id: nodeId, time: now };
     pointerSelectionRef.current = null;
     setSelectedNodeId(nodeId);
-    if (openNodeOnClick && alreadySelected && normalizedCurrentNodeId !== nodeId) {
+    if (openNodeOnClick && rapidSecondClick && normalizedCurrentNodeId !== nodeId) {
       openVocabularyNode(node);
     }
-  }, [normalizedCurrentNodeId, openNodeOnClick, openVocabularyNode, selectedNodeId]);
+  }, [normalizedCurrentNodeId, openNodeOnClick, openVocabularyNode]);
 
   const handleDeckSelect = useCallback((componentId) => {
     setSelectedComponentId(componentId);
@@ -1096,7 +1164,22 @@ export function RelationGraphPanel({
             <h2>{title}</h2>
             <p>{emptyDescription}</p>
           </div>
-          <UiIcon name="chart" size={18} />
+          <div className="visual-graph-header-actions">
+            {canRefreshGraph ? (
+              <button
+                type="button"
+                className="visual-graph-refresh-button"
+                onClick={onRefreshGraph}
+                disabled={graphRefreshing}
+                title="随机换一批关系块"
+                aria-label="随机换一批关系块"
+              >
+                <UiIcon name="shuffle" size={15} />
+                <span>{graphRefreshing ? '换取中' : '换一批'}</span>
+              </button>
+            ) : null}
+            <UiIcon name="chart" size={18} />
+          </div>
         </div>
         <div className="visual-empty visual-graph-empty">{emptyMessage}</div>
       </section>
@@ -1108,18 +1191,36 @@ export function RelationGraphPanel({
     const activeSummary = deckSummaries[activeIndex] || deckSummaries[0];
     const activeComponent = selectedDeckComponent || components[0];
     const activeGraph = activeComponent ? buildSingleComponentGraph(graph, activeComponent, activeIndex) : { components: [] };
-    const scopeLabel = graph?.scope?.label || graph?.scope?.category || '全部目录';
+  const scopeLabel = graph?.scope?.label || graph?.scope?.category || '全部目录';
+  const edgeTypeLegend = buildGraphEdgeTypeLegend(model.edges);
 
-    return (
+  return (
       <section className={`visual-panel visual-graph-panel visual-graph-deck-panel${compact ? ' is-compact' : ''}${className ? ` ${className}` : ''}`}>
         <div className="visual-panel-header">
           <div>
             <h2>{title}</h2>
             <p>{scopeLabel} · {components.length}块 · {formatNumber(model.nodes.length)}词</p>
           </div>
-          <div className="visual-graph-legend" aria-label="边颜色说明">
-            <span><i className="same-category" />同目录</span>
-            <span><i className="cross-category" />跨目录</span>
+          <div className="visual-graph-header-actions">
+            <div className="visual-graph-legend" aria-label="边类型颜色说明">
+              {edgeTypeLegend.map((item) => (
+                <span key={item.type}><i style={{ background: item.color }} />{item.label}</span>
+              ))}
+              <span><i className="cross-category" />跨目录虚线</span>
+            </div>
+            {canRefreshGraph ? (
+              <button
+                type="button"
+                className="visual-graph-refresh-button"
+                onClick={onRefreshGraph}
+                disabled={graphRefreshing}
+                title="随机换一批关系块"
+                aria-label="随机换一批关系块"
+              >
+                <UiIcon name="shuffle" size={15} />
+                <span>{graphRefreshing ? '换取中' : '换一批'}</span>
+              </button>
+            ) : null}
           </div>
         </div>
 
@@ -1181,6 +1282,7 @@ export function RelationGraphPanel({
   const scopeLabel = graph?.scope?.label || graph?.scope?.category || '全部目录';
   const zones = [...zonesRef.current.values()];
   const summaryById = new Map(model.summaries.map((summary) => [summary.id, summary]));
+  const edgeTypeLegend = buildGraphEdgeTypeLegend(model.edges);
 
   return (
     <section className={`visual-panel visual-graph-panel${compact ? ' is-compact' : ''}${className ? ` ${className}` : ''}`}>
@@ -1189,9 +1291,26 @@ export function RelationGraphPanel({
           <h2>{title}</h2>
           <p>{scopeLabel} · {components.length}块 · {formatNumber(model.nodes.length)}词</p>
         </div>
-        <div className="visual-graph-legend" aria-label="边颜色说明">
-          <span><i className="same-category" />同目录</span>
-          <span><i className="cross-category" />跨目录</span>
+        <div className="visual-graph-header-actions">
+          <div className="visual-graph-legend" aria-label="边类型颜色说明">
+            {edgeTypeLegend.map((item) => (
+              <span key={item.type}><i style={{ background: item.color }} />{item.label}</span>
+            ))}
+            <span><i className="cross-category" />跨目录虚线</span>
+          </div>
+          {canRefreshGraph ? (
+            <button
+              type="button"
+              className="visual-graph-refresh-button"
+              onClick={onRefreshGraph}
+              disabled={graphRefreshing}
+              title="随机换一批关系块"
+              aria-label="随机换一批关系块"
+            >
+              <UiIcon name="shuffle" size={15} />
+              <span>{graphRefreshing ? '换取中' : '换一批'}</span>
+            </button>
+          ) : null}
         </div>
       </div>
       <div className="visual-graph-workspace">
@@ -1237,7 +1356,7 @@ export function RelationGraphPanel({
                     y1={source.y}
                     x2={target.x}
                     y2={target.y}
-                    stroke={GRAPH_EDGE_COLORS[scope]}
+                    stroke={getGraphEdgeTypeColor(edge.type)}
                   />
                 );
               })}
@@ -1245,10 +1364,11 @@ export function RelationGraphPanel({
             <g className="visual-force-nodes">
               {layoutNodes.map((node) => {
                 const selected = selectedNodeId === node.id;
+                const current = normalizedCurrentNodeId === node.id;
                 return (
                   <g
                     key={node.id}
-                    className={`visual-force-node${selected ? ' is-selected' : ''}`}
+                    className={`visual-force-node${selected ? ' is-selected' : ''}${current ? ' is-current' : ''}`}
                     transform={`translate(${node.x} ${node.y})`}
                     role="button"
                     tabIndex={0}
@@ -1268,8 +1388,8 @@ export function RelationGraphPanel({
                       width={node.boxWidth}
                       height={node.boxHeight}
                       rx="8"
-                      fill="#fff"
-                      stroke={selected ? '#111827' : node.color}
+                      fill={current ? GRAPH_CURRENT_NODE_FILL : '#fff'}
+                      stroke={current ? GRAPH_CURRENT_NODE_STROKE : (selected ? '#111827' : node.color)}
                     />
                     <text className="visual-force-node-word" y="-2" textAnchor="middle">
                       {truncateGraphLabel(node.word || node.file)}
@@ -1335,6 +1455,7 @@ export function RelationGraphPanel({
 
 export default function VisualizationDashboard({ categories = [], defaultCategory = '', onOpenVocabularyEntry = null }) {
   const [selectedCategory, setSelectedCategory] = useState(String(defaultCategory || '').trim());
+  const [graphRequest, setGraphRequest] = useState({ random: false, seed: '' });
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -1346,7 +1467,11 @@ export default function VisualizationDashboard({ categories = [], defaultCategor
       setLoading(true);
       setError('');
     });
-    getReviewVisualization(selectedCategory)
+    getReviewVisualization(selectedCategory, {
+      graphLimit: 5,
+      graphRandom: graphRequest.random,
+      graphSeed: graphRequest.seed,
+    })
       .then((nextData) => {
         if (cancelled) return;
         setData(nextData);
@@ -1362,7 +1487,19 @@ export default function VisualizationDashboard({ categories = [], defaultCategor
     return () => {
       cancelled = true;
     };
-  }, [selectedCategory]);
+  }, [graphRequest.random, graphRequest.seed, selectedCategory]);
+
+  const handleSelectCategory = useCallback((nextCategory) => {
+    setSelectedCategory(String(nextCategory || '').trim());
+    setGraphRequest({ random: false, seed: '' });
+  }, []);
+
+  const handleRefreshGraph = useCallback(() => {
+    setGraphRequest({
+      random: true,
+      seed: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    });
+  }, []);
 
   const fromDataCategories = Array.isArray(data?.categories) ? data.categories : [];
   const categoryOptions = [...new Set([...categories, ...fromDataCategories]
@@ -1376,6 +1513,8 @@ export default function VisualizationDashboard({ categories = [], defaultCategor
   const mastered = selected.mastery?.find((item) => item.key === 'mastered')?.count || 0;
   const unfamiliar = selected.mastery?.find((item) => item.key === 'unfamiliar')?.count || 0;
   const unreviewed = selected.mastery?.find((item) => item.key === 'unreviewed')?.count || 0;
+  const graphRefreshing = loading && graphRequest.random;
+  const showContent = Boolean(data && (!loading || graphRefreshing));
 
   return (
     <div className="visual-dashboard">
@@ -1389,24 +1528,33 @@ export default function VisualizationDashboard({ categories = [], defaultCategor
         <div className="visual-controls">
           <label className="visual-select-label">
             目录
-            <select value={selectedCategory} onChange={(event) => setSelectedCategory(event.target.value)}>
+            <select value={selectedCategory} onChange={(event) => handleSelectCategory(event.target.value)}>
               <option value="">全部目录</option>
               {categoryOptions.map((category) => (
                 <option key={category} value={category}>{category}</option>
               ))}
             </select>
           </label>
-          <button type="button" className="master-secondary-button" onClick={() => setSelectedCategory('')}>
+          <button type="button" className="master-secondary-button" onClick={() => handleSelectCategory('')}>
             全部
           </button>
         </div>
       </div>
 
       {error ? <div className="visual-message is-error">{error}</div> : null}
-      {loading ? <div className="visual-message">正在加载统计数据...</div> : null}
+      {loading ? <div className="visual-message">{graphRefreshing ? '正在换取关系图...' : '正在加载统计数据...'}</div> : null}
 
-      {!loading && data ? (
+      {showContent ? (
         <div className="visual-content">
+          <RelationGraphPanel
+            graph={data.graph || {}}
+            onOpenVocabularyEntry={onOpenVocabularyEntry}
+            title="推荐关系图"
+            deckMode
+            onRefreshGraph={handleRefreshGraph}
+            graphRefreshing={graphRefreshing}
+          />
+
           <div className="visual-metrics">
             <MetricCard label="总单词" value={total} hint={selectedCategory || '全部目录'} icon="book" />
             <MetricCard label="熟练" value={mastered} hint={total ? percent(mastered / total) : '0%'} icon="check" />
@@ -1437,15 +1585,9 @@ export default function VisualizationDashboard({ categories = [], defaultCategor
             <CategoryRank
               items={overview.category_rank || []}
               selectedCategory={selectedCategory}
-              onSelect={setSelectedCategory}
+              onSelect={handleSelectCategory}
             />
           </div>
-
-          <RelationGraphPanel
-            graph={data.graph || {}}
-            onOpenVocabularyEntry={onOpenVocabularyEntry}
-            deckMode
-          />
 
           <div className="visual-grid visual-grid-entry">
             <EntryList

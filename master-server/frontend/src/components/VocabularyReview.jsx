@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import UiIcon from './UiIcon';
 
 import {
@@ -16,6 +17,7 @@ import { RelationGraphPanel } from './VisualizationDashboard.jsx';
 
 const REVIEW_CATEGORY_KEY = 'vocabReviewCategory';
 const DESKTOP_CONTENT_COLLAPSED_KEY = 'vocabReviewDesktopContentDefaultCollapsed';
+const RELATION_GRAPH_FULL_COMPONENT_KEY = 'vocabReviewRelationGraphFullComponent';
 const ALL_CATEGORIES_VALUE = '__all_categories__';
 const FOCUS_RENDER_TOKEN_REGEX = /\s+|[\p{L}\p{N}_]+|[^\s]/gu;
 const CATEGORY_LABELS = {
@@ -60,11 +62,65 @@ const DEFAULT_RECOMMENDATION_PREFERENCES = {
   created_order: 'recent',
   score_order: 'low',
 };
-const RECOMMENDATION_WEIGHT_OPTIONS = [
-  { key: 'due_weight', label: '到期', description: '逾期、今天到期、新词条' },
-  { key: 'created_weight', label: '创建', description: '按创建时间方向排序' },
-  { key: 'score_weight', label: '评分', description: '按最近一次评分排序' },
+const RECOMMENDATION_HEX_VERTICES = [
+  {
+    key: 'high',
+    label: '高分',
+    angle: Math.PI / 6,
+    x: Math.cos(Math.PI / 6),
+    y: Math.sin(Math.PI / 6),
+    vector: { due: 0.8, created: 0.4, score: 5 },
+  },
+  {
+    key: 'explore',
+    label: '探索',
+    angle: Math.PI / 2,
+    x: 0,
+    y: 1,
+    vector: { due: 0.1, created: 0.15, score: -0.15 },
+  },
+  {
+    key: 'oldest',
+    label: '最早',
+    angle: (5 * Math.PI) / 6,
+    x: Math.cos((5 * Math.PI) / 6),
+    y: Math.sin((5 * Math.PI) / 6),
+    vector: { due: 0.8, created: -5, score: -0.3 },
+  },
+  {
+    key: 'low',
+    label: '低分',
+    angle: (7 * Math.PI) / 6,
+    x: Math.cos((7 * Math.PI) / 6),
+    y: Math.sin((7 * Math.PI) / 6),
+    vector: { due: 2, created: 0.2, score: -5 },
+  },
+  {
+    key: 'due',
+    label: '到期',
+    angle: (3 * Math.PI) / 2,
+    x: 0,
+    y: -1,
+    vector: { due: 5, created: 0.3, score: -0.6 },
+  },
+  {
+    key: 'recent',
+    label: '最近',
+    angle: (11 * Math.PI) / 6,
+    x: Math.cos((11 * Math.PI) / 6),
+    y: Math.sin((11 * Math.PI) / 6),
+    vector: { due: 1.2, created: 5, score: -0.3 },
+  },
 ];
+const RECOMMENDATION_HEX_CENTER_VECTOR = {
+  due: DEFAULT_RECOMMENDATION_PREFERENCES.due_weight,
+  created: DEFAULT_RECOMMENDATION_PREFERENCES.created_weight,
+  score: -DEFAULT_RECOMMENDATION_PREFERENCES.score_weight,
+};
+const RECOMMENDATION_HEX_SIZE = 220;
+const RECOMMENDATION_HEX_CENTER = RECOMMENDATION_HEX_SIZE / 2;
+const RECOMMENDATION_HEX_RADIUS = 74;
+const RECOMMENDATION_HEX_LABEL_RADIUS = 96;
 
 const getTodayLocalDateString = () => {
   const today = new Date();
@@ -84,6 +140,10 @@ const getStoredReviewCategory = () => {
 
 const getStoredDesktopContentDefaultCollapsed = () => (
   localStorage.getItem(DESKTOP_CONTENT_COLLAPSED_KEY) === '1'
+);
+
+const getStoredRelationGraphFullComponent = () => (
+  localStorage.getItem(RELATION_GRAPH_FULL_COMPONENT_KEY) === '1'
 );
 
 const isAllCategoriesValue = (value) => String(value || '').trim() === ALL_CATEGORIES_VALUE;
@@ -152,9 +212,90 @@ const sortRelationNodesForFocus = (focusNodeId) => (left, right) => {
   );
 };
 
-const buildFocusedRelationGraph = (graph, entry, fallbackCategory = '') => {
+const buildRelationGraphIndex = (graph) => {
   const nodes = Array.isArray(graph?.nodes) ? graph.nodes : [];
   const edges = Array.isArray(graph?.edges) ? graph.edges : [];
+  const nodeById = new Map();
+  const nodeByLookupKey = new Map();
+  const adjacency = new Map();
+  const edgesByNodeId = new Map();
+  const validEdges = [];
+
+  nodes.forEach((node) => {
+    const id = String(node?.id || '').trim();
+    if (!id) return;
+    nodeById.set(id, node);
+
+    [
+      buildRelationNodeLookupKey(node?.category, node?.file || node?.word),
+      buildRelationNodeLookupKey(node?.category, node?.word),
+    ].filter(Boolean).forEach((key) => {
+      if (!nodeByLookupKey.has(key)) nodeByLookupKey.set(key, node);
+    });
+  });
+
+  edges.forEach((edge) => {
+    const source = String(edge?.source || '').trim();
+    const target = String(edge?.target || '').trim();
+    if (!source || !target || source === target || !nodeById.has(source) || !nodeById.has(target)) return;
+
+    const normalizedEdge = {
+      ...edge,
+      source,
+      target,
+      type: String(edge?.type || 'related').trim() || 'related',
+      scope: edge?.scope === 'cross_category' ? 'cross_category' : 'same_category',
+    };
+    validEdges.push(normalizedEdge);
+
+    if (!adjacency.has(source)) adjacency.set(source, new Set());
+    if (!adjacency.has(target)) adjacency.set(target, new Set());
+    adjacency.get(source).add(target);
+    adjacency.get(target).add(source);
+
+    if (!edgesByNodeId.has(source)) edgesByNodeId.set(source, []);
+    if (!edgesByNodeId.has(target)) edgesByNodeId.set(target, []);
+    edgesByNodeId.get(source).push(normalizedEdge);
+    edgesByNodeId.get(target).push(normalizedEdge);
+  });
+
+  return {
+    nodes,
+    nodeById,
+    nodeByLookupKey,
+    adjacency,
+    edgesByNodeId,
+    edges: validEdges,
+  };
+};
+
+const collectRelationComponentNodeIds = (graphIndex, focusNodeId) => {
+  const visited = new Set([focusNodeId]);
+  const queue = [focusNodeId];
+  let cursor = 0;
+
+  while (cursor < queue.length) {
+    const current = queue[cursor];
+    cursor += 1;
+    const neighbors = graphIndex.adjacency.get(current) || [];
+    neighbors.forEach((neighborId) => {
+      if (visited.has(neighborId)) return;
+      visited.add(neighborId);
+      queue.push(neighborId);
+    });
+  }
+
+  return visited;
+};
+
+const compareRelationNodesStable = (left, right) => (
+  String(left?.category || '').localeCompare(String(right?.category || ''), undefined, { sensitivity: 'base' })
+  || String(left?.word || left?.file || '').localeCompare(String(right?.word || right?.file || ''), undefined, { sensitivity: 'base' })
+  || String(left?.id || '').localeCompare(String(right?.id || ''), undefined, { sensitivity: 'base' })
+);
+
+const buildFocusedRelationGraph = (graphIndex, entry, fallbackCategory = '', fullComponent = false) => {
+  const nodes = Array.isArray(graphIndex?.nodes) ? graphIndex.nodes : [];
   if (!entry || !nodes.length) return null;
 
   const entryCategory = String(entry?.category || fallbackCategory || '').trim();
@@ -165,9 +306,11 @@ const buildFocusedRelationGraph = (graph, entry, fallbackCategory = '') => {
     normalizeVocabularyLaunchWord(entry?.file || entry?.key || entry?.word),
   ].map((value) => buildRelationNodeLookupKey(entryCategory, value)).filter(Boolean));
 
-  let focusNode = nodes.find((node) => (
-    candidateKeys.has(buildRelationNodeLookupKey(node?.category, node?.file || node?.word))
-  ));
+  let focusNode = null;
+  for (const key of candidateKeys) {
+    focusNode = graphIndex.nodeByLookupKey.get(key);
+    if (focusNode) break;
+  }
 
   if (!focusNode && entryCategory) {
     const wordKey = buildVocabularyWordKey(entry?.word || entry?.key || entry?.file);
@@ -180,47 +323,50 @@ const buildFocusedRelationGraph = (graph, entry, fallbackCategory = '') => {
   const focusNodeId = String(focusNode?.id || '').trim();
   if (!focusNodeId) return null;
 
-  const directEdges = edges.filter((edge) => {
-    const source = String(edge?.source || '').trim();
-    const target = String(edge?.target || '').trim();
-    return source === focusNodeId || target === focusNodeId;
-  });
+  const directEdges = graphIndex.edgesByNodeId.get(focusNodeId) || [];
+  const includedIds = fullComponent
+    ? collectRelationComponentNodeIds(graphIndex, focusNodeId)
+    : new Set([focusNodeId]);
 
-  const nodeById = new Map(nodes
-    .map((node) => [String(node?.id || '').trim(), node])
-    .filter(([id]) => id));
-  const includedIds = new Set([focusNodeId]);
-  directEdges.forEach((edge) => {
-    const source = String(edge?.source || '').trim();
-    const target = String(edge?.target || '').trim();
-    if (source) includedIds.add(source);
-    if (target) includedIds.add(target);
-  });
+  if (!fullComponent) {
+    directEdges.forEach((edge) => {
+      if (edge.source) includedIds.add(edge.source);
+      if (edge.target) includedIds.add(edge.target);
+    });
+  }
 
   const componentNodes = [...includedIds]
-    .map((id) => nodeById.get(id))
+    .map((id) => graphIndex.nodeById.get(id))
     .filter(Boolean)
-    .sort(sortRelationNodesForFocus(focusNodeId));
+    .sort(fullComponent ? compareRelationNodesStable : sortRelationNodesForFocus(focusNodeId));
   const liveIds = new Set(componentNodes.map((node) => String(node?.id || '').trim()).filter(Boolean));
-  const componentEdges = edges.filter((edge) => (
-    liveIds.has(String(edge?.source || '').trim())
-    && liveIds.has(String(edge?.target || '').trim())
+  const componentEdges = graphIndex.edges.filter((edge) => (
+    liveIds.has(edge.source)
+    && liveIds.has(edge.target)
   ));
   if (!componentNodes.length) return null;
+  const componentKey = fullComponent
+    ? [...liveIds].sort().join('|')
+    : focusNodeId;
+  const componentId = `${fullComponent ? 'component' : 'focus'}-${componentKey || focusNodeId}`;
 
   return {
     focusNodeId,
     hasEdges: componentEdges.length > 0,
+    fullComponent,
+    componentKey,
     graph: {
       scope: {
         category: entryCategory || String(focusNode?.category || '').trim(),
-        label: `${focusNode.word || entry.word || '当前词'} 关联`,
+        label: fullComponent
+          ? `${componentNodes.length}词连通块`
+          : `${focusNode.word || entry.word || '当前词'} 关联`,
       },
       nodes: componentNodes,
       edges: componentEdges,
       components: [
         {
-          id: `focus-${focusNodeId}`,
+          id: componentId,
           nodes: componentNodes,
           edges: componentEdges,
           node_count: componentNodes.length,
@@ -545,6 +691,67 @@ const normalizeRecommendationPreferences = (value) => {
   };
 };
 
+const clampUnit = (value) => Math.max(-1, Math.min(1, Number(value) || 0));
+
+const clampRecommendationHexPoint = (point) => {
+  const x = clampUnit(point?.x);
+  const y = clampUnit(point?.y);
+  const scale = Math.max(1, Math.abs(x), Math.abs(y), Math.abs(x * 0.8660254 + y * 0.5), Math.abs(x * 0.8660254 - y * 0.5));
+  return {
+    x: Math.round((x / scale) * 1000) / 1000,
+    y: Math.round((y / scale) * 1000) / 1000,
+  };
+};
+
+const recommendationHexPointToPreferences = (point, base = {}) => {
+  const normalizedBase = normalizeRecommendationPreferences(base);
+  const { x, y } = clampRecommendationHexPoint(point);
+  const vertexScores = RECOMMENDATION_HEX_VERTICES.map((vertex) => Math.max(0, x * vertex.x + y * vertex.y));
+  const scoreSum = vertexScores.reduce((sum, value) => sum + value, 0);
+  const blend = Math.min(1, Math.hypot(x, y));
+  const vector = { ...RECOMMENDATION_HEX_CENTER_VECTOR };
+
+  if (scoreSum > 0) {
+    RECOMMENDATION_HEX_VERTICES.forEach((vertex, index) => {
+      const amount = vertexScores[index] / scoreSum;
+      vector.due += (vertex.vector.due - RECOMMENDATION_HEX_CENTER_VECTOR.due) * amount * blend;
+      vector.created += (vertex.vector.created - RECOMMENDATION_HEX_CENTER_VECTOR.created) * amount * blend;
+      vector.score += (vertex.vector.score - RECOMMENDATION_HEX_CENTER_VECTOR.score) * amount * blend;
+    });
+  }
+
+  return normalizeRecommendationPreferences({
+    ...normalizedBase,
+    due_weight: vector.due,
+    created_weight: Math.abs(vector.created),
+    score_weight: Math.abs(vector.score),
+    created_order: vector.created < 0 ? 'oldest' : 'recent',
+    score_order: vector.score > 0 ? 'high' : 'low',
+  });
+};
+
+const recommendationPreferencesToHexPoint = (preferences) => {
+  const normalized = normalizeRecommendationPreferences(preferences);
+  const created = normalized.created_weight / 5 * (normalized.created_order === 'oldest' ? -1 : 1);
+  const score = normalized.score_weight / 5 * (normalized.score_order === 'high' ? 1 : -1);
+  const due = normalized.due_weight / 5;
+  return clampRecommendationHexPoint({
+    x: (created - score) * 0.78,
+    y: (score + created) * 0.34 - due * 0.82 + (1 - due) * 0.18,
+  });
+};
+
+const randomRecommendationHexPoint = () => {
+  const angle = Math.random() * Math.PI * 2;
+  const radius = Math.sqrt(Math.random()) * 0.96;
+  return clampRecommendationHexPoint({
+    x: Math.cos(angle) * radius,
+    y: Math.sin(angle) * radius,
+  });
+};
+
+const formatRecommendationWeightValue = (value) => Number(value || 0).toFixed(2);
+
 const recommendationPreferencesFromConfig = (config) => normalizeRecommendationPreferences({
   due_weight: config?.review_recommend_due_weight,
   created_weight: config?.review_recommend_created_weight,
@@ -581,6 +788,142 @@ const formatRecommendationPreferenceSummary = (preferences) => {
   const score = normalized.score_order === 'high' ? '高分优先' : '低分优先';
   return `${created} · ${score}`;
 };
+
+function RecommendationHexTuner({
+  preferences,
+  point,
+  onChange,
+  onPointChange,
+  onClose,
+}) {
+  const svgRef = useRef(null);
+  const hexDraggingRef = useRef(false);
+  const normalized = normalizeRecommendationPreferences(preferences);
+  const activePoint = clampRecommendationHexPoint(point || recommendationPreferencesToHexPoint(normalized));
+  const pointerX = RECOMMENDATION_HEX_CENTER + activePoint.x * RECOMMENDATION_HEX_RADIUS;
+  const pointerY = RECOMMENDATION_HEX_CENTER + activePoint.y * RECOMMENDATION_HEX_RADIUS;
+  const polygonPoints = RECOMMENDATION_HEX_VERTICES
+    .map((vertex) => `${RECOMMENDATION_HEX_CENTER + vertex.x * RECOMMENDATION_HEX_RADIUS},${RECOMMENDATION_HEX_CENTER + vertex.y * RECOMMENDATION_HEX_RADIUS}`)
+    .join(' ');
+  const innerPolygonPoints = RECOMMENDATION_HEX_VERTICES
+    .map((vertex) => `${RECOMMENDATION_HEX_CENTER + vertex.x * RECOMMENDATION_HEX_RADIUS * 0.54},${RECOMMENDATION_HEX_CENTER + vertex.y * RECOMMENDATION_HEX_RADIUS * 0.54}`)
+    .join(' ');
+
+  const commitPoint = useCallback((nextPoint) => {
+    const normalizedPoint = clampRecommendationHexPoint(nextPoint);
+    onPointChange?.(normalizedPoint);
+    onChange?.(recommendationHexPointToPreferences(normalizedPoint, normalized));
+  }, [normalized, onChange, onPointChange]);
+
+  const pointFromEvent = useCallback((event) => {
+    const svg = svgRef.current;
+    const matrix = svg?.getScreenCTM?.();
+    if (!svg || !matrix) return null;
+    const svgPoint = svg.createSVGPoint();
+    svgPoint.x = event.clientX;
+    svgPoint.y = event.clientY;
+    const localPoint = svgPoint.matrixTransform(matrix.inverse());
+    return clampRecommendationHexPoint({
+      x: (localPoint.x - RECOMMENDATION_HEX_CENTER) / RECOMMENDATION_HEX_RADIUS,
+      y: (localPoint.y - RECOMMENDATION_HEX_CENTER) / RECOMMENDATION_HEX_RADIUS,
+    });
+  }, []);
+
+  const handlePointerDown = useCallback((event) => {
+    event.preventDefault();
+    hexDraggingRef.current = true;
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+    const nextPoint = pointFromEvent(event);
+    if (nextPoint) commitPoint(nextPoint);
+  }, [commitPoint, pointFromEvent]);
+
+  const handlePointerMove = useCallback((event) => {
+    if (!hexDraggingRef.current && !(event.buttons & 1)) return;
+    event.preventDefault();
+    const nextPoint = pointFromEvent(event);
+    if (nextPoint) commitPoint(nextPoint);
+  }, [commitPoint, pointFromEvent]);
+
+  const handlePointerEnd = useCallback((event) => {
+    hexDraggingRef.current = false;
+    event.currentTarget.releasePointerCapture?.(event.pointerId);
+  }, []);
+
+  const handleKeyDown = useCallback((event) => {
+    const step = event.shiftKey ? 0.12 : 0.06;
+    let nextPoint = null;
+    if (event.key === 'ArrowLeft') nextPoint = { x: activePoint.x - step, y: activePoint.y };
+    if (event.key === 'ArrowRight') nextPoint = { x: activePoint.x + step, y: activePoint.y };
+    if (event.key === 'ArrowUp') nextPoint = { x: activePoint.x, y: activePoint.y - step };
+    if (event.key === 'ArrowDown') nextPoint = { x: activePoint.x, y: activePoint.y + step };
+    if (!nextPoint) return;
+    event.preventDefault();
+    commitPoint(nextPoint);
+  }, [activePoint.x, activePoint.y, commitPoint]);
+
+  return (
+    <div className="vocab-recommend-hex-card">
+      <div className="vocab-recommend-hex-head">
+        <div>
+          <strong>策略取点</strong>
+          <span>{formatRecommendationPreferenceSummary(normalized)}</span>
+        </div>
+        <button
+          type="button"
+          className="vocab-recommend-hex-close"
+          aria-label="关闭随机设置"
+          onClick={onClose}
+        >
+          <UiIcon name="close" size={16} />
+        </button>
+      </div>
+      <svg
+        ref={svgRef}
+        className="vocab-recommend-hex"
+        viewBox={`0 0 ${RECOMMENDATION_HEX_SIZE} ${RECOMMENDATION_HEX_SIZE}`}
+        role="slider"
+        tabIndex={0}
+        aria-label="随机推荐策略取点"
+        aria-valuetext={`到期 ${formatRecommendationWeightValue(normalized.due_weight)}，创建 ${formatRecommendationWeightValue(normalized.created_weight)}，评分 ${formatRecommendationWeightValue(normalized.score_weight)}`}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerEnd}
+        onPointerCancel={handlePointerEnd}
+        onKeyDown={handleKeyDown}
+      >
+        <polygon className="vocab-recommend-hex-bg" points={polygonPoints} />
+        <polygon className="vocab-recommend-hex-inner" points={innerPolygonPoints} />
+        {RECOMMENDATION_HEX_VERTICES.map((vertex) => (
+          <g key={vertex.key}>
+            <line
+              className="vocab-recommend-hex-axis"
+              x1={RECOMMENDATION_HEX_CENTER}
+              y1={RECOMMENDATION_HEX_CENTER}
+              x2={RECOMMENDATION_HEX_CENTER + vertex.x * RECOMMENDATION_HEX_RADIUS}
+              y2={RECOMMENDATION_HEX_CENTER + vertex.y * RECOMMENDATION_HEX_RADIUS}
+            />
+            <text
+              className="vocab-recommend-hex-label"
+              x={RECOMMENDATION_HEX_CENTER + vertex.x * RECOMMENDATION_HEX_LABEL_RADIUS}
+              y={RECOMMENDATION_HEX_CENTER + vertex.y * RECOMMENDATION_HEX_LABEL_RADIUS}
+              textAnchor="middle"
+              dominantBaseline="middle"
+            >
+              {vertex.label}
+            </text>
+          </g>
+        ))}
+        <circle className="vocab-recommend-hex-pointer-shadow" cx={pointerX} cy={pointerY} r="11" />
+        <circle className="vocab-recommend-hex-pointer" cx={pointerX} cy={pointerY} r="8" />
+      </svg>
+      <div className="vocab-recommend-hex-values">
+        <span><strong>到期</strong>{formatRecommendationWeightValue(normalized.due_weight)}</span>
+        <span><strong>{normalized.created_order === 'oldest' ? '最早' : '最近'}</strong>{formatRecommendationWeightValue(normalized.created_weight)}</span>
+        <span><strong>{normalized.score_order === 'high' ? '高分' : '低分'}</strong>{formatRecommendationWeightValue(normalized.score_weight)}</span>
+      </div>
+    </div>
+  );
+}
 
 const buildYoudaoUrl = (word) => {
   const normalized = String(word || '').trim();
@@ -651,7 +994,9 @@ export default function VocabularyReview({
   entryUpdateRequest = null,
   mobileSimple = false,
   compactDesktop = false,
+  compactViewport = false,
   selectionMode = 'random',
+  workspaceToolbarControlsHost = null,
 }) {
   const randomSelectionMode = selectionMode === 'random';
   const [entries, setEntries] = useState([]);
@@ -673,7 +1018,9 @@ export default function VocabularyReview({
   const [mobileInfoOpen, setMobileInfoOpen] = useState(false);
   const [desktopContentDefaultCollapsed, setDesktopContentDefaultCollapsed] = useState(() => getStoredDesktopContentDefaultCollapsed());
   const [desktopDefinitionsCollapsed, setDesktopDefinitionsCollapsed] = useState(() => getStoredDesktopContentDefaultCollapsed());
-  const [desktopExampleNotesCollapsed, setDesktopExampleNotesCollapsed] = useState(() => getStoredDesktopContentDefaultCollapsed());
+  const [desktopExampleNoteCollapsedOverrides, setDesktopExampleNoteCollapsedOverrides] = useState({});
+  const [mobileDefinitionsCollapsed, setMobileDefinitionsCollapsed] = useState(true);
+  const [relationGraphFullComponent, setRelationGraphFullComponent] = useState(getStoredRelationGraphFullComponent);
   const [recommendSettingsOpen, setRecommendSettingsOpen] = useState(false);
   const [savingMarked, setSavingMarked] = useState(false);
   const [savingReviewScore, setSavingReviewScore] = useState(false);
@@ -689,7 +1036,11 @@ export default function VocabularyReview({
   const [recommendPreferences, setRecommendPreferences] = useState(() => (
     normalizeRecommendationPreferences(DEFAULT_RECOMMENDATION_PREFERENCES)
   ));
+  const [recommendationHexPoint, setRecommendationHexPoint] = useState(() => (
+    recommendationPreferencesToHexPoint(DEFAULT_RECOMMENDATION_PREFERENCES)
+  ));
   const [recommendPreferenceHydrated, setRecommendPreferenceHydrated] = useState(false);
+  const [recommendPreferenceDirty, setRecommendPreferenceDirty] = useState(false);
   const pendingLaunchRef = useRef(null);
   const selectedCategoryRef = useRef(selectedCategory);
   const entriesRequestRef = useRef(0);
@@ -701,15 +1052,15 @@ export default function VocabularyReview({
   const recommendPreferenceDirtyRef = useRef(false);
   const recommendPreferencesRef = useRef(normalizeRecommendationPreferences(DEFAULT_RECOMMENDATION_PREFERENCES));
   const savedRecommendPreferenceKeyRef = useRef(recommendationPreferencesKey(DEFAULT_RECOMMENDATION_PREFERENCES));
-  const recommendPreferenceSaveTimerRef = useRef(null);
-  const recommendPreferenceSaveInFlightRef = useRef(false);
   const recommendPreferenceSaveRequestRef = useRef(0);
   const recommendationQueueRequestRef = useRef(0);
   const recommendationRefreshRequestRef = useRef(0);
   const relationGraphRequestRef = useRef(0);
+  const fullComponentGraphCacheRef = useRef(null);
   const autoRecommendationPoolKeyRef = useRef('');
   const randomSelectionModeRef = useRef(randomSelectionMode);
   const infoButtonRef = useRef(null);
+  const sidebarWordListRef = useRef(null);
   const [mobileInfoPanelPosition, setMobileInfoPanelPosition] = useState(null);
   const desktopOverviewLeftRef = useRef(null);
   const [desktopOverviewLeftHeight, setDesktopOverviewLeftHeight] = useState(0);
@@ -756,8 +1107,27 @@ export default function VocabularyReview({
   const handleDesktopContentDefaultCollapsedChange = useCallback((collapsed) => {
     setDesktopContentDefaultCollapsed(collapsed);
     setDesktopDefinitionsCollapsed(collapsed);
-    setDesktopExampleNotesCollapsed(collapsed);
+    setDesktopExampleNoteCollapsedOverrides({});
     localStorage.setItem(DESKTOP_CONTENT_COLLAPSED_KEY, collapsed ? '1' : '0');
+  }, []);
+
+  const handleDesktopExampleNoteToggle = useCallback((index) => {
+    const key = String(index);
+    setDesktopExampleNoteCollapsedOverrides((current) => {
+      const currentCollapsed = Object.prototype.hasOwnProperty.call(current, key)
+        ? Boolean(current[key])
+        : desktopContentDefaultCollapsed;
+      return {
+        ...current,
+        [key]: !currentCollapsed,
+      };
+    });
+  }, [desktopContentDefaultCollapsed]);
+
+  const handleRelationGraphFullComponentChange = useCallback((enabled) => {
+    const nextEnabled = Boolean(enabled);
+    setRelationGraphFullComponent(nextEnabled);
+    localStorage.setItem(RELATION_GRAPH_FULL_COMPONENT_KEY, nextEnabled ? '1' : '0');
   }, []);
 
   useEffect(() => {
@@ -884,18 +1254,26 @@ export default function VocabularyReview({
     }
   }, [categories]);
 
-  const handleSelectEntry = useCallback(async (entryLike, categoryOverride = selectedCategory, pool = entries) => {
+  const handleSelectEntry = useCallback(async (
+    entryLike,
+    categoryOverride = selectedCategory,
+    pool = entries,
+    options = {},
+  ) => {
     const resolvedEntry = resolveEntryCandidate(entryLike, categoryOverride, pool);
     if (!resolvedEntry) return;
 
     const normalizedCategory = String(categoryOverride || '').trim();
     const requestCategory = resolveEntryCategory(resolvedEntry, normalizedCategory);
     if (!requestCategory) return;
+    const keepDetailWhileLoading = Boolean(options?.keepDetailWhileLoading);
     const requestId = detailRequestRef.current + 1;
     detailRequestRef.current = requestId;
     setSelectedEntryId(resolvedEntry.id);
     setSelectedEntrySnapshot(resolvedEntry);
-    setDetailData(null);
+    if (!keepDetailWhileLoading) {
+      setDetailData(null);
+    }
     setDetailCategory(requestCategory);
     if (typeof onSelectionChange === 'function') {
       onSelectionChange({
@@ -912,6 +1290,7 @@ export default function VocabularyReview({
       if (detailRequestRef.current !== requestId) return;
       if (selectedCategoryRef.current !== normalizedCategory) return;
       setDetailCategory('');
+      setDetailData(null);
       console.error('加载详情失败', error);
       alert('加载详情失败');
     }
@@ -931,7 +1310,10 @@ export default function VocabularyReview({
         savedRecommendPreferenceKeyRef.current = nextKey;
         if (!recommendPreferenceDirtyRef.current) {
           recommendPreferencesRef.current = nextPreferences;
+          recommendPreferenceDirtyRef.current = false;
+          setRecommendPreferenceDirty(false);
           setRecommendPreferences(nextPreferences);
+          setRecommendationHexPoint(recommendationPreferencesToHexPoint(nextPreferences));
         }
       })
       .catch((error) => {
@@ -948,68 +1330,6 @@ export default function VocabularyReview({
       cancelled = true;
     };
   }, []);
-
-  useEffect(() => () => {
-    if (recommendPreferenceSaveTimerRef.current) {
-      window.clearTimeout(recommendPreferenceSaveTimerRef.current);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!recommendPreferenceHydratedRef.current) return undefined;
-
-    const currentKey = recommendationPreferencesKey(recommendPreferences);
-    if (currentKey === savedRecommendPreferenceKeyRef.current) return undefined;
-
-    if (recommendPreferenceSaveTimerRef.current) {
-      window.clearTimeout(recommendPreferenceSaveTimerRef.current);
-    }
-
-    const runSave = () => {
-      if (recommendPreferenceSaveInFlightRef.current) {
-        recommendPreferenceSaveTimerRef.current = window.setTimeout(runSave, 320);
-        return;
-      }
-      const requestPreferences = normalizeRecommendationPreferences(recommendPreferencesRef.current);
-      const requestKey = recommendationPreferencesKey(requestPreferences);
-      if (requestKey === savedRecommendPreferenceKeyRef.current) {
-        recommendPreferenceDirtyRef.current = false;
-        setSavingRecommendPreferences(false);
-        return;
-      }
-      const requestId = recommendPreferenceSaveRequestRef.current + 1;
-      recommendPreferenceSaveRequestRef.current = requestId;
-      recommendPreferenceSaveInFlightRef.current = true;
-      setSavingRecommendPreferences(true);
-      saveConfig(recommendationPreferencesToConfig(requestPreferences))
-        .then((res) => {
-          const nextPreferences = recommendationPreferencesFromConfig(res?.data || {});
-          const savedKey = recommendationPreferencesKey(nextPreferences);
-          if (recommendPreferenceSaveRequestRef.current !== requestId) return;
-          savedRecommendPreferenceKeyRef.current = savedKey;
-          const currentKey = recommendationPreferencesKey(recommendPreferencesRef.current);
-          recommendPreferenceDirtyRef.current = currentKey !== savedKey;
-          window.dispatchEvent(new Event('config-updated'));
-        })
-        .catch((error) => {
-          console.error('保存推荐偏好失败', error);
-        })
-        .finally(() => {
-          if (recommendPreferenceSaveRequestRef.current === requestId) {
-            recommendPreferenceSaveInFlightRef.current = false;
-            setSavingRecommendPreferences(false);
-          }
-        });
-    };
-
-    recommendPreferenceSaveTimerRef.current = window.setTimeout(runSave, 420);
-
-    return () => {
-      if (recommendPreferenceSaveTimerRef.current) {
-        window.clearTimeout(recommendPreferenceSaveTimerRef.current);
-      }
-    };
-  }, [recommendPreferences]);
 
   useEffect(() => {
     if (!mobileInfoOpen) {
@@ -1296,12 +1616,49 @@ export default function VocabularyReview({
   const relationGraphRefreshToken = String(entryUpdateRequest?.token || '');
   const relationGraphFetchScope = useMemo(() => {
     if (!selectedEntry && !detailCategory) return null;
-    if (isAllCategoriesValue(selectedCategory)) return '';
+    if (relationGraphFullComponent || isAllCategoriesValue(selectedCategory)) return '';
     return String(detailCategory || selectedEntry?.category || selectedCategory || '').trim();
-  }, [detailCategory, selectedCategory, selectedEntry?.category, selectedEntry]);
-  const focusedRelationGraph = useMemo(() => (
-    buildFocusedRelationGraph(relationGraphData?.graph, selectedEntry, detailCategory)
-  ), [detailCategory, relationGraphData?.graph, selectedEntry]);
+  }, [detailCategory, relationGraphFullComponent, selectedCategory, selectedEntry]);
+  const relationGraphIndex = useMemo(() => (
+    buildRelationGraphIndex(relationGraphData?.graph)
+  ), [relationGraphData?.graph]);
+  const focusedRelationGraph = useMemo(() => {
+    const nextGraph = buildFocusedRelationGraph(
+      relationGraphIndex,
+      selectedEntry,
+      detailCategory,
+      relationGraphFullComponent,
+    );
+
+    if (!relationGraphFullComponent || !nextGraph) {
+      fullComponentGraphCacheRef.current = null;
+      return nextGraph;
+    }
+
+    const cached = fullComponentGraphCacheRef.current;
+    if (
+      cached
+      && cached.componentKey === nextGraph.componentKey
+      && cached.sourceGraph === relationGraphData?.graph
+      && cached.graph
+      && !cached.pending
+    ) {
+      const reusedGraph = {
+        ...nextGraph,
+        graph: cached.graph,
+        sourceGraph: relationGraphData?.graph,
+      };
+      fullComponentGraphCacheRef.current = reusedGraph;
+      return reusedGraph;
+    }
+
+    const cachedGraph = {
+      ...nextGraph,
+      sourceGraph: relationGraphData?.graph,
+    };
+    fullComponentGraphCacheRef.current = cachedGraph;
+    return cachedGraph;
+  }, [detailCategory, relationGraphData?.graph, relationGraphFullComponent, relationGraphIndex, selectedEntry]);
 
   useEffect(() => {
     if (relationGraphFetchScope === null) {
@@ -1415,23 +1772,75 @@ export default function VocabularyReview({
       targetEntry,
       isAllCategoriesValue(selectedCategory) ? selectedCategory : targetCategory,
       entries,
+      {
+        keepDetailWhileLoading: relationGraphFullComponent,
+      },
     );
-  }, [entries, handleSelectEntry, selectedCategory]);
+  }, [entries, handleSelectEntry, relationGraphFullComponent, selectedCategory]);
 
   const handleRecommendPreferencesChange = useCallback((patch) => {
-    setRecommendPreferences((prev) => {
-      const next = normalizeRecommendationPreferences({
-        ...prev,
-        ...(patch || {}),
-      });
-      recommendPreferencesRef.current = next;
-      recommendPreferenceDirtyRef.current = recommendationPreferencesKey(next) !== savedRecommendPreferenceKeyRef.current;
-      return next;
+    const next = normalizeRecommendationPreferences({
+      ...recommendPreferencesRef.current,
+      ...(patch || {}),
     });
+    const dirty = recommendationPreferencesKey(next) !== savedRecommendPreferenceKeyRef.current;
+    recommendPreferencesRef.current = next;
+    recommendPreferenceDirtyRef.current = dirty;
+    setRecommendPreferenceDirty(dirty);
+    setRecommendPreferences(next);
     setRecommendExcludeKeys([]);
     setRecommendation(null);
     setRecommendationQueue([]);
   }, []);
+
+  const handleRecommendPreferencesReset = useCallback(() => {
+    setRecommendationHexPoint(recommendationPreferencesToHexPoint(DEFAULT_RECOMMENDATION_PREFERENCES));
+    handleRecommendPreferencesChange(DEFAULT_RECOMMENDATION_PREFERENCES);
+  }, [handleRecommendPreferencesChange]);
+
+  const handleRecommendPreferencesRandomize = useCallback(() => {
+    const nextPoint = randomRecommendationHexPoint();
+    setRecommendationHexPoint(nextPoint);
+    handleRecommendPreferencesChange(recommendationHexPointToPreferences(nextPoint, recommendPreferencesRef.current));
+  }, [handleRecommendPreferencesChange]);
+
+  const handleRecommendPreferencesSave = useCallback(async () => {
+    if (!recommendPreferenceHydratedRef.current || savingRecommendPreferences) return;
+
+    const requestPreferences = normalizeRecommendationPreferences(recommendPreferencesRef.current);
+    const requestKey = recommendationPreferencesKey(requestPreferences);
+    if (requestKey === savedRecommendPreferenceKeyRef.current) {
+      recommendPreferenceDirtyRef.current = false;
+      setRecommendPreferenceDirty(false);
+      return;
+    }
+
+    const requestId = recommendPreferenceSaveRequestRef.current + 1;
+    recommendPreferenceSaveRequestRef.current = requestId;
+    setSavingRecommendPreferences(true);
+
+    try {
+      const res = await saveConfig(recommendationPreferencesToConfig(requestPreferences));
+      if (recommendPreferenceSaveRequestRef.current !== requestId) return;
+
+      const nextPreferences = recommendationPreferencesFromConfig(res?.data || {});
+      const savedKey = recommendationPreferencesKey(nextPreferences);
+      const currentKey = recommendationPreferencesKey(recommendPreferencesRef.current);
+      const dirty = currentKey !== savedKey;
+
+      savedRecommendPreferenceKeyRef.current = savedKey;
+      recommendPreferenceDirtyRef.current = dirty;
+      setRecommendPreferenceDirty(dirty);
+      window.dispatchEvent(new Event('config-updated'));
+    } catch (error) {
+      console.error('保存推荐偏好失败', error);
+      alert('保存推荐偏好失败');
+    } finally {
+      if (recommendPreferenceSaveRequestRef.current === requestId) {
+        setSavingRecommendPreferences(false);
+      }
+    }
+  }, [savingRecommendPreferences]);
 
   const runRecommendationRefresh = useCallback(async (excludeKeys = [], options = {}) => {
     const fallbackPool = Array.isArray(options?.fallbackPool) ? options.fallbackPool : visibleEntries;
@@ -1609,10 +2018,37 @@ export default function VocabularyReview({
   }, [randomSelectionMode, recommendPreferences, recommendScope]);
 
   useEffect(() => {
-    if (!detailData || mobileSimple) return;
+    if (randomSelectionMode || !selectedEntryId) return;
+    const listNode = sidebarWordListRef.current;
+    if (!listNode) return;
+    const selectedNode = listNode.querySelector('[data-selected-entry="true"]');
+    if (!selectedNode) return;
+
+    const listRect = listNode.getBoundingClientRect();
+    const selectedRect = selectedNode.getBoundingClientRect();
+    const viewportPadding = 12;
+    const isFullyVisible = (
+      selectedRect.top >= listRect.top + viewportPadding
+      && selectedRect.bottom <= listRect.bottom - viewportPadding
+    );
+    if (isFullyVisible) return;
+
+    const targetTop = listNode.scrollTop
+      + (selectedRect.top - listRect.top)
+      - Math.max(0, (listRect.height - selectedRect.height) / 2);
+    listNode.scrollTop = Math.max(0, targetTop);
+  }, [randomSelectionMode, selectedEntryId, visibleEntries]);
+
+  useEffect(() => {
+    if (!mobileSimple || compactDesktop) return;
+    setMobileDefinitionsCollapsed(true);
+  }, [compactDesktop, mobileSimple, selectedEntryId]);
+
+  useEffect(() => {
+    if (!detailData || (mobileSimple && !compactDesktop)) return;
     setDesktopDefinitionsCollapsed(desktopContentDefaultCollapsed);
-    setDesktopExampleNotesCollapsed(desktopContentDefaultCollapsed);
-  }, [desktopContentDefaultCollapsed, detailData, mobileSimple]);
+    setDesktopExampleNoteCollapsedOverrides({});
+  }, [compactDesktop, desktopContentDefaultCollapsed, detailData, mobileSimple]);
 
   const handleToggleMarked = useCallback(async () => {
     const currentEntry = selectedEntry || resolveEntryCandidate(detailData?.word, selectedCategory, entries);
@@ -1678,8 +2114,6 @@ export default function VocabularyReview({
   const latestReviewTone = latestReview ? getReviewToneStyle(latestReview.score) : null;
   const activeFilterOption = ENTRY_FILTER_OPTIONS.find((item) => item.value === entryFilter) || ENTRY_FILTER_OPTIONS[0];
   const youdaoUrl = buildYoudaoUrl(detailData?.word || selectedEntry?.word || '');
-  const recommendationPreferenceSummary = formatRecommendationPreferenceSummary(recommendPreferences);
-  const recommendationScopeLabel = recommendScope === ALL_RECOMMEND_SCOPE ? '全部目录' : formatCategoryLabel(recommendScope);
   const selectedRecommendationKey = selectedEntry
     ? `${selectedEntry.category}/${selectedEntry.file}`
     : '';
@@ -1817,28 +2251,6 @@ export default function VocabularyReview({
     '--vocab-info-panel-top': `${mobileInfoPanelPosition.top}px`,
     '--vocab-info-panel-max-height': `${mobileInfoPanelPosition.maxHeight}px`,
   } : undefined;
-  const renderEntryFilterPill = (option) => {
-    const selected = entryFilter === option.value;
-    const count = filterCounts[option.value] || 0;
-    return (
-      <button
-        key={option.value}
-        type="button"
-        className={`vocab-review-filter-pill${selected ? ' is-active' : ''}`}
-        onClick={() => setEntryFilter(option.value)}
-        aria-pressed={selected}
-        aria-label={`${option.label} ${count}`}
-        title={`${option.label} ${count}`}
-      >
-        <span className="vocab-review-filter-pill-check">
-          <UiIcon name="check" size={11} />
-        </span>
-        <span className="vocab-review-filter-pill-label">{option.compactLabel}</span>
-        <span className="vocab-review-filter-pill-count">{count}</span>
-      </button>
-    );
-  };
-
   const renderManualSortPill = (option) => {
     const selected = manualSortOrder === option.value;
     return (
@@ -1861,23 +2273,41 @@ export default function VocabularyReview({
 
   const reviewFilterControlsNode = (
     <>
-      <label className="vocab-review-floating-field vocab-review-sidebar-category-field">
-        <span className="vocab-review-field-label">目录</span>
-        <select
-          className="vocab-review-select"
-          value={selectedCategory}
-          onChange={(e) => applySelectedCategory(e.target.value)}
-          style={{ width: '100%', padding: '9px 10px', border: '1px solid var(--ms-border)', borderRadius: '6px', fontSize: '13px', outline: 'none', background: '#fff', color: 'var(--ms-text)' }}
-        >
-          {compactCategoryOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-        </select>
-      </label>
+      <div className="vocab-review-filter-stack">
+        <label className="vocab-review-filter-row vocab-review-category-filter-row vocab-review-sidebar-category-field">
+          <span className="vocab-review-filter-row-control">
+            <select
+              className="vocab-review-select vocab-review-filter-select vocab-review-category-select"
+              value={selectedCategory}
+              onChange={(e) => applySelectedCategory(e.target.value)}
+              aria-label="目录"
+            >
+              {compactCategoryOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+            </select>
+          </span>
+        </label>
 
-      <div className="vocab-review-floating-filter-grid vocab-review-entry-filter-grid" role="group" aria-label="词池筛选">
-        {ENTRY_FILTER_OPTIONS.map(renderEntryFilterPill)}
+        <label className="vocab-review-filter-row vocab-review-entry-filter-row">
+          <span className="vocab-review-filter-row-control">
+            <select
+              className="vocab-review-select vocab-review-filter-select vocab-review-status-select"
+              value={entryFilter}
+              onChange={(event) => setEntryFilter(event.target.value)}
+              aria-label="状态"
+            >
+              {ENTRY_FILTER_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.compactLabel} {filterCounts[option.value] || 0}
+                </option>
+              ))}
+            </select>
+          </span>
+        </label>
       </div>
     </>
   );
+
+  const movePrimaryControlsToWorkspaceToolbar = Boolean(workspaceToolbarControlsHost) && !compactViewport && (!mobileSimple || compactDesktop);
 
   const manualSortControlsNode = !randomSelectionMode ? (
     <div className="vocab-review-floating-field vocab-review-manual-sort-field">
@@ -1888,7 +2318,7 @@ export default function VocabularyReview({
     </div>
   ) : null;
 
-  const desktopPoolControlsNode = (
+  const desktopPoolControlsNode = (!movePrimaryControlsToWorkspaceToolbar || !randomSelectionMode) ? (
     <div
       className="vocab-review-sidebar-pool-controls"
       style={{
@@ -1899,7 +2329,7 @@ export default function VocabularyReview({
         gap: '7px',
       }}
     >
-      {reviewFilterControlsNode}
+      {movePrimaryControlsToWorkspaceToolbar ? null : reviewFilterControlsNode}
       {!randomSelectionMode ? (
         <>
           {manualSortControlsNode}
@@ -1917,7 +2347,7 @@ export default function VocabularyReview({
         </>
       ) : null}
     </div>
-  );
+  ) : null;
 
   const desktopReviewControlsNode = !mobileSimple ? (
     <div className="vocab-review-desktop-review-controls">
@@ -1980,7 +2410,7 @@ export default function VocabularyReview({
     </div>
   ) : null;
 
-  const desktopContentPreferenceNode = !mobileSimple && !compactDesktop ? (
+  const desktopContentPreferenceNode = (!mobileSimple || compactDesktop) ? (
     <div className="vocab-review-desktop-preference-panel">
       <button
         type="button"
@@ -1989,8 +2419,7 @@ export default function VocabularyReview({
         aria-pressed={desktopContentDefaultCollapsed}
       >
         <span className="vocab-review-desktop-toggle-copy">
-          <strong>释义和解析默认折叠</strong>
-          <span>{desktopContentDefaultCollapsed ? '新词条先收起内容' : '新词条直接展开内容'}</span>
+          <strong>默认折叠</strong>
         </span>
         <span className="vocab-review-desktop-toggle-switch" aria-hidden="true">
           <span />
@@ -1998,6 +2427,20 @@ export default function VocabularyReview({
       </button>
     </div>
   ) : null;
+
+  const workspaceToolbarControlsNode = movePrimaryControlsToWorkspaceToolbar
+    ? createPortal(
+      <div
+        className={`vocab-workspace-review-tools${compactDesktop ? ' is-compact-desktop' : ''}`}
+        role="group"
+        aria-label="生词本筛选和显示设置"
+      >
+        {reviewFilterControlsNode}
+        {desktopContentPreferenceNode}
+      </div>,
+      workspaceToolbarControlsHost,
+    )
+    : null;
 
   const recommendationSettingsControlsNode = (
     <>
@@ -2016,91 +2459,36 @@ export default function VocabularyReview({
         </select>
       </label>
 
-      <div className="vocab-recommend-segment-stack">
-        <div className="vocab-recommend-segment-group">
-          <div className="vocab-recommend-segment-label">创建时间</div>
-          <div className="vocab-recommend-segment" role="group" aria-label="创建时间方向">
-            <button
-              type="button"
-              className={recommendPreferences.created_order === 'recent' ? 'active' : ''}
-              onClick={() => handleRecommendPreferencesChange({ created_order: 'recent' })}
-              aria-pressed={recommendPreferences.created_order === 'recent'}
-            >
-              最近加入
-            </button>
-            <button
-              type="button"
-              className={recommendPreferences.created_order === 'oldest' ? 'active' : ''}
-              onClick={() => handleRecommendPreferencesChange({ created_order: 'oldest' })}
-              aria-pressed={recommendPreferences.created_order === 'oldest'}
-            >
-              最早加入
-            </button>
-          </div>
-        </div>
-
-        <div className="vocab-recommend-segment-group">
-          <div className="vocab-recommend-segment-label">最近评分</div>
-          <div className="vocab-recommend-segment" role="group" aria-label="评分方向">
-            <button
-              type="button"
-              className={recommendPreferences.score_order === 'low' ? 'active' : ''}
-              onClick={() => handleRecommendPreferencesChange({ score_order: 'low' })}
-              aria-pressed={recommendPreferences.score_order === 'low'}
-            >
-              低分优先
-            </button>
-            <button
-              type="button"
-              className={recommendPreferences.score_order === 'high' ? 'active' : ''}
-              onClick={() => handleRecommendPreferencesChange({ score_order: 'high' })}
-              aria-pressed={recommendPreferences.score_order === 'high'}
-            >
-              高分优先
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="vocab-recommend-weight-list">
-        {RECOMMENDATION_WEIGHT_OPTIONS.map((option) => (
-          <label key={option.key} className="vocab-recommend-weight-row">
-            <span className="vocab-recommend-weight-head">
-              <strong>{option.label}</strong>
-              <output>{Number(recommendPreferences[option.key] || 0).toFixed(2)}</output>
-            </span>
-            <span className="vocab-recommend-weight-help">{option.description}</span>
-            <input
-              type="range"
-              min="0"
-              max="5"
-              step="0.05"
-              value={recommendPreferences[option.key]}
-              onChange={(event) => handleRecommendPreferencesChange({ [option.key]: Number(event.target.value) })}
-            />
-          </label>
-        ))}
-      </div>
+      <RecommendationHexTuner
+        preferences={recommendPreferences}
+        point={recommendationHexPoint}
+        onChange={handleRecommendPreferencesChange}
+        onPointChange={setRecommendationHexPoint}
+        onClose={() => setRecommendSettingsOpen(false)}
+      />
 
       <div className="vocab-recommend-panel-actions">
         <button
           type="button"
           className="vocab-review-filter-pill"
-          onClick={() => handleRecommendPreferencesChange(DEFAULT_RECOMMENDATION_PREFERENCES)}
+          onClick={handleRecommendPreferencesReset}
         >
           重置
         </button>
         <button
           type="button"
-          className="master-primary-button"
-          onClick={() => {
-            setRecommendExcludeKeys([]);
-            setRecommendationQueue([]);
-            void runRecommendationRefresh([], { fallbackPool: visibleEntries, fallbackOnEmpty: true });
-          }}
-          disabled={loadingRecommendation}
+          className="vocab-review-filter-pill"
+          onClick={handleRecommendPreferencesRandomize}
         >
-          {loadingRecommendation ? '抽取中' : '重新抽词'}
+          随机调参
+        </button>
+        <button
+          type="button"
+          className="master-primary-button"
+          onClick={handleRecommendPreferencesSave}
+          disabled={!recommendPreferenceHydrated || !recommendPreferenceDirty || savingRecommendPreferences}
+        >
+          {savingRecommendPreferences ? '保存中' : '保存到后台'}
         </button>
       </div>
     </>
@@ -2159,11 +2547,12 @@ export default function VocabularyReview({
   );
 
   const sidebarWordListNode = (
-    <ul className="vocab-review-word-list" style={{ listStyle: 'none', padding: 0, margin: 0, overflowY: 'auto', flex: 1, minHeight: 0 }}>
+    <ul ref={sidebarWordListRef} className="vocab-review-word-list" style={{ listStyle: 'none', padding: 0, margin: 0, overflowY: 'auto', flex: 1, minHeight: 0 }}>
       {visibleEntries.map((entry) => (
         <li
           key={entry.id}
           className={`vocab-review-word-item${selectedEntryId === entry.id ? ' is-selected' : ''}`}
+          data-selected-entry={selectedEntryId === entry.id ? 'true' : undefined}
           onClick={() => void handleSelectEntry(entry)}
           style={{
             padding: '13px 16px',
@@ -2290,10 +2679,12 @@ export default function VocabularyReview({
           </button>
         </div>
 
-        <div className="vocab-review-mobile-tools-section">
-          <div className="vocab-review-mobile-tools-section-title">词池</div>
-          {reviewFilterControlsNode}
-        </div>
+        {!movePrimaryControlsToWorkspaceToolbar ? (
+          <div className="vocab-review-mobile-tools-section">
+            <div className="vocab-review-mobile-tools-section-title">词池</div>
+            {reviewFilterControlsNode}
+          </div>
+        ) : null}
 
         {randomSelectionMode ? (
           <div className="vocab-review-mobile-tools-section">
@@ -2314,23 +2705,6 @@ export default function VocabularyReview({
         onClick={() => setRecommendSettingsOpen(false)}
       />
       <section className="vocab-review-floating-panel vocab-review-recommend-panel" role="dialog" aria-modal="false" aria-label="随机设置">
-        <div className="vocab-review-floating-header">
-          <div>
-            <div className="vocab-review-floating-title">随机设置</div>
-            <div className="vocab-review-floating-caption">
-              {recommendationScopeLabel} · {recommendationPreferenceSummary}
-              {!recommendPreferenceHydrated ? ' · 读取中' : (savingRecommendPreferences ? ' · 保存中' : '')}
-            </div>
-          </div>
-          <button
-            type="button"
-            className="vocab-review-mobile-tools-button"
-            aria-label="关闭随机设置"
-            onClick={() => setRecommendSettingsOpen(false)}
-          >
-            <UiIcon name="close" size={16} />
-          </button>
-        </div>
         {recommendationSettingsControlsNode}
       </section>
     </div>
@@ -2343,16 +2717,38 @@ export default function VocabularyReview({
   const shouldShowRelationGraph = Boolean(
     detailData
     && visibleRelationGraph
-    && (!mobileSimple || visibleRelationGraph.hasEdges)
   );
-  const definitionsMasked = desktopDefinitionsCollapsed;
+  const definitionsMasked = (mobileSimple && !compactDesktop) ? mobileDefinitionsCollapsed : desktopDefinitionsCollapsed;
   const definitionMaskActionLabel = definitionsMasked ? '显示释义' : '遮蔽释义';
+  const toggleDefinitionsMask = () => {
+    if (mobileSimple && !compactDesktop) {
+      setMobileDefinitionsCollapsed((collapsed) => !collapsed);
+      return;
+    }
+    setDesktopDefinitionsCollapsed((collapsed) => !collapsed);
+  };
+  const relationGraphModeTitle = relationGraphFullComponent ? '完整块已开启，点击后只显示直接邻接' : '完整块已关闭，点击后显示完整连通块';
   const relationGraphNode = shouldShowRelationGraph ? (
-    <div className={`vocab-review-relation-graph-frame${visibleRelationGraph.pending ? ' is-pending' : ''}`}>
+    <div className={`vocab-review-relation-graph-frame${visibleRelationGraph.pending ? ' is-pending' : ''}${visibleRelationGraph.fullComponent ? ' is-full-component' : ''}`}>
+      {!visibleRelationGraph.pending ? (
+        <button
+          type="button"
+          className={`vocab-review-relation-graph-mode-toggle${relationGraphFullComponent ? ' is-active' : ''}`}
+          onClick={() => handleRelationGraphFullComponentChange(!relationGraphFullComponent)}
+          aria-pressed={relationGraphFullComponent}
+          aria-label={relationGraphModeTitle}
+          title={relationGraphModeTitle}
+        >
+          <span className="vocab-review-relation-graph-switch" aria-hidden="true">
+            <span className="vocab-review-relation-graph-switch-thumb" />
+          </span>
+          <span>完整块</span>
+        </button>
+      ) : null}
       <RelationGraphPanel
         graph={visibleRelationGraph.graph}
         title="连线"
-        compact
+        compact={!visibleRelationGraph.fullComponent}
         className="vocab-review-relation-graph"
         focusNodeId={visibleRelationGraph.focusNodeId}
         currentNodeId={visibleRelationGraph.focusNodeId}
@@ -2374,7 +2770,7 @@ export default function VocabularyReview({
         <button
           type="button"
           className="vocab-review-definition-mask-toggle"
-          onClick={() => setDesktopDefinitionsCollapsed((collapsed) => !collapsed)}
+          onClick={toggleDefinitionsMask}
           aria-pressed={definitionsMasked}
           aria-label={definitionMaskActionLabel}
           title={definitionMaskActionLabel}
@@ -2455,7 +2851,7 @@ export default function VocabularyReview({
             {desktopDefinitionCard}
           </div>
           <div
-            className="vocab-review-desktop-overview-graph"
+            className={`vocab-review-desktop-overview-graph${visibleRelationGraph?.fullComponent ? ' is-full-component' : ''}`}
             style={desktopOverviewLeftHeight ? { '--vocab-review-overview-left-height': `${desktopOverviewLeftHeight}px` } : undefined}
           >
             {relationGraphNode}
@@ -2586,6 +2982,10 @@ export default function VocabularyReview({
               {examples.length ? examples.map((example, index) => {
                 const rawFocus = example.focusPositions ?? example.focusPosition ?? example.fp ?? example.fps ?? [];
                 const normalizedFocus = normalizeFocusPositions(rawFocus, tokenizeFocusText(example.text).length);
+                const exampleNoteKey = String(index);
+                const noteCollapsed = Object.prototype.hasOwnProperty.call(desktopExampleNoteCollapsedOverrides, exampleNoteKey)
+                  ? Boolean(desktopExampleNoteCollapsedOverrides[exampleNoteKey])
+                  : desktopContentDefaultCollapsed;
 
                 const renderedText = renderTextWithFocusPositions(example.text, rawFocus)
                   || renderTextWithFocusWords(example.text, example.focusWords);
@@ -2626,17 +3026,17 @@ export default function VocabularyReview({
                     </div>
 
                     {example.explanation ? (
-                      <div className={`vocab-review-example-note vocab-review-desktop-example-note${desktopExampleNotesCollapsed ? ' is-collapsed' : ''}`} style={{ fontSize: '13px', color: 'var(--ms-text-muted)', background: 'rgba(255, 255, 255, 0.9)', borderRadius: '6px', padding: '9px 10px', border: '1px solid rgba(213, 221, 208, 0.72)' }}>
+                      <div className={`vocab-review-example-note vocab-review-desktop-example-note${noteCollapsed ? ' is-collapsed' : ''}`} style={{ fontSize: '13px', color: 'var(--ms-text-muted)', background: 'rgba(255, 255, 255, 0.9)', borderRadius: '6px', padding: '9px 10px', border: '1px solid rgba(213, 221, 208, 0.72)' }}>
                         <button
                           type="button"
                           className="vocab-review-desktop-note-toggle"
-                          onClick={() => setDesktopExampleNotesCollapsed((collapsed) => !collapsed)}
-                          aria-expanded={!desktopExampleNotesCollapsed}
+                          onClick={() => handleDesktopExampleNoteToggle(index)}
+                          aria-expanded={!noteCollapsed}
                         >
                           <span>解析</span>
-                          <UiIcon name={desktopExampleNotesCollapsed ? 'chevron-down' : 'chevron-up'} size={13} />
+                          <UiIcon name={noteCollapsed ? 'chevron-down' : 'chevron-up'} size={13} />
                         </button>
-                        {!desktopExampleNotesCollapsed ? (
+                        {!noteCollapsed ? (
                           <div className="vocab-review-desktop-note-body">{example.explanation}</div>
                         ) : null}
                       </div>
@@ -2701,7 +3101,7 @@ export default function VocabularyReview({
               <button
                 type="button"
                 className="vocab-review-definition-mask-toggle"
-                onClick={() => setDesktopDefinitionsCollapsed((collapsed) => !collapsed)}
+                onClick={toggleDefinitionsMask}
                 aria-pressed={definitionsMasked}
                 aria-label={definitionMaskActionLabel}
                 title={definitionMaskActionLabel}
@@ -2880,6 +3280,7 @@ export default function VocabularyReview({
           overflow: 'hidden',
         }}
       >
+        {workspaceToolbarControlsNode}
         <div
           className="vocab-review-sidebar"
           style={{
@@ -2905,14 +3306,16 @@ export default function VocabularyReview({
               gap: '10px',
             }}
           >
-            <select
-              className="vocab-review-select"
-              value={selectedCategory}
-              onChange={(e) => applySelectedCategory(e.target.value)}
-              style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--ms-border)', borderRadius: '6px', fontSize: '13px', outline: 'none', background: '#fff', color: 'var(--ms-text)' }}
-            >
-              {compactCategoryOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-            </select>
+            {!movePrimaryControlsToWorkspaceToolbar ? (
+              <select
+                className="vocab-review-select"
+                value={selectedCategory}
+                onChange={(e) => applySelectedCategory(e.target.value)}
+                style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--ms-border)', borderRadius: '6px', fontSize: '13px', outline: 'none', background: '#fff', color: 'var(--ms-text)' }}
+              >
+                {compactCategoryOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+              </select>
+            ) : null}
 
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
               <span className="vocab-review-chip" style={chipStyle()}>范围: {selectedCategoryLabel}</span>
@@ -3005,6 +3408,7 @@ export default function VocabularyReview({
         className={`vocab-review vocab-review-mobile-simple${compactDesktop ? ' is-compact-desktop' : ''}${randomSelectionMode ? ' is-random-mode' : ''}`}
         style={mobileSimpleRootStyle}
       >
+        {workspaceToolbarControlsNode}
         <div className={`vocab-review-mobile-toolbar${compactDesktop ? ' is-compact-desktop' : ''}`} style={mobileSimpleToolbarStyle}>
           <div className="vocab-review-mobile-compact-row">
             <div className="vocab-review-mobile-compact-meta">
@@ -3103,6 +3507,7 @@ export default function VocabularyReview({
 
   return (
     <div className={`vocab-review vocab-review-desktop-split${randomSelectionMode ? ' is-random-mode' : ''}`} style={{ display: 'flex', height: '100%', width: '100%', background: 'transparent' }}>
+      {workspaceToolbarControlsNode}
       {recommendationSettingsNode}
       <div className="vocab-review-content" style={{ flex: 1, padding: '30px 32px', overflowY: 'auto' }}>
         {detailNode}
@@ -3110,7 +3515,7 @@ export default function VocabularyReview({
 
       <aside className="vocab-review-sidebar vocab-review-control-sidebar" style={{ width: '312px', borderLeft: '1px solid var(--ms-border)', background: 'rgba(255, 255, 255, 0.92)', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
         {desktopReviewControlsNode}
-        {desktopContentPreferenceNode}
+        {movePrimaryControlsToWorkspaceToolbar ? null : desktopContentPreferenceNode}
         {desktopPoolControlsNode}
 
         <div className="vocab-review-sidebar-meta" style={{ padding: '10px 14px', borderBottom: '1px solid var(--ms-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>

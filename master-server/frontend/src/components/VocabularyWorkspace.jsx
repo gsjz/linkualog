@@ -9,13 +9,10 @@ const normalizeVocabularyLaunchWord = (value) => String(value || '')
   .trim()
   .replace(/\.json$/i, '');
 
-const REVIEW_WORKSPACE_FOCUS_VALUES = new Set(['clean', 'editor', 'organize', 'connection']);
-
 const normalizeWorkspaceFocus = (value) => {
   const normalized = String(value || '').trim().toLowerCase();
-  if (normalized === 'review') return 'organize';
-  if (normalized === 'connect') return 'connection';
-  return REVIEW_WORKSPACE_FOCUS_VALUES.has(normalized) ? normalized : 'clean';
+  if (normalized === 'connection' || normalized === 'connect') return 'connection';
+  return 'editor';
 };
 
 const buildReviewLaunchRequest = ({ category = '', word = '', focus = 'clean' } = {}) => {
@@ -30,12 +27,6 @@ const buildReviewLaunchRequest = ({ category = '', word = '', focus = 'clean' } 
     focus: normalizeWorkspaceFocus(focus),
   };
 };
-
-const EDITOR_SURFACE_OPTIONS = [
-  { key: 'organize', label: '整理', icon: 'wand' },
-  { key: 'editor', label: '编辑', icon: 'edit' },
-  { key: 'connection', label: '连接', icon: 'external-link' },
-];
 
 const STUDY_MODE_OPTIONS = [
   { key: 'random', label: '随机', icon: 'shuffle' },
@@ -61,21 +52,30 @@ function StudyModeSwitch({ mode, onChange }) {
   );
 }
 
-function EditLaunchButton({ disabled, onOpen, hasReadySuggestion }) {
+function SurfaceLaunchButton({
+  surface,
+  label,
+  icon,
+  disabled,
+  onOpen,
+  active = false,
+  hasReadySuggestion = false,
+  title = '',
+}) {
   return (
     <button
       type="button"
-      className={`vocab-mode-switch${hasReadySuggestion ? ' has-ready-suggestion' : ''}`}
-      aria-label="打开编辑面板"
-      title={hasReadySuggestion ? '已有预生成整理建议' : '打开编辑面板'}
-      onClick={onOpen}
+      className={`vocab-mode-switch${active ? ' is-on' : ''}${hasReadySuggestion ? ' has-ready-suggestion' : ''}`}
+      aria-label={`打开${label}面板`}
+      title={title || `打开${label}面板`}
+      onClick={() => onOpen(surface)}
       disabled={disabled}
     >
       {hasReadySuggestion ? <span className="vocab-mode-switch-dot" aria-hidden="true" /> : null}
       <span className="vocab-mode-switch-icon">
-        <UiIcon name="edit" size={17} />
+        <UiIcon name={icon} size={17} />
       </span>
-      <span className="vocab-mode-switch-copy">编辑</span>
+      <span className="vocab-mode-switch-copy">{label}</span>
     </button>
   );
 }
@@ -85,6 +85,7 @@ export default function VocabularyWorkspace({
   launchRequest = null,
   mobileSimple = false,
   compactDesktop = false,
+  compactViewport = false,
   onOpenConfig = null,
   onSelectionChange = null,
 }) {
@@ -93,6 +94,7 @@ export default function VocabularyWorkspace({
   const [editorLaunchToken, setEditorLaunchToken] = useState(0);
   const [reviewEntryUpdate, setReviewEntryUpdate] = useState(null);
   const [prefetchedRefineUpdate, setPrefetchedRefineUpdate] = useState(null);
+  const [reviewToolbarControlsHost, setReviewToolbarControlsHost] = useState(null);
   const [visibleScope, setVisibleScope] = useState({
     entries: [],
     selectedEntry: null,
@@ -109,7 +111,7 @@ export default function VocabularyWorkspace({
     buildReviewLaunchRequest({
       category: currentSelection?.category || launchRequest?.category,
       word: currentSelection?.word || currentSelection?.filename || launchRequest?.fileKey || launchRequest?.word,
-      focus: launchRequest?.focus || 'clean',
+      focus: launchRequest?.focus || 'editor',
     })
   ), [currentSelection?.category, currentSelection?.filename, currentSelection?.word, launchRequest?.category, launchRequest?.fileKey, launchRequest?.focus, launchRequest?.word]);
 
@@ -128,14 +130,14 @@ export default function VocabularyWorkspace({
     overlayLaunchRequest
       ? {
           ...overlayLaunchRequest,
-          autoRefineToken: editorLaunchToken,
+          autoRefineToken: editorSurface === 'editor' ? editorLaunchToken : '',
         }
       : null
-  ), [editorLaunchToken, overlayLaunchRequest]);
-  const openEditorPanel = () => {
+  ), [editorLaunchToken, editorSurface, overlayLaunchRequest]);
+  const openWorkspaceSurface = (surface = 'editor') => {
     if (!hasSelection) return;
     setEditorLaunchToken((token) => token + 1);
-    setEditorSurface('organize');
+    setEditorSurface(surface);
   };
   const markRefineCached = useCallback((category, files) => {
     const normalizedCategory = String(category || '').trim();
@@ -167,6 +169,10 @@ export default function VocabularyWorkspace({
 
   const handleVisibleScopeChange = useCallback((scope) => {
     setVisibleScope(scope || {});
+  }, []);
+
+  const handleReviewToolbarControlsHostRef = useCallback((node) => {
+    setReviewToolbarControlsHost(node);
   }, []);
 
   const handlePrefetchVisibleRefine = useCallback(async () => {
@@ -254,20 +260,18 @@ export default function VocabularyWorkspace({
     ? `预生成 ${prefetchProgress.done}/${prefetchProgress.total}`
     : '预生成';
   const editorSurfaceTitle = {
-    organize: '整理建议',
-    editor: '词条编辑',
+    editor: '手动整理',
     connection: '连接',
-  }[editorSurface] || '词条编辑';
+  }[editorSurface] || '手动整理';
+  const editorPanelAriaLabel = {
+    editor: '手动整理面板',
+    connection: '连接面板',
+  }[editorSurface] || '手动整理面板';
 
   return (
     <div className={`vocab-workspace${compactDesktop ? ' is-compact-desktop' : ''} is-study-mode${overlayLaunchRequest ? ' is-editor-open' : ''}`}>
       <div className="vocab-workspace-toolbar">
-        <div className="vocab-workspace-heading">
-          <div className="vocab-workspace-title">生词本</div>
-          <div className="vocab-workspace-caption">
-            {studyMode === 'random' ? '随机跳词' : '手动选词'}
-          </div>
-        </div>
+        <div className="vocab-workspace-review-tools-host" ref={handleReviewToolbarControlsHostRef} />
         <div className="vocab-workspace-actions">
           <StudyModeSwitch mode={studyMode} onChange={setStudyMode} />
           <button
@@ -283,7 +287,25 @@ export default function VocabularyWorkspace({
             </span>
             <span className="vocab-mode-switch-copy">{prefetchLabel}</span>
           </button>
-          <EditLaunchButton disabled={!hasSelection} onOpen={openEditorPanel} hasReadySuggestion={selectedHasReadySuggestion} />
+          <SurfaceLaunchButton
+            surface="editor"
+            label="编辑"
+            icon="edit"
+            disabled={!hasSelection}
+            onOpen={openWorkspaceSurface}
+            active={editorSurface === 'editor'}
+            hasReadySuggestion={selectedHasReadySuggestion}
+            title={selectedHasReadySuggestion ? '打开手动整理；已有预生成整理建议' : '打开手动整理'}
+          />
+          <SurfaceLaunchButton
+            surface="connection"
+            label="连接"
+            icon="external-link"
+            disabled={!hasSelection}
+            onOpen={openWorkspaceSurface}
+            active={editorSurface === 'connection'}
+            title="打开连接面板"
+          />
         </div>
       </div>
 
@@ -295,9 +317,11 @@ export default function VocabularyWorkspace({
             prefetchedRefineRequest={prefetchedRefineUpdate}
             mobileSimple={reviewSurfaceMobileSimple}
             compactDesktop={reviewSurfaceCompactDesktop}
+            compactViewport={compactViewport}
             selectionMode={studyMode}
             onSelectionChange={onSelectionChange}
             onVisibleScopeChange={handleVisibleScopeChange}
+            workspaceToolbarControlsHost={reviewToolbarControlsHost}
           />
         </section>
 
@@ -306,10 +330,10 @@ export default function VocabularyWorkspace({
             <button
               type="button"
               className="vocab-editor-backdrop"
-              aria-label="关闭编辑面板"
+              aria-label={`关闭${editorPanelAriaLabel}`}
               onClick={() => setEditorSurface('')}
             />
-            <section className={`vocab-editor-panel is-${editorSurface}-surface`} role="dialog" aria-modal="false" aria-label="编辑面板">
+            <section className={`vocab-editor-panel is-${editorSurface}-surface`} role="dialog" aria-modal="false" aria-label={editorPanelAriaLabel}>
               <div className="vocab-editor-panel-header">
                 <div className="vocab-editor-panel-heading">
                   <div className="vocab-editor-panel-title">
@@ -320,25 +344,10 @@ export default function VocabularyWorkspace({
                   </div>
                 </div>
                 <div className="vocab-editor-panel-actions">
-                  <div className="vocab-editor-panel-switch" role="tablist" aria-label="编辑面板视图">
-                    {EDITOR_SURFACE_OPTIONS.map((option) => (
-                      <button
-                        key={option.key}
-                        type="button"
-                        className={`vocab-editor-panel-switch-button${editorSurface === option.key ? ' active' : ''}`}
-                        onClick={() => setEditorSurface(option.key)}
-                        aria-pressed={editorSurface === option.key}
-                        title={option.label}
-                      >
-                        <UiIcon name={option.icon} size={15} />
-                        <span>{option.label}</span>
-                      </button>
-                    ))}
-                  </div>
                   <button
                     type="button"
                     className="vocab-edit-fab vocab-edit-fab-icon"
-                    aria-label="关闭编辑面板"
+                    aria-label={`关闭${editorPanelAriaLabel}`}
                     onClick={() => setEditorSurface('')}
                   >
                     <UiIcon name="close" size={16} />

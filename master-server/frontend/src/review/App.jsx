@@ -1,11 +1,11 @@
 import { useCallback, useDeferredValue, useEffect, useEffectEvent, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 import ConfigDrawer from './components/ConfigDrawer';
 import UiIcon from '../components/UiIcon';
 import './index.css';
 import { FOCUS_TOKEN_REGEX as TOKEN_REGEX, tokenizeNonSpace } from './focusTokens';
 import {
-  applySplitSuggestion,
   fetchCategories,
   fetchConfig,
   fetchFiles,
@@ -40,6 +40,86 @@ const ENTRY_FILTER_OPTIONS = [
   { value: 'unmarked', label: '未标记' },
 ];
 
+const TOAST_EXIT_MS = 160;
+
+function GlobalToastLayer({
+  error = '',
+  notice = '',
+  onClearError,
+  onClearNotice,
+}) {
+  const [renderedError, setRenderedError] = useState(error);
+  const [renderedNotice, setRenderedNotice] = useState(notice);
+  const [errorLeaving, setErrorLeaving] = useState(false);
+  const [noticeLeaving, setNoticeLeaving] = useState(false);
+
+  useEffect(() => {
+    if (error) {
+      queueMicrotask(() => {
+        setRenderedError(error);
+        setErrorLeaving(false);
+      });
+      return undefined;
+    }
+    if (!renderedError) return undefined;
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (!cancelled) setErrorLeaving(true);
+    });
+    const timer = window.setTimeout(() => {
+      setRenderedError('');
+      setErrorLeaving(false);
+    }, TOAST_EXIT_MS);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [error, renderedError]);
+
+  useEffect(() => {
+    if (notice) {
+      queueMicrotask(() => {
+        setRenderedNotice(notice);
+        setNoticeLeaving(false);
+      });
+      return undefined;
+    }
+    if (!renderedNotice) return undefined;
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (!cancelled) setNoticeLeaving(true);
+    });
+    const timer = window.setTimeout(() => {
+      setRenderedNotice('');
+      setNoticeLeaving(false);
+    }, TOAST_EXIT_MS);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [notice, renderedNotice]);
+
+  if (typeof document === 'undefined' || (!renderedError && !renderedNotice)) return null;
+
+  return createPortal(
+    <div className="global-toast-layer" aria-live="polite" aria-atomic="true">
+      {renderedError ? (
+        <div className={`global-error global-toast${errorLeaving ? ' is-leaving' : ''}`} role="alert">
+          <span>{renderedError}</span>
+          <button type="button" className="toast-close" onClick={onClearError}>关闭</button>
+        </div>
+      ) : null}
+      {renderedNotice ? (
+        <div className={`global-notice global-toast${noticeLeaving ? ' is-leaving' : ''}`} role="status">
+          <span>{renderedNotice}</span>
+          <button type="button" className="toast-close" onClick={onClearNotice}>关闭</button>
+        </div>
+      ) : null}
+    </div>,
+    document.body,
+  );
+}
+
 const recommendationMarkFilterFromEntryFilter = (value) => (
   value === 'marked' || value === 'unmarked' || value === 'needs_processing' ? value : 'all'
 );
@@ -59,7 +139,30 @@ const DEFAULT_RECOMMENDATION_PREFERENCES = {
 };
 
 const ORGANIZE_CURRENT_WORD_INCLUDE_LLM = true;
-const ORGANIZE_SPLIT_DELETE_SOURCE = true;
+const RELATION_TYPE_OPTIONS = [
+  { value: 'related', label: '相关' },
+  { value: 'same_word', label: '同词' },
+  { value: 'phrase', label: '短语' },
+  { value: 'variant', label: '变体' },
+  { value: 'collocation', label: '搭配' },
+  { value: 'synonym', label: '近义' },
+  { value: 'antonym', label: '反义' },
+  { value: 'same_category', label: '同类' },
+  { value: 'same_scene', label: '同场景' },
+];
+const RELATION_TYPE_ALIASES = new Map([
+  ['sameword', 'same_word'],
+  ['fixed_phrase', 'phrase'],
+  ['idiom', 'phrase'],
+  ['synonyms', 'synonym'],
+  ['near_synonym', 'synonym'],
+  ['antonyms', 'antonym'],
+  ['opposite', 'antonym'],
+  ['category', 'same_category'],
+  ['same_class', 'same_category'],
+  ['scenario', 'same_scene'],
+  ['scene', 'same_scene'],
+]);
 
 function normalizeCategoryValue(value) {
   return String(value || '').trim();
@@ -130,7 +233,8 @@ function normalizeRelationType(value) {
     .replace(/[\s-]+/g, '_')
     .replace(/[^a-z0-9_]+/g, '')
     .replace(/^_+|_+$/g, '');
-  return normalized || 'related';
+  const aliased = RELATION_TYPE_ALIASES.get(normalized) || normalized;
+  return RELATION_TYPE_OPTIONS.some((item) => item.value === aliased) ? aliased : 'related';
 }
 
 function relationTargetFromValue(value, fallbackCategory = '') {
@@ -210,6 +314,24 @@ function relationEntryId(target) {
   return category && file ? `${category}/${file}` : '';
 }
 
+function normalizeSuggestionConfidence(value) {
+  if (value === undefined || value === null || value === '') return null;
+  const confidence = Number(value);
+  if (!Number.isFinite(confidence)) return null;
+  return Math.max(0, Math.min(1, confidence));
+}
+
+function suggestionConfidenceOpacity(value) {
+  const confidence = normalizeSuggestionConfidence(value);
+  if (confidence === null) return undefined;
+  return 0.48 + confidence * 0.52;
+}
+
+function suggestionConfidenceStyle(value) {
+  const opacity = suggestionConfidenceOpacity(value);
+  return opacity === undefined ? undefined : { '--suggestion-confidence-opacity': opacity };
+}
+
 function normalizeRelationItem(item, fallbackCategory = '', sourceTarget = null, allowIncomplete = false) {
   let target = relationTargetFromValue(item, fallbackCategory);
   if (!target && allowIncomplete && item && typeof item === 'object') {
@@ -236,9 +358,9 @@ function normalizeRelationItem(item, fallbackCategory = '', sourceTarget = null,
   if (reason) relation.reason = reason;
   if (source) relation.source = source;
   if (item?.confidence !== undefined && item?.confidence !== null && item?.confidence !== '') {
-    const confidence = Number(item.confidence);
-    if (Number.isFinite(confidence)) {
-      relation.confidence = Math.max(0, Math.min(1, confidence));
+    const confidence = normalizeSuggestionConfidence(item.confidence);
+    if (confidence !== null) {
+      relation.confidence = confidence;
     }
   }
   return relation;
@@ -970,9 +1092,6 @@ function isActionableEntrySuggestion(item) {
   if (action === 'rename') {
     return Boolean(String(item.suggested_word || '').trim());
   }
-  if (action === 'split') {
-    return Array.isArray(item.suggested_entries) && item.suggested_entries.length > 0;
-  }
   return false;
 }
 
@@ -1089,16 +1208,21 @@ function countActionableLlmItems(llmData, draft = null) {
   return total;
 }
 
+function getActionableEntryRenameSuggestion(llmData) {
+  const entrySuggestions = Array.isArray(llmData?.entry) ? llmData.entry : [];
+  return entrySuggestions.find((item) => (
+    normalizeEntryAction(item?.action) === 'rename'
+    && isActionableEntrySuggestion(item)
+    && collapseWhitespace(item?.suggested_word)
+  )) || null;
+}
+
 function buildFullyAutoAppliedDraft(baseDraft, cleanData) {
   const next = deepClone(baseDraft);
   next.definitions = Array.isArray(next.definitions) ? [...next.definitions] : [];
   next.examples = Array.isArray(next.examples) ? [...next.examples] : [];
 
-  const entrySuggestions = Array.isArray(cleanData?.llm?.entry) ? cleanData.llm.entry : [];
-  const renameSuggestion = entrySuggestions.find((item) => (
-    normalizeEntryAction(item?.action) === 'rename'
-    && isActionableEntrySuggestion(item)
-  ));
+  const renameSuggestion = getActionableEntryRenameSuggestion(cleanData?.llm);
   if (renameSuggestion) {
     const renamed = applyEntryRenameToDraft(next, renameSuggestion.suggested_word);
     next.word = renamed.word;
@@ -1177,12 +1301,23 @@ function ManualMergePanel({
   entries,
   currentCategory,
   currentFilename,
+  targetRequest,
   loading,
   hasDraft,
   onManualMerge,
 }) {
   const [manualTargetCategory, setManualTargetCategory] = useState(currentCategory || '');
   const [manualTargetWord, setManualTargetWord] = useState('');
+
+  useEffect(() => {
+    const requestedWord = collapseWhitespace(targetRequest?.word);
+    if (!requestedWord) return;
+    const requestedCategory = normalizeCategoryValue(targetRequest?.category || currentCategory);
+    queueMicrotask(() => {
+      setManualTargetCategory(requestedCategory);
+      setManualTargetWord(requestedWord);
+    });
+  }, [currentCategory, targetRequest?.category, targetRequest?.token, targetRequest?.word]);
 
   const normalizedManualTargetCategory = normalizeCategoryValue(manualTargetCategory || currentCategory);
   const normalizedManualTargetWord = collapseWhitespace(manualTargetWord);
@@ -1291,13 +1426,13 @@ function ManualMergePanel({
 function EditorPanel({
   draft,
   dirty,
-  saving,
   activeWord,
   categories,
   entries,
   currentCategory,
   currentFilename,
   manualMergeLoading,
+  manualMergeTargetRequest,
   onWordChange,
   onDefinitionChange,
   onDefinitionAdd,
@@ -1309,8 +1444,6 @@ function EditorPanel({
   onExampleClearFocusPositions,
   onExampleApplyFocusPositions,
   onReplaceDraft,
-  onReset,
-  onSave,
   onManualMerge,
 }) {
   const [rawText, setRawText] = useState('');
@@ -1334,6 +1467,7 @@ function EditorPanel({
         entries={entries}
         currentCategory={currentCategory}
         currentFilename={currentFilename}
+        targetRequest={manualMergeTargetRequest}
         loading={manualMergeLoading}
         hasDraft={Boolean(draft)}
         onManualMerge={onManualMerge}
@@ -1617,11 +1751,6 @@ function EditorPanel({
           <div className="muted">输入合法 JSON 后会自动同步到草稿，再正常保存到 data。</div>
         )}
       </details>
-
-      <div className="editor-footer">
-        <button type="button" className="ghost" onClick={onReset} disabled={!dirty || saving}>重置草稿</button>
-        <button type="button" className="primary" onClick={onSave} disabled={!dirty || saving}>{saving ? '保存中...' : '保存到 data'}</button>
-      </div>
     </div>
   );
 }
@@ -1694,14 +1823,55 @@ function ConnectionPanel({
         <section className="editor-section relation-editor-section">
           <div className="editor-title-row">
             <div>
-              <h4>手动连边</h4>
-              <div className="editor-subtitle">保存后会同步写入目标词条的反向边。</div>
+              <h4>LLM 连边建议</h4>
+              <div className="editor-subtitle">
+                {candidateCount ? `${candidateCount} 个候选词条` : '从当前词条与候选词条中推断关系'}
+                {skippedCount ? ` · 跳过 ${skippedCount}` : ''}
+              </div>
             </div>
             <div className="relation-editor-actions">
               <button type="button" className="ghost" onClick={onRunRelationSuggest} disabled={relationSuggestLoading || !draft}>
                 <UiIcon name="wand" size={14} />
                 <span>{relationSuggestLoading ? '建议中...' : 'LLM 建议连边'}</span>
               </button>
+            </div>
+          </div>
+
+          {relationSuggestError ? <div className="error">{relationSuggestError}</div> : null}
+
+          <div className="relation-suggestion-list">
+            {suggestions.length === 0 ? <div className="empty">暂无建议。点击“LLM 建议连边”生成候选关系。</div> : null}
+            {suggestions.map((suggestion, index) => {
+              const target = suggestion.target || {};
+              return (
+                <div
+                  className="relation-editor-card relation-suggestion-card"
+                  key={`${relationEntryId(target)}-${suggestion.type}-${index}`}
+                  style={suggestionConfidenceStyle(suggestion.confidence)}
+                >
+                  <div className="relation-card-head">
+                    <strong>{target.word || filenameToWord(target.file)} · {suggestion.type || 'related'}</strong>
+                    <button type="button" className="primary" onClick={() => onApplyRelationSuggestion(suggestion, index)}>应用</button>
+                  </div>
+                  <div className="relation-suggestion-meta">
+                    <span>{target.category || currentCategory} / {target.file}</span>
+                    {suggestion.confidence !== undefined ? <span>confidence {Number(suggestion.confidence).toFixed(2)}</span> : null}
+                    {suggestion.source ? <span>{suggestion.source}</span> : null}
+                  </div>
+                  {suggestion.reason ? <div className="muted">{suggestion.reason}</div> : null}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="editor-section relation-editor-section">
+          <div className="editor-title-row">
+            <div>
+              <h4>手动连边</h4>
+              <div className="editor-subtitle">保存后会同步写入目标词条的反向边。</div>
+            </div>
+            <div className="relation-editor-actions">
               <button type="button" className="ghost" onClick={onRelationAdd}>
                 <UiIcon name="external-link" size={14} />
                 <span>新增边</span>
@@ -1724,12 +1894,15 @@ function ConnectionPanel({
                   <div className="editor-grid relation-grid">
                     <label>
                       type
-                      <input
+                      <select
                         className="field"
-                        value={relation.type || 'related'}
+                        value={normalizeRelationType(relation.type || 'related')}
                         onChange={(event) => onRelationChange(index, 'type', event.target.value)}
-                        placeholder="related / split / phrase"
-                      />
+                      >
+                        {RELATION_TYPE_OPTIONS.map((item) => (
+                          <option key={item.value} value={item.value}>{item.label}</option>
+                        ))}
+                      </select>
                     </label>
                     <label>
                       目标目录
@@ -1790,41 +1963,6 @@ function ConnectionPanel({
           </datalist>
         </section>
 
-        <section className="editor-section relation-editor-section">
-          <div className="editor-title-row">
-            <div>
-              <h4>LLM 连边建议</h4>
-              <div className="editor-subtitle">
-                {candidateCount ? `${candidateCount} 个候选词条` : '从当前词条与候选词条中推断关系'}
-                {skippedCount ? ` · 跳过 ${skippedCount}` : ''}
-              </div>
-            </div>
-          </div>
-
-          {relationSuggestError ? <div className="error">{relationSuggestError}</div> : null}
-
-          <div className="relation-suggestion-list">
-            {suggestions.length === 0 ? <div className="empty">暂无建议。点击“LLM 建议连边”生成候选关系。</div> : null}
-            {suggestions.map((suggestion, index) => {
-              const target = suggestion.target || {};
-              return (
-                <div className="relation-editor-card relation-suggestion-card" key={`${relationEntryId(target)}-${suggestion.type}-${index}`}>
-                  <div className="relation-card-head">
-                    <strong>{target.word || filenameToWord(target.file)} · {suggestion.type || 'related'}</strong>
-                    <button type="button" className="primary" onClick={() => onApplyRelationSuggestion(suggestion)}>应用</button>
-                  </div>
-                  <div className="relation-suggestion-meta">
-                    <span>{target.category || currentCategory} / {target.file}</span>
-                    {suggestion.confidence !== undefined ? <span>confidence {Number(suggestion.confidence).toFixed(2)}</span> : null}
-                    {suggestion.source ? <span>{suggestion.source}</span> : null}
-                  </div>
-                  {suggestion.reason ? <div className="muted">{suggestion.reason}</div> : null}
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
         <div className="editor-footer">
           <button type="button" className="ghost" onClick={onReset} disabled={!dirty || saving}>重置草稿</button>
           <button type="button" className="primary" onClick={onSave} disabled={!dirty || saving}>{saving ? '保存中...' : '保存到 data'}</button>
@@ -1843,8 +1981,6 @@ function OrganizePanel({
   onApplyEntryRenameAndSave,
   onApplyAllSuggestions,
   onApplyAllAndSave,
-  onApplySplit,
-  splitApplyingKey,
   renameApplyingKey,
   hasDraft,
   savingDraft,
@@ -1925,7 +2061,6 @@ function OrganizePanel({
     replace: '替换',
     replace_all: '重写',
     rewrite: '改写',
-    split: '拆分',
     trim: '精简',
   }[action] || action || '建议');
 
@@ -1993,13 +2128,11 @@ function OrganizePanel({
 
   const renderEntryCard = (item, index) => {
     const action = normalizeEntryAction(item.action);
-    const entries = Array.isArray(item.suggested_entries) ? item.suggested_entries : [];
-    const splitActionKey = suggestionItemKey(`entry-split:${analysisToken}`, item, index);
     const renameActionKey = suggestionItemKey(`entry-rename:${analysisToken}`, item, index);
     const confidence = formatConfidence(item.confidence);
 
     return (
-      <article className="organize-suggestion-card" key={`llm-entry-${index}`}>
+      <article className="organize-suggestion-card" key={`llm-entry-${index}`} style={suggestionConfidenceStyle(item.confidence)}>
         <div className="organize-card-head">
           {renderCardMeta('词条', action, confidence)}
           {action === 'rename' ? (
@@ -2009,7 +2142,7 @@ function OrganizePanel({
                 onClick={() => onApplyLlmSuggestion('entry', item)}
                 disabled={!hasDraft || Boolean(renameApplyingKey)}
               >
-                写入编辑草稿
+                应用到草稿
               </button>
               <button
                 className="primary"
@@ -2019,14 +2152,6 @@ function OrganizePanel({
                 {renameApplyingKey === renameActionKey ? '保存中...' : '直接保存/合并'}
               </button>
             </div>
-          ) : action === 'split' ? (
-            <button
-              className="ghost"
-              onClick={() => onApplySplit(item, splitActionKey)}
-              disabled={!hasDraft || Boolean(splitApplyingKey)}
-            >
-              {splitApplyingKey === splitActionKey ? '拆分中...' : '自动拆分'}
-            </button>
           ) : (
             <span className="muted">需手动处理</span>
           )}
@@ -2044,19 +2169,6 @@ function OrganizePanel({
             </div>
           </div>
         ) : null}
-        {action === 'split' ? (
-          <div className="organize-split-list">
-            {entries.map((entry, entryIndex) => {
-              const definitions = Array.isArray(entry.definitions) ? entry.definitions : [];
-              return (
-                <div className="organize-split-item" key={`split-entry-${entryIndex}`}>
-                  <strong>{entry.word || `词条 ${entryIndex + 1}`}</strong>
-                  {definitions[0] ? <span>{definitions[0]}</span> : null}
-                </div>
-              );
-            })}
-          </div>
-        ) : null}
       </article>
     );
   };
@@ -2065,6 +2177,7 @@ function OrganizePanel({
     const action = normalizeLlmAction(item.action);
     const itemIndex = parseIndex(item.index);
     const itemKey = suggestionItemKey(`llm-def:${analysisToken}`, item, index);
+    const confidence = formatConfidence(item.confidence);
     const editorField = action === 'replace_all' ? 'suggested_definitions' : 'suggested';
     const editedValue = getEditorValue(
       itemKey,
@@ -2085,9 +2198,9 @@ function OrganizePanel({
           : '目标释义';
 
     return (
-      <article className="organize-suggestion-card" key={`llm-def-${index}`}>
+      <article className="organize-suggestion-card" key={`llm-def-${index}`} style={suggestionConfidenceStyle(item.confidence)}>
         <div className="organize-card-head">
-          {renderCardMeta('释义', action)}
+          {renderCardMeta('释义', action, confidence)}
           <button
             className="ghost"
             onClick={() => onApplyLlmSuggestion('definition', patched)}
@@ -2126,6 +2239,7 @@ function OrganizePanel({
     const action = normalizeLlmAction(item.action);
     const itemIndex = parseIndex(item.index);
     const itemKey = suggestionItemKey(`llm-ex:${analysisToken}`, item, index);
+    const confidence = formatConfidence(item.confidence);
     const suggestedText = getEditorValue(itemKey, 'suggested_text', String(item.suggested_text || ''));
     const suggestedExplanation = getEditorValue(itemKey, 'suggested_explanation', String(item.suggested_explanation || ''));
     const patched = {
@@ -2142,9 +2256,9 @@ function OrganizePanel({
     const targetLabel = itemIndex !== null ? `第 ${itemIndex + 1} 条例句` : '目标例句';
 
     return (
-      <article className="organize-suggestion-card" key={`llm-ex-${index}`}>
+      <article className="organize-suggestion-card" key={`llm-ex-${index}`} style={suggestionConfidenceStyle(item.confidence)}>
         <div className="organize-card-head">
-          {renderCardMeta('例句', action)}
+          {renderCardMeta('例句', action, confidence)}
           <button
             className="ghost"
             onClick={() => onApplyLlmSuggestion('example', patched)}
@@ -2205,7 +2319,10 @@ function OrganizePanel({
     <div className="panel organize-panel">
       <div className="panel-header">
         <div className="panel-heading">
-          <h3>整理</h3>
+          <h3 className="panel-title-with-icon">
+            <UiIcon name="wand" size={20} />
+            <span>辅助整理</span>
+          </h3>
           <div className="panel-caption">
             {cleanData ? `${sourceLabel} · ${totalSuggestionCount} 条结果` : '当前词条'}
           </div>
@@ -2223,7 +2340,7 @@ function OrganizePanel({
           {renderOrganizeActions()}
         </div>
         <div className="organize-summary-strip" aria-label="整理结果摘要">
-          {renderSummaryItem('entry', '词条', llmEntry.length, '重命名/拆分')}
+          {renderSummaryItem('entry', '词条', llmEntry.length, '重命名')}
           {renderSummaryItem('definition', '释义', llmDefinitions.length, '可直接应用')}
           {renderSummaryItem('example', '例句', llmExamples.length, '可直接应用')}
           {renderSummaryItem('note', '备注', llmNotes.length, sourceLabel)}
@@ -2851,13 +2968,14 @@ export default function App({
   const [loadingReview, setLoadingReview] = useState(false);
   const [savingDraft, setSavingDraft] = useState(false);
   const [savingMarked, setSavingMarked] = useState(false);
-  const [splitApplyingKey, setSplitApplyingKey] = useState('');
   const [renameApplyingKey, setRenameApplyingKey] = useState('');
   const [manualMergeLoading, setManualMergeLoading] = useState(false);
+  const [manualMergeTargetRequest, setManualMergeTargetRequest] = useState(null);
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
   const [ttsVoiceLabel, setTtsVoiceLabel] = useState('');
   const pendingSelectionRef = useRef({ category: '', filename: '' });
+  const manualMergeTargetTokenRef = useRef(0);
   const speechRequestRef = useRef(0);
   const recommendPreferenceHydratedRef = useRef(false);
   const savedRecommendPreferenceKeyRef = useRef('');
@@ -2926,6 +3044,7 @@ export default function App({
     setDetail(normalized);
     setDraft(normalized);
     setDraftDirty(false);
+    setManualMergeTargetRequest(null);
     setEditorSyncToken((prev) => prev + 1);
   };
 
@@ -2938,6 +3057,7 @@ export default function App({
     setRelationSuggestions([]);
     setRelationSuggestMeta(null);
     setRelationSuggestError('');
+    setManualMergeTargetRequest(null);
   };
 
   const updateDraft = (updater) => {
@@ -2947,6 +3067,17 @@ export default function App({
       return next;
     });
     setDraftDirty(true);
+  };
+
+  const loadManualMergeTarget = (word, targetCategory = apiCategory) => {
+    const normalizedWord = collapseWhitespace(word);
+    if (!normalizedWord) return;
+    manualMergeTargetTokenRef.current += 1;
+    setManualMergeTargetRequest({
+      token: manualMergeTargetTokenRef.current,
+      category: normalizeCategoryValue(targetCategory || apiCategory),
+      word: normalizedWord,
+    });
   };
 
   const sanitizeCurrentDraft = useCallback((value, fallbackWord, targetFilename = filename) => sanitizeDraftForSave(
@@ -3513,7 +3644,7 @@ export default function App({
     });
   };
 
-  const handleApplyRelationSuggestion = (suggestion) => {
+  const handleApplyRelationSuggestion = (suggestion, suggestionIndex = -1) => {
     if (!draft || !suggestion) return;
     updateDraft((base) => {
       const relations = upsertRelationList(
@@ -3524,6 +3655,17 @@ export default function App({
         base.word || filenameToWord(filename),
       );
       return { ...base, relations };
+    });
+    setRelationSuggestions((current) => {
+      const suggestions = Array.isArray(current) ? current : [];
+      if (suggestionIndex >= 0 && suggestionIndex < suggestions.length) {
+        return suggestions.filter((_, index) => index !== suggestionIndex);
+      }
+
+      const suggestionKey = `${relationEntryId(suggestion.target || {})}|${normalizeRelationType(suggestion.type || 'related')}`;
+      return suggestions.filter((item) => (
+        `${relationEntryId(item?.target || {})}|${normalizeRelationType(item?.type || 'related')}` !== suggestionKey
+      ));
     });
     showNotice('已将连边建议写入编辑草稿');
   };
@@ -3566,7 +3708,8 @@ export default function App({
       const suggestedWord = collapseWhitespace(item.suggested_word);
       if (!suggestedWord) return;
       updateDraft((base) => applyEntryRenameToDraft(base, suggestedWord));
-      showNotice('已将词条合并/重命名建议写入编辑草稿');
+      loadManualMergeTarget(suggestedWord, apiCategory);
+      showNotice('已将词条合并/重命名建议写入编辑草稿，并装载到手动合并');
       return;
     }
     if (kind === 'definition' && !isActionableDefinitionSuggestion(item)) return;
@@ -3635,57 +3778,6 @@ export default function App({
     } finally {
       setSavingDraft(false);
       setRenameApplyingKey('');
-    }
-  };
-
-  const handleApplySplit = async (item, actionKey = '') => {
-    if (!hasSelection || !draft || !isActionableEntrySuggestion(item)) return;
-    if (normalizeEntryAction(item.action) !== 'split') return;
-
-    setSplitApplyingKey(actionKey || 'split');
-    try {
-      setError('');
-      const payload = sanitizeCurrentDraft(draft, filename.replace(/\.json$/i, ''));
-      const res = await applySplitSuggestion(
-        apiCategory,
-        filename,
-        item,
-        ORGANIZE_SPLIT_DELETE_SOURCE,
-        payload,
-      );
-      const entriesCreated = Array.isArray(res?.entries) ? res.entries : [];
-      const updatedCount = Array.isArray(res?.updated_files) ? res.updated_files.length : 0;
-      const createdCount = Array.isArray(res?.created_files) ? res.created_files.length : 0;
-      const firstTarget = entriesCreated[0]?.file || '';
-
-      setCleanData(null);
-      void refreshFiles();
-
-      if (ORGANIZE_SPLIT_DELETE_SOURCE && firstTarget) {
-        pendingSelectionRef.current = { category: apiCategory, filename: firstTarget };
-        setDraftDirty(false);
-        setFilename(firstTarget);
-      } else if (firstTarget) {
-        showNotice(`已拆分：新建 ${createdCount} 个，更新 ${updatedCount} 个`);
-      }
-
-      if (ORGANIZE_SPLIT_DELETE_SOURCE && !firstTarget) {
-        setFilename('');
-        resetEntryState();
-      }
-
-      if (firstTarget && !ORGANIZE_SPLIT_DELETE_SOURCE) {
-        const refreshed = await runFileRefine(apiCategory, filename, false, payload);
-        setCleanData(refreshed);
-      }
-
-      if (ORGANIZE_SPLIT_DELETE_SOURCE && firstTarget) {
-        showNotice(`已拆分：新建 ${createdCount} 个，更新 ${updatedCount} 个，并切换到 ${firstTarget}`);
-      }
-    } catch (err) {
-      showError(err.message);
-    } finally {
-      setSplitApplyingKey('');
     }
   };
 
@@ -3813,6 +3905,10 @@ export default function App({
     }
 
     updateDraft((base) => buildFullyAutoAppliedDraft(base, cleanData));
+    const renameSuggestion = getActionableEntryRenameSuggestion(cleanData?.llm);
+    if (renameSuggestion) {
+      loadManualMergeTarget(renameSuggestion.suggested_word, apiCategory);
+    }
     showNotice(`已一键应用 ${totalAutoCount} 条建议到草稿`);
   };
 
@@ -4111,8 +4207,15 @@ export default function App({
   const renderEditorSurface = () => (
     <div className="panel">
       <div className="panel-header">
-        <h3>词条编辑器</h3>
-        {draft ? <span className={`badge ${draftDirty ? 'medium' : 'high'}`}>{draftDirty ? 'draft' : 'synced'}</span> : null}
+        <h3 className="panel-title-with-icon editor-panel-title">
+          <UiIcon name="edit" size={20} />
+          <span>手动整理</span>
+        </h3>
+        <div className="panel-header-actions editor-header-actions">
+          {draft ? <span className={`badge ${draftDirty ? 'medium' : 'high'}`}>{draftDirty ? 'draft' : 'synced'}</span> : null}
+          <button type="button" className="ghost" onClick={handleDraftReset} disabled={!draftDirty || savingDraft}>重置草稿</button>
+          <button type="button" className="primary" onClick={handleDraftSave} disabled={!draftDirty || savingDraft}>{savingDraft ? '保存中...' : '保存到 data'}</button>
+        </div>
       </div>
       <EditorPanel
         key={`editor-${editorSyncToken}`}
@@ -4125,6 +4228,7 @@ export default function App({
         currentCategory={apiCategory}
         currentFilename={filename}
         manualMergeLoading={manualMergeLoading}
+        manualMergeTargetRequest={manualMergeTargetRequest}
         onWordChange={(value) => updateDraft((base) => ({ ...base, word: value }))}
         onDefinitionChange={(index, value) => updateDraft((base) => {
           const definitions = Array.isArray(base.definitions) ? [...base.definitions] : [];
@@ -4280,8 +4384,6 @@ export default function App({
           return { ...base, examples };
         })}
         onReplaceDraft={(value) => updateDraft(() => deepClone(value || {}))}
-        onReset={handleDraftReset}
-        onSave={handleDraftSave}
         onManualMerge={handleManualMerge}
       />
     </div>
@@ -4311,12 +4413,35 @@ export default function App({
     />
   );
 
+  const renderCombinedEditorSurface = () => (
+    <div className="overlay-editor-stack">
+      <div ref={organizePanelRef} className="overlay-editor-stack-item overlay-focus-organize">
+        <OrganizePanel
+          key={`organize-${apiCategory}-${filename}`}
+          cleanData={cleanData}
+          draft={draft}
+          loading={loadingClean}
+          onRun={handleClean}
+          onApplyLlmSuggestion={handleApplyLlmSuggestion}
+          onApplyEntryRenameAndSave={handleApplyEntryRenameAndSave}
+          onApplyAllSuggestions={handleApplyAllSuggestions}
+          onApplyAllAndSave={handleApplyAllAndSave}
+          renameApplyingKey={renameApplyingKey}
+          hasDraft={Boolean(draft)}
+          savingDraft={savingDraft}
+          analyzedFrom={cleanData?.analyzed_from || 'file'}
+        />
+      </div>
+      <div className="overlay-editor-stack-item">
+        {renderEditorSurface()}
+      </div>
+    </div>
+  );
+
   const requestedFocus = String(launchRequest?.focus || '').trim().toLowerCase();
-  const overlayFocus = requestedFocus === 'editor'
-    ? 'editor'
-    : requestedFocus === 'connection' || requestedFocus === 'connect'
-      ? 'connection'
-      : 'organize';
+  const overlayFocus = requestedFocus === 'connection' || requestedFocus === 'connect'
+    ? 'connection'
+    : 'editor';
 
   return (
     <div className={`review-scope page workspace-page${embedded ? ' embedded' : ''}${overlayMode ? ' overlay-mode' : ''}`}>
@@ -4483,13 +4608,14 @@ export default function App({
             {overlayMode ? null : (
             <aside className="editor-column">
               {renderEditorSurface()}
+              {renderConnectionSurface()}
             </aside>
             )}
 
             <section className="inspector-column">
               {overlayMode ? (
                 <div ref={editorPanelRef} className="overlay-focus-panel overlay-focus-editor">
-                  {renderEditorSurface()}
+                  {renderCombinedEditorSurface()}
                 </div>
               ) : null}
               {!overlayMode ? (
@@ -4505,46 +4631,42 @@ export default function App({
                 </div>
               ) : null}
 
-              <div ref={connectionPanelRef} className="overlay-focus-panel overlay-focus-connection">
-                {renderConnectionSurface()}
-              </div>
+              {overlayMode ? (
+                <div ref={connectionPanelRef} className="overlay-focus-panel overlay-focus-connection">
+                  {renderConnectionSurface()}
+                </div>
+              ) : null}
 
-              <div ref={organizePanelRef} className="overlay-focus-panel overlay-focus-organize">
-                <OrganizePanel
-                  key={`organize-${apiCategory}-${filename}`}
-                  cleanData={cleanData}
-                  draft={draft}
-                  loading={loadingClean}
-                  onRun={handleClean}
-                  onApplyLlmSuggestion={handleApplyLlmSuggestion}
-                  onApplyEntryRenameAndSave={handleApplyEntryRenameAndSave}
-                  onApplyAllSuggestions={handleApplyAllSuggestions}
-                  onApplyAllAndSave={handleApplyAllAndSave}
-                  onApplySplit={handleApplySplit}
-                  splitApplyingKey={splitApplyingKey}
-                  renameApplyingKey={renameApplyingKey}
-                  hasDraft={Boolean(draft)}
-                  savingDraft={savingDraft}
-                  analyzedFrom={cleanData?.analyzed_from || 'file'}
-                />
-              </div>
+              {!overlayMode ? (
+                <div ref={organizePanelRef} className="overlay-focus-panel overlay-focus-organize">
+                  <OrganizePanel
+                    key={`organize-${apiCategory}-${filename}`}
+                    cleanData={cleanData}
+                    draft={draft}
+                    loading={loadingClean}
+                    onRun={handleClean}
+                    onApplyLlmSuggestion={handleApplyLlmSuggestion}
+                    onApplyEntryRenameAndSave={handleApplyEntryRenameAndSave}
+                    onApplyAllSuggestions={handleApplyAllSuggestions}
+                    onApplyAllAndSave={handleApplyAllAndSave}
+                    renameApplyingKey={renameApplyingKey}
+                    hasDraft={Boolean(draft)}
+                    savingDraft={savingDraft}
+                    analyzedFrom={cleanData?.analyzed_from || 'file'}
+                  />
+                </div>
+              ) : null}
             </section>
           </div>
         </section>
       </main>
 
-      {error ? (
-        <div className="global-error">
-          <span>{error}</span>
-          <button type="button" className="toast-close" onClick={() => setError('')}>关闭</button>
-        </div>
-      ) : null}
-      {notice ? (
-        <div className="global-notice">
-          <span>{notice}</span>
-          <button type="button" className="toast-close" onClick={() => setNotice('')}>关闭</button>
-        </div>
-      ) : null}
+      <GlobalToastLayer
+        error={error}
+        notice={notice}
+        onClearError={() => setError('')}
+        onClearNotice={() => setNotice('')}
+      />
 
       {!embedded ? <ConfigDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} /> : null}
     </div>

@@ -562,6 +562,7 @@ function App() {
               launchRequest={vocabularyLaunchRequest}
               mobileSimple={usesCompactLayout}
               compactDesktop={useDesktopMinimalMode}
+              compactViewport={usesCompactViewport}
               onOpenConfig={handleOpenConfig}
               onSelectionChange={handleVocabularySelectionChange}
             />

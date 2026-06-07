@@ -377,8 +377,7 @@
 }
 
 .workspace-page.overlay-mode .workspace-columns.is-overlay-focus-editor .overlay-focus-editor,
-.workspace-page.overlay-mode .workspace-columns.is-overlay-focus-connection .overlay-focus-connection,
-.workspace-page.overlay-mode .workspace-columns.is-overlay-focus-organize .overlay-focus-organize {
+.workspace-page.overlay-mode .workspace-columns.is-overlay-focus-connection .overlay-focus-connection {
   display: block;
 }
 
@@ -392,6 +391,16 @@
 .workspace-page.overlay-mode .inspector-column,
 .workspace-page.overlay-mode .overlay-focus-panel {
   width: 100%;
+  min-width: 0;
+}
+
+.workspace-page.overlay-mode .overlay-editor-stack {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.workspace-page.overlay-mode .overlay-editor-stack-item {
   min-width: 0;
 }
 
@@ -439,6 +448,26 @@
   font-weight: 720;
 }
 
+.panel-title-with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: var(--ink);
+  font-size: 20px !important;
+  font-weight: 780;
+  line-height: 1.15;
+}
+
+.panel-title-with-icon svg {
+  flex: 0 0 auto;
+}
+
+.panel-title-with-icon span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 .panel-heading {
   display: grid;
   gap: 4px;
@@ -451,6 +480,15 @@
   justify-content: flex-end;
   gap: 8px;
   min-width: 0;
+}
+
+.editor-header-actions {
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+}
+
+.editor-header-actions button {
+  min-height: 30px;
 }
 
 .panel-caption {
@@ -1312,14 +1350,13 @@
 
 .organize-panel .panel-heading {
   display: flex;
-  align-items: baseline;
-  gap: 8px;
+  align-items: center;
+  gap: 10px;
   min-width: 0;
 }
 
 .organize-panel .panel-heading h3 {
   flex: 0 0 auto;
-  font-size: 15px;
   line-height: 1.2;
 }
 
@@ -1475,6 +1512,10 @@
   border: 1px solid rgba(214, 214, 207, 0.96);
   border-radius: 6px;
   background: #fff;
+}
+
+.organize-suggestion-card {
+  opacity: var(--suggestion-confidence-opacity, 1);
 }
 
 .organize-card-head {
@@ -2152,6 +2193,7 @@
 .relation-suggestion-card {
   border-color: rgba(5, 150, 105, 0.22);
   background: var(--accent-soft);
+  opacity: var(--suggestion-confidence-opacity, 1);
 }
 
 .relation-suggestion-meta {
@@ -2274,11 +2316,23 @@
   font-weight: 650;
 }
 
-.global-error,
-.global-notice {
+.global-toast-layer {
   position: fixed;
   right: 18px;
-  max-width: min(560px, calc(100vw - 36px));
+  bottom: 18px;
+  z-index: 12000;
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: flex-end;
+  gap: 10px;
+  width: min(560px, calc(100vw - 36px));
+  pointer-events: none;
+}
+
+.global-error,
+.global-notice {
+  width: fit-content;
+  max-width: 100%;
   padding: 10px 12px;
   border-radius: 6px;
   display: flex;
@@ -2286,20 +2340,48 @@
   justify-content: space-between;
   gap: 12px;
   box-shadow: var(--shadow-panel);
-  z-index: 30;
+  pointer-events: auto;
+  animation: global-toast-enter 180ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  backdrop-filter: blur(8px);
+}
+
+.global-toast.is-leaving {
+  animation: global-toast-exit 160ms ease-in both;
+}
+
+@keyframes global-toast-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(12px, 8px, 0) scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes global-toast-exit {
+  from {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: translate3d(10px, 6px, 0) scale(0.985);
+  }
 }
 
 .global-error {
-  bottom: 18px;
-  background: rgba(255, 255, 255, 0.98);
-  border: 1px solid rgba(214, 214, 207, 0.92);
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(214, 214, 207, 0.78);
   color: var(--ink);
 }
 
 .global-notice {
-  bottom: 82px;
-  background: rgba(243, 243, 240, 0.98);
-  border: 1px solid rgba(214, 214, 207, 0.92);
+  background: rgba(243, 243, 240, 0.88);
+  border: 1px solid rgba(214, 214, 207, 0.74);
   color: var(--ink);
 }
 
@@ -2849,7 +2931,7 @@
   }
 
   .organize-panel .panel-heading h3 {
-    font-size: 14px;
+    font-size: 18px !important;
   }
 
   .organize-panel .panel-caption {
@@ -2862,19 +2944,11 @@
     font-size: 11px;
   }
 
-  .global-error,
-  .global-notice {
+  .global-toast-layer {
     left: 12px;
     right: 12px;
-    max-width: none;
-  }
-
-  .global-error {
     bottom: 12px;
-  }
-
-  .global-notice {
-    bottom: 74px;
+    width: auto;
   }
 }
 
@@ -3477,6 +3551,19 @@
 
   .panel-header {
     padding: 10px 12px !important;
+  }
+
+  .editor-header-actions {
+    justify-content: stretch;
+    width: 100%;
+  }
+
+  .editor-header-actions .badge {
+    flex: 1 1 100%;
+  }
+
+  .editor-header-actions button {
+    flex: 1 1 calc(50% - 4px);
   }
 
   .panel-body {
