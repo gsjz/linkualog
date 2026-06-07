@@ -15,6 +15,41 @@ from services.lemma_dictionary import get_lemma_words
 
 logger = logging.getLogger("master_server.review.llm")
 LETTER_WORD_PATTERN = re.compile(r"^[a-z]+$")
+RELATION_TYPE_ALIASES = {
+    "": "related",
+    "related": "related",
+    "relation": "related",
+    "same_word": "same_word",
+    "sameword": "same_word",
+    "phrase": "phrase",
+    "fixed_phrase": "phrase",
+    "idiom": "phrase",
+    "variant": "variant",
+    "collocation": "collocation",
+    "synonym": "synonym",
+    "synonyms": "synonym",
+    "near_synonym": "synonym",
+    "antonym": "antonym",
+    "antonyms": "antonym",
+    "opposite": "antonym",
+    "same_category": "same_category",
+    "category": "same_category",
+    "same_class": "same_category",
+    "same_scene": "same_scene",
+    "scenario": "same_scene",
+    "scene": "same_scene",
+}
+RELATION_TYPE_VALUES = {
+    "related",
+    "same_word",
+    "phrase",
+    "variant",
+    "collocation",
+    "synonym",
+    "antonym",
+    "same_category",
+    "same_scene",
+}
 
 
 LLM_RETRYABLE_HTTP_STATUS = {408, 429, 500, 502, 503, 504}
@@ -197,7 +232,14 @@ def _should_ing_add_e(stem: str) -> bool:
     return stem[-2] in "aeiouy"
 
 
-def _merge_target_candidates(word: str) -> list[str]:
+def _normalize_optional_confidence(value) -> float | None:
+    try:
+        return round(max(0.0, min(1.0, float(value))), 3)
+    except (TypeError, ValueError):
+        return None
+
+
+def _merge_target_candidates(word: str, *, include_ambiguous_er: bool = False) -> list[str]:
     candidates: list[str] = []
     is_ied_form = word.endswith("ied") and len(word) > 4
     is_ies_form = word.endswith("ies") and len(word) > 4
@@ -227,6 +269,7 @@ def _merge_target_candidates(word: str) -> list[str]:
             _append_unique(candidates, stem + "e", word)
         if stem.endswith("dg") or stem.endswith("v"):
             _append_unique(candidates, stem + "e", word)
+        _append_unique(candidates, stem + "e", word)
         if len(word) >= 3 and word[-3] == "e":
             _append_unique(candidates, word[:-1], word)
         if _looks_like_double_consonant(stem):
@@ -241,13 +284,15 @@ def _merge_target_candidates(word: str) -> list[str]:
         stem = word[:-2]
         if _looks_like_double_consonant(stem):
             _append_unique(candidates, stem[:-1], word)
-        _append_unique(candidates, stem, word)
+        if include_ambiguous_er:
+            _append_unique(candidates, stem, word)
         _append_unique(candidates, stem + "e", word)
     if word.endswith("est") and len(word) > 5 and not is_iest_form:
         stem = word[:-3]
         if _looks_like_double_consonant(stem):
             _append_unique(candidates, stem[:-1], word)
-        _append_unique(candidates, stem, word)
+        if include_ambiguous_er:
+            _append_unique(candidates, stem, word)
         _append_unique(candidates, stem + "e", word)
 
     return candidates
@@ -278,11 +323,27 @@ def _merge_reason(source: str, target: str) -> str:
         return "比较级回退到形容词原形"
     if source.endswith("iest") and target == source[:-4] + "y":
         return "最高级回退到形容词原形"
-    if source.endswith("er") and target in {source[:-2], source[:-2] + "e"}:
+    if source.endswith("er") and target == source[:-2] + "e":
         return "比较级回退到形容词原形"
-    if source.endswith("est") and target in {source[:-3], source[:-3] + "e"}:
+    if source.endswith("er"):
+        stem = source[:-2]
+        if _looks_like_double_consonant(stem) and target == stem[:-1]:
+            return "比较级回退到形容词原形"
+    if source.endswith("est") and target == source[:-3] + "e":
         return "最高级回退到形容词原形"
+    if source.endswith("est"):
+        stem = source[:-3]
+        if _looks_like_double_consonant(stem) and target == stem[:-1]:
+            return "最高级回退到形容词原形"
     return "通用词形回退"
+
+
+def _ambiguous_merge_reason(source: str, target: str) -> str:
+    if source.endswith("er") and target == source[:-2]:
+        return "-er 结尾疑似回退，可能是比较级，也可能是词性变化、派生词或独立词"
+    if source.endswith("est") and target == source[:-3]:
+        return "-est 结尾疑似回退，可能是最高级，也可能是词性变化、派生词或独立词"
+    return _merge_reason(source, target)
 
 
 def _dictionary_merge_target_candidates(word: str, known_lemmas: set[str] | frozenset[str]) -> list[str]:
@@ -293,11 +354,27 @@ def _dictionary_merge_target_candidates(word: str, known_lemmas: set[str] | froz
     ]
 
 
+def _dictionary_ambiguous_merge_target_candidates(word: str, known_lemmas: set[str] | frozenset[str]) -> list[str]:
+    strong = set(_dictionary_merge_target_candidates(word, known_lemmas))
+    return [
+        candidate
+        for candidate in _merge_target_candidates(word, include_ambiguous_er=True)
+        if candidate in known_lemmas and candidate not in strong
+    ]
+
+
 def get_dictionary_merge_target_candidates(word: str) -> list[str]:
     token = _normalize_merge_word(word)
     if not token:
         return []
     return _dictionary_merge_target_candidates(token, get_lemma_words())
+
+
+def get_dictionary_ambiguous_merge_target_candidates(word: str) -> list[str]:
+    token = _normalize_merge_word(word)
+    if not token:
+        return []
+    return _dictionary_ambiguous_merge_target_candidates(token, get_lemma_words())
 
 
 def _select_folder_merge_words(entries: list[tuple[str, dict]], word_limit: int) -> tuple[list[str], int]:
@@ -789,6 +866,7 @@ def _normalize_definition_suggestions(raw_items) -> list[dict]:
             continue
 
         reason = _first_non_empty_text(raw_item.get("reason"), raw_item.get("note"))
+        confidence = _normalize_optional_confidence(raw_item.get("confidence"))
         index = _parse_non_negative_int(raw_item.get("index"))
         indices = sorted(
             {
@@ -819,6 +897,8 @@ def _normalize_definition_suggestions(raw_items) -> list[dict]:
                 "reason": reason,
                 "suggested_definitions": suggested_values,
             }
+            if confidence is not None:
+                payload["confidence"] = confidence
             key = ("replace_all", tuple(suggested_values))
             if suggested_values and key not in seen:
                 seen.add(key)
@@ -838,6 +918,8 @@ def _normalize_definition_suggestions(raw_items) -> list[dict]:
                         "suggested": value,
                     }
                 )
+                if confidence is not None:
+                    normalized[-1]["confidence"] = confidence
             continue
 
         target_indices = indices or ([index] if index is not None else [])
@@ -857,6 +939,8 @@ def _normalize_definition_suggestions(raw_items) -> list[dict]:
                         "reason": reason,
                     }
                 )
+                if confidence is not None:
+                    normalized[-1]["confidence"] = confidence
             continue
 
         if action == "replace":
@@ -876,6 +960,8 @@ def _normalize_definition_suggestions(raw_items) -> list[dict]:
                         "suggested": first_value,
                     }
                 )
+                if confidence is not None:
+                    normalized[-1]["confidence"] = confidence
 
     return normalized
 
@@ -919,6 +1005,9 @@ def _normalize_example_suggestions(raw_items) -> list[dict]:
             "action": action,
             "reason": _first_non_empty_text(raw_item.get("reason"), raw_item.get("note")),
         }
+        confidence = _normalize_optional_confidence(raw_item.get("confidence"))
+        if confidence is not None:
+            payload["confidence"] = confidence
         if suggested_text:
             payload["suggested_text"] = suggested_text
         if suggested_explanation:
@@ -952,16 +1041,10 @@ def _normalize_entry_action(raw_action: str, *, has_suggested_word: bool, has_sp
         "merge": "rename",
         "merge_to": "rename",
         "merge_into": "rename",
-        "split": "split",
-        "separate": "split",
-        "extract": "split",
-        "split_entry": "split",
     }
     normalized = mapping.get(action, "")
     if normalized:
         return normalized
-    if has_split_entries:
-        return "split"
     if has_suggested_word:
         return "rename"
     return ""
@@ -1087,22 +1170,6 @@ def _normalize_entry_suggestions(raw_items) -> list[dict]:
             )
             continue
 
-        if action == "split":
-            if not split_entries:
-                continue
-            key = ("split", tuple(entry["word"] for entry in split_entries))
-            if key in seen:
-                continue
-            seen.add(key)
-            normalized.append(
-                {
-                    "action": "split",
-                    "suggested_entries": split_entries,
-                    "reason": reason,
-                    "confidence": round(confidence, 3),
-                }
-            )
-
     return normalized
 
 
@@ -1136,31 +1203,38 @@ def suggest_entry_quality_with_rules(word: str, definitions: list[str], examples
             }
         )
 
-    if normalized_word == "assortment of ailments" and "an assortment of ailments" in text_blob:
-        suggestions.append(
-            {
-                "action": "split",
-                "suggested_entries": [
-                    {
-                        "word": "an assortment of",
-                        "definitions": ["各种各样的；一系列不同的"],
-                        "focus_words": ["an assortment of"],
-                        "example_indices": [0],
-                        "reason": "可迁移的数量/集合搭配。",
-                    },
-                    {
-                        "word": "ailment",
-                        "definitions": ["小病；不严重的疾病；身体不适"],
-                        "focus_words": ["ailments"],
-                        "example_indices": [0],
-                        "reason": "核心名词，例句中以复数 ailments 出现。",
-                    },
-                ],
-                "reason": "规则识别：当前词条混合了搭配 an assortment of 与名词 ailment，建议拆分。",
-                "confidence": 0.94,
-                "source": "rule",
-            }
-        )
+    if " " not in normalized_word and "-" not in normalized_word:
+        lemma_targets = get_dictionary_merge_target_candidates(normalized_word)
+        if lemma_targets:
+            target = lemma_targets[0]
+            reason = _merge_reason(normalized_word, target)
+            suggestions.append(
+                {
+                    "type": "entry_lemma_merge",
+                    "action": "rename",
+                    "suggested_word": target,
+                    "reason": f"规则识别：{normalized_word} 可按“{reason}”归并到原型 {target}。",
+                    "confidence": 0.93,
+                    "source": "lemma_rule",
+                }
+            )
+        ambiguous_targets = get_dictionary_ambiguous_merge_target_candidates(normalized_word)
+        if ambiguous_targets:
+            target = ambiguous_targets[0]
+            reason = _ambiguous_merge_reason(normalized_word, target)
+            suggestions.append(
+                {
+                    "type": "lemma_candidate_review",
+                    "suggested_action": "llm_judge",
+                    "suggested_word": target,
+                    "reason": (
+                        f"规则诊断：{normalized_word} 可能被切成 {target}，但该形态属于“{reason}”"
+                        "的歧义场景；需结合释义和例句判断是否只是透明屈折，还是词性变化、派生词或独立词条。"
+                    ),
+                    "confidence": 0.5,
+                    "source": "lemma_review",
+                }
+            )
 
     return suggestions
 
@@ -1205,7 +1279,7 @@ def _normalize_relation_type(value: str) -> str:
     relation_type = _safe_string(value).lower()
     relation_type = re.sub(r"[\s\-]+", "_", relation_type)
     relation_type = re.sub(r"[^a-z0-9_]+", "", relation_type).strip("_")
-    return relation_type[:40] or "related"
+    return RELATION_TYPE_ALIASES.get(relation_type, "related")
 
 
 def _candidate_relation_id(category: str, file_name: str) -> str:
@@ -1346,6 +1420,165 @@ def _normalize_relation_suggestions(raw_result, candidates: list[dict], limit: i
     return normalized_items
 
 
+def _compact_relation_source(source: dict) -> dict:
+    return {
+        "category": _safe_string(source.get("category")),
+        "file": _normalize_relation_filename(source.get("file") or source.get("filename")),
+        "word": _safe_string(source.get("word")),
+        "definitions": _normalize_text_list(source.get("definitions"))[:5],
+        "examples": source.get("examples") if isinstance(source.get("examples"), list) else [],
+    }
+
+
+def _compact_relation_full_payload(payload) -> dict:
+    if not isinstance(payload, dict):
+        return {}
+    compact = {}
+    for key, value in payload.items():
+        if key in {"reviews", "reviewSessions"}:
+            continue
+        if key == "definitions":
+            compact[key] = _normalize_text_list(value)[:8]
+        elif key == "examples" and isinstance(value, list):
+            compact_examples = []
+            for example in value[:6]:
+                if not isinstance(example, dict):
+                    continue
+                compact_examples.append(
+                    {
+                        "text": _clip_text(example.get("text", ""), 420),
+                        "explanation": _clip_text(example.get("explanation", ""), 260),
+                        "focusWords": example.get("focusWords") if isinstance(example.get("focusWords"), list) else [],
+                    }
+                )
+            compact[key] = compact_examples
+        elif key == "relations" and isinstance(value, list):
+            compact[key] = value[:12]
+        elif isinstance(value, (str, int, float, bool)) or value is None:
+            compact[key] = _clip_text(value, 500) if isinstance(value, str) else value
+        elif isinstance(value, list):
+            compact[key] = value[:12]
+        elif isinstance(value, dict):
+            compact[key] = value
+    return compact
+
+
+def _normalize_relation_candidate_selection(raw_result, vocabulary_index: dict, limit: int = 5) -> tuple[dict, list[str]]:
+    if isinstance(raw_result, dict):
+        raw_items = (
+            raw_result.get("candidates")
+            or raw_result.get("words")
+            or raw_result.get("suggestions")
+            or raw_result.get("targets")
+            or []
+        )
+        raw_notes = raw_result.get("notes")
+    elif isinstance(raw_result, list):
+        raw_items = raw_result
+        raw_notes = []
+    else:
+        raw_items = []
+        raw_notes = []
+
+    valid_words: dict[str, set[str]] = {}
+    for category, words in vocabulary_index.items() if isinstance(vocabulary_index, dict) else []:
+        if not isinstance(words, list):
+            continue
+        valid_words[_safe_string(category)] = {
+            _safe_string(word).lower()
+            for word in words
+            if _safe_string(word)
+        }
+
+    selected: dict[str, list[str]] = {}
+    seen = set()
+    for raw_item in raw_items if isinstance(raw_items, list) else []:
+        if isinstance(raw_item, str):
+            category = ""
+            word = _safe_string(raw_item)
+        elif isinstance(raw_item, dict):
+            category = _safe_string(raw_item.get("category") or raw_item.get("dir") or raw_item.get("folder"))
+            word = _first_non_empty_text(
+                raw_item.get("word"),
+                raw_item.get("target_word"),
+                raw_item.get("targetWord"),
+                raw_item.get("label"),
+            )
+        else:
+            continue
+        word_key = word.lower()
+        if not word_key:
+            continue
+
+        matches = []
+        if category and word_key in valid_words.get(category, set()):
+            matches.append(category)
+        elif not category:
+            matches = [item_category for item_category, words in valid_words.items() if word_key in words]
+        if not matches:
+            continue
+        for match_category in matches:
+            key = (match_category, word_key)
+            if key in seen:
+                continue
+            seen.add(key)
+            selected.setdefault(match_category, []).append(word)
+            if len(seen) >= max(1, int(limit or 5)):
+                return selected, _normalize_text_list(raw_notes)
+
+    return selected, _normalize_text_list(raw_notes)
+
+
+def select_vocab_relation_candidates_with_llm(
+    source: dict,
+    vocabulary_index: dict,
+    existing_relations: list[dict] | None = None,
+    limit: int = 5,
+) -> dict:
+    normalized_limit = max(1, min(int(limit or 5), 10))
+    compact_source = _compact_relation_source(source)
+    compact_existing = []
+    for relation in existing_relations if isinstance(existing_relations, list) else []:
+        if not isinstance(relation, dict):
+            continue
+        target = relation.get("target") if isinstance(relation.get("target"), dict) else {}
+        compact_existing.append(
+            {
+                "type": _normalize_relation_type(relation.get("type") or "related"),
+                "target": {
+                    "category": _safe_string(target.get("category")),
+                    "file": _normalize_relation_filename(target.get("file")),
+                    "word": _safe_string(target.get("word")),
+                },
+            }
+        )
+
+    prompt = (
+        "你是英文词库关系图候选筛选器。请只输出 JSON，不要输出 markdown。"
+        "任务：从压缩全量词表里，为当前词条选出最可能有关联、最值得进一步核验的词条。"
+        "只根据词表选候选，不要编造词表外的单词。"
+        "优先考虑：同一 headword、固定短语/习语、强搭配、近义、反义、同类、同场景。"
+        "不要选择 existing_relations 中已经连接过的词条。"
+        f"最多选择 {normalized_limit} 个。"
+        '输出结构：{"candidates":[{"category":"daily","word":"hazard a guess","reason":"..."}],"notes":["..."]}'
+        f"当前词条: {json.dumps(compact_source, ensure_ascii=False, separators=(',', ':'))}\n"
+        f"existing_relations: {json.dumps(compact_existing, ensure_ascii=False, separators=(',', ':'))}\n"
+        f"vocabulary_index: {json.dumps(vocabulary_index, ensure_ascii=False, separators=(',', ':'))}"
+    )
+    result = _call_llm_json(
+        prompt,
+        max_tokens=800,
+        temperature=0.0,
+        request_tag="vocab_relation_candidate_select",
+    )
+    selected, notes = _normalize_relation_candidate_selection(result, vocabulary_index, limit=normalized_limit)
+    return {
+        "selected": selected,
+        "notes": notes,
+        "raw": result if isinstance(result, dict) else {},
+    }
+
+
 def suggest_vocab_relations_with_llm(
     source: dict,
     candidates: list[dict],
@@ -1364,6 +1597,7 @@ def suggest_vocab_relations_with_llm(
                 "word": _safe_string(candidate.get("word")),
                 "definitions": _normalize_text_list(candidate.get("definitions"))[:3],
                 "examples": candidate.get("examples") if isinstance(candidate.get("examples"), list) else [],
+                "data": _compact_relation_full_payload(candidate.get("data")),
                 "signals": candidate.get("signals") if isinstance(candidate.get("signals"), list) else [],
             }
         )
@@ -1398,11 +1632,12 @@ def suggest_vocab_relations_with_llm(
         "你是英文词库关系图助手。请只输出 JSON，不要输出 markdown。"
         "任务：为当前词条从候选词条中选择应该建立 graph edge 的目标。"
         "只选择真实、有学习价值的关系；不要因为普通词形相似就连边。"
-        "优先考虑：同一 headword 的不同目录词条、一个词和它的固定短语/习语、拆分自同一词条的学习点、强搭配或语义上需要互相跳转的词条。"
+        "候选词条最多 5 个，每个候选带完整词条数据的压缩版；必须基于这些完整数据确认是否真的应该连接。"
+        "优先考虑：同一 headword 的不同目录词条、一个词和它的固定短语/习语、强搭配、近义词、反义词、同类词、同场景词，或语义上需要互相跳转的词条。"
         "如果当前词条已经有 existing_relations 中的关系，不要重复建议同一 target/type。"
-        "relation type 只能使用简短英文 snake_case，优先使用 related、split、same_word、phrase、variant、collocation。"
+        "relation type 只能从这些值选择：related、same_word、phrase、variant、collocation、synonym、antonym、same_category、same_scene。"
         "输出结构："
-        '{"suggestions":[{"type":"phrase","target":{"category":"daily","file":"hazard-a-guess.json","word":"hazard a guess"},"reason":"中文理由","confidence":0.86}],"notes":["..."]}'
+        '{"suggestions":[{"type":"phrase","target":{"category":"daily","file":"hazard-a-guess.json","word":"hazard a guess"},"reason":"中文理由，具体说明关系特征","confidence":0.86}],"notes":["..."]}'
         f"最多返回 {normalized_limit} 条 suggestions。"
         f"当前词条: {json.dumps(compact_source, ensure_ascii=False)}\n"
         f"existing_relations: {json.dumps(compact_existing, ensure_ascii=False)}\n"
@@ -1551,8 +1786,12 @@ def suggest_file_cleaning_with_llm(
         "词条规则：必须结合 examples 判断词条是否是真正应记忆的单位。"
         "如果词条只是“核心词 + 例句里碰巧出现的普通名词/宾语”，应建议 rename 到核心词。"
         "例如 elaborate signs 出现在 elaborate signs, symbols, and sounds 中时，signs 只是并列对象，建议 rename 为 elaborate。"
-        "如果当前词条把两个独立学习点揉在一起，应建议 split，并给出拆分后的词条。"
-        "例如 assortment of ailments 来自 detect an assortment of ailments 时，通常应拆成 an assortment of 与 ailment。"
+        "屈折词形归并规则：如果当前 headword 是单个英文词，并且只是某个 lemma 的复数、第三人称单数、过去式/过去分词、现在分词/动名词、比较级或最高级，"
+        "必须在 entry 中返回 action=rename，把 suggested_word 设为原型/lemma；不要只写 global_notes。"
+        "典型例子：pledged -> pledge, pledges -> pledge, hoped -> hope, irritating -> irritate。"
+        "即使 definitions 把 pledged 解释成“已承诺的/保证的”，只要它是透明过去分词或形容词化分词，也应归并到 pledge。"
+        "不要把派生词、词性变化或已经词汇化且含义明显独立的词硬归并；不确定时再只写 global_notes。"
+        "不要建议拆分词条；如果当前词条包含多个学习点，只能用 global_notes 提醒人工检查，或在确实能收敛时建议 rename。"
         "不要把固定短语、习语、动词短语或真实搭配误拆；不确定时只写 global_notes，不给可执行 entry 建议。"
         "风格要求：所有 suggested / suggested_definitions / suggested_explanation 都必须保持中文学习友好。"
         "如果 definitions 为空或缺少有效中文释义，必须基于词条与 examples 给出 definitions 建议："
@@ -1568,17 +1807,20 @@ def suggest_file_cleaning_with_llm(
         "如果需要改 suggested_text，必须尽量做最小改动：保留原句核心措辞、语气、时态、主语和事实，不要擅自换同义表达、补背景、扩写细节、改写成更地道但更远离原文的新句子。"
         "严禁为了追求自然度而过度发挥；不要新增原句里没有的信息、因果、评价或例子。"
         "输出结构："
-        '{"entry":[{"action":"rename","suggested_word":"...","confidence":0.82,"reason":"..."},'
-        '{"action":"split","confidence":0.82,"reason":"...","suggested_entries":[{"word":"...","definitions":["中文释义"],"focus_words":["..."],"example_indices":[0],"reason":"..."}]}],'
-        '"definitions":[{"action":"replace|append|drop|replace_all","index":0,"reason":"...","suggested":"...","suggested_definitions":["..."]}],'
-        '"examples":[{"index":0,"action":"keep|trim|drop|rewrite","reason":"...","suggested_text":"...","suggested_explanation":"..."}],'
+        '{"entry":[{"action":"rename","suggested_word":"...","confidence":0.82,"reason":"..."}],'
+        '"definitions":[{"action":"replace|append|drop|replace_all","index":0,"confidence":0.82,"reason":"...","suggested":"...","suggested_definitions":["..."]}],'
+        '"examples":[{"index":0,"action":"keep|trim|drop|rewrite","confidence":0.82,"reason":"...","suggested_text":"...","suggested_explanation":"..."}],'
         '"global_notes":["..."]}'
-        "Entry 规则：rename 只用于把当前词条收敛为一个更准确的 headword；split 只用于当前词条确实包含多个独立学习点。"
-        "split 的 suggested_entries 每个 definitions 必须是中文学习释义；example_indices 指可复用的原例句下标。"
+        "Entry 规则：entry 里只允许 action=rename；严禁输出 split、separate、extract 或 suggested_entries。"
         "Definitions 规则：replace 仅修改 index 对应释义；append 追加一条新释义；drop 删除 index；"
         "只有当整组 definitions 都应该重写时才使用 replace_all，并填写 suggested_definitions 数组。"
         "当 definitions: [] 时，不要返回空 definitions 建议，至少返回一个 append 或 replace_all。"
         "下面的规则预检只作为诊断线索，不是最终建议；你必须结合词条和例句独立判断。"
+        "如果规则预检包含 source=lemma_rule 或 type=entry_lemma_merge 的 rename 建议，应优先保留为 entry.rename；"
+        "只有在 examples 明确证明该词不是透明屈折形式，而是独立词汇化词条时，才可以不采纳。"
+        "如果规则预检包含 source=lemma_review 或 type=lemma_candidate_review，它只是歧义诊断，不能直接照抄为 entry.rename；"
+        "必须先总结 headword、definitions、examples/focusWords 证据，判断它是否为透明屈折词形。"
+        "只有证据强烈支持归并到 suggested_word 时才返回 entry.rename；若更像词性变化、派生词或独立词条，请忽略该候选或只写 global_notes。"
         "如果规则预检指出 definitions 为空，且词条是有效学习点，必须在 definitions 里返回 append 或 replace_all。"
         "如果规则预检指出重复、空值、focus 错位或 explanation 缺失，请把有价值的部分转化为对应 definitions/examples 建议；无价值则忽略。"
         f"词条: {word}\n"

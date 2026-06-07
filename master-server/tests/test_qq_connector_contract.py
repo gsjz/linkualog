@@ -585,7 +585,7 @@ class QQConnectorContractTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(source_path.exists())
         self.assertFalse((self.vocab_dir / "missing").exists())
 
-    def test_apply_split_creates_target_entries_and_removes_source(self):
+    def test_apply_split_endpoint_is_removed(self):
         source_path = self.vocab_dir / "cet" / "assortment-of-ailments.json"
         source_path.parent.mkdir(parents=True, exist_ok=True)
         source_path.write_text(
@@ -606,48 +606,37 @@ class QQConnectorContractTests(unittest.IsolatedAsyncioTestCase):
             encoding="utf-8",
         )
 
-        result = review_routes.apply_split(
-            review_routes.SplitApplyRequest(
-                category="cet",
-                source_filename="assortment-of-ailments.json",
-                delete_source=True,
-                suggestion={
-                    "action": "split",
-                    "reason": "拆成搭配和核心名词",
-                    "suggested_entries": [
-                        {
-                            "word": "an assortment of",
-                            "definitions": ["各种各样的；一系列"],
-                            "focus_words": ["an assortment of"],
-                            "example_indices": [0],
-                        },
-                        {
-                            "word": "ailment",
-                            "definitions": ["小病；病症"],
-                            "focus_words": ["ailments"],
-                            "example_indices": [0],
-                        },
-                    ],
-                },
+        with self.assertRaises(Exception) as ctx:
+            review_routes.apply_split(
+                review_routes.SplitApplyRequest(
+                    category="cet",
+                    source_filename="assortment-of-ailments.json",
+                    delete_source=True,
+                    suggestion={
+                        "action": "split",
+                        "reason": "拆成搭配和核心名词",
+                        "suggested_entries": [
+                            {
+                                "word": "an assortment of",
+                                "definitions": ["各种各样的；一系列"],
+                                "focus_words": ["an assortment of"],
+                                "example_indices": [0],
+                            },
+                            {
+                                "word": "ailment",
+                                "definitions": ["小病；病症"],
+                                "focus_words": ["ailments"],
+                                "example_indices": [0],
+                            },
+                        ],
+                    },
+                )
             )
-        )
 
-        self.assertEqual(result["status"], "success")
-        self.assertTrue(result["source_deleted"])
-        self.assertFalse(source_path.exists())
-
-        assortment_path = self.vocab_dir / "cet" / "an-assortment-of.json"
-        ailment_path = self.vocab_dir / "cet" / "ailment.json"
-        self.assertTrue(assortment_path.exists())
-        self.assertTrue(ailment_path.exists())
-
-        assortment = review_vocabulary.load_vocab_file(str(assortment_path))
-        ailment = review_vocabulary.load_vocab_file(str(ailment_path))
-        self.assertEqual(assortment["word"], "an assortment of")
-        self.assertEqual(assortment["examples"][0]["focusWords"], ["an assortment of"])
-        self.assertEqual(ailment["word"], "ailment")
-        self.assertEqual(ailment["examples"][0]["focusWords"], ["ailments"])
-        self.assertEqual(ailment["splitFrom"][0]["file"], "assortment-of-ailments.json")
+        self.assertEqual(getattr(ctx.exception, "status_code", None), 410)
+        self.assertTrue(source_path.exists())
+        self.assertFalse((self.vocab_dir / "cet" / "an-assortment-of.json").exists())
+        self.assertFalse((self.vocab_dir / "cet" / "ailment.json").exists())
 
     def test_apply_split_merges_into_existing_target_entries(self):
         category_dir = self.vocab_dir / "cet"
@@ -689,36 +678,33 @@ class QQConnectorContractTests(unittest.IsolatedAsyncioTestCase):
             encoding="utf-8",
         )
 
-        result = review_routes.apply_split(
-            review_routes.SplitApplyRequest(
-                category="cet",
-                source_filename="assortment-of-ailments.json",
-                delete_source=True,
-                suggestion={
-                    "action": "split",
-                    "reason": "拆出已有 ailment 词条",
-                    "suggested_entries": [
-                        {
-                            "word": "ailment",
-                            "definitions": ["小病；病症"],
-                            "focus_words": ["ailments"],
-                            "example_indices": [0],
-                        }
-                    ],
-                },
+        with self.assertRaises(Exception) as ctx:
+            review_routes.apply_split(
+                review_routes.SplitApplyRequest(
+                    category="cet",
+                    source_filename="assortment-of-ailments.json",
+                    delete_source=True,
+                    suggestion={
+                        "action": "split",
+                        "reason": "拆出已有 ailment 词条",
+                        "suggested_entries": [
+                            {
+                                "word": "ailment",
+                                "definitions": ["小病；病症"],
+                                "focus_words": ["ailments"],
+                                "example_indices": [0],
+                            }
+                        ],
+                    },
+                )
             )
-        )
 
-        self.assertEqual(result["status"], "success")
-        self.assertTrue(result["source_deleted"])
-        self.assertFalse(source_path.exists())
-        self.assertEqual(result["created_files"], [])
-        self.assertEqual(result["updated_files"][0]["file"], "ailment.json")
-
+        self.assertEqual(getattr(ctx.exception, "status_code", None), 410)
+        self.assertTrue(source_path.exists())
         merged = review_vocabulary.load_vocab_file(str(ailment_path))
         self.assertEqual(merged["word"], "ailment")
-        self.assertEqual(len(merged["examples"]), 2)
-        self.assertEqual(merged["splitFrom"][0]["file"], "assortment-of-ailments.json")
+        self.assertEqual(len(merged["examples"]), 1)
+        self.assertNotIn("splitFrom", merged)
 
     def test_review_visualization_includes_recently_added_entries(self):
         category_dir = self.vocab_dir / "daily"
@@ -988,6 +974,44 @@ class QQConnectorContractTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(first["cache"]["status"], "stored")
         self.assertEqual(second["cache"]["status"], "hit")
         self.assertEqual(second["llm"], llm_payload)
+
+    def test_refine_file_includes_lemma_rule_rename_when_llm_misses_it(self):
+        category_dir = self.vocab_dir / "daily"
+        category_dir.mkdir(parents=True, exist_ok=True)
+        review_vocabulary.save_vocab_file(
+            str(category_dir / "pledged.json"),
+            {
+                "word": "pledged",
+                "createdAt": "2026-06-02",
+                "reviews": [],
+                "definitions": ["（过去式）郑重承诺；保证给予"],
+                "examples": [
+                    {
+                        "text": "A millionaire pledged $1 million.",
+                        "explanation": "这里的 pledged 表示郑重承诺。",
+                        "focusWords": ["pledged"],
+                    }
+                ],
+            },
+        )
+
+        llm_payload = {"entry": [], "definitions": [], "examples": [], "global_notes": []}
+        with patch.object(review_routes, "suggest_file_cleaning_with_llm", return_value=llm_payload):
+            result = review_routes.refine_file(
+                review_routes.FileRefineRequest(category="daily", filename="pledged.json", use_cache=False)
+            )
+
+        self.assertEqual(
+            result["llm"]["entry"],
+            [
+                {
+                    "action": "rename",
+                    "suggested_word": "pledge",
+                    "reason": "规则识别：pledged 可按“过去式/过去分词回退到动词原形”归并到原型 pledge。",
+                    "confidence": 0.93,
+                }
+            ],
+        )
 
     def test_refine_file_cache_changes_after_saved_content_changes(self):
         category_dir = self.vocab_dir / "daily"

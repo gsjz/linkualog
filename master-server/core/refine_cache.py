@@ -12,6 +12,7 @@ from core.config import APP_DIR, get_config_data
 
 
 CACHE_SCHEMA_VERSION = 1
+FILE_REFINE_PROMPT_VERSION = 3
 DEFAULT_CACHE_DIR = APP_DIR / "local_data/refine_cache"
 REFINE_CACHE_DIR = Path(os.environ.get("REFINE_CACHE_DIR", DEFAULT_CACHE_DIR))
 
@@ -146,6 +147,7 @@ def build_refine_cache_key(category: str, filename: str, payload: dict) -> dict:
         {
             "schema": CACHE_SCHEMA_VERSION,
             "kind": "file_refine_llm",
+            "prompt_version": FILE_REFINE_PROMPT_VERSION,
             "category": normalized_category,
             "filename": normalized_filename,
             "content_hash": content_hash,
@@ -154,6 +156,7 @@ def build_refine_cache_key(category: str, filename: str, payload: dict) -> dict:
     )
     return {
         "schema": CACHE_SCHEMA_VERSION,
+        "prompt_version": FILE_REFINE_PROMPT_VERSION,
         "category": normalized_category,
         "filename": normalized_filename,
         "content_hash": content_hash,

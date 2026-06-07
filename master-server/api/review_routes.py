@@ -5,6 +5,7 @@ from collections import Counter, defaultdict, deque
 from copy import deepcopy
 from datetime import date, timedelta
 from itertools import combinations
+from random import Random
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
@@ -41,6 +42,7 @@ from services.analysis import (
 from services.lemma_dictionary import get_lemma_words
 from services.review_llm import (
     get_dictionary_merge_target_candidates,
+    select_vocab_relation_candidates_with_llm,
     suggest_entry_quality_with_rules,
     suggest_file_cleaning_with_llm,
     suggest_folder_merge_with_llm,
@@ -70,6 +72,42 @@ _RECOMMENDATION_CONFIG_KEYS = {
     "created_order": "review_recommend_created_order",
     "score_order": "review_recommend_score_order",
 }
+_DEFAULT_RELATION_GRAPH_COMPONENT_LIMIT = 5
+_RELATION_TYPE_ALIASES = {
+    "": "related",
+    "related": "related",
+    "relation": "related",
+    "same_word": "same_word",
+    "sameword": "same_word",
+    "phrase": "phrase",
+    "fixed_phrase": "phrase",
+    "idiom": "phrase",
+    "variant": "variant",
+    "collocation": "collocation",
+    "synonym": "synonym",
+    "synonyms": "synonym",
+    "near_synonym": "synonym",
+    "antonym": "antonym",
+    "antonyms": "antonym",
+    "opposite": "antonym",
+    "same_category": "same_category",
+    "category": "same_category",
+    "same_class": "same_category",
+    "same_scene": "same_scene",
+    "scenario": "same_scene",
+    "scene": "same_scene",
+}
+_RELATION_TYPE_VALUES = (
+    "related",
+    "same_word",
+    "phrase",
+    "variant",
+    "collocation",
+    "synonym",
+    "antonym",
+    "same_category",
+    "same_scene",
+)
 _VOCAB_RELATION_KEYS = (
     "relations",
     "graphEdges",
@@ -223,6 +261,13 @@ def _entry_ref_id(ref: dict) -> str:
     return f"{str(ref.get('category') or '').strip()}/{_normalize_json_filename(ref.get('file'))}"
 
 
+def _normalize_relation_type(value) -> str:
+    relation_type = str(value or "related").strip().lower()
+    relation_type = re.sub(r"[\s\-]+", "_", relation_type)
+    relation_type = re.sub(r"[^a-z0-9_]+", "", relation_type).strip("_")
+    return _RELATION_TYPE_ALIASES.get(relation_type, "related")
+
+
 def _relation_ref_from_item(item, default_category: str = "") -> dict | None:
     if isinstance(item, str):
         raw = item.strip()
@@ -292,12 +337,12 @@ def _normalize_relation_item(item, default_category: str, source_ref: dict | Non
     reason = ""
     source = ""
     if isinstance(item, dict):
-        relation_type = str(item.get("type") or item.get("relation") or "related").strip() or "related"
+        relation_type = _normalize_relation_type(item.get("type") or item.get("relation") or "related")
         reason = str(item.get("reason") or item.get("note") or "").strip()
         source = str(item.get("source") or item.get("origin") or "").strip()
 
     relation = {
-        "type": relation_type,
+        "type": _normalize_relation_type(relation_type),
         "target": target_ref,
     }
     if reason:
@@ -327,7 +372,7 @@ def _normalize_relations(raw_payload: dict, default_category: str, source_ref: d
         target_ref = relation.get("target") if isinstance(relation.get("target"), dict) else {}
         key = (
             _entry_ref_id(target_ref),
-            str(relation.get("type") or "related").strip(),
+            _normalize_relation_type(relation.get("type") or "related"),
         )
         if not key[0] or key in seen:
             continue
@@ -387,6 +432,116 @@ def _remove_relation_to_ref(payload: dict, target_ref: dict) -> dict:
     return payload
 
 
+def _rewrite_relation_target_in_payload(payload: dict, source_ref: dict, old_ref: dict, new_ref: dict) -> tuple[dict, bool]:
+    if not isinstance(payload, dict):
+        return payload, False
+    source_id = _entry_ref_id(source_ref)
+    old_id = _entry_ref_id(old_ref)
+    new_id = _entry_ref_id(new_ref)
+    relations = _normalize_relations(payload, str(source_ref.get("category") or ""), source_ref=source_ref)
+    changed = False
+    next_relations = []
+    seen = set()
+    for relation in relations:
+        target_ref = relation.get("target") if isinstance(relation.get("target"), dict) else {}
+        target_id = _entry_ref_id(target_ref)
+        if target_id == old_id:
+            if new_id == source_id:
+                changed = True
+                continue
+            relation = {
+                **relation,
+                "target": {
+                    "category": new_ref["category"],
+                    "file": new_ref["file"],
+                    "word": new_ref["word"],
+                },
+            }
+            changed = True
+            target_id = new_id
+        key = (target_id, _normalize_relation_type(relation.get("type") or "related"))
+        if not key[0] or key in seen:
+            changed = True
+            continue
+        seen.add(key)
+        next_relations.append(relation)
+
+    for key in _VOCAB_RELATION_KEYS:
+        if key != "relations":
+            payload.pop(key, None)
+    if next_relations:
+        payload["relations"] = next_relations
+    else:
+        changed = changed or bool(payload.get("relations"))
+        payload.pop("relations", None)
+    return payload, changed
+
+
+def _rewrite_all_relation_targets(old_ref: dict, new_ref: dict) -> int:
+    old_id = _entry_ref_id(old_ref)
+    new_id = _entry_ref_id(new_ref)
+    if not old_id or not new_id or old_id == new_id:
+        return 0
+
+    updated = 0
+    for category_name in list_categories():
+        try:
+            files = list_vocab_files(category_name)
+        except Exception:
+            continue
+        for path in files:
+            file_name = os.path.basename(path)
+            source_ref = _build_entry_ref(category_name, file_name, "")
+            if _entry_ref_id(source_ref) == old_id:
+                continue
+            try:
+                payload = load_vocab_file(path)
+            except Exception:
+                continue
+            source_ref = _build_entry_ref(category_name, file_name, payload.get("word") or os.path.splitext(file_name)[0])
+            next_payload, changed = _rewrite_relation_target_in_payload(payload, source_ref, old_ref, new_ref)
+            if not changed:
+                continue
+            save_vocab_file(path, next_payload)
+            updated += 1
+    return updated
+
+
+def _find_incoming_relations(target_ref: dict) -> list[dict]:
+    target_id = _entry_ref_id(target_ref)
+    if not target_id:
+        return []
+    incoming = []
+    for category_name in list_categories():
+        try:
+            files = list_vocab_files(category_name)
+        except Exception:
+            continue
+        for path in files:
+            file_name = os.path.basename(path)
+            source_id = _entry_ref_id(_build_entry_ref(category_name, file_name, ""))
+            if source_id == target_id:
+                continue
+            try:
+                payload = load_vocab_file(path)
+            except Exception:
+                continue
+            source_ref = _build_entry_ref(category_name, file_name, payload.get("word") or os.path.splitext(file_name)[0])
+            for relation in _normalize_relations(payload, category_name, source_ref=source_ref):
+                relation_target = relation.get("target") if isinstance(relation.get("target"), dict) else {}
+                if _entry_ref_id(relation_target) != target_id:
+                    continue
+                incoming.append(
+                    {
+                        "type": _normalize_relation_type(relation.get("type") or "related"),
+                        "target": source_ref,
+                        "reason": str(relation.get("reason") or ""),
+                        "source": str(relation.get("source") or "incoming"),
+                    }
+                )
+    return incoming
+
+
 def _upsert_relation(payload: dict, source_ref: dict, target_ref: dict, relation_type: str = "related", reason: str = "", origin: str = "") -> dict:
     if not isinstance(payload, dict):
         payload = {}
@@ -395,10 +550,10 @@ def _upsert_relation(payload: dict, source_ref: dict, target_ref: dict, relation
 
     relations = _normalize_relations(payload, str(source_ref.get("category") or ""), source_ref=source_ref)
     target_id = _entry_ref_id(target_ref)
-    normalized_type = str(relation_type or "related").strip() or "related"
+    normalized_type = _normalize_relation_type(relation_type)
     for relation in relations:
         target = relation.get("target") if isinstance(relation.get("target"), dict) else {}
-        if _entry_ref_id(target) == target_id and str(relation.get("type") or "related") == normalized_type:
+        if _entry_ref_id(target) == target_id and _normalize_relation_type(relation.get("type") or "related") == normalized_type:
             relation["target"] = {
                 "category": target_ref["category"],
                 "file": target_ref["file"],
@@ -473,7 +628,7 @@ def _relation_key(relation: dict) -> tuple[str, str]:
     if not isinstance(relation, dict):
         return ("", "")
     target_ref = relation.get("target") if isinstance(relation.get("target"), dict) else {}
-    relation_type = str(relation.get("type") or "related").strip() or "related"
+    relation_type = _normalize_relation_type(relation.get("type") or "related")
     return (_entry_ref_id(target_ref), relation_type)
 
 
@@ -491,14 +646,14 @@ def _remove_reverse_relation(target_ref: dict, source_ref: dict, relation_type: 
         filename=str(target_ref.get("file") or ""),
     )
     source_id = _entry_ref_id(source_ref)
-    normalized_type = str(relation_type or "related").strip() or "related"
+    normalized_type = _normalize_relation_type(relation_type)
     relations = _normalize_relations(normalized, str(target_ref.get("category") or ""), source_ref=target_ref)
     filtered = [
         relation
         for relation in relations
         if not (
             _entry_ref_id(relation.get("target", {})) == source_id
-            and str(relation.get("type") or "related") == normalized_type
+            and _normalize_relation_type(relation.get("type") or "related") == normalized_type
         )
     ]
     if len(filtered) == len(relations):
@@ -632,38 +787,13 @@ def _normalize_recommendation_choice(value, allowed: set[str], fallback: str, fi
 
 
 def _normalize_recommendation_preferences(req: ReviewRecommendRequest) -> dict:
-    server_config = get_config_data()
-    defaults = {
-        key: server_config.get(config_key, fallback)
-        for key, config_key in _RECOMMENDATION_CONFIG_KEYS.items()
-        for fallback in [_DEFAULT_RECOMMENDATION_PREFERENCES[key]]
-    }
-    return {
-        "due_weight": _clamp_recommendation_weight(
-            req.due_weight,
-            defaults["due_weight"],
-        ),
-        "created_weight": _clamp_recommendation_weight(
-            req.created_weight,
-            defaults["created_weight"],
-        ),
-        "score_weight": _clamp_recommendation_weight(
-            req.score_weight,
-            defaults["score_weight"],
-        ),
-        "created_order": _normalize_recommendation_choice(
-            req.created_order,
-            _RECOMMENDATION_CREATED_ORDERS,
-            defaults["created_order"],
-            "created_order",
-        ),
-        "score_order": _normalize_recommendation_choice(
-            req.score_order,
-            _RECOMMENDATION_SCORE_ORDERS,
-            defaults["score_order"],
-            "score_order",
-        ),
-    }
+    return _build_recommendation_preferences_from_values(
+        due_weight=req.due_weight,
+        created_weight=req.created_weight,
+        score_weight=req.score_weight,
+        created_order=req.created_order,
+        score_order=req.score_order,
+    )
 
 
 def _normalize_recommendation_mark_filter(value: str | None) -> str:
@@ -772,6 +902,56 @@ def _build_review_candidate_score(advice: dict, created_at: str, today: date, pr
             "has_review": last_score is not None,
         },
     }
+
+
+def _build_recommendation_preferences_from_values(
+    *,
+    due_weight=None,
+    created_weight=None,
+    score_weight=None,
+    created_order=None,
+    score_order=None,
+) -> dict:
+    server_config = get_config_data()
+    defaults = {
+        key: server_config.get(config_key, fallback)
+        for key, config_key in _RECOMMENDATION_CONFIG_KEYS.items()
+        for fallback in [_DEFAULT_RECOMMENDATION_PREFERENCES[key]]
+    }
+    return {
+        "due_weight": _clamp_recommendation_weight(
+            due_weight,
+            defaults["due_weight"],
+        ),
+        "created_weight": _clamp_recommendation_weight(
+            created_weight,
+            defaults["created_weight"],
+        ),
+        "score_weight": _clamp_recommendation_weight(
+            score_weight,
+            defaults["score_weight"],
+        ),
+        "created_order": _normalize_recommendation_choice(
+            created_order,
+            _RECOMMENDATION_CREATED_ORDERS,
+            defaults["created_order"],
+            "created_order",
+        ),
+        "score_order": _normalize_recommendation_choice(
+            score_order,
+            _RECOMMENDATION_SCORE_ORDERS,
+            defaults["score_order"],
+            "score_order",
+        ),
+    }
+
+
+def _safe_int_range(value, fallback: int, minimum: int, maximum: int) -> int:
+    try:
+        number = int(value)
+    except (TypeError, ValueError):
+        number = fallback
+    return min(max(number, minimum), maximum)
 
 
 def _score_review_candidate(advice: dict, created_at: str, today: date) -> float:
@@ -1150,6 +1330,18 @@ def _merge_vocab_payload(
     return target
 
 
+def _finalize_vocab_merge_relations(
+    *,
+    source_ref: dict,
+    target_ref: dict,
+    merged_payload: dict,
+) -> tuple[dict, int]:
+    merged_payload = _remove_relation_to_ref(merged_payload, source_ref)
+    merged_payload = _remove_relation_to_ref(merged_payload, target_ref)
+    rewritten_count = _rewrite_all_relation_targets(source_ref, target_ref)
+    return merged_payload, rewritten_count
+
+
 def _normalize_split_apply_entries(raw_suggestion: dict) -> list[dict]:
     if not isinstance(raw_suggestion, dict):
         return []
@@ -1500,6 +1692,161 @@ def _build_relation_graph(nodes_by_id: dict[str, dict], raw_edges: list[dict]) -
     }
 
 
+def _component_review_priority(component: dict) -> dict:
+    nodes = component.get("nodes") if isinstance(component.get("nodes"), list) else []
+    node_scores = []
+    due_node_count = 0
+    for node in nodes:
+        if not isinstance(node, dict):
+            continue
+        try:
+            score = float(node.get("review_priority_score", 0.0))
+        except (TypeError, ValueError):
+            score = 0.0
+        node_scores.append((score, node))
+        if str(node.get("review_status") or "") in {"overdue", "due_today", "due_soon", "new"}:
+            due_node_count += 1
+
+    score_values = [item[0] for item in node_scores]
+    total_score = round(sum(score_values), 3)
+    max_score = round(max(score_values) if score_values else 0.0, 3)
+    average_score = round(total_score / len(score_values), 3) if score_values else 0.0
+    top_nodes = []
+    for score, node in sorted(
+        node_scores,
+        key=lambda item: (
+            -item[0],
+            str(item[1].get("category") or ""),
+            str(item[1].get("file") or ""),
+        ),
+    )[:3]:
+        top_nodes.append(
+            {
+                "id": node.get("id"),
+                "category": node.get("category"),
+                "file": node.get("file"),
+                "word": node.get("word"),
+                "priority_score": round(score, 3),
+                "review_status": node.get("review_status"),
+                "review_status_label": node.get("review_status_label"),
+            }
+        )
+
+    return {
+        "max_score": max_score,
+        "total_score": total_score,
+        "average_score": average_score,
+        "due_node_count": due_node_count,
+        "top_nodes": top_nodes,
+    }
+
+
+def _rank_relation_graph_components_by_review_value(relation_graph: dict) -> None:
+    components = relation_graph.get("components") if isinstance(relation_graph.get("components"), list) else []
+    for component in components:
+        if not isinstance(component, dict):
+            continue
+        component["review_priority"] = _component_review_priority(component)
+
+    components.sort(
+        key=lambda item: (
+            -float(item.get("review_priority", {}).get("max_score") or 0.0),
+            -float(item.get("review_priority", {}).get("total_score") or 0.0),
+            -int(item.get("review_priority", {}).get("due_node_count") or 0),
+            -int(item.get("node_count") or 0),
+            -int(item.get("edge_count") or 0),
+            ",".join(item.get("categories") or []),
+        )
+    )
+    for index, component in enumerate(components, start=1):
+        component["id"] = f"component-{index}"
+        component["review_priority"]["rank"] = index
+
+
+def _select_relation_graph_components(
+    relation_graph: dict,
+    *,
+    limit: int = _DEFAULT_RELATION_GRAPH_COMPONENT_LIMIT,
+    randomize: bool = False,
+    seed: str | None = None,
+) -> dict:
+    components = relation_graph.get("components") if isinstance(relation_graph.get("components"), list) else []
+    limit = _safe_int_range(limit, _DEFAULT_RELATION_GRAPH_COMPONENT_LIMIT, 1, 20)
+    default_components = components[:limit]
+    selection_mode = "recommended"
+
+    if randomize and len(components) > limit:
+        selection_mode = "random"
+        rng = Random(str(seed or os.urandom(8).hex()))
+        default_ids = {str(component.get("id") or "") for component in default_components}
+        alternative_pool = [
+            component
+            for component in components
+            if str(component.get("id") or "") not in default_ids
+        ]
+        if len(alternative_pool) >= limit:
+            selected_components = rng.sample(alternative_pool, limit)
+        else:
+            selected_components = list(alternative_pool)
+            fallback_pool = [
+                component
+                for component in default_components
+                if str(component.get("id") or "") not in {
+                    str(item.get("id") or "") for item in selected_components
+                }
+            ]
+            rng.shuffle(fallback_pool)
+            selected_components.extend(fallback_pool[: max(0, limit - len(selected_components))])
+        rng.shuffle(selected_components)
+    else:
+        selected_components = default_components
+
+    selected_ids = {str(component.get("id") or "") for component in selected_components}
+    selected_node_ids = {
+        str(node.get("id") or "")
+        for component in selected_components
+        for node in component.get("nodes", [])
+        if isinstance(node, dict) and str(node.get("id") or "")
+    }
+    selected_edge_ids = {
+        (
+            str(edge.get("source") or ""),
+            str(edge.get("target") or ""),
+            str(edge.get("type") or "related"),
+        )
+        for component in selected_components
+        for edge in component.get("edges", [])
+        if isinstance(edge, dict)
+    }
+
+    return {
+        **relation_graph,
+        "components": selected_components,
+        "component_count": len(selected_components),
+        "recommended_component_count": len(default_components),
+        "available_component_count": len(components),
+        "selected_connected_node_count": len(selected_node_ids),
+        "selected_edge_count": len(selected_edge_ids),
+        "selection": {
+            "mode": selection_mode,
+            "limit": limit,
+            "seed": str(seed or "") if randomize else "",
+            "selected_component_ids": [str(component.get("id") or "") for component in selected_components],
+            "default_component_ids": [str(component.get("id") or "") for component in default_components],
+            "has_more": len(components) > limit,
+            "available_component_count": len(components),
+            "selected_component_count": len(selected_components),
+        },
+        "all_component_count": len(components),
+        "all_component_ids": [str(component.get("id") or "") for component in components],
+        "hidden_component_ids": [
+            str(component.get("id") or "")
+            for component in components
+            if str(component.get("id") or "") not in selected_ids
+        ],
+    }
+
+
 def _relation_prompt_examples(payload: dict, limit: int = 2) -> list[dict]:
     examples = []
     for example in payload.get("examples") if isinstance(payload.get("examples"), list) else []:
@@ -1533,6 +1880,118 @@ def _relation_entry_summary(category: str, file_name: str, payload: dict, signal
         "examples": _relation_prompt_examples(payload, limit=2),
         "signals": signals or [],
     }
+
+
+def _build_compact_vocabulary_index(source_ref: dict) -> tuple[dict, dict[str, dict], list[dict]]:
+    source_id = _entry_ref_id(source_ref)
+    word_index = {}
+    candidate_by_id = {}
+    skipped = []
+
+    for category_name in list_categories():
+        try:
+            files = list_vocab_files(category_name)
+        except Exception as exc:
+            skipped.append({"category": category_name, "reason": str(exc)})
+            continue
+
+        words = []
+        for path in files:
+            file_name = os.path.basename(path)
+            ref_id = _entry_ref_id(_build_entry_ref(category_name, file_name, ""))
+            if ref_id == source_id:
+                continue
+            try:
+                payload = load_vocab_file(path)
+            except Exception as exc:
+                skipped.append({"category": category_name, "file": file_name, "reason": str(exc)})
+                continue
+            word = _normalize_vocab_display_word(payload.get("word") or os.path.splitext(file_name)[0]) or os.path.splitext(file_name)[0]
+            words.append(word)
+            candidate_by_id[ref_id] = {
+                "category": category_name,
+                "file": file_name,
+                "word": word,
+                "definitions": _safe_definitions(payload.get("definitions"))[:2],
+            }
+        if words:
+            word_index[category_name] = sorted(set(words), key=lambda item: item.lower())
+
+    return word_index, candidate_by_id, skipped
+
+
+def _candidate_refs_from_words(
+    words_by_category: dict,
+    candidate_by_id: dict[str, dict],
+    *,
+    fallback_category: str,
+    limit: int,
+) -> list[dict]:
+    if not isinstance(words_by_category, dict):
+        return []
+    by_category_word: dict[tuple[str, str], list[dict]] = defaultdict(list)
+    by_word: dict[str, list[dict]] = defaultdict(list)
+    for candidate in candidate_by_id.values():
+        category = str(candidate.get("category") or "")
+        word_key = _normalize_text_key(candidate.get("word"))
+        if not category or not word_key:
+            continue
+        by_category_word[(category, word_key)].append(candidate)
+        by_word[word_key].append(candidate)
+
+    selected = []
+    seen = set()
+    for raw_category, raw_words in words_by_category.items():
+        category = str(raw_category or fallback_category).strip() or fallback_category
+        values = raw_words
+        if isinstance(values, str):
+            values = [values]
+        if not isinstance(values, list):
+            continue
+        for raw_word in values:
+            word_key = _normalize_text_key(raw_word)
+            if not word_key:
+                continue
+            matches = by_category_word.get((category, word_key)) or by_word.get(word_key) or []
+            for match in matches:
+                ref_id = _entry_ref_id(match)
+                if not ref_id or ref_id in seen:
+                    continue
+                seen.add(ref_id)
+                selected.append(match)
+                if len(selected) >= max(1, int(limit or 5)):
+                    return selected
+    return selected
+
+
+def _load_relation_candidate_summaries(candidate_refs: list[dict], source_ref: dict, source_payload: dict) -> tuple[list[dict], list[dict]]:
+    candidates = []
+    skipped = []
+    for ref in candidate_refs:
+        try:
+            path, payload = load_vocab_entry(str(ref.get("category") or ""), str(ref.get("file") or ""))
+        except Exception as exc:
+            skipped.append({"category": ref.get("category"), "file": ref.get("file"), "reason": str(exc)})
+            continue
+        file_name = os.path.basename(path)
+        summary = _relation_entry_summary(str(ref.get("category") or ""), file_name, payload)
+        summary["data"] = payload if isinstance(payload, dict) else {}
+        score, signals = _relation_candidate_score(source_ref, source_payload, summary)
+        summary["signals"] = signals
+        summary["_score"] = score
+        candidates.append(summary)
+
+    candidates.sort(
+        key=lambda item: (
+            -int(item.get("_score") or 0),
+            str(item.get("category") or ""),
+            str(item.get("word") or ""),
+            str(item.get("file") or ""),
+        )
+    )
+    for item in candidates:
+        item.pop("_score", None)
+    return candidates, skipped
 
 
 def _relation_word_tokens(value: str) -> list[str]:
@@ -1768,6 +2227,11 @@ def _build_file_refine_llm_result(
         llm = {"entry": [], "definitions": [], "examples": [], "global_notes": []}
 
     if isinstance(llm, dict):
+        llm["entry"] = _merge_llm_entry_suggestions(
+            llm.get("entry"),
+            rule_suggestions,
+        )
+
         missing_definitions = any(
             isinstance(item, dict) and item.get("type") == "definition_missing"
             for item in heuristic.get("suggestions", [])
@@ -1816,6 +2280,50 @@ def _build_file_refine_llm_result(
                 logger.exception("[refine_file] missing explanation llm failed file=%s: %s", file_name, exc)
 
     return llm, llm_error
+
+
+def _merge_llm_entry_suggestions(existing_items, rule_suggestions: list[dict]) -> list[dict]:
+    merged = []
+    seen = set()
+
+    for raw_item in existing_items if isinstance(existing_items, list) else []:
+        if not isinstance(raw_item, dict):
+            continue
+        action = str(raw_item.get("action") or "").strip().lower()
+        suggested_word = _WS_RE.sub(" ", str(raw_item.get("suggested_word") or raw_item.get("target_word") or "")).strip()
+        if action != "rename" or not suggested_word:
+            continue
+        key = (action, suggested_word.lower())
+        if key in seen:
+            continue
+        seen.add(key)
+        merged.append(raw_item)
+
+    for raw_item in rule_suggestions if isinstance(rule_suggestions, list) else []:
+        if not isinstance(raw_item, dict):
+            continue
+        if str(raw_item.get("source") or "").strip() != "lemma_rule":
+            continue
+        if str(raw_item.get("type") or "").strip() != "entry_lemma_merge":
+            continue
+        action = str(raw_item.get("action") or "").strip().lower()
+        suggested_word = _WS_RE.sub(" ", str(raw_item.get("suggested_word") or "")).strip()
+        if action != "rename" or not suggested_word:
+            continue
+        key = (action, suggested_word.lower())
+        if key in seen:
+            continue
+        seen.add(key)
+        merged.append(
+            {
+                "action": "rename",
+                "suggested_word": suggested_word,
+                "reason": str(raw_item.get("reason") or "规则识别：词形应归并到原型。").strip(),
+                "confidence": _clamp_probability(raw_item.get("confidence"), fallback=0.93),
+            }
+        )
+
+    return merged
 
 
 def _build_file_refine_response(
@@ -1905,12 +2413,24 @@ def health_check():
 
 
 @router.get("/api/review/visualization")
-def review_visualization(category: str | None = None):
+def review_visualization(
+    category: str | None = None,
+    graph_limit: int = _DEFAULT_RELATION_GRAPH_COMPONENT_LIMIT,
+    graph_random: bool = False,
+    graph_seed: str | None = None,
+):
     try:
         today = date.today()
         selected_category = str(category or "").strip()
         all_categories = list_categories()
         scoped_categories = [selected_category] if selected_category else all_categories
+        graph_component_limit = _safe_int_range(
+            graph_limit,
+            _DEFAULT_RELATION_GRAPH_COMPONENT_LIMIT,
+            1,
+            20,
+        )
+        recommendation_preferences = _build_recommendation_preferences_from_values()
 
         category_summaries = {}
         global_counts = {
@@ -1979,6 +2499,12 @@ def review_visualization(category: str | None = None):
                 advice = build_review_advice(reviews, today=today)
                 status = str(advice.get("status") or "unknown")
                 created_at = _safe_created_at(payload.get("createdAt"))
+                score_result = _build_review_candidate_score(
+                    advice,
+                    created_at,
+                    today,
+                    recommendation_preferences,
+                )
                 feature_flags = _entry_example_feature_flags(payload)
                 marked = bool(payload.get("marked", False))
                 reviewed_today = any(review.get("date") == format_review_date(today) for review in reviews)
@@ -2024,6 +2550,8 @@ def review_visualization(category: str | None = None):
                     "review_count": len(reviews),
                     "next_review_date": advice.get("next_review_date"),
                     "days_until_due": advice.get("days_until_due"),
+                    "priority_score": score_result["priority_score"],
+                    "score_breakdown": score_result["score_breakdown"],
                     "feature_flags": feature_flags,
                     "reviewed_today": reviewed_today,
                 }
@@ -2041,6 +2569,12 @@ def review_visualization(category: str | None = None):
                     "mastery_bucket": bucket,
                     "mastery_label": _score_bucket_label(bucket),
                     "review_count": len(reviews),
+                    "latest_review": latest_review,
+                    "latest_score": latest_score,
+                    "next_review_date": advice.get("next_review_date"),
+                    "days_until_due": advice.get("days_until_due"),
+                    "review_priority_score": score_result["priority_score"],
+                    "review_score_breakdown": score_result["score_breakdown"],
                 }
                 graph_word_index[_normalize_text_key(word)].append(node_id)
 
@@ -2208,7 +2742,14 @@ def review_visualization(category: str | None = None):
             for node_id, node in graph_nodes_by_id.items()
             if not selected_category or str(node.get("category") or "") in graph_category_set
         }
-        relation_graph = _build_relation_graph(scoped_graph_nodes_by_id, graph_raw_edges)
+        full_relation_graph = _build_relation_graph(scoped_graph_nodes_by_id, graph_raw_edges)
+        _rank_relation_graph_components_by_review_value(full_relation_graph)
+        relation_graph = _select_relation_graph_components(
+            full_relation_graph,
+            limit=graph_component_limit,
+            randomize=bool(graph_random),
+            seed=graph_seed,
+        )
         relation_graph["scope"] = {
             "category": selected_category,
             "label": selected_category or "全部目录",
@@ -2277,6 +2818,14 @@ def review_visualization(category: str | None = None):
                 "scanned_categories": len(all_categories),
                 "scanned_files": global_counts["total"],
                 "skipped": skipped,
+                "graph": {
+                    "selection": relation_graph.get("selection", {}),
+                    "component_limit": graph_component_limit,
+                    "available_component_count": relation_graph.get("available_component_count", 0),
+                    "recommended_component_count": relation_graph.get("recommended_component_count", 0),
+                    "selection_mode": relation_graph.get("selection", {}).get("mode", "recommended"),
+                    "preferences": recommendation_preferences,
+                },
             },
         }
     except Exception as exc:
@@ -2299,27 +2848,75 @@ def suggest_vocab_relations(req: RelationSuggestRequest):
         )
         source_ref = _build_entry_ref(category, file_name, source_payload.get("word") or fallback_word)
         existing_relations = _normalize_relations(source_payload, category, source_ref=source_ref)
+        existing_relation_keys = {_relation_key(item) for item in existing_relations}
+        for incoming_relation in _find_incoming_relations(source_ref):
+            if _relation_key(incoming_relation) not in existing_relation_keys:
+                existing_relations.append(incoming_relation)
+                existing_relation_keys.add(_relation_key(incoming_relation))
         normalized_limit = max(1, min(int(req.limit or 12), 30))
-        candidates, skipped = _build_relation_candidates(
+        rule_candidates, rule_skipped = _build_relation_candidates(
             source_ref,
             source_payload,
             candidate_limit=req.candidate_limit,
         )
         heuristic = _build_relation_rule_suggestions(
             source_ref,
-            candidates,
+            rule_candidates,
             existing_relations,
             limit=normalized_limit,
         )
 
         llm_result = {"suggestions": [], "notes": []}
+        llm_selection = {"selected": {}, "notes": []}
         llm_error = None
-        if candidates:
+        vocabulary_index, compact_candidate_by_id, index_skipped = _build_compact_vocabulary_index(source_ref)
+        skipped = rule_skipped + index_skipped
+        selected_candidate_refs = []
+        if vocabulary_index:
             try:
                 logger.info(
-                    "[relations_suggest] llm analyze start file=%s candidates=%s",
+                    "[relations_suggest] llm select start file=%s categories=%s candidates=%s",
                     file_name,
-                    len(candidates),
+                    len(vocabulary_index),
+                    len(compact_candidate_by_id),
+                )
+                llm_selection = select_vocab_relation_candidates_with_llm(
+                    source={
+                        **_relation_entry_summary(category, file_name, source_payload),
+                        "category": category,
+                        "file": file_name,
+                    },
+                    vocabulary_index=vocabulary_index,
+                    existing_relations=existing_relations,
+                    limit=5,
+                )
+                selected_candidate_refs = _candidate_refs_from_words(
+                    llm_selection.get("selected", {}) if isinstance(llm_selection, dict) else {},
+                    compact_candidate_by_id,
+                    fallback_category=category,
+                    limit=5,
+                )
+                logger.info(
+                    "[relations_suggest] llm select success file=%s selected=%s",
+                    file_name,
+                    len(selected_candidate_refs),
+                )
+            except Exception as exc:
+                llm_error = str(exc)
+                logger.exception("[relations_suggest] llm select failed file=%s: %s", file_name, exc)
+
+        llm_candidates, llm_candidate_skipped = _load_relation_candidate_summaries(
+            selected_candidate_refs,
+            source_ref,
+            source_payload,
+        )
+        skipped.extend(llm_candidate_skipped)
+        if llm_candidates:
+            try:
+                logger.info(
+                    "[relations_suggest] llm confirm start file=%s candidates=%s",
+                    file_name,
+                    len(llm_candidates),
                 )
                 llm_result = suggest_vocab_relations_with_llm(
                     source={
@@ -2327,18 +2924,18 @@ def suggest_vocab_relations(req: RelationSuggestRequest):
                         "category": category,
                         "file": file_name,
                     },
-                    candidates=candidates,
+                    candidates=llm_candidates,
                     existing_relations=existing_relations,
                     limit=normalized_limit,
                 )
                 logger.info(
-                    "[relations_suggest] llm analyze success file=%s suggestion_count=%s",
+                    "[relations_suggest] llm confirm success file=%s suggestion_count=%s",
                     file_name,
                     len(llm_result.get("suggestions", []) if isinstance(llm_result, dict) else []),
                 )
             except Exception as exc:
-                llm_error = str(exc)
-                logger.exception("[relations_suggest] llm analyze failed file=%s: %s", file_name, exc)
+                llm_error = str(exc) if not llm_error else f"{llm_error}; {exc}"
+                logger.exception("[relations_suggest] llm confirm failed file=%s: %s", file_name, exc)
 
         suggestions = _merge_relation_suggestions(
             heuristic,
@@ -2356,12 +2953,21 @@ def suggest_vocab_relations(req: RelationSuggestRequest):
             "source": source_ref,
             "suggestions": suggestions,
             "heuristic": {"suggestions": heuristic},
-            "llm": llm_result,
+            "llm": {
+                **(llm_result if isinstance(llm_result, dict) else {"suggestions": [], "notes": []}),
+                "selection": llm_selection,
+            },
             "llm_error": llm_error,
-            "notes": llm_result.get("notes", []) if isinstance(llm_result, dict) else [],
+            "notes": (
+                (llm_selection.get("notes", []) if isinstance(llm_selection, dict) else [])
+                + (llm_result.get("notes", []) if isinstance(llm_result, dict) else [])
+            ),
             "meta": {
-                "candidate_count": len(candidates),
+                "candidate_count": len(llm_candidates),
+                "full_vocabulary_candidate_count": len(compact_candidate_by_id),
+                "rule_candidate_count": len(rule_candidates),
                 "candidate_limit": max(12, min(int(req.candidate_limit or 72), 180)),
+                "llm_selected_count": len(selected_candidate_refs),
                 "skipped": skipped,
             },
         }
@@ -2459,6 +3065,15 @@ def rename_vocab(req: VocabRenameRequest):
                 source_category=category,
                 source_filename=source_file,
             )
+            source_ref = _build_entry_ref(category, source_file, source_word)
+            target_ref = _build_entry_ref(category, target_filename, normalized.get("word") or target_display_word)
+            normalized, rewritten_relation_files = _finalize_vocab_merge_relations(
+                source_ref=source_ref,
+                target_ref=target_ref,
+                merged_payload=normalized,
+            )
+        else:
+            rewritten_relation_files = 0
         save_vocab_file(target_path, normalized)
         _sync_bidirectional_relations_for_entry(
             category,
@@ -2486,6 +3101,7 @@ def rename_vocab(req: VocabRenameRequest):
             "data": normalized,
             "target_existed": target_existed,
             "merged_to_existing": target_existed,
+            "rewritten_relation_files": rewritten_relation_files,
         }
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
@@ -2745,7 +3361,20 @@ def apply_merge(req: MergeApplyRequest):
             source_category=category,
             source_filename=os.path.basename(source_path),
         )
+        source_ref = _build_entry_ref(category, os.path.basename(source_path), source_payload.get("word") or os.path.splitext(os.path.basename(source_path))[0])
+        target_ref = _build_entry_ref(category, os.path.basename(target_path), merged_payload.get("word") or os.path.splitext(os.path.basename(target_path))[0])
+        merged_payload, rewritten_relation_files = _finalize_vocab_merge_relations(
+            source_ref=source_ref,
+            target_ref=target_ref,
+            merged_payload=merged_payload,
+        )
         save_vocab_file(target_path, merged_payload)
+        _sync_bidirectional_relations_for_entry(
+            category,
+            os.path.basename(target_path),
+            target_payload if isinstance(target_payload, dict) else {},
+            merged_payload,
+        )
         delete_refine_cache_for_entry(category, os.path.basename(source_path))
         delete_refine_cache_for_entry(category, os.path.basename(target_path))
 
@@ -2764,6 +3393,7 @@ def apply_merge(req: MergeApplyRequest):
             "create_target_if_missing": req.create_target_if_missing,
             "target_created": target_created,
             "target_data": merged_payload,
+            "rewritten_relation_files": rewritten_relation_files,
         }
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
@@ -2827,8 +3457,21 @@ def manual_merge_vocab(req: ManualVocabMergeRequest):
         )
         if not target_exists and target_word:
             merged_payload["word"] = target_word
+        source_ref = _build_entry_ref(source_category, source_file, source_word)
+        target_ref = _build_entry_ref(target_category, target_filename, merged_payload.get("word") or target_word or target_fallback_word)
+        merged_payload, rewritten_relation_files = _finalize_vocab_merge_relations(
+            source_ref=source_ref,
+            target_ref=target_ref,
+            merged_payload=merged_payload,
+        )
 
         save_vocab_file(target_path, merged_payload)
+        _sync_bidirectional_relations_for_entry(
+            target_category,
+            os.path.basename(target_path),
+            target_payload if isinstance(target_payload, dict) else {},
+            merged_payload,
+        )
         delete_refine_cache_for_entry(source_category, source_file)
         delete_refine_cache_for_entry(target_category, os.path.basename(target_path))
 
@@ -2851,6 +3494,7 @@ def manual_merge_vocab(req: ManualVocabMergeRequest):
             "target_created": not target_exists,
             "source_deleted": source_deleted,
             "data": merged_payload,
+            "rewritten_relation_files": rewritten_relation_files,
         }
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
@@ -2862,6 +3506,7 @@ def manual_merge_vocab(req: ManualVocabMergeRequest):
 
 @router.post("/api/refine/split/apply")
 def apply_split(req: SplitApplyRequest):
+    raise HTTPException(status_code=410, detail="词条拆分功能已移除")
     try:
         category = _require_category(req.category)
         source_path, existing = load_vocab_entry(category, req.source_filename)

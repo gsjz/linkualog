@@ -1,15 +1,18 @@
 import unittest
+from datetime import date, timedelta
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 import core.review_vocabulary as review_vocabulary
 from api.review_routes import (
+    ManualVocabMergeRequest,
     RelationSuggestRequest,
     SplitApplyRequest,
     VocabSaveRequest,
     VocabRenameRequest,
     apply_split,
+    manual_merge_vocab,
     rename_vocab,
     review_visualization,
     save_vocab,
@@ -68,7 +71,7 @@ class VocabularyRelationTests(unittest.TestCase):
         saved = review_vocabulary.load_vocab_file(str(self.root / "daily" / "go-off-tone.json"))
         self.assertEqual(saved["word"], "go off tone")
 
-    def test_split_keeps_source_target_and_creates_bidirectional_edges(self):
+    def test_split_apply_endpoint_is_removed(self):
         write_vocab(
             self.root,
             "daily",
@@ -93,45 +96,36 @@ class VocabularyRelationTests(unittest.TestCase):
             },
         )
 
-        body = apply_split(
-            SplitApplyRequest(
-                category="daily",
-                source_filename="hazard.json",
-                delete_source=True,
-                suggestion={
-                    "action": "split",
-                    "reason": "名词 hazard 和固定短语 hazard a guess 应分开。",
-                    "suggested_entries": [
-                        {
-                            "word": "hazard",
-                            "definitions": ["危害；危险；风险"],
-                            "focus_words": ["hazards"],
-                            "example_indices": [0],
-                        },
-                        {
-                            "word": "hazard a guess",
-                            "definitions": ["冒昧猜一下；试着猜一猜"],
-                            "focus_words": ["hazard a guess"],
-                            "example_indices": [1],
-                        },
-                    ],
-                },
+        with self.assertRaises(Exception) as ctx:
+            apply_split(
+                SplitApplyRequest(
+                    category="daily",
+                    source_filename="hazard.json",
+                    delete_source=True,
+                    suggestion={
+                        "action": "split",
+                        "reason": "名词 hazard 和固定短语 hazard a guess 应分开。",
+                        "suggested_entries": [
+                            {
+                                "word": "hazard",
+                                "definitions": ["危害；危险；风险"],
+                                "focus_words": ["hazards"],
+                                "example_indices": [0],
+                            },
+                            {
+                                "word": "hazard a guess",
+                                "definitions": ["冒昧猜一下；试着猜一猜"],
+                                "focus_words": ["hazard a guess"],
+                                "example_indices": [1],
+                            },
+                        ],
+                    },
+                )
             )
-        )
 
-        self.assertFalse(body["source_deleted"])
+        self.assertEqual(getattr(ctx.exception, "status_code", None), 410)
         self.assertTrue((self.root / "daily" / "hazard.json").exists())
-        self.assertTrue((self.root / "daily" / "hazard-a-guess.json").exists())
-
-        hazard = review_vocabulary.load_vocab_file(str(self.root / "daily" / "hazard.json"))
-        phrase = review_vocabulary.load_vocab_file(str(self.root / "daily" / "hazard-a-guess.json"))
-        self.assertEqual(hazard["word"], "hazard")
-        self.assertEqual(phrase["word"], "hazard a guess")
-        self.assertEqual(hazard["reviews"], [{"date": "2026-05-20", "score": 3}])
-        self.assertEqual(hazard["examples"][0]["focusWords"], ["hazards"])
-        self.assertEqual(phrase["examples"][0]["focusWords"], ["hazard a guess"])
-        self.assertEqual(hazard["relations"][0]["target"]["file"], "hazard-a-guess.json")
-        self.assertEqual(phrase["relations"][0]["target"]["file"], "hazard.json")
+        self.assertFalse((self.root / "daily" / "hazard-a-guess.json").exists())
 
     def test_visualization_graph_includes_json_and_cross_category_same_word_edges(self):
         write_vocab(
@@ -146,7 +140,7 @@ class VocabularyRelationTests(unittest.TestCase):
                 "examples": [],
                 "relations": [
                     {
-                        "type": "split",
+                        "type": "phrase",
                         "target": {
                             "category": "daily",
                             "file": "hazard-a-guess.json",
@@ -192,6 +186,142 @@ class VocabularyRelationTests(unittest.TestCase):
         scopes = {edge["scope"] for edge in component["edges"]}
         self.assertIn("same_category", scopes)
         self.assertIn("cross_category", scopes)
+
+    def test_visualization_graph_recommends_top_five_components_by_review_priority(self):
+        today = date.today()
+
+        for index in range(6):
+            created_at = (today - timedelta(days=index)).isoformat()
+            write_vocab(
+                self.root,
+                "daily",
+                f"priority-{index}-a.json",
+                {
+                    "word": f"priority-{index}-a",
+                    "createdAt": created_at,
+                    "reviews": [],
+                    "definitions": [],
+                    "examples": [],
+                    "relations": [
+                        {
+                            "type": "related",
+                            "target": {
+                                "category": "daily",
+                                "file": f"priority-{index}-b.json",
+                                "word": f"priority-{index}-b",
+                            },
+                        }
+                    ],
+                },
+            )
+            write_vocab(
+                self.root,
+                "daily",
+                f"priority-{index}-b.json",
+                {
+                    "word": f"priority-{index}-b",
+                    "createdAt": created_at,
+                    "reviews": [],
+                    "definitions": [],
+                    "examples": [],
+                },
+            )
+
+        with patch("api.review_routes.get_config_data", return_value={}):
+            graph = review_visualization(category="daily")["graph"]
+
+        self.assertEqual(graph["available_component_count"], 6)
+        self.assertEqual(graph["component_count"], 5)
+        self.assertEqual(graph["selection"]["mode"], "recommended")
+        component_words = [
+            {node["word"] for node in component["nodes"]}
+            for component in graph["components"]
+        ]
+        self.assertEqual(
+            component_words,
+            [
+                {"priority-0-a", "priority-0-b"},
+                {"priority-1-a", "priority-1-b"},
+                {"priority-2-a", "priority-2-b"},
+                {"priority-3-a", "priority-3-b"},
+                {"priority-4-a", "priority-4-b"},
+            ],
+        )
+        self.assertEqual(graph["components"][0]["review_priority"]["rank"], 1)
+        self.assertGreater(
+            graph["components"][0]["review_priority"]["max_score"],
+            graph["components"][-1]["review_priority"]["max_score"],
+        )
+
+    def test_visualization_graph_refresh_samples_other_five_components(self):
+        today = date.today()
+
+        for index in range(10):
+            created_at = (today - timedelta(days=index)).isoformat()
+            write_vocab(
+                self.root,
+                "daily",
+                f"refresh-{index}-a.json",
+                {
+                    "word": f"refresh-{index}-a",
+                    "createdAt": created_at,
+                    "reviews": [],
+                    "definitions": [],
+                    "examples": [],
+                    "relations": [
+                        {
+                            "type": "related",
+                            "target": {
+                                "category": "daily",
+                                "file": f"refresh-{index}-b.json",
+                                "word": f"refresh-{index}-b",
+                            },
+                        }
+                    ],
+                },
+            )
+            write_vocab(
+                self.root,
+                "daily",
+                f"refresh-{index}-b.json",
+                {
+                    "word": f"refresh-{index}-b",
+                    "createdAt": created_at,
+                    "reviews": [],
+                    "definitions": [],
+                    "examples": [],
+                },
+            )
+
+        with patch("api.review_routes.get_config_data", return_value={}):
+            graph = review_visualization(
+                category="daily",
+                graph_random=True,
+                graph_seed="fixed-refresh-test",
+            )["graph"]
+
+        self.assertEqual(graph["available_component_count"], 10)
+        self.assertEqual(graph["component_count"], 5)
+        self.assertEqual(graph["selection"]["mode"], "random")
+        self.assertTrue(set(graph["selection"]["selected_component_ids"]).isdisjoint(
+            set(graph["selection"]["default_component_ids"])
+        ))
+        selected_words = {node["word"] for component in graph["components"] for node in component["nodes"]}
+        self.assertEqual(
+            selected_words,
+            {
+                "refresh-5-a",
+                "refresh-5-b",
+                "refresh-6-a",
+                "refresh-6-b",
+                "refresh-7-a",
+                "refresh-7-b",
+                "refresh-8-a",
+                "refresh-8-b",
+                "refresh-9-a",
+                "refresh-9-b",
+            },
+        )
 
     def test_save_normalizes_relation_aliases_and_syncs_reverse_edge(self):
         write_vocab(
@@ -316,7 +446,7 @@ class VocabularyRelationTests(unittest.TestCase):
         self.assertNotIn("relations", hazard)
         self.assertNotIn("relations", phrase)
 
-    def test_relation_suggest_endpoint_uses_dedicated_llm_and_filters_candidates(self):
+    def test_relation_suggest_endpoint_uses_two_step_llm_and_filters_candidates(self):
         write_vocab(
             self.root,
             "daily",
@@ -354,8 +484,15 @@ class VocabularyRelationTests(unittest.TestCase):
             },
         )
 
-        with patch("api.review_routes.suggest_vocab_relations_with_llm") as mocked:
-            mocked.return_value = {
+        with (
+            patch("api.review_routes.select_vocab_relation_candidates_with_llm") as mocked_select,
+            patch("api.review_routes.suggest_vocab_relations_with_llm") as mocked_confirm,
+        ):
+            mocked_select.return_value = {
+                "selected": {"daily": ["hazard a guess"], "cet": ["hazard"]},
+                "notes": [],
+            }
+            mocked_confirm.return_value = {
                 "suggestions": [
                     {
                         "type": "phrase",
@@ -378,15 +515,87 @@ class VocabularyRelationTests(unittest.TestCase):
                 )
             )
 
-        mocked.assert_called_once()
+        mocked_select.assert_called_once()
+        mocked_confirm.assert_called_once()
+        confirm_candidates = mocked_confirm.call_args.kwargs["candidates"]
+        self.assertLessEqual(len(confirm_candidates), 5)
+        self.assertTrue(any(item.get("data", {}).get("word") == "hazard a guess" for item in confirm_candidates))
         self.assertEqual(body["status"], "success")
         self.assertGreaterEqual(body["meta"]["candidate_count"], 2)
+        self.assertEqual(body["meta"]["llm_selected_count"], 2)
         targets = {
             (item["type"], item["target"]["category"], item["target"]["file"])
             for item in body["suggestions"]
         }
         self.assertIn(("phrase", "daily", "hazard-a-guess.json"), targets)
         self.assertIn(("same_word", "cet", "hazard.json"), targets)
+
+    def test_manual_merge_rewrites_incoming_undirected_relation_to_target(self):
+        write_vocab(
+            self.root,
+            "daily",
+            "irritating.json",
+            {
+                "word": "irritating",
+                "createdAt": "2026-05-17",
+                "reviews": [],
+                "definitions": ["令人恼火的"],
+                "examples": [],
+            },
+        )
+        write_vocab(
+            self.root,
+            "cet",
+            "irritate.json",
+            {
+                "word": "irritate",
+                "createdAt": "2026-05-18",
+                "reviews": [],
+                "definitions": ["使恼怒"],
+                "examples": [],
+            },
+        )
+        write_vocab(
+            self.root,
+            "daily",
+            "annoying.json",
+            {
+                "word": "annoying",
+                "createdAt": "2026-05-19",
+                "reviews": [],
+                "definitions": ["烦人的"],
+                "examples": [],
+                "relations": [
+                    {
+                        "type": "synonym",
+                        "target": {
+                            "category": "daily",
+                            "file": "irritating.json",
+                            "word": "irritating",
+                        },
+                    }
+                ],
+            },
+        )
+
+        result = manual_merge_vocab(
+            ManualVocabMergeRequest(
+                source_category="daily",
+                source_filename="irritating.json",
+                target_category="cet",
+                target_word="irritate",
+                delete_source=True,
+                create_target_if_missing=True,
+            )
+        )
+
+        self.assertEqual(result["status"], "success")
+        self.assertEqual(result["rewritten_relation_files"], 1)
+        self.assertFalse((self.root / "daily" / "irritating.json").exists())
+        annoying = review_vocabulary.load_vocab_file(str(self.root / "daily" / "annoying.json"))
+        self.assertEqual(annoying["relations"][0]["type"], "synonym")
+        self.assertEqual(annoying["relations"][0]["target"]["category"], "cet")
+        self.assertEqual(annoying["relations"][0]["target"]["file"], "irritate.json")
 
 
 if __name__ == "__main__":

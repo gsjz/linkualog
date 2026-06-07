@@ -1,4 +1,7 @@
 import unittest
+from unittest.mock import patch
+
+from core.refine_cache import FILE_REFINE_PROMPT_VERSION, build_refine_cache_key
 from services.analysis import analyze_file_cleaning_suggestions, analyze_folder_merge_suggestions
 from services.lemma_dictionary import get_lemma_words
 from services.review_llm import (
@@ -6,7 +9,10 @@ from services.review_llm import (
     _normalize_definition_suggestions,
     _normalize_example_suggestions,
     _select_folder_merge_words,
+    get_dictionary_ambiguous_merge_target_candidates,
     get_dictionary_merge_target_candidates,
+    suggest_entry_quality_with_rules,
+    suggest_file_cleaning_with_llm,
 )
 
 
@@ -75,8 +81,13 @@ class MergeSuggestionTests(unittest.TestCase):
 
     def test_llm_candidate_guard_uses_dictionary_targets(self):
         self.assertEqual(get_dictionary_merge_target_candidates("breed"), [])
+        self.assertEqual(get_dictionary_merge_target_candidates("hinder"), [])
+        self.assertEqual(get_dictionary_ambiguous_merge_target_candidates("hinder"), ["hind"])
         self.assertEqual(get_dictionary_merge_target_candidates("underprivileged"), [])
         self.assertEqual(get_dictionary_merge_target_candidates("irritating"), ["irritate"])
+        self.assertEqual(get_dictionary_merge_target_candidates("pledged"), ["pledge"])
+        self.assertEqual(get_dictionary_merge_target_candidates("larger"), ["large"])
+        self.assertEqual(get_dictionary_merge_target_candidates("bigger"), ["big"])
 
     def test_dictionary_contains_expected_lemmas_only(self):
         lemmas = get_lemma_words()
@@ -87,7 +98,7 @@ class MergeSuggestionTests(unittest.TestCase):
         self.assertNotIn("bree", lemmas)
         self.assertNotIn("underprivileg", lemmas)
 
-    def test_file_cleaning_normalizes_entry_rename_and_split(self):
+    def test_file_cleaning_normalizes_entry_rename_and_ignores_split(self):
         normalized = _normalize_file_cleaning_result(
             {
                 "entry": [
@@ -121,11 +132,7 @@ class MergeSuggestionTests(unittest.TestCase):
 
         self.assertEqual(normalized["entry"][0]["action"], "rename")
         self.assertEqual(normalized["entry"][0]["suggested_word"], "elaborate")
-        self.assertEqual(normalized["entry"][1]["action"], "split")
-        self.assertEqual(
-            [item["word"] for item in normalized["entry"][1]["suggested_entries"]],
-            ["an assortment of", "ailment"],
-        )
+        self.assertEqual(len(normalized["entry"]), 1)
 
     def test_file_cleaning_normalizes_entry_merge_to_rename(self):
         normalized = _normalize_file_cleaning_result(
@@ -152,6 +159,113 @@ class MergeSuggestionTests(unittest.TestCase):
                 }
             ],
         )
+
+    def test_file_cleaning_rule_hints_pledged_should_merge_to_lemma(self):
+        suggestions = suggest_entry_quality_with_rules(
+            "pledged",
+            ["已承诺的；保证的"],
+            [
+                {
+                    "text": "The pledged funds were released.",
+                    "focusWords": ["pledged"],
+                }
+            ],
+        )
+
+        self.assertEqual(len(suggestions), 1)
+        self.assertEqual(suggestions[0]["action"], "rename")
+        self.assertEqual(suggestions[0]["suggested_word"], "pledge")
+        self.assertEqual(suggestions[0]["source"], "lemma_rule")
+
+    def test_file_cleaning_rule_sends_hinder_candidate_to_llm_review(self):
+        suggestions = suggest_entry_quality_with_rules(
+            "hinder",
+            ["阻碍；妨碍"],
+            [
+                {
+                    "text": "Urban design can hinder or promote healthier choices.",
+                    "focusWords": ["hinder"],
+                }
+            ],
+        )
+
+        self.assertEqual(len(suggestions), 1)
+        self.assertEqual(suggestions[0]["type"], "lemma_candidate_review")
+        self.assertEqual(suggestions[0]["source"], "lemma_review")
+        self.assertEqual(suggestions[0]["suggested_action"], "llm_judge")
+        self.assertEqual(suggestions[0]["suggested_word"], "hind")
+        self.assertNotIn("action", suggestions[0])
+
+    def test_file_cleaning_prompt_emphasizes_inflection_lemma_rename(self):
+        captured_prompts = []
+
+        def fake_call(prompt, **_kwargs):
+            captured_prompts.append(prompt)
+            return {"entry": [], "definitions": [], "examples": [], "global_notes": []}
+
+        with patch("services.review_llm._call_llm_json", side_effect=fake_call):
+            suggest_file_cleaning_with_llm(
+                "pledged",
+                ["已承诺的；保证的"],
+                [{"text": "The pledged funds were released.", "focusWords": ["pledged"]}],
+                rule_suggestions=[
+                    {
+                        "type": "entry_lemma_merge",
+                        "action": "rename",
+                        "suggested_word": "pledge",
+                        "source": "lemma_rule",
+                    }
+                ],
+            )
+
+        self.assertEqual(len(captured_prompts), 1)
+        prompt = captured_prompts[0]
+        self.assertIn("屈折词形归并规则", prompt)
+        self.assertIn("pledged -> pledge", prompt)
+        self.assertIn("source=lemma_rule", prompt)
+        self.assertIn('"suggested_word": "pledge"', prompt)
+
+    def test_file_cleaning_prompt_marks_ambiguous_lemma_candidate_as_llm_review(self):
+        captured_prompts = []
+
+        def fake_call(prompt, **_kwargs):
+            captured_prompts.append(prompt)
+            return {"entry": [], "definitions": [], "examples": [], "global_notes": []}
+
+        with patch("services.review_llm._call_llm_json", side_effect=fake_call):
+            suggest_file_cleaning_with_llm(
+                "hinder",
+                ["阻碍；妨碍"],
+                [{"text": "Urban design can hinder or promote healthier choices.", "focusWords": ["hinder"]}],
+                rule_suggestions=[
+                    {
+                        "type": "lemma_candidate_review",
+                        "suggested_action": "llm_judge",
+                        "suggested_word": "hind",
+                        "source": "lemma_review",
+                    }
+                ],
+            )
+
+        self.assertEqual(len(captured_prompts), 1)
+        prompt = captured_prompts[0]
+        self.assertIn("source=lemma_review", prompt)
+        self.assertIn("lemma_candidate_review", prompt)
+        self.assertIn("不能直接照抄为 entry.rename", prompt)
+        self.assertIn('"suggested_word": "hind"', prompt)
+
+    def test_file_refine_cache_key_tracks_prompt_version(self):
+        cache_meta = build_refine_cache_key(
+            "daily",
+            "pledged.json",
+            {
+                "word": "pledged",
+                "definitions": ["已承诺的；保证的"],
+                "examples": [{"text": "The pledged funds were released.", "focusWords": ["pledged"]}],
+            },
+        )
+
+        self.assertEqual(cache_meta["prompt_version"], FILE_REFINE_PROMPT_VERSION)
 
     def test_file_cleaning_flags_missing_definitions(self):
         result = analyze_file_cleaning_suggestions(
@@ -205,6 +319,7 @@ class MergeSuggestionTests(unittest.TestCase):
                     "action": "append",
                     "reason": "definitions 为空",
                     "suggested": "小病；不严重的疾病；身体不适",
+                    "confidence": 0.61,
                 }
             ]
         )
@@ -216,6 +331,7 @@ class MergeSuggestionTests(unittest.TestCase):
                     "action": "append",
                     "reason": "definitions 为空",
                     "suggested": "小病；不严重的疾病；身体不适",
+                    "confidence": 0.61,
                 }
             ],
         )
@@ -228,6 +344,7 @@ class MergeSuggestionTests(unittest.TestCase):
                     "action": "rewrite",
                     "reason": "explanation 为空",
                     "suggested_explanation": "这句话表示诊所治疗各种疾病，ailments 指小病或身体不适。",
+                    "confidence": 0.58,
                 }
             ]
         )
@@ -240,6 +357,7 @@ class MergeSuggestionTests(unittest.TestCase):
                     "action": "rewrite",
                     "reason": "explanation 为空",
                     "suggested_explanation": "这句话表示诊所治疗各种疾病，ailments 指小病或身体不适。",
+                    "confidence": 0.58,
                 }
             ],
         )

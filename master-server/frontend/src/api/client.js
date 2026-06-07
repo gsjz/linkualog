@@ -137,10 +137,15 @@ export const getVocabularyCategories = async () => {
   return handleResponse(res);
 };
 
-export const getReviewVisualization = async (category = '') => {
+export const getReviewVisualization = async (category = '', options = {}) => {
   const params = new URLSearchParams();
   const normalizedCategory = String(category || '').trim();
   if (normalizedCategory) params.set('category', normalizedCategory);
+  const graphLimit = Number(options?.graphLimit || options?.graph_limit || 0);
+  if (graphLimit > 0) params.set('graph_limit', String(Math.round(graphLimit)));
+  if (options?.graphRandom || options?.graph_random) params.set('graph_random', 'true');
+  const graphSeed = String(options?.graphSeed || options?.graph_seed || '').trim();
+  if (graphSeed) params.set('graph_seed', graphSeed);
   const query = params.toString();
   const res = await fetch(`${BACKEND_URL}/api/review/visualization${query ? `?${query}` : ''}`);
   return handleResponse(res);

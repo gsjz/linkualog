@@ -143,27 +143,6 @@ export const manualMergeVocab = async ({
   });
 };
 
-export const applySplitSuggestion = async (
-  category,
-  sourceFilename,
-  suggestion,
-  deleteSource = true,
-  data = null,
-) => {
-  const finalCategory = requireCategory(category);
-  return requestJson('/api/refine/split/apply', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      category: finalCategory,
-      source_filename: sourceFilename,
-      suggestion,
-      delete_source: deleteSource,
-      data,
-    }),
-  });
-};
-
 export const runFileRefine = async (category, filename, includeLlm = true, data = null, options = {}) => {
   const finalCategory = requireCategory(category);
   return requestJson('/api/refine/file', {
