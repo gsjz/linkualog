@@ -69,5 +69,27 @@
         "在语境中指这种故事非常流行且常见"
       ]
     }
+  ],
+  "relations": [
+    {
+      "type": "synonym",
+      "target": {
+        "category": "daily",
+        "file": "ubiquitous.json",
+        "word": "ubiquitous"
+      },
+      "reason": "pervasive 与 ubiquitous 都表示“普遍存在、到处都是”，语义高度接近，且都常用于描述现象、技术或影响广泛存在，适合建立近义跳转。",
+      "source": "llm"
+    },
+    {
+      "type": "synonym",
+      "target": {
+        "category": "cet",
+        "file": "prevalent.json",
+        "word": "prevalent"
+      },
+      "reason": "pervasive 与 prevalent 都可表示“普遍存在的、广泛流行的”，都常用于描述现象、观念、问题等在某范围内很常见，语义接近，适合建立近义词关系。",
+      "source": "llm"
+    }
   ]
 }

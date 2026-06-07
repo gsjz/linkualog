@@ -2,11 +2,13 @@
   "word": "physiological",
   "createdAt": "2026-06-02",
   "reviews": [],
-  "definitions": [],
+  "definitions": [
+    "生理的；生理机能的（physiological）"
+  ],
   "examples": [
     {
       "text": "and subsequently, the failure of the whole organism. The exact mechanisms of aging are poorly understood. But recently, scientists have identified nine physiological traits, ranging from genetic changes to alterations in a cell's regenerative ability",
-      "explanation": "",
+      "explanation": "这里的 physiological traits 指“生理特征/生理指标”，即和身体机能有关的特征。整句是在说：科学家最近识别出了九种与衰老相关的生理特征，从基因变化到细胞再生能力的改变。",
       "focusWords": [
         "physiological"
       ],

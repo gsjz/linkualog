@@ -27,5 +27,17 @@
         "timestamp": 177
       }
     }
+  ],
+  "relations": [
+    {
+      "type": "antonym",
+      "target": {
+        "category": "cet",
+        "file": "rotten.json",
+        "word": "rotten"
+      },
+      "reason": "在食物/果实语境中， ripe 表示“成熟的、可食用的”，而 rotten 表示“腐烂的、变质的”，两者常构成同一成熟度连续体上的对立状态，适合建立反义跳转。",
+      "source": "llm"
+    }
   ]
 }

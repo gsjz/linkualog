@@ -29,5 +29,17 @@
   ],
   "mergedFrom": [
     "funded"
+  ],
+  "relations": [
+    {
+      "type": "related",
+      "target": {
+        "category": "daily",
+        "file": "pledge.json",
+        "word": "pledge"
+      },
+      "reason": "当前词条例句里是 pledged $1 million，和 fund 都涉及金钱支持。pledge 强调先作出正式承诺，fund 强调实际提供资金，二者在“捐款/资助/出资”场景中联系紧密，适合建立语义相关边帮助区分。",
+      "source": "llm"
+    }
   ]
 }

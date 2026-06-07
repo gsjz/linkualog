@@ -21,5 +21,17 @@
         "timestamp": 252
       }
     }
+  ],
+  "relations": [
+    {
+      "type": "related",
+      "target": {
+        "category": "daily",
+        "file": "surplus.json",
+        "word": "surplus"
+      },
+      "reason": "surplus 与 excessive 都可表达“多于正常/需要的量”。但 surplus 更偏“剩余、盈余”，常指数量上有余；excessive 更偏“过度、过分”，常带不当或负面色彩，因此更适合作为相关词而非严格同义词。",
+      "source": "llm"
+    }
   ]
 }

@@ -1,0 +1,47 @@
+{
+  "word": "pledge",
+  "createdAt": "2026-06-02",
+  "reviews": [],
+  "definitions": [
+    "郑重承诺；保证给予（如奖金、捐款等）"
+  ],
+  "examples": [
+    {
+      "text": "Her age was so astounding that a millionaire pledged $1 million to anyone who could break her record.",
+      "explanation": "这里的 pledged 表示“郑重承诺、许诺提供”。句子意思是：她的年龄惊人到一位百万富翁承诺拿出100万美元，奖励任何能打破她纪录的人。",
+      "focusWords": [
+        "pledge"
+      ],
+      "source": {
+        "text": "我们身体为何会老化？ - 莫妮咔 玛抐斯妮",
+        "url": "https://www.youtube.com/watch?v=GASaqPv0t0g"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=GASaqPv0t0g",
+        "timestamp": 22
+      }
+    }
+  ],
+  "relations": [
+    {
+      "type": "related",
+      "target": {
+        "category": "daily",
+        "file": "fund.json",
+        "word": "fund"
+      },
+      "reason": "当前词条例句里是 pledged $1 million，和 fund 都涉及金钱支持。pledge 强调先作出正式承诺，fund 强调实际提供资金，二者在“捐款/资助/出资”场景中联系紧密，适合建立语义相关边帮助区分。",
+      "source": "llm"
+    },
+    {
+      "type": "related",
+      "target": {
+        "category": "daily",
+        "file": "endorse.json",
+        "word": "endorse"
+      },
+      "reason": "两者都涉及公开表态或支持：pledged 强调“郑重承诺/许诺”，endorsed 强调“认可/背书”。虽然不构成同义词，但在“支持某人、某事或某项目”的语义网络中有学习价值，适合互相跳转区分“承诺支持”和“公开背书”。",
+      "source": "llm"
+    }
+  ]
+}

@@ -1,12 +1,19 @@
 {
   "word": "reside",
   "createdAt": "2026-06-02",
-  "reviews": [],
-  "definitions": [],
+  "reviews": [
+    {
+      "date": "2026-06-07",
+      "score": 1
+    }
+  ],
+  "definitions": [
+    "位于；存在于（正式用语，常指某物存在于某处）"
+  ],
   "examples": [
     {
       "text": "But the response also kicks in more as we age, halting cell growth and cutting short their ability to replicate. Aging also involves stem cells that reside in many tissues and have the property of dividing without limits to replenish other cells. As we get older, stem cells decrease in number",
-      "explanation": "",
+      "explanation": "这里的 reside 表示“存在于、位于”。stem cells that reside in many tissues 指“存在于许多组织中的干细胞”。该词比 live 更正式，常用于说明某事物存在于某个地方。",
       "focusWords": [
         "reside"
       ],

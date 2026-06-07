@@ -40,7 +40,7 @@
   ],
   "relations": [
     {
-      "type": "related",
+      "type": "antonym",
       "target": {
         "category": "daily",
         "file": "democratically-elected.json",

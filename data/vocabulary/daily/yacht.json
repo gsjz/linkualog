@@ -26,5 +26,17 @@
         "timestamp": 12
       }
     }
+  ],
+  "relations": [
+    {
+      "type": "same_category",
+      "target": {
+        "category": "cet",
+        "file": "expedition-vessel.json",
+        "word": "expedition-vessel"
+      },
+      "reason": "两者都属于“船只”这一具体交通工具类别，expedition vessel 是用于考察/探险的船，yacht 是用于娱乐或私人航行的船；虽然用途不同，但作为同类名词，便于学习者在“船只类型”中横向对比记忆。",
+      "source": "llm"
+    }
   ]
 }

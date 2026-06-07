@@ -7,11 +7,13 @@
       "score": 3
     }
   ],
-  "definitions": [],
+  "definitions": [
+    "俗称，通俗叫法；（原义也可指）街头常用的别名、黑话名称"
+  ],
   "examples": [
     {
-      "text": "or manipulating numbers in a structured and purposeful way, like adding two numbers together. These operations are handled by a computer’s Arithmetic and Logic Unit, but most people call it by its street name: the ALU. The ALU is the mathematical brain of a computer. When you understand an ALU’s design and function, you’ll understand a fundamental",
-      "explanation": "",
+      "text": "These operations are handled by a computer's Arithmetic and Logic Unit, but most people call it by its street name: the ALU.",
+      "explanation": "这里的 street name 不是字面上的“街道名称”，而是比喻说法，表示“俗称、大家平时常叫的名字”。句中意思是：它的正式名称是 Arithmetic and Logic Unit，但大多数人直接叫它 ALU。",
       "focusWords": [
         "street name"
       ],

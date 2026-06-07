@@ -1,12 +1,19 @@
 {
   "word": "reluctant",
   "createdAt": "2026-06-05",
-  "reviews": [],
-  "definitions": [],
+  "reviews": [
+    {
+      "date": "2026-06-06",
+      "score": 1
+    }
+  ],
+  "definitions": [
+    "不情愿的；勉强的；犹豫的（not willing or hesitant）"
+  ],
   "examples": [
     {
       "text": "as an anchor of global security and as an advocate for human freedom. Mindful of the risks and costs of military action, we are naturally reluctant to use force to solve the world’s many challenges. But when our interests and values are at stake, we have a responsibility to act.",
-      "explanation": "",
+      "explanation": "这里的 reluctant to use force 表示“对使用武力持不情愿、谨慎克制的态度”。整句意思是：考虑到军事行动的风险和代价，我们自然不愿轻易诉诸武力来解决世界上的诸多挑战。",
       "focusWords": [
         "reluctant"
       ],

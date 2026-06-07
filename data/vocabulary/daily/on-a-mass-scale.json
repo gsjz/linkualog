@@ -1,12 +1,19 @@
 {
   "word": "on a mass scale",
   "createdAt": "2026-06-03",
-  "reviews": [],
-  "definitions": [],
+  "reviews": [
+    {
+      "date": "2026-06-06",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "大规模地；在大范围内（especially across many people, places, or units）"
+  ],
   "examples": [
     {
-      "text": "didn't really get their start until the Industrial Revolution, when new technology deployed on a mass scale allowed cities to expand and integrate further, establishing police,",
-      "explanation": "",
+      "text": "didn't really get their start until the Industrial Revolution, when new technology deployed on a mass scale allowed cities to expand and integrate further",
+      "explanation": "这里的 on a mass scale 表示“以大规模的方式、在广泛范围内”。整句意思是：直到工业革命时期，相关事物才真正开始发展起来；当时新技术被大规模应用，使城市得以进一步扩张和整合。",
       "focusWords": [
         "on a mass scale"
       ],
@@ -18,6 +25,28 @@
         "url": "https://www.youtube.com/watch?v=fKnAJCSGSdk",
         "timestamp": 150
       }
+    }
+  ],
+  "relations": [
+    {
+      "type": "related",
+      "target": {
+        "category": "daily",
+        "file": "scalable.json",
+        "word": "scalable"
+      },
+      "reason": "两个词都围绕“规模扩大”这一核心语义展开：on a mass scale 强调某事被大范围部署或应用，scalable 强调系统或方案能够随着规模增长而扩展，属于学习中很值得互相跳转的一组概念。",
+      "source": "llm"
+    },
+    {
+      "type": "related",
+      "target": {
+        "category": "daily",
+        "file": "ubiquitous.json",
+        "word": "ubiquitous"
+      },
+      "reason": "on a mass scale 表示“大规模地、广泛地”实施或发生，ubiquitous 表示“无处不在、非常普遍”。二者不构成同义，但都常用于描述某技术、产品或现象在广泛范围内传播，语义场接近，适合建立相关跳转。",
+      "source": "llm"
     }
   ]
 }

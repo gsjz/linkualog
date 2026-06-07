@@ -26,5 +26,37 @@
         "timestamp": 12
       }
     }
+  ],
+  "relations": [
+    {
+      "type": "related",
+      "target": {
+        "category": "daily",
+        "file": "on-a-mass-scale.json",
+        "word": "on a mass scale"
+      },
+      "reason": "on a mass scale 表示“大规模地、广泛地”实施或发生，ubiquitous 表示“无处不在、非常普遍”。二者不构成同义，但都常用于描述某技术、产品或现象在广泛范围内传播，语义场接近，适合建立相关跳转。",
+      "source": "llm"
+    },
+    {
+      "type": "synonym",
+      "target": {
+        "category": "daily",
+        "file": "pervasive.json",
+        "word": "pervasive"
+      },
+      "reason": "pervasive 与 ubiquitous 都表示“普遍存在、到处都是”，语义高度接近，且都常用于描述现象、技术或影响广泛存在，适合建立近义跳转。",
+      "source": "llm"
+    },
+    {
+      "type": "synonym",
+      "target": {
+        "category": "cet",
+        "file": "prevalent.json",
+        "word": "prevalent"
+      },
+      "reason": "prevalent 和 ubiquitous 都有“普遍的、常见的”含义，属于学习中非常常互相参照的近义词；虽然 ubiquitous 更强调“无处不在”，但两者确有稳定语义重合。",
+      "source": "llm"
+    }
   ]
 }

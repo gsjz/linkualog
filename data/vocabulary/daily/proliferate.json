@@ -1,0 +1,52 @@
+{
+  "word": "proliferate",
+  "createdAt": "2026-06-02",
+  "reviews": [
+    {
+      "date": "2026-06-06",
+      "score": 1
+    }
+  ],
+  "definitions": [
+    "增殖；繁殖；激增（proliferate 的现在分词）"
+  ],
+  "examples": [
+    {
+      "text": "With age, cells increasingly grow senescent, too, a process that halts the cell cycle in times of risk, like when cancer cells are proliferating. But the response also kicks in more as we age, halting cell growth and cutting short their ability to replicate.",
+      "explanation": "这里的 proliferating 出现在 cancer cells are proliferating 中，意思是“癌细胞正在增殖/迅速繁殖”。整句是在说：随着年龄增长，细胞更容易进入衰老状态；这种机制本来能在风险出现时（例如癌细胞增殖时）暂停细胞周期，但随着年龄增长，它也会更频繁启动，从而抑制细胞生长和复制能力。",
+      "focusWords": [
+        "proliferate"
+      ],
+      "source": {
+        "text": "我们身体为何会老化？ - 莫妮咔 玛抐斯妮",
+        "url": "https://www.youtube.com/watch?v=GASaqPv0t0g"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=GASaqPv0t0g",
+        "timestamp": 210
+      }
+    }
+  ],
+  "relations": [
+    {
+      "type": "same_scene",
+      "target": {
+        "category": "daily",
+        "file": "senescent.json",
+        "word": "senescent"
+      },
+      "reason": "两词都出现在同一段关于细胞衰老与细胞周期的语境中：proliferate 表示细胞增殖，senescent 表示细胞进入衰老状态并停止分裂，语义上构成同一生物学场景中的关键概念，适合互相跳转学习。",
+      "source": "llm"
+    },
+    {
+      "type": "same_scene",
+      "target": {
+        "category": "daily",
+        "file": "replicate.json",
+        "word": "replicate"
+      },
+      "reason": "proliferate 与 replicate 都涉及细胞/DNA 的复制与增生过程。候选例句和当前词条例句都在讨论细胞复制、增殖能力受限等内容，属于高度相关的生命科学场景词。",
+      "source": "llm"
+    }
+  ]
+}

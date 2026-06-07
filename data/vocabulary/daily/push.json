@@ -1,0 +1,34 @@
+{
+  "word": "push",
+  "createdAt": "2026-04-29",
+  "reviews": [
+    {
+      "date": "2026-05-03",
+      "score": 3
+    },
+    {
+      "date": "2026-05-09",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "（口语）接近，快到（某个年龄、数字等）；如 be pushing 20 表示“快 20 岁了/快有 20 年了”。"
+  ],
+  "examples": [
+    {
+      "text": "That being said, the songs used for these tests are all over ten years old. Some are even pushing 20 years old. Since then, we've become much more accustomed to songwriters taking liberty by going off tone.",
+      "explanation": "这里的 pushing 不是“推动”，而是口语里表示“接近、快到”。Some are even pushing 20 years old 意思是“有些（歌）甚至都快有 20 年历史了”。",
+      "focusWords": [
+        "push"
+      ],
+      "source": {
+        "text": "Chinese Music - It's Not Dead, It's Misunderstood...",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=1qiv68LKZjo",
+        "timestamp": 661
+      }
+    }
+  ]
+}

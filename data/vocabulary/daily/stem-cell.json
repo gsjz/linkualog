@@ -1,12 +1,19 @@
 {
   "word": "stem-cell",
   "createdAt": "2026-06-02",
-  "reviews": [],
-  "definitions": [],
+  "reviews": [
+    {
+      "date": "2026-06-07",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "干细胞：一种能够自我复制并分化成其他类型细胞的细胞。"
+  ],
   "examples": [
     {
       "text": "But the response also kicks in more as we age, halting cell growth and cutting short their ability to replicate. Aging also involves stem cells that reside in many tissues and have the property of dividing without limits to replenish other cells. As we get older, stem cells decrease in number",
-      "explanation": "",
+      "explanation": "这里的 stem cells 指“干细胞”，即能够不断分裂，并补充或生成其他细胞的细胞。该句主要说明：随着年龄增长，干细胞的数量会减少。",
       "focusWords": [
         "stem cell"
       ],

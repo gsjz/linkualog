@@ -1,12 +1,19 @@
 {
   "word": "regulate",
   "createdAt": "2026-06-02",
-  "reviews": [],
-  "definitions": [],
+  "reviews": [
+    {
+      "date": "2026-06-06",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "调节；控制；管理（使其按一定方式运作）"
+  ],
   "examples": [
     {
-      "text": "or ATP, the main energy source for all cellular processes, plus mitochondria regulate many different cell activities and play an important role in programmed cell death. If mitochondrial function declines,",
-      "explanation": "",
+      "text": "Mitochondria regulate many different cell activities and play an important role in programmed cell death.",
+      "explanation": "这里的 regulate 表示“调节、控制”。整句意思是：线粒体会调节许多不同的细胞活动，并且在线粒体程序性细胞死亡中发挥重要作用。",
       "focusWords": [
         "regulate"
       ],

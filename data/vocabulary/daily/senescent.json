@@ -1,12 +1,19 @@
 {
   "word": "senescent",
   "createdAt": "2026-06-02",
-  "reviews": [],
-  "definitions": [],
+  "reviews": [
+    {
+      "date": "2026-06-07",
+      "score": 1
+    }
+  ],
+  "definitions": [
+    "衰老的；老化的（尤指细胞逐渐失去分裂或正常功能的）"
+  ],
   "examples": [
     {
       "text": "cells stop replicating and die, slowing the body's ability to renew itself. With age, cells increasingly grow senescent, too, a process that halts the cell cycle in times of risk, like when cancer cells are proliferating.",
-      "explanation": "",
+      "explanation": "这里的 senescent 指“衰老的、老化的”。句子意思是：随着年龄增长，细胞越来越容易进入衰老状态，这会让细胞周期停止，作为一种在风险情况下的保护机制。",
       "focusWords": [
         "senescent"
       ],
@@ -18,6 +25,18 @@
         "url": "https://www.youtube.com/watch?v=GASaqPv0t0g",
         "timestamp": 203
       }
+    }
+  ],
+  "relations": [
+    {
+      "type": "same_scene",
+      "target": {
+        "category": "daily",
+        "file": "proliferate.json",
+        "word": "proliferate"
+      },
+      "reason": "两词都出现在同一段关于细胞衰老与细胞周期的语境中：proliferate 表示细胞增殖，senescent 表示细胞进入衰老状态并停止分裂，语义上构成同一生物学场景中的关键概念，适合互相跳转学习。",
+      "source": "llm"
     }
   ]
 }

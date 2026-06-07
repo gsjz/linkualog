@@ -1,14 +1,16 @@
 {
-  "word": "Organelles",
+  "word": "organelle",
   "createdAt": "2026-06-02",
   "reviews": [],
-  "definitions": [],
+  "definitions": [
+    "细胞器：细胞内具有特定功能的结构（如线粒体、叶绿体等）。"
+  ],
   "examples": [
     {
       "text": "These occur naturally when the body's DNA replicates, but also in non-dividing cells. Organelles called mitochondria are especially prone to this damage. Mitochondria produce adenosine triphosphate, or ATP,",
-      "explanation": "",
+      "explanation": "这里的 organelles 指“细胞器”。句中说一种损伤不仅会在 DNA 复制时自然发生，也会出现在不分裂的细胞中；其中名为 mitochondria（线粒体）的细胞器特别容易受到这种损伤。",
       "focusWords": [
-        "Organelles"
+        "organelle"
       ],
       "source": {
         "text": "我们身体为何会老化？ - 莫妮咔 玛抐斯妮",

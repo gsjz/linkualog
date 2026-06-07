@@ -26,5 +26,17 @@
         "timestamp": 13
       }
     }
+  ],
+  "relations": [
+    {
+      "type": "related",
+      "target": {
+        "category": "daily",
+        "file": "on-a-mass-scale.json",
+        "word": "on a mass scale"
+      },
+      "reason": "两个词都围绕“规模扩大”这一核心语义展开：on a mass scale 强调某事被大范围部署或应用，scalable 强调系统或方案能够随着规模增长而扩展，属于学习中很值得互相跳转的一组概念。",
+      "source": "llm"
+    }
   ]
 }

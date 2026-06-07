@@ -1,0 +1,35 @@
+{
+  "word": "from scratch",
+  "createdAt": "2026-05-11",
+  "reviews": [
+    {
+      "date": "2026-05-13",
+      "score": 2
+    },
+    {
+      "date": "2026-05-29",
+      "score": 4
+    }
+  ],
+  "definitions": [
+    "从零开始；从头做起",
+    "白手起家地；无现成基础地"
+  ],
+  "examples": [
+    {
+      "text": "Today I'm bored. So we're going to make an entire machine learning library from scratch and see and train it to recognize handwritten digits with the emnest data set.",
+      "explanation": "这里的 from scratch 表示“从零开始、从头做起”，意思是不依赖现成库，自己一步步搭建整个机器学习库。",
+      "focusWords": [
+        "from scratch"
+      ],
+      "source": {
+        "text": "coding a machine learning library in c from scratch",
+        "url": ""
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=hL_n_GljC0I",
+        "timestamp": 3
+      }
+    }
+  ]
+}

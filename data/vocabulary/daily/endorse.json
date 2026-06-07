@@ -1,5 +1,5 @@
 {
-  "word": "endorsed",
+  "word": "endorse",
   "createdAt": "2026-05-17",
   "reviews": [
     {
@@ -16,14 +16,15 @@
     }
   ],
   "definitions": [
-    "（在文中）得到认可；被支持；被背书（如：endorsed by medical doctors 表示“得到医生认可/背书”）"
+    "认可；赞同；支持",
+    "公开表示支持；为……背书"
   ],
   "examples": [
     {
       "text": "By the end of the 1800s, bananas were a hit in the US. They were affordable, available year-round, and endorsed by medical doctors. As bananas became big business, U.S. fruit companies wanted to grow their own bananas.",
       "explanation": "这里的 endorsed by medical doctors 表示“得到医生的认可/背书”。整句意思是：到19世纪末，香蕉在美国很受欢迎，因为价格便宜、全年都能买到，而且还有医生为其背书。这里重点学习 endorsed 表示“被认可、被支持”。",
       "focusWords": [
-        "endorsed"
+        "endorse"
       ],
       "source": {
         "text": "The dark history of bananas - John Soluri",
@@ -33,6 +34,18 @@
         "url": "https://www.youtube.com/watch?v=esvycD1O3cM",
         "timestamp": 110
       }
+    }
+  ],
+  "relations": [
+    {
+      "type": "related",
+      "target": {
+        "category": "daily",
+        "file": "pledge.json",
+        "word": "pledge"
+      },
+      "reason": "两者都涉及公开表态或支持：pledged 强调“郑重承诺/许诺”，endorsed 强调“认可/背书”。虽然不构成同义词，但在“支持某人、某事或某项目”的语义网络中有学习价值，适合互相跳转区分“承诺支持”和“公开背书”。",
+      "source": "llm"
     }
   ]
 }

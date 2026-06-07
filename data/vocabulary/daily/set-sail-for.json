@@ -26,5 +26,17 @@
         "timestamp": 19
       }
     }
+  ],
+  "relations": [
+    {
+      "type": "same_scene",
+      "target": {
+        "category": "cet",
+        "file": "expedition-vessel.json",
+        "word": "expedition-vessel"
+      },
+      "reason": "expedition vessel 是执行航行任务的船只，set sail for 表示乘船起航前往某地，二者处于明显一致的航海/出航场景中，适合建立场景跳转。",
+      "source": "llm"
+    }
   ]
 }

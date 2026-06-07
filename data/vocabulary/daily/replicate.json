@@ -1,0 +1,37 @@
+{
+  "word": "replicate",
+  "createdAt": "2026-06-02",
+  "reviews": [],
+  "definitions": [
+    "复制；复现，重复制造（尤指精确地再现）"
+  ],
+  "examples": [
+    {
+      "text": "Firstly, as the years pass, our bodies accumulate genetic damage in the form of DNA lesions. These occur naturally when the body's DNA replicates, but also in non-dividing cells. Organelles called mitochondria are especially prone to this damage.",
+      "explanation": "这里的 replicates 指“复制”。句子意思是：DNA 在复制时会自然产生一些损伤。该词常用于生物学语境，也可泛指“精确复制、复现”。",
+      "focusWords": [
+        "replicate"
+      ],
+      "source": {
+        "text": "我们身体为何会老化？ - 莫妮咔 玛抐斯妮",
+        "url": "https://www.youtube.com/watch?v=GASaqPv0t0g"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=GASaqPv0t0g",
+        "timestamp": 111
+      }
+    }
+  ],
+  "relations": [
+    {
+      "type": "same_scene",
+      "target": {
+        "category": "daily",
+        "file": "proliferate.json",
+        "word": "proliferate"
+      },
+      "reason": "proliferate 与 replicate 都涉及细胞/DNA 的复制与增生过程。候选例句和当前词条例句都在讨论细胞复制、增殖能力受限等内容，属于高度相关的生命科学场景词。",
+      "source": "llm"
+    }
+  ]
+}

@@ -2,11 +2,13 @@
   "word": "surplus",
   "createdAt": "2026-06-03",
   "reviews": [],
-  "definitions": [],
+  "definitions": [
+    "过剩的；剩余的；盈余"
+  ],
   "examples": [
     {
       "text": "of other specialized trades, and, by extension, cities. With cities now producing surplus food, as well as tools, crafts,",
-      "explanation": "",
+      "explanation": "这里的 surplus 用作形容词，修饰 food，表示“剩余的、过剩的”。surplus food 指“超过基本所需、可供储存或交换的食物”。",
       "focusWords": [
         "surplus"
       ],
@@ -18,6 +20,28 @@
         "url": "https://www.youtube.com/watch?v=fKnAJCSGSdk",
         "timestamp": 83
       }
+    }
+  ],
+  "relations": [
+    {
+      "type": "antonym",
+      "target": {
+        "category": "daily",
+        "file": "scarce.json",
+        "word": "scarce"
+      },
+      "reason": "surplus 表示“过剩的、剩余的”，scarce 表示“稀缺的、匮乏的”，二者都描述资源数量状态，语义上形成明确反义，适合互相跳转学习。",
+      "source": "llm"
+    },
+    {
+      "type": "related",
+      "target": {
+        "category": "daily",
+        "file": "excessive.json",
+        "word": "excessive"
+      },
+      "reason": "surplus 与 excessive 都可表达“多于正常/需要的量”。但 surplus 更偏“剩余、盈余”，常指数量上有余；excessive 更偏“过度、过分”，常带不当或负面色彩，因此更适合作为相关词而非严格同义词。",
+      "source": "llm"
     }
   ]
 }

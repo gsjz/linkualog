@@ -1,12 +1,19 @@
 {
   "word": "prominent",
   "createdAt": "2026-06-02",
-  "reviews": [],
-  "definitions": [],
+  "reviews": [
+    {
+      "date": "2026-06-06",
+      "score": 1
+    }
+  ],
+  "definitions": [
+    "显著的；突出的；明显的"
+  ],
   "examples": [
     {
       "text": "that affect the body's tissues and cells. Genes silenced or expressed only at low levels in newborns become prominent in older people, leading to the development of degenerative diseases, like Alzheimer's, which accelerate aging.",
-      "explanation": "",
+      "explanation": "这里的 prominent 表示“变得显著、明显起来”。句子意思是：一些在新生儿时期被沉默或只低水平表达的基因，在老年人身上会变得更明显/更活跃，从而导致阿尔茨海默病等退行性疾病的发展。",
       "focusWords": [
         "prominent"
       ],
