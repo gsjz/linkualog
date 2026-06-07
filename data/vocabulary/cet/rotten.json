@@ -27,5 +27,27 @@
       },
       "intentionalBlank": true
     }
+  ],
+  "relations": [
+    {
+      "type": "synonym",
+      "target": {
+        "category": "cet",
+        "file": "deceitful.json",
+        "word": "deceitful"
+      },
+      "reason": "rotten 的释义中含有“不诚实的，靠不住的”，与 deceitful“欺骗的；不诚实的”在品格评价义上语义明显重合，属于可互相跳转的近义关系，但 rotten 语义更广，所以用 synonym 连接较合适。",
+      "source": "llm"
+    },
+    {
+      "type": "antonym",
+      "target": {
+        "category": "daily",
+        "file": "ripe.json",
+        "word": "ripe"
+      },
+      "reason": "在食物/果实语境中， ripe 表示“成熟的、可食用的”，而 rotten 表示“腐烂的、变质的”，两者常构成同一成熟度连续体上的对立状态，适合建立反义跳转。",
+      "source": "llm"
+    }
   ]
 }

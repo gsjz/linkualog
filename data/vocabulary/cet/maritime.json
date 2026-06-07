@@ -52,5 +52,17 @@
       ],
       "missing_points": []
     }
+  ],
+  "relations": [
+    {
+      "type": "synonym",
+      "target": {
+        "category": "cet",
+        "file": "expedition-vessel.json",
+        "word": "expedition-vessel"
+      },
+      "reason": "marine 与 maritime 都表示“海洋的/海事的”，词义高度接近，属于可对照学习的一组近义形容词。",
+      "source": "llm"
+    }
   ]
 }

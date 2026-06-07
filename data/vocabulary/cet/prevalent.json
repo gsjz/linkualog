@@ -30,5 +30,37 @@
         "url": ""
       }
     }
+  ],
+  "relations": [
+    {
+      "type": "synonym",
+      "target": {
+        "category": "daily",
+        "file": "ubiquitous.json",
+        "word": "ubiquitous"
+      },
+      "reason": "prevalent 和 ubiquitous 都有“普遍的、常见的”含义，属于学习中非常常互相参照的近义词；虽然 ubiquitous 更强调“无处不在”，但两者确有稳定语义重合。",
+      "source": "llm"
+    },
+    {
+      "type": "same_word",
+      "target": {
+        "category": "cet",
+        "file": "prevalence.json",
+        "word": "prevalence"
+      },
+      "reason": "prevalent 是形容词，prevalence 是其对应的名词形式，二者核心语义都围绕“普遍存在、盛行”，属于同一词族内学习时需要互相跳转的高价值关系。",
+      "source": "llm"
+    },
+    {
+      "type": "synonym",
+      "target": {
+        "category": "daily",
+        "file": "pervasive.json",
+        "word": "pervasive"
+      },
+      "reason": "pervasive 与 prevalent 都可表示“普遍存在的、广泛流行的”，都常用于描述现象、观念、问题等在某范围内很常见，语义接近，适合建立近义词关系。",
+      "source": "llm"
+    }
   ]
 }

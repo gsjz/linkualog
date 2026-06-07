@@ -30,5 +30,37 @@
         "url": ""
       }
     }
+  ],
+  "relations": [
+    {
+      "type": "same_category",
+      "target": {
+        "category": "daily",
+        "file": "yacht.json",
+        "word": "yacht"
+      },
+      "reason": "两者都属于“船只”这一具体交通工具类别，expedition vessel 是用于考察/探险的船，yacht 是用于娱乐或私人航行的船；虽然用途不同，但作为同类名词，便于学习者在“船只类型”中横向对比记忆。",
+      "source": "llm"
+    },
+    {
+      "type": "same_scene",
+      "target": {
+        "category": "daily",
+        "file": "set-sail-for.json",
+        "word": "set sail for"
+      },
+      "reason": "expedition vessel 是执行航行任务的船只，set sail for 表示乘船起航前往某地，二者处于明显一致的航海/出航场景中，适合建立场景跳转。",
+      "source": "llm"
+    },
+    {
+      "type": "synonym",
+      "target": {
+        "category": "cet",
+        "file": "maritime.json",
+        "word": "maritime"
+      },
+      "reason": "marine 与 maritime 都表示“海洋的/海事的”，词义高度接近，属于可对照学习的一组近义形容词。",
+      "source": "llm"
+    }
   ]
 }

@@ -34,5 +34,17 @@
         "url": ""
       }
     }
+  ],
+  "relations": [
+    {
+      "type": "same_word",
+      "target": {
+        "category": "cet",
+        "file": "prevalent.json",
+        "word": "prevalent"
+      },
+      "reason": "prevalent 是形容词，prevalence 是其对应的名词形式，二者核心语义都围绕“普遍存在、盛行”，属于同一词族内学习时需要互相跳转的高价值关系。",
+      "source": "llm"
+    }
   ]
 }

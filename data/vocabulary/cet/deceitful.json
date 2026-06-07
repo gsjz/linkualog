@@ -38,5 +38,17 @@
         "url": ""
       }
     }
+  ],
+  "relations": [
+    {
+      "type": "synonym",
+      "target": {
+        "category": "cet",
+        "file": "rotten.json",
+        "word": "rotten"
+      },
+      "reason": "rotten 的释义中含有“不诚实的，靠不住的”，与 deceitful“欺骗的；不诚实的”在品格评价义上语义明显重合，属于可互相跳转的近义关系，但 rotten 语义更广，所以用 synonym 连接较合适。",
+      "source": "llm"
+    }
   ]
 }
