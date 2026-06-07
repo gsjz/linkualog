@@ -13,7 +13,7 @@
   "examples": [
     {
       "text": "It appears that the sediment-free water emerging from the Aswan dams picks up silt and sand as it erodes the river bed and banks on the 800-kilometre trip to Cairo.",
-      "explanation": "",
+      "explanation": "这里的 silt 指河水夹带或冲刷出的细泥沙、淤泥。句子说从阿斯旺大坝流出的“无沉积物的水”在前往开罗途中侵蚀河床和河岸，于是重新卷走了 silt 和 sand。",
       "focusWords": [
         "silt"
       ],
@@ -23,8 +23,8 @@
       }
     },
     {
-      "text": "covering a region of over 22,000 square kilometres with layers of fertile silt. Annual flooding brought in new, nutrient-rich soil",
-      "explanation": "这里的 silt 指河流泛滥后留下的细泥沙、淤泥。fertile silt 表示“肥沃的淤泥”，说明洪水带来了富含养分的沉积土壤。",
+      "text": "Annual flooding covered a region of over 22,000 square kilometres with layers of fertile silt and brought in new, nutrient-rich soil.",
+      "explanation": "这里的 silt 指洪水泛滥后沉积下来的细泥沙、淤泥。fertile silt 表示“肥沃的淤泥”，强调这种沉积物能为土地补充养分。",
       "focusWords": [
         "silt"
       ],
@@ -36,5 +36,27 @@
   ],
   "mergedFrom": [
     "fertile silt"
+  ],
+  "relations": [
+    {
+      "type": "same_category",
+      "target": {
+        "category": "ielts",
+        "file": "sediment.json",
+        "word": "sediment"
+      },
+      "reason": "silt 指“淤泥、粉砂”，属于更具体的细颗粒沉积物；sediment 指更广义的“沉积物、泥沙”。两者处于同一地理/河流沉积语义场，且学习中常需要从具体物质与上位概念之间互相跳转。",
+      "source": "llm"
+    },
+    {
+      "type": "same_scene",
+      "target": {
+        "category": "ielts",
+        "file": "erosion.json",
+        "word": "erosion"
+      },
+      "reason": "silt 常与河流、河岸、三角洲被侵蚀后产生或搬运的细泥沙一起出现；erosion 表示造成这些泥沙来源与地貌变化的过程。两词不是同义词，但在河流地貌和环境变化场景中联系紧密，适合建立场景跳转。",
+      "source": "llm"
+    }
   ]
 }

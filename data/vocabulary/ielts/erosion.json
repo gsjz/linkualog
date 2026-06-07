@@ -22,5 +22,17 @@
         "url": ""
       }
     }
+  ],
+  "relations": [
+    {
+      "type": "same_scene",
+      "target": {
+        "category": "ielts",
+        "file": "silt.json",
+        "word": "silt"
+      },
+      "reason": "silt 常与河流、河岸、三角洲被侵蚀后产生或搬运的细泥沙一起出现；erosion 表示造成这些泥沙来源与地貌变化的过程。两词不是同义词，但在河流地貌和环境变化场景中联系紧密，适合建立场景跳转。",
+      "source": "llm"
+    }
   ]
 }

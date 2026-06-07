@@ -27,5 +27,17 @@
       }
     }
   ],
-  "marked": false
+  "marked": false,
+  "relations": [
+    {
+      "type": "same_category",
+      "target": {
+        "category": "ielts",
+        "file": "silt.json",
+        "word": "silt"
+      },
+      "reason": "silt 指“淤泥、粉砂”，属于更具体的细颗粒沉积物；sediment 指更广义的“沉积物、泥沙”。两者处于同一地理/河流沉积语义场，且学习中常需要从具体物质与上位概念之间互相跳转。",
+      "source": "llm"
+    }
+  ]
 }
