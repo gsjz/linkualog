@@ -26,5 +26,17 @@
         "url": ""
       }
     }
+  ],
+  "relations": [
+    {
+      "type": "antonym",
+      "target": {
+        "category": "daily",
+        "file": "extremity.json",
+        "word": "extremity"
+      },
+      "reason": "extremity 表示“末端、尽头、最远端部位”，强调事物的边缘或端点；interior 表示“内部、内陆、腹地”，强调内部区域。两者在空间概念上形成清晰对照，适合建立反义跳转，帮助学习“边缘/末端”与“内部/腹地”的对立。",
+      "source": "llm"
+    }
   ]
 }

@@ -26,5 +26,17 @@
         "url": ""
       }
     }
+  ],
+  "relations": [
+    {
+      "type": "same_scene",
+      "target": {
+        "category": "ielts",
+        "file": "dispose-of.json",
+        "word": "dispose of"
+      },
+      "reason": "两者都属于公共卫生与废弃物处理场景：dispose of 指“处理/清除废弃物”，sanitation 指“卫生设施”，在环境卫生、城市基础设施等语境中常需要互相跳转理解。",
+      "source": "llm"
+    }
   ]
 }

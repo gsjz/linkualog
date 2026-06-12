@@ -1,0 +1,64 @@
+{
+  "word": "dispose of",
+  "createdAt": "2026-03-26",
+  "reviews": [
+    {
+      "date": "2026-04-17",
+      "score": 1
+    },
+    {
+      "date": "2026-05-02",
+      "score": 2
+    },
+    {
+      "date": "2026-05-28",
+      "score": 2
+    },
+    {
+      "date": "2026-05-29",
+      "score": 3
+    },
+    {
+      "date": "2026-06-11",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "处理；清除；丢掉（尤指不需要的东西）"
+  ],
+  "examples": [
+    {
+      "text": "People worry that the endless rise in the amount of stuff everyone throws away will cause the world to run out of places to dispose of waste.",
+      "explanation": "人们担心，大家丢弃物品的数量无休止地增长，会导致世界上没有地方处理这些废弃物。",
+      "focusWords": [
+        "dispose of"
+      ],
+      "source": {
+        "text": "剑桥 5 1 阅读3",
+        "url": ""
+      }
+    }
+  ],
+  "relations": [
+    {
+      "type": "same_scene",
+      "target": {
+        "category": "ielts",
+        "file": "municipal.json",
+        "word": "municipal"
+      },
+      "reason": "当前词条例句是 dispose of waste，而 municipal 词条明确给出 municipal waste（市政垃圾）；两者在“城市垃圾处理”这一场景中紧密相关，能形成有学习价值的场景联想。",
+      "source": "llm"
+    },
+    {
+      "type": "same_scene",
+      "target": {
+        "category": "ielts",
+        "file": "sanitation.json",
+        "word": "sanitation"
+      },
+      "reason": "两者都属于公共卫生与废弃物处理场景：dispose of 指“处理/清除废弃物”，sanitation 指“卫生设施”，在环境卫生、城市基础设施等语境中常需要互相跳转理解。",
+      "source": "llm"
+    }
+  ]
+}

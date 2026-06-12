@@ -30,5 +30,17 @@
         "url": ""
       }
     }
+  ],
+  "relations": [
+    {
+      "type": "synonym",
+      "target": {
+        "category": "ielts",
+        "file": "radical.json",
+        "word": "radical"
+      },
+      "reason": "`drastic` 在当前语境里表示“激进的、力度很大的”，与 `radical` 的形容词义“激进的；根本的”高度接近；两者还出现在同一语境中（应对气候问题需要采取强力措施），有明显互相跳转学习价值。",
+      "source": "llm"
+    }
   ]
 }
