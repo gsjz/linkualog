@@ -9,27 +9,76 @@ interface SettingsProps { adapter: IVideoAdapter; onClose: () => void; }
 
 type CfgKey = keyof typeof DEFAULTS;
 
+const API_BASE_PATH = '/v1';
+const API_CHAT_COMPLETIONS_PATH = '/chat/completions';
 const LAN_SYNC_API_PATH = '/api/vocabulary/add';
-const LAN_SYNC_PROTOCOL = 'http://';
+type UrlProtocol = 'http' | 'https';
+type ApiEndpointPath = typeof API_BASE_PATH | typeof API_CHAT_COMPLETIONS_PATH;
 
-const normalizeLanPrefix = (prefix: string) => prefix.trim().replace(/\/+$/, '');
+const normalizeUrlPrefix = (prefix: string) => prefix.trim().replace(/\/+$/, '');
 
-const buildLanSyncUrl = (prefix: string) => {
-  const normalizedPrefix = normalizeLanPrefix(prefix)
-    .replace(/^https?:\/\//i, '')
-    .replace(/\/api\/vocabulary\/add$/i, '');
-  return normalizedPrefix ? `${LAN_SYNC_PROTOCOL}${normalizeLanPrefix(normalizedPrefix)}${LAN_SYNC_API_PATH}` : '';
+const stripUrlProtocol = (value: string) => value.replace(/^https?:\/\//i, '');
+
+const getUrlProtocol = (url: string, fallback: UrlProtocol = 'http'): UrlProtocol => {
+  const match = url.trim().match(/^(https?):\/\//i);
+  if (!match) return fallback;
+  return match[1].toLowerCase() === 'https' ? 'https' : 'http';
 };
 
-const getLanPrefix = (url: string) => {
-  const trimmedUrl = url.trim();
-  return trimmedUrl.startsWith(LAN_SYNC_PROTOCOL) && trimmedUrl.endsWith(LAN_SYNC_API_PATH)
-    ? normalizeLanPrefix(trimmedUrl.slice(LAN_SYNC_PROTOCOL.length, -LAN_SYNC_API_PATH.length))
+const buildUrlWithPath = (prefix: string, protocol: UrlProtocol, path: string) => {
+  const normalizedPrefix = normalizeUrlPrefix(stripUrlProtocol(prefix));
+  return normalizedPrefix ? `${protocol}://${normalizedPrefix}${path}` : '';
+};
+
+const getUrlPrefixForPath = (url: string, path: string) => {
+  const trimmedUrl = normalizeUrlPrefix(url);
+  const protocolMatch = trimmedUrl.match(/^https?:\/\//i);
+  return protocolMatch && trimmedUrl.toLowerCase().endsWith(path.toLowerCase())
+    ? normalizeUrlPrefix(trimmedUrl.slice(protocolMatch[0].length, -path.length))
     : '';
 };
 
+const getApiEndpointPath = (url: string): ApiEndpointPath => {
+  const normalizedUrl = normalizeUrlPrefix(url);
+  if (/\/chat\/completions$/i.test(normalizedUrl)) return API_CHAT_COMPLETIONS_PATH;
+  if (/\/v1$/i.test(normalizedUrl)) return API_BASE_PATH;
+  return API_BASE_PATH;
+};
+
+const getApiPrefix = (url: string) => {
+  const normalizedUrl = normalizeUrlPrefix(url);
+  const protocolMatch = normalizedUrl.match(/^https?:\/\//i);
+  if (!protocolMatch) return '';
+
+  const withoutProtocol = normalizedUrl.slice(protocolMatch[0].length);
+  if (/\/chat\/completions$/i.test(withoutProtocol)) {
+    return normalizeUrlPrefix(withoutProtocol.replace(/\/chat\/completions$/i, ''));
+  }
+  if (/\/v1$/i.test(withoutProtocol)) {
+    return normalizeUrlPrefix(withoutProtocol.replace(/\/v1$/i, ''));
+  }
+  return '';
+};
+
+const buildApiUrl = (prefix: string, protocol: UrlProtocol, endpointPath: ApiEndpointPath) => {
+  let normalizedPrefix = normalizeUrlPrefix(stripUrlProtocol(prefix))
+    .replace(/\/chat\/completions$/i, '');
+
+  if (endpointPath === API_BASE_PATH) {
+    normalizedPrefix = normalizedPrefix.replace(/\/v1$/i, '');
+  }
+
+  return buildUrlWithPath(normalizedPrefix, protocol, endpointPath);
+};
+
+const buildLanSyncUrl = (prefix: string, protocol: UrlProtocol) => (
+  buildUrlWithPath(stripUrlProtocol(prefix).replace(/\/api\/vocabulary\/add$/i, ''), protocol, LAN_SYNC_API_PATH)
+);
+
+const getLanPrefix = (url: string) => getUrlPrefixForPath(url, LAN_SYNC_API_PATH);
+
 const Settings: React.FC<SettingsProps> = ({ adapter, onClose }) => {
-  const [activeTab, setActiveTab] = useState<'api' | 'ui' | 'lan'>('api');
+  const [activeTab, setActiveTab] = useState<'api' | 'params' | 'ui'>('api');
 
   const getAdpCfg = (key: CfgKey) => {
     const val = ConfigService.get(`${key}_${adapter.platformName}` as any);
@@ -60,8 +109,36 @@ const Settings: React.FC<SettingsProps> = ({ adapter, onClose }) => {
     setCfg(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleApiPrefixChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCfg(prev => ({ ...prev, url: buildApiUrl(e.target.value, getUrlProtocol(prev.url, 'https'), getApiEndpointPath(prev.url)) }));
+  };
+
+  const handleApiProtocolChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const protocol = e.target.value as UrlProtocol;
+    setCfg(prev => {
+      const prefix = getApiPrefix(prev.url);
+      return prefix ? { ...prev, url: buildApiUrl(prefix, protocol, getApiEndpointPath(prev.url)) } : prev;
+    });
+  };
+
+  const handleApiEndpointPathChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const endpointPath = e.target.value as ApiEndpointPath;
+    setCfg(prev => {
+      const prefix = getApiPrefix(prev.url);
+      return prefix ? { ...prev, url: buildApiUrl(prefix, getUrlProtocol(prev.url, 'https'), endpointPath) } : prev;
+    });
+  };
+
   const handleLanPrefixChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setCfg(prev => ({ ...prev, lanUrl: buildLanSyncUrl(e.target.value) }));
+    setCfg(prev => ({ ...prev, lanUrl: buildLanSyncUrl(e.target.value, getUrlProtocol(prev.lanUrl)) }));
+  };
+
+  const handleLanProtocolChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const protocol = e.target.value as UrlProtocol;
+    setCfg(prev => {
+      const prefix = getLanPrefix(prev.lanUrl);
+      return prefix ? { ...prev, lanUrl: buildLanSyncUrl(prefix, protocol) } : prev;
+    });
   };
 
   const handleSave = () => {
@@ -102,7 +179,11 @@ const Settings: React.FC<SettingsProps> = ({ adapter, onClose }) => {
     if (e.target === e.currentTarget) onClose();
   };
 
+  const apiPrefix = getApiPrefix(cfg.url);
+  const apiProtocol = getUrlProtocol(cfg.url, 'https');
+  const apiEndpointPath = getApiEndpointPath(cfg.url);
   const lanPrefix = getLanPrefix(cfg.lanUrl);
+  const lanProtocol = getUrlProtocol(cfg.lanUrl);
 
   return (
     <div className="modal" onMouseDown={handleBackdropMouseDown}>
@@ -114,15 +195,30 @@ const Settings: React.FC<SettingsProps> = ({ adapter, onClose }) => {
 
         <div className="tabs">
           <div className={`tab ${activeTab === 'api' ? 'active' : ''}`} onClick={() => setActiveTab('api')}>🔌 API 设置</div>
+          <div className={`tab ${activeTab === 'params' ? 'active' : ''}`} onClick={() => setActiveTab('params')}>⚙️ 参数调整</div>
           <div className={`tab ${activeTab === 'ui' ? 'active' : ''}`} onClick={() => setActiveTab('ui')}>🎨 界面设置</div>
-          <div className={`tab ${activeTab === 'lan' ? 'active' : ''}`} onClick={() => setActiveTab('lan')}>📡 局域网</div>
         </div>
 
         <div className="tab-content">
           {activeTab === 'api' && (
             <div className="tab-pane fade-in">
               <div className="setting-col">
-                <label>API URL</label>
+                <label>API URL（快捷）</label>
+                <div className="url-prefix-row">
+                  <select className="url-protocol-select" value={apiProtocol} onChange={handleApiProtocolChange} aria-label="API 协议">
+                    <option value="http">http</option>
+                    <option value="https">https</option>
+                  </select>
+                  <input value={apiPrefix} onChange={handleApiPrefixChange} placeholder="dashscope.aliyuncs.com/compatible-mode/v1" />
+                  <select className="url-path-select" value={apiEndpointPath} onChange={handleApiEndpointPathChange} aria-label="API 端点">
+                    <option value={API_BASE_PATH}>/v1</option>
+                    <option value={API_CHAT_COMPLETIONS_PATH}>/chat/completions</option>
+                  </select>
+                </div>
+                <div className="setting-help">快捷模式支持 /v1 或 /chat/completions；如需 /v1/chat/completions，可让前缀以 /v1 结尾。</div>
+              </div>
+              <div className="setting-col">
+                <label>API URL（完整）</label>
                 <input name="url" value={cfg.url} onChange={handleChange} placeholder="https://..." />
               </div>
               <div className="setting-col">
@@ -133,6 +229,31 @@ const Settings: React.FC<SettingsProps> = ({ adapter, onClose }) => {
                 <label>对话模型 (Model)</label>
                 <input name="model" value={cfg.model} onChange={handleChange} placeholder="如：gpt-3.5-turbo" />
               </div>
+              <div className="setting-col">
+                <label>后端服务前缀（快捷）</label>
+                <div className="url-prefix-row">
+                  <select className="url-protocol-select" value={lanProtocol} onChange={handleLanProtocolChange} aria-label="后端服务协议">
+                    <option value="http">http</option>
+                    <option value="https">https</option>
+                  </select>
+                  <input value={lanPrefix} onChange={handleLanPrefixChange} placeholder="127.0.0.1:8000" />
+                  <span className="url-fixed-suffix">{LAN_SYNC_API_PATH}</span>
+                </div>
+                <div className="setting-help">只填写主机和端口会自动生成下方完整地址；如需自定义协议或路径，可直接编辑完整 API 地址。</div>
+              </div>
+              <div className="setting-col">
+                <label>后端生词添加 API 地址（完整）</label>
+                <input name="lanUrl" value={cfg.lanUrl} onChange={handleChange} placeholder="http://127.0.0.1:8000/api/vocabulary/add" />
+              </div>
+              <div className="setting-col">
+                <label>默认生词本目录 (Category)</label>
+                <input name="lanAction" value={cfg.lanAction} onChange={handleChange} placeholder="例如: Video_Sync" />
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'params' && (
+            <div className="tab-pane fade-in">
               <div className="setting-col">
                 <label>上下文携带数量 (上下各取 N 条)</label>
                 <input type="number" name="ctxSize" value={cfg.ctxSize} onChange={handleChange} min="0" max="10" />
@@ -198,27 +319,6 @@ const Settings: React.FC<SettingsProps> = ({ adapter, onClose }) => {
             </div>
           )}
 
-          {activeTab === 'lan' && (
-            <div className="tab-pane fade-in">
-              <div className="setting-col">
-                <label>后端服务前缀（快捷）</label>
-                <div className="url-prefix-row">
-                  <span className="url-fixed-prefix">{LAN_SYNC_PROTOCOL}</span>
-                  <input value={lanPrefix} onChange={handleLanPrefixChange} placeholder="127.0.0.1:8000" />
-                  <span className="url-fixed-suffix">{LAN_SYNC_API_PATH}</span>
-                </div>
-                <div className="setting-help">只填写主机和端口会自动生成下方完整地址；如需自定义协议或路径，可直接编辑完整 API 地址。</div>
-              </div>
-              <div className="setting-col">
-                <label>后端生词添加 API 地址（完整）</label>
-                <input name="lanUrl" value={cfg.lanUrl} onChange={handleChange} placeholder="http://127.0.0.1:8000/api/vocabulary/add" />
-              </div>
-              <div className="setting-col">
-                <label>默认生词本目录 (Category)</label>
-                <input name="lanAction" value={cfg.lanAction} onChange={handleChange} placeholder="例如: Video_Sync" />
-              </div>
-            </div>
-          )}
         </div>
 
         <div className="modal-footer">

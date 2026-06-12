@@ -13,11 +13,19 @@ export interface FetchLlmOptions {
   onDone: () => void;
 }
 
+export function normalizeLlmApiUrl(apiUrl: string): string {
+  const trimmedUrl = apiUrl.trim().replace(/\/+$/, '');
+  if (/\/chat\/completions$/i.test(trimmedUrl)) return trimmedUrl;
+  if (/\/v1$/i.test(trimmedUrl)) return `${trimmedUrl}/chat/completions`;
+  return trimmedUrl;
+}
+
 export function fetchLlmStream(options: FetchLlmOptions): { abort: () => void } {
   let isAborted = false;
   let gmReq: any = null;
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
   const abortController = new AbortController();
+  const requestUrl = normalizeLlmApiUrl(options.apiUrl);
 
   const abort = (reason = 'ABORTED') => {
     if (isAborted) return;
@@ -55,7 +63,7 @@ export function fetchLlmStream(options: FetchLlmOptions): { abort: () => void } 
       let streamAttached = false;
       gmReq = GM_xmlhttpRequest({
         method: 'POST',
-        url: options.apiUrl,
+        url: requestUrl,
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'text/event-stream',
@@ -116,8 +124,8 @@ export function fetchLlmStream(options: FetchLlmOptions): { abort: () => void } 
       });
     } else {
       try {
-        console.warn('[Linkual] GM_xmlhttpRequest 不可用，正在使用 fetch 请求 LLM:', options.apiUrl);
-        const res = await fetch(options.apiUrl, {
+        console.warn('[Linkual] GM_xmlhttpRequest 不可用，正在使用 fetch 请求 LLM:', requestUrl);
+        const res = await fetch(requestUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${options.apiKey}` },
           body: JSON.stringify(payload),
