@@ -30,5 +30,27 @@
         "url": ""
       }
     }
+  ],
+  "relations": [
+    {
+      "type": "synonym",
+      "target": {
+        "category": "daily",
+        "file": "fatal.json",
+        "word": "fatal"
+      },
+      "reason": "detrimental 与 fatal 都带明显负面语义，且都可描述会造成严重伤害或后果的事物。虽然 fatal 更强，常直接指“致命的”，detrimental 更常指“有害的、不利的”，不是完全等义，但在学习上有价值，可作为近义梯度跳转。",
+      "source": "llm"
+    },
+    {
+      "type": "antonym",
+      "target": {
+        "category": "daily",
+        "file": "benign.json",
+        "word": "benign"
+      },
+      "reason": "benign 的核心义之一是“无害的；不会造成严重后果的”，detrimental 表示“有害的；不利的”，两者在“是否造成伤害或负面影响”上形成明确对立，适合作为反义跳转。",
+      "source": "llm"
+    }
   ]
 }

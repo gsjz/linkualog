@@ -26,5 +26,17 @@
         "url": ""
       }
     }
+  ],
+  "relations": [
+    {
+      "type": "synonym",
+      "target": {
+        "category": "daily",
+        "file": "prone.json",
+        "word": "prone"
+      },
+      "reason": "susceptible 表示“易受影响的/易受…伤害的”，prone 表示“易于…的；有…倾向的”，两者都常用于 prone/susceptible to 结构，在“容易受到某种影响或损害”这一核心语义上高度接近，具有明确的近义跳转价值。",
+      "source": "llm"
+    }
   ]
 }

@@ -9,6 +9,10 @@
     {
       "date": "2026-05-26",
       "score": 2
+    },
+    {
+      "date": "2026-06-08",
+      "score": 3
     }
   ],
   "definitions": [
@@ -25,6 +29,18 @@
         "text": "CET6 23 12 2 阅读2",
         "url": ""
       }
+    }
+  ],
+  "relations": [
+    {
+      "type": "synonym",
+      "target": {
+        "category": "daily",
+        "file": "fatal.json",
+        "word": "fatal"
+      },
+      "reason": "adverse 表示“不利的；有害的”，与 fatal 的“造成严重后果的、灾难性的”在负面结果语义上有明显重合，二者都可用于描述会带来严重不良后果的情况，适合作为近义跳转；且不同于已存在的 detrimental 关系，不重复。",
+      "source": "llm"
     }
   ]
 }

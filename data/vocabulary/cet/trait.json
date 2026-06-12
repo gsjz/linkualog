@@ -41,5 +41,17 @@
         "url": ""
       }
     }
+  ],
+  "relations": [
+    {
+      "type": "collocation",
+      "target": {
+        "category": "daily",
+        "file": "physiological.json",
+        "word": "physiological"
+      },
+      "reason": "当前词条例句中直接出现固定搭配 physiological traits，表示“生理特征/生理指标”。trait 与 physiological 之间不是泛泛同场景，而是有明确、自然且有学习价值的高频名词搭配关系，适合建立 collocation。",
+      "source": "llm"
+    }
   ]
 }

@@ -1,7 +1,12 @@
 {
   "word": "deter",
   "createdAt": "2026-06-02",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-06-08",
+      "score": 3
+    }
+  ],
   "definitions": [
     "阻止，制止；威慑，使不敢（做某事）"
   ],
@@ -17,6 +22,28 @@
         "url": ""
       },
       "intentionalBlank": true
+    }
+  ],
+  "relations": [
+    {
+      "type": "synonym",
+      "target": {
+        "category": "cet",
+        "file": "hinder.json",
+        "word": "hinder"
+      },
+      "reason": "deter 与 hinder 都有“阻止、妨碍”之义，且都可表示使某事难以发生或进行。虽然 deter 更强调“威慑得不敢做”，hinder 更强调“造成阻碍、使进展变慢”，但在学习上属于可对照辨析的近义词，值得连边。",
+      "source": "llm"
+    },
+    {
+      "type": "related",
+      "target": {
+        "category": "daily",
+        "file": "deteriorate.json",
+        "word": "deteriorate"
+      },
+      "reason": "deter-",
+      "source": "manual"
     }
   ]
 }

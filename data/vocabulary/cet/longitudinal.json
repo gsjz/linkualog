@@ -1,7 +1,12 @@
 {
   "word": "longitudinal",
   "createdAt": "2026-06-05",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-06-07",
+      "score": 3
+    }
+  ],
   "definitions": [
     "纵向的；长期追踪的（尤用于研究中，在较长时间内持续观察同一对象）"
   ],

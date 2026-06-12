@@ -1,7 +1,16 @@
 {
   "word": "lane",
   "createdAt": "2026-06-04",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-06-07",
+      "score": 1
+    },
+    {
+      "date": "2026-06-08",
+      "score": 3
+    }
+  ],
   "definitions": [
     "（道路的）车道；（尤指乡间的）小路、小巷"
   ],

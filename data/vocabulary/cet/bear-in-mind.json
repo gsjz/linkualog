@@ -1,7 +1,12 @@
 {
   "word": "bear in mind",
   "createdAt": "2026-06-04",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-06-07",
+      "score": 3
+    }
+  ],
   "definitions": [
     "牢记；把……记在心里；注意到（= remember and consider）"
   ],
@@ -15,7 +20,12 @@
       "source": {
         "text": "CET6 23 12 3 完形",
         "url": ""
-      }
+      },
+      "focusPositions": [
+        24,
+        26,
+        27
+      ]
     }
   ]
 }

@@ -58,5 +58,17 @@
       ],
       "missing_points": []
     }
+  ],
+  "relations": [
+    {
+      "type": "antonym",
+      "target": {
+        "category": "cet",
+        "file": "hinder.json",
+        "word": "hinder"
+      },
+      "reason": "hinder 表示“阻碍、妨碍、使进展变慢”，propel 表示“推动、促使前进”，二者在“是否推进进程”这一核心语义上形成明显对立，且当前词条例句中也有与 promote 的对比，和 propel 的语义方向一致，适合建立反义关系。",
+      "source": "llm"
+    }
   ]
 }
