@@ -26,5 +26,17 @@
         "timestamp": 18
       }
     }
+  ],
+  "relations": [
+    {
+      "type": "synonym",
+      "target": {
+        "category": "daily",
+        "file": "malleable.json",
+        "word": "malleable"
+      },
+      "reason": "repurposable 含“可重新调整用于新目的”的意思，与 malleable 的“易改变、可适应变化”在“可被改造、可调整”这一学习核心上明显接近，能形成有价值的近义跳转；虽然前者更强调用途转换，后者更宽泛，但相关度足够高。",
+      "source": "llm"
+    }
   ]
 }

@@ -5,6 +5,10 @@
     {
       "date": "2026-06-07",
       "score": 1
+    },
+    {
+      "date": "2026-06-11",
+      "score": 2
     }
   ],
   "definitions": [
@@ -25,6 +29,18 @@
         "url": "https://www.youtube.com/watch?v=GASaqPv0t0g",
         "timestamp": 220
       }
+    }
+  ],
+  "relations": [
+    {
+      "type": "related",
+      "target": {
+        "category": "daily",
+        "file": "persist.json",
+        "word": "persist"
+      },
+      "reason": "两者都可表示较正式的“存在”，但侧重点不同：reside 强调“存在于某处/位于”，persist 强调“持续存在/延续”。这种语义邻近且有区别的关系，适合互相跳转学习。",
+      "source": "llm"
     }
   ]
 }

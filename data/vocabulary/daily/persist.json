@@ -62,5 +62,27 @@
         "未结合例句中 humanity will persist 表达“人类将继续存在下去”"
       ]
     }
+  ],
+  "relations": [
+    {
+      "type": "antonym",
+      "target": {
+        "category": "daily",
+        "file": "halt.json",
+        "word": "halt"
+      },
+      "reason": "halt 表示“停止、中止”，persist 表示“持续存在、延续”，二者在“是否继续进行/存在”这一核心语义上形成明显对立，适合建立反义关系。",
+      "source": "llm"
+    },
+    {
+      "type": "related",
+      "target": {
+        "category": "daily",
+        "file": "reside.json",
+        "word": "reside"
+      },
+      "reason": "两者都可表示较正式的“存在”，但侧重点不同：reside 强调“存在于某处/位于”，persist 强调“持续存在/延续”。这种语义邻近且有区别的关系，适合互相跳转学习。",
+      "source": "llm"
+    }
   ]
 }

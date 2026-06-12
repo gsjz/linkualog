@@ -69,5 +69,17 @@
         "格式还可以更精确一些"
       ]
     }
+  ],
+  "relations": [
+    {
+      "type": "same_category",
+      "target": {
+        "category": "daily",
+        "file": "sucrose.json",
+        "word": "sucrose"
+      },
+      "reason": "lactose 的定义明确为乳糖，例句也与 sucrose 一起被归入 sugar forms；两者同属糖类词汇，具有较好的横向学习价值。",
+      "source": "llm"
+    }
   ]
 }

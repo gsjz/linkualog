@@ -1,7 +1,12 @@
 {
   "word": "cellular",
   "createdAt": "2026-06-02",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-06-08",
+      "score": 3
+    }
+  ],
   "definitions": [
     "细胞的；由细胞组成的（如 cellular processes 表示“细胞过程”）"
   ],
@@ -20,6 +25,28 @@
         "url": "https://www.youtube.com/watch?v=GASaqPv0t0g",
         "timestamp": 127
       }
+    }
+  ],
+  "relations": [
+    {
+      "type": "same_scene",
+      "target": {
+        "category": "daily",
+        "file": "organelle.json",
+        "word": "organelle"
+      },
+      "reason": "cellular 表示“细胞的”，organelle 表示“细胞器”，二者同属细胞生物学场景，且当前例句直接谈到线粒体等细胞器在 cellular processes 中的作用，学习上很适合互相跳转。",
+      "source": "llm"
+    },
+    {
+      "type": "same_scene",
+      "target": {
+        "category": "daily",
+        "file": "stem-cell.json",
+        "word": "stem-cell"
+      },
+      "reason": "stem-cell 是具体的“细胞”类型，cellular 是描述与细胞相关的性质或过程的形容词，二者围绕“细胞”这一核心概念，属于紧密相关的生物学学习场景。",
+      "source": "llm"
     }
   ]
 }

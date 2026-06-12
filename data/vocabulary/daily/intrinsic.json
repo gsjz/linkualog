@@ -1,7 +1,12 @@
 {
   "word": "intrinsic",
   "createdAt": "2026-06-02",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-06-08",
+      "score": 3
+    }
+  ],
   "definitions": [
     "固有的；内在的；本身具有的"
   ],

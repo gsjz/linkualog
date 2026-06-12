@@ -1,7 +1,16 @@
 {
   "word": "vacant",
   "createdAt": "2026-06-03",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-06-08",
+      "score": 1
+    },
+    {
+      "date": "2026-06-11",
+      "score": 1
+    }
+  ],
   "definitions": [
     "空着的；未被使用的；（土地、房屋等）闲置的"
   ],

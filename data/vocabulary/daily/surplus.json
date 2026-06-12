@@ -1,7 +1,12 @@
 {
   "word": "surplus",
   "createdAt": "2026-06-03",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-06-08",
+      "score": 3
+    }
+  ],
   "definitions": [
     "过剩的；剩余的；盈余"
   ],
@@ -41,6 +46,16 @@
         "word": "excessive"
       },
       "reason": "surplus 与 excessive 都可表达“多于正常/需要的量”。但 surplus 更偏“剩余、盈余”，常指数量上有余；excessive 更偏“过度、过分”，常带不当或负面色彩，因此更适合作为相关词而非严格同义词。",
+      "source": "llm"
+    },
+    {
+      "type": "related",
+      "target": {
+        "category": "daily",
+        "file": "adequate.json",
+        "word": "adequate"
+      },
+      "reason": "adequate 表示“足够、满足需要”，surplus 表示“过剩、超过所需”，二者都围绕“数量是否满足需求”这一语义轴展开，虽不是严格反义，但有明显对照学习价值：adequate 是刚好够用，surplus 是有余量。",
       "source": "llm"
     }
   ]

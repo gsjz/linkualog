@@ -1,7 +1,12 @@
 {
   "word": "organelle",
   "createdAt": "2026-06-02",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-06-08",
+      "score": 2
+    }
+  ],
   "definitions": [
     "细胞器：细胞内具有特定功能的结构（如线粒体、叶绿体等）。"
   ],
@@ -20,6 +25,18 @@
         "url": "https://www.youtube.com/watch?v=GASaqPv0t0g",
         "timestamp": 117
       }
+    }
+  ],
+  "relations": [
+    {
+      "type": "same_scene",
+      "target": {
+        "category": "daily",
+        "file": "cellular.json",
+        "word": "cellular"
+      },
+      "reason": "cellular 表示“细胞的”，organelle 表示“细胞器”，二者同属细胞生物学场景，且当前例句直接谈到线粒体等细胞器在 cellular processes 中的作用，学习上很适合互相跳转。",
+      "source": "llm"
     }
   ]
 }

@@ -11,11 +11,13 @@
       "score": 5
     }
   ],
-  "definitions": [],
+  "definitions": [
+    "n. （尤指船只失事后的）残骸，沉船"
+  ],
   "examples": [
     {
       "text": "The discovery was cause for celebration. The artifacts indicated the divers had likely found the wreck of La Trinité, a 16th-century French vessel that had been at the center of a bloody battle between France and Spain that changed the fate of the United States of America.",
-      "explanation": "",
+      "explanation": "这里的 wreck 指“失事船只的残骸”或“沉船”。句子说：这些文物表明，潜水员很可能找到了“拉三一号”（La Trinité）的沉船遗骸，这是一艘16世纪的法国船只，曾处于一场改变了美国命运的法西血战中心。",
       "focusWords": [
         "wreck"
       ],

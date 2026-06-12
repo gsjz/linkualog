@@ -1,0 +1,55 @@
+{
+  "word": "extremity",
+  "createdAt": "2026-06-02",
+  "reviews": [
+    {
+      "date": "2026-06-08",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "（物体的）末端，尽头；最远端部位"
+  ],
+  "examples": [
+    {
+      "text": "The DNA in our cells is packaged within chromosomes, each of which has two protective regions at the extremities called telomeres.",
+      "explanation": "这里的 extremities 指“末端、两端”。句中说每条染色体的两端都有起保护作用的区域，叫作端粒（telomeres）。",
+      "focusWords": [
+        "extremity"
+      ],
+      "source": {
+        "text": "我们身体为何会老化？ - 莫妮咔 玛抐斯妮",
+        "url": "https://www.youtube.com/watch?v=GASaqPv0t0g"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=GASaqPv0t0g",
+        "timestamp": 186
+      },
+      "focusPositions": [
+        19
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "type": "antonym",
+      "target": {
+        "category": "ielts",
+        "file": "interior.json",
+        "word": "interior"
+      },
+      "reason": "extremity 表示“末端、尽头、最远端部位”，强调事物的边缘或端点；interior 表示“内部、内陆、腹地”，强调内部区域。两者在空间概念上形成清晰对照，适合建立反义跳转，帮助学习“边缘/末端”与“内部/腹地”的对立。",
+      "source": "llm"
+    },
+    {
+      "type": "related",
+      "target": {
+        "category": "daily",
+        "file": "apex.json",
+        "word": "apex"
+      },
+      "reason": "apex 指“顶点、顶峰”，也是空间位置上的端部或极端点；extremity 指“末端、最远端部位”。两者不完全同义，但都涉及物体或结构的最外端/极端位置，具有明确的语义邻近性，适合作为相关词互相跳转。",
+      "source": "llm"
+    }
+  ]
+}

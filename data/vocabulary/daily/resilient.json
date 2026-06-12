@@ -30,5 +30,17 @@
         "timestamp": 85
       }
     }
+  ],
+  "relations": [
+    {
+      "type": "related",
+      "target": {
+        "category": "daily",
+        "file": "malleable.json",
+        "word": "malleable"
+      },
+      "reason": "两词都可用于描述系统、城市、结构等在变化环境中的适应能力。malleable 偏“可被塑造、可调整”，resilient 偏“受冲击后能恢复”，不是同义词，但在“灵活/适应性强的特质”这一语义场中值得互相跳转。",
+      "source": "llm"
+    }
   ]
 }

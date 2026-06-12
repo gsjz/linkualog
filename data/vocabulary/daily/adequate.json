@@ -1,7 +1,12 @@
 {
   "word": "adequate",
   "createdAt": "2026-06-03",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-06-08",
+      "score": 2
+    }
+  ],
   "definitions": [
     "足够的；合乎需要的"
   ],
@@ -20,6 +25,28 @@
         "url": "https://www.youtube.com/watch?v=fKnAJCSGSdk",
         "timestamp": 183
       }
+    }
+  ],
+  "relations": [
+    {
+      "type": "antonym",
+      "target": {
+        "category": "daily",
+        "file": "scarce.json",
+        "word": "scarce"
+      },
+      "reason": "adequate 表示“足够的、合乎需要的”，scarce 表示“稀缺的、匮乏的”，二者都围绕资源是否满足需求这一数量/供给状态展开，语义上构成清晰对立，适合建立反义跳转。",
+      "source": "llm"
+    },
+    {
+      "type": "related",
+      "target": {
+        "category": "daily",
+        "file": "surplus.json",
+        "word": "surplus"
+      },
+      "reason": "adequate 表示“足够、满足需要”，surplus 表示“过剩、超过所需”，二者都围绕“数量是否满足需求”这一语义轴展开，虽不是严格反义，但有明显对照学习价值：adequate 是刚好够用，surplus 是有余量。",
+      "source": "llm"
     }
   ]
 }

@@ -9,6 +9,10 @@
     {
       "date": "2026-06-01",
       "score": 2
+    },
+    {
+      "date": "2026-06-11",
+      "score": 3
     }
   ],
   "definitions": [
@@ -50,6 +54,18 @@
         "准确回忆出目标词 doom"
       ],
       "missing_points": []
+    }
+  ],
+  "relations": [
+    {
+      "type": "related",
+      "target": {
+        "category": "daily",
+        "file": "fatal.json",
+        "word": "fatal"
+      },
+      "reason": "doom 表示“厄运；毁灭”，与 fatal 的“致命的；灾难性的”都涉及死亡、毁灭、严重结局这一核心语义场。词性和具体用法不同，不宜强行判为近义词，但作为语义相关词有学习价值。",
+      "source": "llm"
     }
   ]
 }

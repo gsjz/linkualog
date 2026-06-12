@@ -104,5 +104,17 @@
         "正确答案是 Glucose"
       ]
     }
+  ],
+  "relations": [
+    {
+      "type": "same_category",
+      "target": {
+        "category": "daily",
+        "file": "sucrose.json",
+        "word": "sucrose"
+      },
+      "reason": "两者都明确是具体糖类名称，且在示例中与 sucrose 并列出现为“all forms of sugar”，属于同一知识小类，便于学习者在糖类词汇间跳转。",
+      "source": "llm"
+    }
   ]
 }

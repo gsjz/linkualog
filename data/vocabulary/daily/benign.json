@@ -68,5 +68,17 @@
         "需要回忆出目标词 from benign"
       ]
     }
+  ],
+  "relations": [
+    {
+      "type": "antonym",
+      "target": {
+        "category": "cet",
+        "file": "detrimental.json",
+        "word": "detrimental"
+      },
+      "reason": "benign 的核心义之一是“无害的；不会造成严重后果的”，detrimental 表示“有害的；不利的”，两者在“是否造成伤害或负面影响”上形成明确对立，适合作为反义跳转。",
+      "source": "llm"
+    }
   ]
 }

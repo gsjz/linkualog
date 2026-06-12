@@ -26,5 +26,27 @@
         "timestamp": 220
       }
     }
+  ],
+  "relations": [
+    {
+      "type": "same_scene",
+      "target": {
+        "category": "daily",
+        "file": "cellular.json",
+        "word": "cellular"
+      },
+      "reason": "stem-cell 是具体的“细胞”类型，cellular 是描述与细胞相关的性质或过程的形容词，二者围绕“细胞”这一核心概念，属于紧密相关的生物学学习场景。",
+      "source": "llm"
+    },
+    {
+      "type": "same_scene",
+      "target": {
+        "category": "daily",
+        "file": "epigenetic.json",
+        "word": "epigenetic"
+      },
+      "reason": "表观遗传调控与干细胞的分化、命运决定和自我更新密切相关；stem-cell 是具体细胞类型，epigenetic 是解释其基因表达调控的重要概念，属于强相关生物学场景。",
+      "source": "llm"
+    }
   ]
 }

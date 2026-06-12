@@ -32,6 +32,26 @@
       },
       "reason": "proliferate 与 replicate 都涉及细胞/DNA 的复制与增生过程。候选例句和当前词条例句都在讨论细胞复制、增殖能力受限等内容，属于高度相关的生命科学场景词。",
       "source": "llm"
+    },
+    {
+      "type": "same_scene",
+      "target": {
+        "category": "daily",
+        "file": "lesion.json",
+        "word": "lesion"
+      },
+      "reason": "两词在候选与当前例句中直接共现：DNA lesions 会在 DNA replicates 时自然发生。lesion 表示受损部位，replicate 表示 DNA 复制过程，二者构成同一生物学机制场景，学习上很适合互相跳转。",
+      "source": "llm"
+    },
+    {
+      "type": "same_scene",
+      "target": {
+        "category": "daily",
+        "file": "replenish.json",
+        "word": "replenish"
+      },
+      "reason": "当前例句中 replenish 与 replicate 直接共现，且都处在干细胞/细胞更新的生命科学语境中：replicate 强调复制分裂，replenish 强调补充其他细胞，属于同一生物过程场景中的相关动作词。",
+      "source": "llm"
     }
   ]
 }

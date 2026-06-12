@@ -1,7 +1,12 @@
 {
   "word": "excessive",
   "createdAt": "2026-06-02",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-06-08",
+      "score": 3
+    }
+  ],
   "definitions": [
     "过度的；过多的；过分的"
   ],

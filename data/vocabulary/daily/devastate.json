@@ -29,5 +29,17 @@
   ],
   "mergedFrom": [
     "devastating"
+  ],
+  "relations": [
+    {
+      "type": "related",
+      "target": {
+        "category": "daily",
+        "file": "fatal.json",
+        "word": "fatal"
+      },
+      "reason": "该词条虽然文件名是 devastate，但释义和例句实际对应的是 devastating“毁灭性的；造成严重后果的”。它与 fatal 在“后果极其严重、灾难性”这一语义上接近，适合作为相关词跳转；但 fatal 更偏“致命/导致死亡”，因此不直接定为近义词。",
+      "source": "llm"
+    }
   ]
 }

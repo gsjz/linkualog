@@ -75,5 +75,17 @@
       ],
       "missing_points": []
     }
+  ],
+  "relations": [
+    {
+      "type": "same_category",
+      "target": {
+        "category": "cet",
+        "file": "hinder.json",
+        "word": "hinder"
+      },
+      "reason": "hinder 是“阻碍”的动词，setback 是“挫折、阻碍”的名词，二者同属“使进展受阻”的语义类别。虽然词性不同、不是严格近义词，但在学习中常需要从动作到结果互相联想，适合建立同类词关系。",
+      "source": "llm"
+    }
   ]
 }

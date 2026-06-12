@@ -1,7 +1,16 @@
 {
-  "word": "lesions",
+  "word": "lesion",
   "createdAt": "2026-06-02",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-06-08",
+      "score": 1
+    },
+    {
+      "date": "2026-06-11",
+      "score": 2
+    }
+  ],
   "definitions": [
     "损伤；病变；损害（尤指组织、器官或 DNA 的受损部位，lesion）"
   ],
@@ -10,7 +19,7 @@
       "text": "that play a central role. Firstly, as the years pass, our bodies accumulate genetic damage in the form of DNA lesions. These occur naturally when the body's DNA replicates, but also in non-dividing cells.",
       "explanation": "这里的 lesions 指“损伤、受损位点”。DNA lesions 就是“DNA 损伤”，强调 DNA 上出现了受损或异常的部位。句子意思是：随着年龄增长，我们体内会逐渐积累这类遗传损伤。",
       "focusWords": [
-        "lesions"
+        "lesion"
       ],
       "source": {
         "text": "我们身体为何会老化？ - 莫妮咔 玛抐斯妮",
@@ -20,6 +29,18 @@
         "url": "https://www.youtube.com/watch?v=GASaqPv0t0g",
         "timestamp": 108
       }
+    }
+  ],
+  "relations": [
+    {
+      "type": "same_scene",
+      "target": {
+        "category": "daily",
+        "file": "replicate.json",
+        "word": "replicate"
+      },
+      "reason": "两词在候选与当前例句中直接共现：DNA lesions 会在 DNA replicates 时自然发生。lesion 表示受损部位，replicate 表示 DNA 复制过程，二者构成同一生物学机制场景，学习上很适合互相跳转。",
+      "source": "llm"
     }
   ]
 }

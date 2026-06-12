@@ -1,7 +1,16 @@
 {
   "word": "malleable",
   "createdAt": "2026-06-03",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-06-08",
+      "score": 1
+    },
+    {
+      "date": "2026-06-11",
+      "score": 3
+    }
+  ],
   "definitions": [
     "可塑的；易改变的；可适应变化的"
   ],
@@ -20,6 +29,38 @@
         "url": "https://www.youtube.com/watch?v=fKnAJCSGSdk",
         "timestamp": 224
       }
+    }
+  ],
+  "relations": [
+    {
+      "type": "synonym",
+      "target": {
+        "category": "daily",
+        "file": "repurposable.json",
+        "word": "repurposable"
+      },
+      "reason": "repurposable 含“可重新调整用于新目的”的意思，与 malleable 的“易改变、可适应变化”在“可被改造、可调整”这一学习核心上明显接近，能形成有价值的近义跳转；虽然前者更强调用途转换，后者更宽泛，但相关度足够高。",
+      "source": "llm"
+    },
+    {
+      "type": "antonym",
+      "target": {
+        "category": "daily",
+        "file": "rigidly.json",
+        "word": "rigidly"
+      },
+      "reason": "malleable 强调“可塑、易改变”，而 rigidly 表示“僵硬地、固定地”，语义方向明显相反。虽词性不完全一致（形容词对副词），但候选释义里核心概念正是“固定不易变化”，与 malleable 构成很有学习价值的反向对照。",
+      "source": "llm"
+    },
+    {
+      "type": "related",
+      "target": {
+        "category": "daily",
+        "file": "resilient.json",
+        "word": "resilient"
+      },
+      "reason": "两词都可用于描述系统、城市、结构等在变化环境中的适应能力。malleable 偏“可被塑造、可调整”，resilient 偏“受冲击后能恢复”，不是同义词，但在“灵活/适应性强的特质”这一语义场中值得互相跳转。",
+      "source": "llm"
     }
   ]
 }

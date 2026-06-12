@@ -1,7 +1,12 @@
 {
   "word": "nanobot",
   "createdAt": "2026-06-02",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-06-08",
+      "score": 4
+    }
+  ],
   "definitions": [
     "纳米机器人：尺寸极小、通常设想用于医学或工程任务的微型机器人。"
   ],

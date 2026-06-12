@@ -26,5 +26,17 @@
         "timestamp": 305
       }
     }
+  ],
+  "relations": [
+    {
+      "type": "synonym",
+      "target": {
+        "category": "cet",
+        "file": "imperative.json",
+        "word": "imperative"
+      },
+      "reason": "imperative 作形容词有“必要的、极重要的”之义，vital 表示“至关重要的；必不可少的”，核心语义高度重合，适合作为近义跳转。",
+      "source": "llm"
+    }
   ]
 }

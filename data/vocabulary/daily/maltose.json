@@ -49,5 +49,17 @@
         "格式还可以更精确一些"
       ]
     }
+  ],
+  "relations": [
+    {
+      "type": "same_category",
+      "target": {
+        "category": "daily",
+        "file": "sucrose.json",
+        "word": "sucrose"
+      },
+      "reason": "maltose 与 sucrose 同为以 -ose 结尾的具体糖名，但这里不是基于词形，而是基于定义和共享例句中“都是糖的形式”的明确语义归类。",
+      "source": "llm"
+    }
   ]
 }

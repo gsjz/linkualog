@@ -1,7 +1,12 @@
 {
   "word": "epigenetic",
   "createdAt": "2026-06-02",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-06-08",
+      "score": 3
+    }
+  ],
   "definitions": [
     "表观遗传的（指不改变 DNA 序列、但会影响基因表达的）"
   ],
@@ -20,6 +25,18 @@
         "url": "https://www.youtube.com/watch?v=GASaqPv0t0g",
         "timestamp": 149
       }
+    }
+  ],
+  "relations": [
+    {
+      "type": "same_scene",
+      "target": {
+        "category": "daily",
+        "file": "stem-cell.json",
+        "word": "stem-cell"
+      },
+      "reason": "表观遗传调控与干细胞的分化、命运决定和自我更新密切相关；stem-cell 是具体细胞类型，epigenetic 是解释其基因表达调控的重要概念，属于强相关生物学场景。",
+      "source": "llm"
     }
   ]
 }

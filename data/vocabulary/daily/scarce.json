@@ -71,6 +71,16 @@
       },
       "reason": "surplus 表示“过剩的、剩余的”，scarce 表示“稀缺的、匮乏的”，二者都描述资源数量状态，语义上形成明确反义，适合互相跳转学习。",
       "source": "llm"
+    },
+    {
+      "type": "antonym",
+      "target": {
+        "category": "daily",
+        "file": "adequate.json",
+        "word": "adequate"
+      },
+      "reason": "adequate 表示“足够的、合乎需要的”，scarce 表示“稀缺的、匮乏的”，二者都围绕资源是否满足需求这一数量/供给状态展开，语义上构成清晰对立，适合建立反义跳转。",
+      "source": "llm"
     }
   ]
 }

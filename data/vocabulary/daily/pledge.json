@@ -1,7 +1,12 @@
 {
   "word": "pledge",
   "createdAt": "2026-06-02",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-06-08",
+      "score": 2
+    }
+  ],
   "definitions": [
     "郑重承诺；保证给予（如奖金、捐款等）"
   ],

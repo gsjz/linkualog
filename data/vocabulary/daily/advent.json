@@ -1,7 +1,12 @@
 {
   "word": "advent",
   "createdAt": "2026-06-03",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-06-08",
+      "score": 3
+    }
+  ],
   "definitions": [
     "出现；到来（尤指重要事物、时代或技术的出现）"
   ],

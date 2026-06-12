@@ -1,7 +1,12 @@
 {
   "word": "halt",
   "createdAt": "2026-06-02",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-06-08",
+      "score": 3
+    }
+  ],
   "definitions": [
     "（使）停止，中止；阻止……继续进行"
   ],
@@ -20,6 +25,28 @@
         "url": "https://www.youtube.com/watch?v=GASaqPv0t0g",
         "timestamp": 206
       }
+    }
+  ],
+  "relations": [
+    {
+      "type": "antonym",
+      "target": {
+        "category": "daily",
+        "file": "persist.json",
+        "word": "persist"
+      },
+      "reason": "halt 表示“停止、中止”，persist 表示“持续存在、延续”，二者在“是否继续进行/存在”这一核心语义上形成明显对立，适合建立反义关系。",
+      "source": "llm"
+    },
+    {
+      "type": "synonym",
+      "target": {
+        "category": "cet",
+        "file": "hinder.json",
+        "word": "hinder"
+      },
+      "reason": "halt 表示“使停止、中止”，hinder 表示“阻碍、妨碍、使进展变慢”，两者都涉及阻止某事继续进行，属于可对照学习的近义相关词。虽然 halt 更强调直接停下，hinder 更强调造成阻碍，但语义接近且有学习价值。",
+      "source": "llm"
     }
   ]
 }

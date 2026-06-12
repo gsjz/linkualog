@@ -26,5 +26,17 @@
         "timestamp": 58
       }
     }
+  ],
+  "relations": [
+    {
+      "type": "antonym",
+      "target": {
+        "category": "daily",
+        "file": "malleable.json",
+        "word": "malleable"
+      },
+      "reason": "malleable 强调“可塑、易改变”，而 rigidly 表示“僵硬地、固定地”，语义方向明显相反。虽词性不完全一致（形容词对副词），但候选释义里核心概念正是“固定不易变化”，与 malleable 构成很有学习价值的反向对照。",
+      "source": "llm"
+    }
   ]
 }

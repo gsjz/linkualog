@@ -1,7 +1,16 @@
 {
   "word": "fatal",
   "createdAt": "2026-06-02",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-06-08",
+      "score": 2
+    },
+    {
+      "date": "2026-06-11",
+      "score": 1
+    }
+  ],
   "definitions": [
     "致命的；造成死亡的；灾难性的（尤指导致失败或严重后果的）"
   ],
@@ -20,6 +29,58 @@
         "url": "https://www.youtube.com/watch?v=GASaqPv0t0g",
         "timestamp": 252
       }
+    }
+  ],
+  "relations": [
+    {
+      "type": "synonym",
+      "target": {
+        "category": "cet",
+        "file": "detrimental.json",
+        "word": "detrimental"
+      },
+      "reason": "detrimental 与 fatal 都带明显负面语义，且都可描述会造成严重伤害或后果的事物。虽然 fatal 更强，常直接指“致命的”，detrimental 更常指“有害的、不利的”，不是完全等义，但在学习上有价值，可作为近义梯度跳转。",
+      "source": "llm"
+    },
+    {
+      "type": "related",
+      "target": {
+        "category": "daily",
+        "file": "devastate.json",
+        "word": "devastate"
+      },
+      "reason": "该词条虽然文件名是 devastate，但释义和例句实际对应的是 devastating“毁灭性的；造成严重后果的”。它与 fatal 在“后果极其严重、灾难性”这一语义上接近，适合作为相关词跳转；但 fatal 更偏“致命/导致死亡”，因此不直接定为近义词。",
+      "source": "llm"
+    },
+    {
+      "type": "synonym",
+      "target": {
+        "category": "cet",
+        "file": "adverse.json",
+        "word": "adverse"
+      },
+      "reason": "adverse 表示“不利的；有害的”，与 fatal 的“造成严重后果的、灾难性的”在负面结果语义上有明显重合，二者都可用于描述会带来严重不良后果的情况，适合作为近义跳转；且不同于已存在的 detrimental 关系，不重复。",
+      "source": "llm"
+    },
+    {
+      "type": "same_scene",
+      "target": {
+        "category": "daily",
+        "file": "hazard.json",
+        "word": "hazard"
+      },
+      "reason": "hazard 表示“危害；危险；风险”，fatal 表示“致命的”。两者常出现在安全、健康、事故风险等同一语境中：hazard 指危险源或风险，fatal 指其可能导致的最严重后果，具有很强的场景关联，适合互相跳转。",
+      "source": "llm"
+    },
+    {
+      "type": "related",
+      "target": {
+        "category": "daily",
+        "file": "doom.json",
+        "word": "doom"
+      },
+      "reason": "doom 表示“厄运；毁灭”，与 fatal 的“致命的；灾难性的”都涉及死亡、毁灭、严重结局这一核心语义场。词性和具体用法不同，不宜强行判为近义词，但作为语义相关词有学习价值。",
+      "source": "llm"
     }
   ]
 }

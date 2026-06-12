@@ -44,5 +44,17 @@
   ],
   "mergedFrom": [
     "hazards"
+  ],
+  "relations": [
+    {
+      "type": "same_scene",
+      "target": {
+        "category": "daily",
+        "file": "fatal.json",
+        "word": "fatal"
+      },
+      "reason": "hazard 表示“危害；危险；风险”，fatal 表示“致命的”。两者常出现在安全、健康、事故风险等同一语境中：hazard 指危险源或风险，fatal 指其可能导致的最严重后果，具有很强的场景关联，适合互相跳转。",
+      "source": "llm"
+    }
   ]
 }

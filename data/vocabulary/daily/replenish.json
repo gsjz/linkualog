@@ -21,5 +21,17 @@
         "timestamp": 224
       }
     }
+  ],
+  "relations": [
+    {
+      "type": "same_scene",
+      "target": {
+        "category": "daily",
+        "file": "replicate.json",
+        "word": "replicate"
+      },
+      "reason": "当前例句中 replenish 与 replicate 直接共现，且都处在干细胞/细胞更新的生命科学语境中：replicate 强调复制分裂，replenish 强调补充其他细胞，属于同一生物过程场景中的相关动作词。",
+      "source": "llm"
+    }
   ]
 }

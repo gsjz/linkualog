@@ -1,0 +1,43 @@
+{
+  "word": "flourish",
+  "createdAt": "2026-06-03",
+  "reviews": [
+    {
+      "date": "2026-06-08",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "繁荣；兴盛；蓬勃发展（尤指贸易、事业等）",
+    "繁荣起来；兴旺发展；蓬勃发展（指贸易、事业、文明等）"
+  ],
+  "examples": [
+    {
+      "text": "And as trade flourished, so did technologies that facilitated it.",
+      "explanation": "这里的 flourished 表示“繁荣起来、兴旺发展”。整句意思是：随着贸易的发展，促进贸易的技术也随之发展起来。",
+      "focusWords": [
+        "flourish"
+      ],
+      "source": {
+        "text": "城市化与未来的城市 - 万斯·凯特",
+        "url": "https://www.youtube.com/watch?v=fKnAJCSGSdk"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=fKnAJCSGSdk",
+        "timestamp": 93
+      }
+    }
+  ],
+  "relations": [
+    {
+      "type": "related",
+      "target": {
+        "category": "cet",
+        "file": "prosperity.json",
+        "word": "prosperity"
+      },
+      "reason": "flourish 表示“繁荣、兴旺发展”，prosperity 表示“繁荣”，两者核心语义高度相关，一个偏过程/状态，一个偏抽象名词结果，学习上很适合互相跳转。",
+      "source": "llm"
+    }
+  ]
+}

@@ -56,5 +56,17 @@
         "需要回忆出目标词 desperate"
       ]
     }
+  ],
+  "relations": [
+    {
+      "type": "antonym",
+      "target": {
+        "category": "daily",
+        "file": "reluctant.json",
+        "word": "reluctant"
+      },
+      "reason": "两者都常接不定式表达意愿强弱，但语义方向相反：reluctant to do 表示“不情愿做”，desperate to do 表示“极度想做”。这种对照有明确学习价值，便于掌握态度强弱的反义关系。",
+      "source": "llm"
+    }
   ]
 }

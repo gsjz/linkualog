@@ -95,5 +95,17 @@
         "缺少与词条对应的准确中文名称"
       ]
     }
+  ],
+  "relations": [
+    {
+      "type": "same_category",
+      "target": {
+        "category": "daily",
+        "file": "sucrose.json",
+        "word": "sucrose"
+      },
+      "reason": "fructose 和 sucrose 都是糖类专名，候选词条定义与例句都确认其为 sugar 的一种，和当前词条构成稳定的同类词关系。",
+      "source": "llm"
+    }
   ]
 }

@@ -9,6 +9,10 @@
     {
       "date": "2026-06-04",
       "score": 1
+    },
+    {
+      "date": "2026-06-07",
+      "score": 2
     }
   ],
   "definitions": [
@@ -29,6 +33,28 @@
         "url": "https://www.youtube.com/watch?v=GASaqPv0t0g",
         "timestamp": 141
       }
+    }
+  ],
+  "relations": [
+    {
+      "type": "synonym",
+      "target": {
+        "category": "daily",
+        "file": "escalate.json",
+        "word": "escalate"
+      },
+      "reason": "deteriorate 表示“变坏、恶化”，escalate 在负面事态语境中常表示“加剧、升级”。两者都可描述问题、危机、成本、局势等朝更糟方向发展，虽然侧重点不同（deteriorate 偏状态变差，escalate 偏程度升级），但具有较强的近义跳转价值。",
+      "source": "llm"
+    },
+    {
+      "type": "related",
+      "target": {
+        "category": "cet",
+        "file": "deter.json",
+        "word": "deter"
+      },
+      "reason": "deter-",
+      "source": "manual"
     }
   ]
 }

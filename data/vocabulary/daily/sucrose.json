@@ -17,6 +17,10 @@
     {
       "date": "2026-05-29",
       "score": 1
+    },
+    {
+      "date": "2026-06-11",
+      "score": 1
     }
   ],
   "definitions": [
@@ -60,6 +64,58 @@
       "missing_points": [
         "未给出准确释义：蔗糖"
       ]
+    }
+  ],
+  "relations": [
+    {
+      "type": "same_category",
+      "target": {
+        "category": "daily",
+        "file": "glucose.json",
+        "word": "glucose"
+      },
+      "reason": "两者都明确是具体糖类名称，且在示例中与 sucrose 并列出现为“all forms of sugar”，属于同一知识小类，便于学习者在糖类词汇间跳转。",
+      "source": "llm"
+    },
+    {
+      "type": "same_category",
+      "target": {
+        "category": "daily",
+        "file": "fructose.json",
+        "word": "fructose"
+      },
+      "reason": "fructose 和 sucrose 都是糖类专名，候选词条定义与例句都确认其为 sugar 的一种，和当前词条构成稳定的同类词关系。",
+      "source": "llm"
+    },
+    {
+      "type": "same_category",
+      "target": {
+        "category": "daily",
+        "file": "maltose.json",
+        "word": "maltose"
+      },
+      "reason": "maltose 与 sucrose 同为以 -ose 结尾的具体糖名，但这里不是基于词形，而是基于定义和共享例句中“都是糖的形式”的明确语义归类。",
+      "source": "llm"
+    },
+    {
+      "type": "same_category",
+      "target": {
+        "category": "daily",
+        "file": "lactose.json",
+        "word": "lactose"
+      },
+      "reason": "lactose 的定义明确为乳糖，例句也与 sucrose 一起被归入 sugar forms；两者同属糖类词汇，具有较好的横向学习价值。",
+      "source": "llm"
+    },
+    {
+      "type": "same_category",
+      "target": {
+        "category": "daily",
+        "file": "dextrose.json",
+        "word": "dextrose"
+      },
+      "reason": "dextrose 词条定义说明它是一种单糖，例句中又与 sucrose 并列为糖的形式，因此可建立同类词关系，帮助补全糖类词网。",
+      "source": "llm"
     }
   ]
 }

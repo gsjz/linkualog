@@ -100,5 +100,17 @@
       ],
       "missing_points": []
     }
+  ],
+  "relations": [
+    {
+      "type": "same_category",
+      "target": {
+        "category": "daily",
+        "file": "sucrose.json",
+        "word": "sucrose"
+      },
+      "reason": "dextrose 词条定义说明它是一种单糖，例句中又与 sucrose 并列为糖的形式，因此可建立同类词关系，帮助补全糖类词网。",
+      "source": "llm"
+    }
   ]
 }
