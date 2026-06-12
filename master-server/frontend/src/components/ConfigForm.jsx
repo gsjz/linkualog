@@ -6,7 +6,9 @@ const DEFAULT_PROVIDER = 'https://dashscope.aliyuncs.com/compatible-mode/v1';
 const DEFAULT_MODEL = 'qwen3.5-flash';
 const DEFAULT_UI_CONFIG = {
   defaultFoldedKeys: 'extracted_text,bbox',
+  vocabWorkspaceAutoLlmOnOpen: true,
 };
+const VOCAB_WORKSPACE_AUTO_LLM_KEY = 'vocabWorkspaceAutoLlmOnOpen';
 const PAGES = [
   { id: 'llm', label: 'API' },
   { id: 'review', label: '参数' },
@@ -16,6 +18,7 @@ const PAGES = [
 function readLocalUiConfig() {
   return {
     defaultFoldedKeys: localStorage.getItem('defaultFoldedKeys') ?? DEFAULT_UI_CONFIG.defaultFoldedKeys,
+    vocabWorkspaceAutoLlmOnOpen: localStorage.getItem(VOCAB_WORKSPACE_AUTO_LLM_KEY) !== '0',
   };
 }
 
@@ -153,6 +156,7 @@ export default function ConfigForm({ onClose }) {
       const data = await saveConfig(payload);
 
       localStorage.setItem('defaultFoldedKeys', uiConfig.defaultFoldedKeys);
+      localStorage.setItem(VOCAB_WORKSPACE_AUTO_LLM_KEY, uiConfig.vocabWorkspaceAutoLlmOnOpen ? '1' : '0');
       window.dispatchEvent(new Event('config-updated'));
 
       setConfig((prev) => ({
@@ -196,6 +200,7 @@ export default function ConfigForm({ onClose }) {
       const nextUiConfig = { ...DEFAULT_UI_CONFIG };
 
       localStorage.setItem('defaultFoldedKeys', nextUiConfig.defaultFoldedKeys);
+      localStorage.setItem(VOCAB_WORKSPACE_AUTO_LLM_KEY, nextUiConfig.vocabWorkspaceAutoLlmOnOpen ? '1' : '0');
       setUiConfig(nextUiConfig);
 
       setConfig((prev) => ({
@@ -355,6 +360,15 @@ export default function ConfigForm({ onClose }) {
                     style={inputStyle(false)}
                     disabled={saving || resetting}
                   />
+                </label>
+                <label className="config-inline-check">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(uiConfig.vocabWorkspaceAutoLlmOnOpen)}
+                    onChange={(e) => setUiConfig((prev) => ({ ...prev, vocabWorkspaceAutoLlmOnOpen: e.target.checked }))}
+                    disabled={saving || resetting}
+                  />
+                  打开生词本编辑/连接面板时自动生成 LLM 建议
                 </label>
                 <div className="config-info-box">
                   这一页保存的是浏览器本地界面偏好，立即生效。

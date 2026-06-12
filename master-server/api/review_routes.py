@@ -133,6 +133,7 @@ class FileRefineRequest(BaseModel):
     data: dict | None = None
     use_cache: bool = True
     refresh_cache: bool = False
+    custom_prompt: str = ""
 
 
 class FileRefinePrefetchRequest(BaseModel):
@@ -148,6 +149,7 @@ class RelationSuggestRequest(BaseModel):
     data: dict | None = None
     limit: int = 12
     candidate_limit: int = 72
+    custom_prompt: str = ""
 
 
 class ReviewSuggestRequest(BaseModel):
@@ -2201,6 +2203,7 @@ def _build_file_refine_llm_result(
     rule_suggestions: list[dict],
     *,
     include_llm: bool,
+    custom_prompt: str = "",
 ) -> tuple[dict | None, str | None]:
     llm = None
     llm_error = None
@@ -2213,6 +2216,7 @@ def _build_file_refine_llm_result(
                 definitions=payload_for_analysis.get("definitions", []),
                 examples=payload_for_analysis.get("examples", []),
                 rule_suggestions=rule_suggestions,
+                custom_prompt=custom_prompt,
             )
             logger.info(
                 "[refine_file] llm analyze success file=%s def_items=%s ex_items=%s",
@@ -2335,6 +2339,7 @@ def _build_file_refine_response(
     include_llm: bool,
     use_cache: bool,
     refresh_cache: bool,
+    custom_prompt: str = "",
 ) -> dict:
     heuristic = analyze_file_cleaning_suggestions(file_name, payload_for_analysis)
     logger.info(
@@ -2352,7 +2357,8 @@ def _build_file_refine_response(
     rule_suggestions.extend(entry_rule_hints)
 
     cache_meta = build_refine_cache_key(category, file_name, payload_for_analysis)
-    can_use_cache = bool(include_llm and use_cache and analyzed_from == "file")
+    normalized_custom_prompt = str(custom_prompt or "").strip()
+    can_use_cache = bool(include_llm and use_cache and analyzed_from == "file" and not normalized_custom_prompt)
     cache_status = "disabled"
     llm = None
     llm_error = None
@@ -2377,6 +2383,7 @@ def _build_file_refine_response(
             heuristic,
             rule_suggestions,
             include_llm=include_llm,
+            custom_prompt=normalized_custom_prompt,
         )
         if can_use_cache and isinstance(llm, dict) and not llm_error:
             save_refine_cache(cache_meta, llm, llm_error)
@@ -2889,6 +2896,7 @@ def suggest_vocab_relations(req: RelationSuggestRequest):
                     vocabulary_index=vocabulary_index,
                     existing_relations=existing_relations,
                     limit=5,
+                    custom_prompt=req.custom_prompt,
                 )
                 selected_candidate_refs = _candidate_refs_from_words(
                     llm_selection.get("selected", {}) if isinstance(llm_selection, dict) else {},
@@ -2927,6 +2935,7 @@ def suggest_vocab_relations(req: RelationSuggestRequest):
                     candidates=llm_candidates,
                     existing_relations=existing_relations,
                     limit=normalized_limit,
+                    custom_prompt=req.custom_prompt,
                 )
                 logger.info(
                     "[relations_suggest] llm confirm success file=%s suggestion_count=%s",
@@ -3656,6 +3665,7 @@ def refine_file(req: FileRefineRequest):
             include_llm=req.include_llm,
             use_cache=req.use_cache,
             refresh_cache=req.refresh_cache,
+            custom_prompt=req.custom_prompt,
         )
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc))

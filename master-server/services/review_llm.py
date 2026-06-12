@@ -731,6 +731,16 @@ def _safe_string(value) -> str:
     return str(value).strip()
 
 
+def _normalize_custom_prompt(value, limit: int = 1200) -> str:
+    text = _safe_string(value)
+    if not text:
+        return ""
+    text = re.sub(r"\r\n?", "\n", text)
+    text = re.sub(r"[ \t]+", " ", text)
+    text = re.sub(r"\n{3,}", "\n\n", text).strip()
+    return text[: max(0, int(limit or 1200))]
+
+
 def _parse_non_negative_int(value) -> int | None:
     try:
         number = int(value)
@@ -1534,8 +1544,11 @@ def select_vocab_relation_candidates_with_llm(
     vocabulary_index: dict,
     existing_relations: list[dict] | None = None,
     limit: int = 5,
+    custom_prompt: str = "",
 ) -> dict:
     normalized_limit = max(1, min(int(limit or 5), 10))
+    custom_context = _normalize_custom_prompt(custom_prompt, limit=1200)
+    custom_prompt_line = f"本次用户补充偏好: {custom_context}\n" if custom_context else ""
     compact_source = _compact_relation_source(source)
     compact_existing = []
     for relation in existing_relations if isinstance(existing_relations, list) else []:
@@ -1563,6 +1576,7 @@ def select_vocab_relation_candidates_with_llm(
         '输出结构：{"candidates":[{"category":"daily","word":"hazard a guess","reason":"..."}],"notes":["..."]}'
         f"当前词条: {json.dumps(compact_source, ensure_ascii=False, separators=(',', ':'))}\n"
         f"existing_relations: {json.dumps(compact_existing, ensure_ascii=False, separators=(',', ':'))}\n"
+        f"{custom_prompt_line}"
         f"vocabulary_index: {json.dumps(vocabulary_index, ensure_ascii=False, separators=(',', ':'))}"
     )
     result = _call_llm_json(
@@ -1584,8 +1598,11 @@ def suggest_vocab_relations_with_llm(
     candidates: list[dict],
     existing_relations: list[dict] | None = None,
     limit: int = 12,
+    custom_prompt: str = "",
 ) -> dict:
     normalized_limit = max(1, min(int(limit or 12), 30))
+    custom_context = _normalize_custom_prompt(custom_prompt, limit=1200)
+    custom_prompt_line = f"本次用户补充偏好: {custom_context}\n" if custom_context else ""
     compact_candidates = []
     for candidate in candidates if isinstance(candidates, list) else []:
         if not isinstance(candidate, dict):
@@ -1641,6 +1658,7 @@ def suggest_vocab_relations_with_llm(
         f"最多返回 {normalized_limit} 条 suggestions。"
         f"当前词条: {json.dumps(compact_source, ensure_ascii=False)}\n"
         f"existing_relations: {json.dumps(compact_existing, ensure_ascii=False)}\n"
+        f"{custom_prompt_line}"
         f"候选词条: {json.dumps(compact_candidates[: max(normalized_limit * 6, 18)], ensure_ascii=False)}"
     )
     result = _call_llm_json(
@@ -1775,8 +1793,11 @@ def suggest_file_cleaning_with_llm(
     definitions: list[str],
     examples: list[dict],
     rule_suggestions: list[dict] | None = None,
+    custom_prompt: str = "",
 ) -> dict:
     rule_context = _compact_rule_suggestions_for_prompt(rule_suggestions)
+    custom_context = _normalize_custom_prompt(custom_prompt, limit=1200)
+    custom_prompt_line = f"本次用户补充偏好: {custom_context}\n" if custom_context else ""
     prompt = (
         "你是英文词库数据治理助手。"
         "请只输出 JSON，不要输出 markdown。"
@@ -1826,6 +1847,7 @@ def suggest_file_cleaning_with_llm(
         f"词条: {word}\n"
         f"definitions: {json.dumps(definitions, ensure_ascii=False)}\n"
         f"examples: {json.dumps(examples, ensure_ascii=False)}\n"
+        f"{custom_prompt_line}"
         f"规则预检: {json.dumps(rule_context, ensure_ascii=False)}"
     )
 

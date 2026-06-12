@@ -208,11 +208,56 @@ function normalizeManualEntry(entryLike) {
   const file = normalizeFilename(entryLike?.file || entryLike?.filename || entryLike?.key || entryLike?.word);
   const fallbackWord = file.replace(/\.json$/i, '');
   return {
+    category: normalizeCategoryValue(entryLike?.category || entryLike?.dir || entryLike?.folder || ''),
     file,
     word: collapseWhitespace(entryLike?.word || fallbackWord) || fallbackWord,
     marked: Boolean(entryLike?.marked),
     needsProcessing: Boolean(entryLike?.needsProcessing || entryLike?.needs_processing),
   };
+}
+
+function normalizeVocabularyListResult(res) {
+  return (Array.isArray(res?.entries) && res.entries.length
+    ? res.entries
+    : (res?.files || []).map((item) => ({ file: item, word: filenameToWord(item), marked: false })))
+    .map((item) => normalizeManualEntry(item))
+    .filter((item) => item.file);
+}
+
+function withEntryCategory(entries, category) {
+  const normalizedCategory = normalizeCategoryValue(category);
+  return (Array.isArray(entries) ? entries : []).map((item) => ({
+    ...item,
+    category: normalizeCategoryValue(item?.category || normalizedCategory),
+  }));
+}
+
+function relationLookupKey(value) {
+  return collapseWhitespace(value).toLowerCase();
+}
+
+function isSameVocabularyFile(leftCategory, leftFile, rightCategory, rightFile) {
+  return normalizeCategoryValue(leftCategory) === normalizeCategoryValue(rightCategory)
+    && normalizeFilename(leftFile).toLowerCase() === normalizeFilename(rightFile).toLowerCase();
+}
+
+function isExactVocabularyEntryMatch(entry, value) {
+  const query = relationLookupKey(String(value || '').replace(/\.json$/i, ''));
+  if (!query) return false;
+  const word = relationLookupKey(entry?.word);
+  const file = normalizeFilename(entry?.file).toLowerCase();
+  const fileWord = relationLookupKey(filenameToWord(entry?.file));
+  const queryFile = normalizeFilename(value).toLowerCase();
+  return word === query || fileWord === query || file === queryFile;
+}
+
+function isVocabularyEntrySearchMatch(entry, queryValue) {
+  const query = relationLookupKey(queryValue);
+  if (!query) return false;
+  const word = relationLookupKey(entry?.word);
+  const file = normalizeFilename(entry?.file).toLowerCase();
+  const fileWord = relationLookupKey(filenameToWord(entry?.file));
+  return word.includes(query) || fileWord.includes(query) || file.includes(query);
 }
 
 const VOCAB_RELATION_KEYS = [
@@ -1761,27 +1806,80 @@ function ConnectionPanel({
   saving,
   categories,
   entries,
+  entriesByCategory,
+  entriesLoadingByCategory,
   currentCategory,
   currentFilename,
   relationSuggestions,
   relationSuggestLoading,
   relationSuggestError,
   relationSuggestMeta,
+  relationSuggestPrompt,
+  onRelationSuggestPromptChange,
   onRunRelationSuggest,
   onApplyRelationSuggestion,
   onRelationChange,
+  onRelationTargetSelect,
   onRelationAdd,
   onRelationRemove,
   onReset,
   onSave,
+  onLoadEntriesForCategory,
 }) {
   const relations = normalizeDraftRelationsForEdit(draft, currentCategory, currentFilename, { includeIncomplete: true });
-  const relationOptions = entries.map((item) => item.word || filenameToWord(item.file)).filter(Boolean);
+  const categorizedEntries = useMemo(() => {
+    const next = {};
+    Object.entries(entriesByCategory || {}).forEach(([categoryName, list]) => {
+      const normalizedCategory = normalizeCategoryValue(categoryName);
+      if (normalizedCategory) {
+        next[normalizedCategory] = withEntryCategory(list, normalizedCategory);
+      }
+    });
+    const normalizedCurrentCategory = normalizeCategoryValue(currentCategory);
+    if (normalizedCurrentCategory) {
+      next[normalizedCurrentCategory] = withEntryCategory(entries, normalizedCurrentCategory);
+    }
+    return next;
+  }, [currentCategory, entries, entriesByCategory]);
+  const allRelationEntries = useMemo(() => {
+    const deduped = new Map();
+    Object.entries(categorizedEntries).forEach(([categoryName, list]) => {
+      withEntryCategory(list, categoryName).forEach((item) => {
+        const id = `${normalizeCategoryValue(item.category || categoryName)}/${normalizeFilename(item.file).toLowerCase()}`;
+        if (!deduped.has(id)) {
+          deduped.set(id, {
+            ...item,
+            category: normalizeCategoryValue(item.category || categoryName),
+          });
+        }
+      });
+    });
+    return [...deduped.values()].sort((left, right) => (
+      normalizeCategoryValue(left.category).localeCompare(normalizeCategoryValue(right.category), undefined, { sensitivity: 'base' })
+      || collapseWhitespace(left.word).localeCompare(collapseWhitespace(right.word), undefined, { sensitivity: 'base' })
+      || normalizeFilename(left.file).localeCompare(normalizeFilename(right.file), undefined, { sensitivity: 'base' })
+    ));
+  }, [categorizedEntries]);
+  const categoryLoadKey = categories.map((item) => normalizeCategoryValue(item)).filter(Boolean).sort().join('|');
   const suggestions = Array.isArray(relationSuggestions) ? relationSuggestions : [];
   const candidateCount = Number(relationSuggestMeta?.candidate_count || 0);
   const skippedCount = Array.isArray(relationSuggestMeta?.skipped)
     ? relationSuggestMeta.skipped.length
     : Number(relationSuggestMeta?.skipped || 0);
+
+  useEffect(() => {
+    if (!draft) return;
+    if (typeof onLoadEntriesForCategory !== 'function') return;
+    categories
+      .map((item) => normalizeCategoryValue(item))
+      .filter(Boolean)
+      .forEach((categoryName) => {
+        if (Array.isArray(categorizedEntries[categoryName]) || entriesLoadingByCategory?.[categoryName]) return;
+        onLoadEntriesForCategory(categoryName).catch((error) => {
+          console.error('加载连接候选词表失败', error);
+        });
+      });
+  }, [categorizedEntries, categoryLoadKey, categories, draft, entriesLoadingByCategory, onLoadEntriesForCategory]);
 
   if (!draft) {
     return (
@@ -1837,6 +1935,17 @@ function ConnectionPanel({
             </div>
           </div>
 
+          <label className="llm-custom-prompt-field">
+            <span>本次连边提示词</span>
+            <textarea
+              className="field textarea llm-custom-prompt-input"
+              value={relationSuggestPrompt}
+              onChange={(event) => onRelationSuggestPromptChange(event.target.value)}
+              placeholder="例如：优先找同义/反义关系；忽略只是同一主题但语义距离较远的词。"
+              disabled={relationSuggestLoading}
+            />
+          </label>
+
           {relationSuggestError ? <div className="error">{relationSuggestError}</div> : null}
 
           <div className="relation-suggestion-list">
@@ -1883,7 +1992,60 @@ function ConnectionPanel({
             {relations.length === 0 ? <div className="empty">暂无连接。可以手动新增，也可以让 LLM 给出候选边。</div> : null}
             {relations.map((relation, index) => {
               const target = relation.target || {};
-              const relationPath = `${target.category || currentCategory || ''}/${target.file || normalizeWordFilename(target.word) || ''}`;
+              const targetCategory = normalizeCategoryValue(target.category || currentCategory || '');
+              const targetWordValue = target.word || filenameToWord(target.file);
+              const targetFileValue = target.file || normalizeWordFilename(target.word);
+              const targetCategoryEntries = categorizedEntries[targetCategory] || [];
+              const targetCategoryLoading = Boolean(entriesLoadingByCategory?.[targetCategory]);
+              const targetSameCurrent = Boolean(targetCategory && targetFileValue) && isSameVocabularyFile(
+                targetCategory,
+                targetFileValue,
+                currentCategory,
+                currentFilename,
+              );
+              const targetExactMatch = targetWordValue
+                ? targetCategoryEntries.find((item) => (
+                    !isSameVocabularyFile(item.category || targetCategory, item.file, currentCategory, currentFilename)
+                    && isExactVocabularyEntryMatch(item, targetWordValue)
+                  ))
+                : null;
+              const otherExactMatches = targetWordValue
+                ? allRelationEntries.filter((item) => (
+                    !isSameVocabularyFile(item.category, item.file, currentCategory, currentFilename)
+                    && !isSameVocabularyFile(item.category, item.file, targetCategory, targetExactMatch?.file || targetFileValue)
+                    && isExactVocabularyEntryMatch(item, targetWordValue)
+                  )).slice(0, 8)
+                : [];
+              const targetSuggestions = targetCategoryEntries
+                .filter((item) => !isSameVocabularyFile(item.category || targetCategory, item.file, currentCategory, currentFilename))
+                .filter((item) => !targetWordValue || isVocabularyEntrySearchMatch(item, targetWordValue))
+                .slice(0, 32);
+              const datalistSuggestions = [...targetSuggestions, ...otherExactMatches]
+                .reduce((list, item) => {
+                  const id = `${normalizeCategoryValue(item.category || targetCategory)}/${normalizeFilename(item.file).toLowerCase()}`;
+                  if (list.some((existing) => existing.id === id)) return list;
+                  list.push({ id, item });
+                  return list;
+                }, [])
+                .slice(0, 40);
+              const datalistId = `relation-target-words-${index}`;
+              const relationPath = `${targetCategory || ''}/${targetFileValue || ''}`;
+
+              const renderTargetMatchButton = (item, className = '') => (
+                <button
+                  key={`${normalizeCategoryValue(item.category || targetCategory)}-${item.file}`}
+                  type="button"
+                  className={`relation-target-match-chip${className ? ` ${className}` : ''}`}
+                  onClick={() => onRelationTargetSelect(index, {
+                    ...item,
+                    category: normalizeCategoryValue(item.category || targetCategory),
+                  })}
+                >
+                  <strong>{item.word || filenameToWord(item.file)}</strong>
+                  <span>{formatCategoryLabel(item.category || targetCategory)} / {item.file}</span>
+                </button>
+              );
+
               return (
                 <div className="relation-editor-card" key={`relation-${index}`}>
                   <div className="relation-card-head">
@@ -1923,11 +2085,36 @@ function ConnectionPanel({
                       目标单词
                       <input
                         className="field"
-                        value={target.word || filenameToWord(target.file)}
+                        value={targetWordValue}
                         onChange={(event) => onRelationChange(index, 'target.word', event.target.value)}
-                        list="relation-target-words"
+                        list={datalistId}
                         placeholder="hazard a guess"
                       />
+                      <datalist id={datalistId}>
+                        {datalistSuggestions.map(({ id, item }) => (
+                          <option
+                            key={id}
+                            value={item.word || filenameToWord(item.file)}
+                            label={`${formatCategoryLabel(item.category || targetCategory)} / ${item.file}`}
+                          />
+                        ))}
+                      </datalist>
+                      <div className="relation-target-hints">
+                        {targetCategoryLoading ? <span className="muted">加载 {formatCategoryLabel(targetCategory)} 词表...</span> : null}
+                        {targetSameCurrent ? <span className="manual-merge-warning">目标不能是当前词条。</span> : null}
+                        {targetExactMatch ? (
+                          <div className="relation-target-match-row">
+                            <span>已有目标</span>
+                            {renderTargetMatchButton(targetExactMatch, 'is-primary')}
+                          </div>
+                        ) : null}
+                        {!targetExactMatch && otherExactMatches.length ? (
+                          <div className="relation-target-match-row">
+                            <span>其它目录已有</span>
+                            {otherExactMatches.map((item) => renderTargetMatchButton(item))}
+                          </div>
+                        ) : null}
+                      </div>
                     </label>
                     <label>
                       目标文件
@@ -1958,9 +2145,6 @@ function ConnectionPanel({
               );
             })}
           </div>
-          <datalist id="relation-target-words">
-            {relationOptions.map((item) => <option key={item} value={item} />)}
-          </datalist>
         </section>
 
         <div className="editor-footer">
@@ -1976,6 +2160,8 @@ function OrganizePanel({
   cleanData,
   draft,
   loading,
+  customPrompt,
+  onCustomPromptChange,
   onRun,
   onApplyLlmSuggestion,
   onApplyEntryRenameAndSave,
@@ -2339,6 +2525,16 @@ function OrganizePanel({
         <div className="organize-toolbar">
           {renderOrganizeActions()}
         </div>
+        <label className="llm-custom-prompt-field">
+          <span>本次整理提示词</span>
+          <textarea
+            className="field textarea llm-custom-prompt-input"
+            value={customPrompt}
+            onChange={(event) => onCustomPromptChange(event.target.value)}
+            placeholder="例如：更保守地保留原例句；只在释义明显缺失时补充，不要主动重写。"
+            disabled={loading}
+          />
+        </label>
         <div className="organize-summary-strip" aria-label="整理结果摘要">
           {renderSummaryItem('entry', '词条', llmEntry.length, '重命名')}
           {renderSummaryItem('definition', '释义', llmDefinitions.length, '可直接应用')}
@@ -2932,6 +3128,8 @@ export default function App({
   const [categories, setCategories] = useState([]);
   const [category, setCategory] = useState(() => normalizeCategoryValue(localStorage.getItem('defaultCategory') || ''));
   const [entries, setEntries] = useState([]);
+  const [entriesByCategory, setEntriesByCategory] = useState({});
+  const [entriesLoadingByCategory, setEntriesLoadingByCategory] = useState({});
   const [filename, setFilename] = useState('');
   const [fileQuery, setFileQuery] = useState('');
   const [entryFilter, setEntryFilter] = useState(() => (overlayMode ? 'needs_processing' : 'marked'));
@@ -2953,9 +3151,11 @@ export default function App({
 
   const [cleanData, setCleanData] = useState(null);
   const [reviewData, setReviewData] = useState(null);
+  const [organizeCustomPrompt, setOrganizeCustomPrompt] = useState('');
   const [relationSuggestions, setRelationSuggestions] = useState([]);
   const [relationSuggestMeta, setRelationSuggestMeta] = useState(null);
   const [relationSuggestError, setRelationSuggestError] = useState('');
+  const [relationSuggestPrompt, setRelationSuggestPrompt] = useState('');
 
   const [reviewDate, setReviewDate] = useState(TODAY);
   const [editorSyncToken, setEditorSyncToken] = useState(0);
@@ -2975,6 +3175,7 @@ export default function App({
   const [error, setError] = useState('');
   const [ttsVoiceLabel, setTtsVoiceLabel] = useState('');
   const pendingSelectionRef = useRef({ category: '', filename: '' });
+  const entriesFetchByCategoryRef = useRef(new Map());
   const manualMergeTargetTokenRef = useRef(0);
   const speechRequestRef = useRef(0);
   const recommendPreferenceHydratedRef = useRef(false);
@@ -2985,6 +3186,7 @@ export default function App({
   const organizePanelRef = useRef(null);
   const reviewPanelRef = useRef(null);
   const handledAutoRefineTokenRef = useRef('');
+  const handledAutoRelationSuggestTokenRef = useRef('');
 
   const deferredFileQuery = useDeferredValue(fileQuery);
   const hasSelection = Boolean(category && filename);
@@ -3038,6 +3240,49 @@ export default function App({
     setNotice('');
     setError(message);
   };
+
+  const cacheEntriesForCategory = useCallback((nextCategory, nextEntries) => {
+    const normalizedCategory = normalizeCategoryValue(nextCategory);
+    if (!normalizedCategory) return [];
+    const normalizedEntries = withEntryCategory(nextEntries, normalizedCategory);
+    setEntriesByCategory((current) => ({
+      ...current,
+      [normalizedCategory]: normalizedEntries,
+    }));
+    return normalizedEntries;
+  }, []);
+
+  const getEntriesForCategory = useCallback(async (targetCategory) => {
+    const normalizedCategory = normalizeCategoryValue(targetCategory);
+    if (!normalizedCategory) return [];
+    if (normalizedCategory === apiCategory && entries.length) {
+      return cacheEntriesForCategory(normalizedCategory, entries);
+    }
+
+    const cached = entriesByCategory[normalizedCategory];
+    if (Array.isArray(cached)) return cached;
+
+    const inFlight = entriesFetchByCategoryRef.current.get(normalizedCategory);
+    if (inFlight) return inFlight;
+
+    setEntriesLoadingByCategory((current) => ({
+      ...current,
+      [normalizedCategory]: true,
+    }));
+
+    const request = fetchFiles(normalizedCategory)
+      .then((res) => cacheEntriesForCategory(normalizedCategory, normalizeVocabularyListResult(res)))
+      .finally(() => {
+        entriesFetchByCategoryRef.current.delete(normalizedCategory);
+        setEntriesLoadingByCategory((current) => ({
+          ...current,
+          [normalizedCategory]: false,
+        }));
+      });
+
+    entriesFetchByCategoryRef.current.set(normalizedCategory, request);
+    return request;
+  }, [apiCategory, cacheEntriesForCategory, entries, entriesByCategory]);
 
   const hydrateDetailAndDraft = (data) => {
     const normalized = deepClone(data || null);
@@ -3322,11 +3567,7 @@ export default function App({
     fetchFiles(apiCategory)
       .then((res) => {
         if (cancelled) return;
-        const list = (Array.isArray(res?.entries) && res.entries.length
-          ? res.entries
-          : (res.files || []).map((item) => ({ file: item, word: item.replace(/\.json$/i, ''), marked: false })))
-          .map((item) => normalizeManualEntry(item))
-          .filter((item) => item.file);
+        const list = cacheEntriesForCategory(apiCategory, normalizeVocabularyListResult(res));
         const filenames = list.map((item) => item.file);
         let nextFilename = '';
         setEntries(list);
@@ -3351,7 +3592,7 @@ export default function App({
     return () => {
       cancelled = true;
     };
-  }, [apiCategory, category]);
+  }, [apiCategory, cacheEntriesForCategory, category]);
 
   useEffect(() => {
     if (mode !== 'recommend' || !categories.length) return undefined;
@@ -3518,11 +3759,7 @@ export default function App({
     setLoadingFiles(true);
     try {
       const res = await fetchFiles(apiCategory);
-      const list = (Array.isArray(res?.entries) && res.entries.length
-        ? res.entries
-        : (res.files || []).map((item) => ({ file: item, word: item.replace(/\.json$/i, ''), marked: false })))
-        .map((item) => normalizeManualEntry(item))
-        .filter((item) => item.file);
+      const list = cacheEntriesForCategory(apiCategory, normalizeVocabularyListResult(res));
       const filenames = list.map((item) => item.file);
       setEntries(list);
 
@@ -3564,7 +3801,11 @@ export default function App({
         filename,
         ORGANIZE_CURRENT_WORD_INCLUDE_LLM,
         analysisDraft,
-        { useCache: !analysisDraft, refreshCache: shouldRefreshCache },
+        {
+          useCache: !analysisDraft,
+          refreshCache: shouldRefreshCache,
+          customPrompt: organizeCustomPrompt,
+        },
       );
       setCleanData(res);
       if (res?.analyzed_from === 'draft') {
@@ -3579,7 +3820,7 @@ export default function App({
     } finally {
       setLoadingClean(false);
     }
-  }, [apiCategory, cleanData?.cache?.status, draft, draftDirty, filename, hasSelection, sanitizeCurrentDraft]);
+  }, [apiCategory, cleanData?.cache?.status, draft, draftDirty, filename, hasSelection, organizeCustomPrompt, sanitizeCurrentDraft]);
 
   const handleRelationChange = (index, field, value) => {
     updateDraft((base) => {
@@ -3587,6 +3828,8 @@ export default function App({
       if (index < 0 || index >= relations.length) return { ...base, relations };
       const nextRelation = deepClone(relations[index]) || createEmptyRelation(apiCategory);
       const target = { ...(nextRelation.target || {}) };
+      const targetCategory = normalizeCategoryValue(target.category || apiCategory);
+      const targetEntries = entriesByCategory[targetCategory] || (targetCategory === apiCategory ? entries : []);
 
       if (field === 'type') {
         nextRelation.type = value;
@@ -3594,15 +3837,19 @@ export default function App({
         nextRelation.reason = value;
       } else if (field === 'target.category') {
         target.category = value;
+        const nextCategory = normalizeCategoryValue(value || apiCategory);
+        const nextEntries = entriesByCategory[nextCategory] || (nextCategory === apiCategory ? entries : []);
+        const matched = nextEntries.find((item) => isExactVocabularyEntryMatch(item, target.word || target.file));
+        if (matched) {
+          target.file = matched.file;
+          target.word = matched.word || target.word || filenameToWord(matched.file);
+        }
       } else if (field === 'target.word') {
         const word = collapseWhitespace(value);
         target.word = word;
-        const matched = entries.find((item) => (
-          collapseWhitespace(item.word).toLowerCase() === word.toLowerCase()
-          || item.file.toLowerCase() === normalizeFilename(word).toLowerCase()
-        ));
-        if (matched && (!target.category || target.category === apiCategory)) {
-          target.category = apiCategory;
+        const matched = targetEntries.find((item) => isExactVocabularyEntryMatch(item, word));
+        if (matched) {
+          target.category = targetCategory || apiCategory;
           target.file = matched.file;
           target.word = matched.word || word;
         } else if (!target.file || target.file === normalizeWordFilename(relations[index]?.target?.word)) {
@@ -3619,6 +3866,21 @@ export default function App({
         category: collapseWhitespace(target.category || apiCategory),
         file: normalizeFilename(target.file || normalizeWordFilename(target.word)),
         word: collapseWhitespace(target.word || filenameToWord(target.file)),
+      };
+      relations[index] = nextRelation;
+      return { ...base, relations };
+    });
+  };
+
+  const handleRelationTargetSelect = (index, entry) => {
+    updateDraft((base) => {
+      const relations = normalizeDraftRelationsForEdit(base, apiCategory, filename, { includeIncomplete: true });
+      if (index < 0 || index >= relations.length || !entry?.file) return { ...base, relations };
+      const nextRelation = deepClone(relations[index]) || createEmptyRelation(apiCategory);
+      nextRelation.target = {
+        category: normalizeCategoryValue(entry.category || apiCategory),
+        file: normalizeFilename(entry.file),
+        word: collapseWhitespace(entry.word || filenameToWord(entry.file)),
       };
       relations[index] = nextRelation;
       return { ...base, relations };
@@ -3678,7 +3940,9 @@ export default function App({
     setRelationSuggestMeta(null);
     try {
       const payload = sanitizeCurrentDraft(draft, filename.replace(/\.json$/i, ''));
-      const res = await suggestVocabRelations(apiCategory, filename, payload, 12);
+      const res = await suggestVocabRelations(apiCategory, filename, payload, 12, {
+        customPrompt: relationSuggestPrompt,
+      });
       setRelationSuggestions(Array.isArray(res?.suggestions) ? res.suggestions : []);
       setRelationSuggestMeta(res?.meta || null);
       if (res?.llm_error) {
@@ -3698,6 +3962,10 @@ export default function App({
       setLoadingRelationSuggest(false);
     }
   };
+
+  const runAutoRelationSuggest = useEffectEvent(() => {
+    void handleRunRelationSuggest();
+  });
 
   const handleApplyLlmSuggestion = (kind, item) => {
     if (!draft || !item) return;
@@ -3807,12 +4075,7 @@ export default function App({
       setError('');
       let finalTargetExists = Boolean(targetExists);
       if (finalTargetCategory !== apiCategory) {
-        const res = await fetchFiles(finalTargetCategory);
-        const list = (Array.isArray(res?.entries) && res.entries.length
-          ? res.entries
-          : (res.files || []).map((item) => ({ file: item, word: filenameToWord(item), marked: false })))
-          .map((item) => normalizeManualEntry(item))
-          .filter((item) => item.file);
+        const list = await getEntriesForCategory(finalTargetCategory);
         finalTargetExists = list.some((item) => (
           normalizeFilename(item.file).toLowerCase() === finalTargetFilename.toLowerCase()
         ));
@@ -4146,6 +4409,16 @@ export default function App({
     void handleClean();
   }, [draft, handleClean, hasSelection, launchRequest?.autoRefineToken, loadingClean, overlayMode]);
 
+  useEffect(() => {
+    const token = String(launchRequest?.autoRelationSuggestToken || '').trim();
+    if (!overlayMode || !token || !hasSelection || !draft || loadingRelationSuggest) return;
+
+    if (handledAutoRelationSuggestTokenRef.current === token) return;
+    handledAutoRelationSuggestTokenRef.current = token;
+
+    runAutoRelationSuggest();
+  }, [draft, hasSelection, launchRequest?.autoRelationSuggestToken, loadingRelationSuggest, overlayMode]);
+
   const scrollToFocusPanel = useEffectEvent((focus) => {
     const normalizedFocus = String(focus || '').trim().toLowerCase();
     const targetRef = normalizedFocus === 'review' && !overlayMode
@@ -4397,19 +4670,25 @@ export default function App({
       saving={savingDraft}
       categories={categories}
       entries={entries}
+      entriesByCategory={entriesByCategory}
+      entriesLoadingByCategory={entriesLoadingByCategory}
       currentCategory={apiCategory}
       currentFilename={filename}
       relationSuggestions={relationSuggestions}
       relationSuggestLoading={loadingRelationSuggest}
       relationSuggestError={relationSuggestError}
       relationSuggestMeta={relationSuggestMeta}
+      relationSuggestPrompt={relationSuggestPrompt}
+      onRelationSuggestPromptChange={setRelationSuggestPrompt}
       onRunRelationSuggest={handleRunRelationSuggest}
       onApplyRelationSuggestion={handleApplyRelationSuggestion}
       onRelationChange={handleRelationChange}
+      onRelationTargetSelect={handleRelationTargetSelect}
       onRelationAdd={handleRelationAdd}
       onRelationRemove={handleRelationRemove}
       onReset={handleDraftReset}
       onSave={handleDraftSave}
+      onLoadEntriesForCategory={getEntriesForCategory}
     />
   );
 
@@ -4421,6 +4700,8 @@ export default function App({
           cleanData={cleanData}
           draft={draft}
           loading={loadingClean}
+          customPrompt={organizeCustomPrompt}
+          onCustomPromptChange={setOrganizeCustomPrompt}
           onRun={handleClean}
           onApplyLlmSuggestion={handleApplyLlmSuggestion}
           onApplyEntryRenameAndSave={handleApplyEntryRenameAndSave}
@@ -4644,6 +4925,8 @@ export default function App({
                     cleanData={cleanData}
                     draft={draft}
                     loading={loadingClean}
+                    customPrompt={organizeCustomPrompt}
+                    onCustomPromptChange={setOrganizeCustomPrompt}
                     onRun={handleClean}
                     onApplyLlmSuggestion={handleApplyLlmSuggestion}
                     onApplyEntryRenameAndSave={handleApplyEntryRenameAndSave}

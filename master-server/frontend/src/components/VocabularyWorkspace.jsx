@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import VocabularyReview from './VocabularyReview.jsx';
 import ReviewWorkspace from '../review/App.jsx';
@@ -32,6 +32,14 @@ const STUDY_MODE_OPTIONS = [
   { key: 'random', label: '随机', icon: 'shuffle' },
   { key: 'manual', label: '手动', icon: 'list' },
 ];
+
+const AUTO_LLM_STORAGE_KEY = 'vocabWorkspaceAutoLlmOnOpen';
+
+const getStoredAutoLlmOnOpen = () => (
+  localStorage.getItem(AUTO_LLM_STORAGE_KEY) !== '0'
+);
+
+const buildAutoLlmLaunchToken = () => `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
 function StudyModeSwitch({ mode, onChange }) {
   return (
@@ -91,7 +99,8 @@ export default function VocabularyWorkspace({
 }) {
   const [studyMode, setStudyMode] = useState('random');
   const [editorSurface, setEditorSurface] = useState('');
-  const [editorLaunchToken, setEditorLaunchToken] = useState(0);
+  const [autoLlmLaunchToken, setAutoLlmLaunchToken] = useState('');
+  const [autoLlmOnOpen, setAutoLlmOnOpen] = useState(getStoredAutoLlmOnOpen);
   const [reviewEntryUpdate, setReviewEntryUpdate] = useState(null);
   const [prefetchedRefineUpdate, setPrefetchedRefineUpdate] = useState(null);
   const [reviewToolbarControlsHost, setReviewToolbarControlsHost] = useState(null);
@@ -130,13 +139,24 @@ export default function VocabularyWorkspace({
     overlayLaunchRequest
       ? {
           ...overlayLaunchRequest,
-          autoRefineToken: editorSurface === 'editor' ? editorLaunchToken : '',
+          autoRefineToken: editorSurface === 'editor' ? autoLlmLaunchToken : '',
+          autoRelationSuggestToken: editorSurface === 'connection' ? autoLlmLaunchToken : '',
         }
       : null
-  ), [editorLaunchToken, editorSurface, overlayLaunchRequest]);
+  ), [autoLlmLaunchToken, editorSurface, overlayLaunchRequest]);
+
+  useEffect(() => {
+    const handleConfigUpdate = () => {
+      setAutoLlmOnOpen(getStoredAutoLlmOnOpen());
+    };
+
+    window.addEventListener('config-updated', handleConfigUpdate);
+    return () => window.removeEventListener('config-updated', handleConfigUpdate);
+  }, []);
+
   const openWorkspaceSurface = (surface = 'editor') => {
     if (!hasSelection) return;
-    setEditorLaunchToken((token) => token + 1);
+    setAutoLlmLaunchToken(autoLlmOnOpen ? buildAutoLlmLaunchToken() : '');
     setEditorSurface(surface);
   };
   const markRefineCached = useCallback((category, files) => {

@@ -155,6 +155,7 @@ export const runFileRefine = async (category, filename, includeLlm = true, data 
       data,
       use_cache: options?.useCache !== false,
       refresh_cache: Boolean(options?.refreshCache),
+      custom_prompt: String(options?.customPrompt || '').trim(),
     }),
   });
 };
@@ -186,7 +187,7 @@ export const saveVocabDetail = async (category, filename, data) => {
   });
 };
 
-export const suggestVocabRelations = async (category, filename, data = null, limit = 12) => {
+export const suggestVocabRelations = async (category, filename, data = null, limit = 12, options = {}) => {
   const finalCategory = requireCategory(category);
   return requestJson('/api/vocabulary/relations/suggest', {
     method: 'POST',
@@ -196,6 +197,7 @@ export const suggestVocabRelations = async (category, filename, data = null, lim
       filename,
       data,
       limit,
+      custom_prompt: String(options?.customPrompt || '').trim(),
     }),
   });
 };

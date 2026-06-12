@@ -512,11 +512,14 @@ class VocabularyRelationTests(unittest.TestCase):
                     category="daily",
                     filename="hazard.json",
                     limit=8,
+                    custom_prompt="优先固定短语，不要普通同主题词",
                 )
             )
 
         mocked_select.assert_called_once()
         mocked_confirm.assert_called_once()
+        self.assertEqual(mocked_select.call_args.kwargs["custom_prompt"], "优先固定短语，不要普通同主题词")
+        self.assertEqual(mocked_confirm.call_args.kwargs["custom_prompt"], "优先固定短语，不要普通同主题词")
         confirm_candidates = mocked_confirm.call_args.kwargs["candidates"]
         self.assertLessEqual(len(confirm_candidates), 5)
         self.assertTrue(any(item.get("data", {}).get("word") == "hazard a guess" for item in confirm_candidates))

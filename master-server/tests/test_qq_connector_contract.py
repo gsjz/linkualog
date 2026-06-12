@@ -1013,6 +1013,43 @@ class QQConnectorContractTests(unittest.IsolatedAsyncioTestCase):
             ],
         )
 
+    def test_refine_file_passes_custom_prompt_and_bypasses_cache(self):
+        category_dir = self.vocab_dir / "daily"
+        category_dir.mkdir(parents=True, exist_ok=True)
+        review_vocabulary.save_vocab_file(
+            str(category_dir / "custom-prompt.json"),
+            {
+                "word": "custom prompt",
+                "createdAt": "2026-06-02",
+                "reviews": [],
+                "definitions": ["自定义提示词测试"],
+                "examples": [
+                    {
+                        "text": "This entry should use the custom prompt.",
+                        "explanation": "这里用于测试自定义提示词。",
+                    }
+                ],
+            },
+        )
+
+        llm_payload = {"entry": [], "definitions": [], "examples": [], "global_notes": []}
+        with patch.object(review_routes, "suggest_file_cleaning_with_llm", return_value=llm_payload) as mocked_llm:
+            first = review_routes.refine_file(
+                review_routes.FileRefineRequest(category="daily", filename="custom-prompt.json")
+            )
+            second = review_routes.refine_file(
+                review_routes.FileRefineRequest(
+                    category="daily",
+                    filename="custom-prompt.json",
+                    custom_prompt="只关注中文释义是否自然",
+                )
+            )
+
+        self.assertEqual(mocked_llm.call_count, 2)
+        self.assertEqual(first["cache"]["status"], "stored")
+        self.assertEqual(second["cache"]["status"], "disabled")
+        self.assertEqual(mocked_llm.call_args.kwargs["custom_prompt"], "只关注中文释义是否自然")
+
     def test_refine_file_cache_changes_after_saved_content_changes(self):
         category_dir = self.vocab_dir / "daily"
         category_dir.mkdir(parents=True, exist_ok=True)

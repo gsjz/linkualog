@@ -1221,6 +1221,22 @@
   align-content: start;
 }
 
+.llm-custom-prompt-field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 720;
+}
+
+.llm-custom-prompt-input {
+  min-height: 58px;
+  resize: vertical;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .organize-actions {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -2162,6 +2178,57 @@
 
 .relation-reason-field {
   min-height: 58px;
+}
+
+.relation-target-hints {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  margin-top: 6px;
+}
+
+.relation-target-match-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+  color: var(--ink-faint);
+  font-size: 11px;
+  font-weight: 720;
+}
+
+.relation-target-match-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  min-height: 26px;
+  padding: 4px 7px;
+  border: 1px solid rgba(214, 214, 207, 0.96);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--ink-soft);
+  cursor: pointer;
+  font-size: 11px;
+  line-height: 1.25;
+  text-align: left;
+}
+
+.relation-target-match-chip:hover {
+  border-color: rgba(5, 150, 105, 0.36);
+  background: var(--accent-soft);
+}
+
+.relation-target-match-chip.is-primary {
+  border-color: rgba(5, 150, 105, 0.34);
+  color: var(--ink);
+}
+
+.relation-target-match-chip strong,
+.relation-target-match-chip span {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .relation-path-preview {
