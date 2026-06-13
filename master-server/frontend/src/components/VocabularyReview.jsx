@@ -62,65 +62,72 @@ const DEFAULT_RECOMMENDATION_PREFERENCES = {
   created_order: 'recent',
   score_order: 'low',
 };
-const RECOMMENDATION_HEX_VERTICES = [
-  {
-    key: 'high',
-    label: '高分',
-    angle: Math.PI / 6,
-    x: Math.cos(Math.PI / 6),
-    y: Math.sin(Math.PI / 6),
-    vector: { due: 0.8, created: 0.4, score: 5 },
-  },
-  {
-    key: 'explore',
-    label: '探索',
-    angle: Math.PI / 2,
-    x: 0,
-    y: 1,
-    vector: { due: 0.1, created: 0.15, score: -0.15 },
-  },
-  {
-    key: 'oldest',
-    label: '最早',
-    angle: (5 * Math.PI) / 6,
-    x: Math.cos((5 * Math.PI) / 6),
-    y: Math.sin((5 * Math.PI) / 6),
-    vector: { due: 0.8, created: -5, score: -0.3 },
-  },
-  {
-    key: 'low',
-    label: '低分',
-    angle: (7 * Math.PI) / 6,
-    x: Math.cos((7 * Math.PI) / 6),
-    y: Math.sin((7 * Math.PI) / 6),
-    vector: { due: 2, created: 0.2, score: -5 },
-  },
+const RECOMMENDATION_TOTAL_WEIGHT = DEFAULT_RECOMMENDATION_PREFERENCES.due_weight
+  + DEFAULT_RECOMMENDATION_PREFERENCES.created_weight
+  + DEFAULT_RECOMMENDATION_PREFERENCES.score_weight;
+const RECOMMENDATION_TRIANGLE_SIZE = 236;
+const RECOMMENDATION_TRIANGLE_POINTS = {
+  due: { x: 118, y: 24, label: '到期优先' },
+  created: { x: 28, y: 204, label: '创建时间' },
+  score: { x: 208, y: 204, label: '熟练度' },
+};
+const RECOMMENDATION_STRATEGY_PRESETS = [
   {
     key: 'due',
-    label: '到期',
-    angle: (3 * Math.PI) / 2,
-    x: 0,
-    y: -1,
-    vector: { due: 5, created: 0.3, score: -0.6 },
+    title: '到期复习',
+    preferences: {
+      due_weight: 2.75,
+      created_weight: 0.25,
+      score_weight: 0.3,
+      created_order: 'recent',
+      score_order: 'low',
+    },
   },
   {
-    key: 'recent',
-    label: '最近',
-    angle: (11 * Math.PI) / 6,
-    x: Math.cos((11 * Math.PI) / 6),
-    y: Math.sin((11 * Math.PI) / 6),
-    vector: { due: 1.2, created: 5, score: -0.3 },
+    key: 'weak',
+    title: '补弱优先',
+    preferences: {
+      due_weight: 1.3,
+      created_weight: 0.35,
+      score_weight: 1.65,
+      created_order: 'recent',
+      score_order: 'low',
+    },
+  },
+  {
+    key: 'new',
+    title: '新词回看',
+    preferences: {
+      due_weight: 0.8,
+      created_weight: 1.75,
+      score_weight: 0.75,
+      created_order: 'recent',
+      score_order: 'low',
+    },
+  },
+  {
+    key: 'high',
+    title: '高分巩固',
+    preferences: {
+      due_weight: 0.8,
+      created_weight: 0.35,
+      score_weight: 2.15,
+      created_order: 'oldest',
+      score_order: 'high',
+    },
+  },
+  {
+    key: 'balanced',
+    title: '均衡',
+    preferences: {
+      due_weight: 1.1,
+      created_weight: 1.1,
+      score_weight: 1.1,
+      created_order: 'recent',
+      score_order: 'low',
+    },
   },
 ];
-const RECOMMENDATION_HEX_CENTER_VECTOR = {
-  due: DEFAULT_RECOMMENDATION_PREFERENCES.due_weight,
-  created: DEFAULT_RECOMMENDATION_PREFERENCES.created_weight,
-  score: -DEFAULT_RECOMMENDATION_PREFERENCES.score_weight,
-};
-const RECOMMENDATION_HEX_SIZE = 220;
-const RECOMMENDATION_HEX_CENTER = RECOMMENDATION_HEX_SIZE / 2;
-const RECOMMENDATION_HEX_RADIUS = 74;
-const RECOMMENDATION_HEX_LABEL_RADIUS = 96;
 
 const getTodayLocalDateString = () => {
   const today = new Date();
@@ -191,6 +198,8 @@ const normalizeVocabularyEntry = (entry, fallbackCategory = '') => {
     needs_processing: Boolean(entry?.needsProcessing || entry?.needs_processing),
     refineCached: Boolean(entry?.refineCached || entry?.refine_cached),
     refine_cached: Boolean(entry?.refineCached || entry?.refine_cached),
+    relationCached: Boolean(entry?.relationCached || entry?.relation_cached),
+    relation_cached: Boolean(entry?.relationCached || entry?.relation_cached),
     createdAt,
     created_at: createdAt,
   };
@@ -502,6 +511,10 @@ const buildRecommendationQueue = (res, pool = [], limit = 8) => {
       marked: Boolean(poolEntry.marked || item.marked),
       needsProcessing: Boolean(poolEntry.needsProcessing || item.needsProcessing || item.needs_processing),
       needs_processing: Boolean(poolEntry.needsProcessing || item.needsProcessing || item.needs_processing),
+      refineCached: Boolean(poolEntry.refineCached || item.refineCached || item.refine_cached),
+      refine_cached: Boolean(poolEntry.refineCached || item.refineCached || item.refine_cached),
+      relationCached: Boolean(poolEntry.relationCached || item.relationCached || item.relation_cached),
+      relation_cached: Boolean(poolEntry.relationCached || item.relationCached || item.relation_cached),
     };
   }).filter(Boolean).slice(0, limit);
 };
@@ -691,62 +704,77 @@ const normalizeRecommendationPreferences = (value) => {
   };
 };
 
-const clampUnit = (value) => Math.max(-1, Math.min(1, Number(value) || 0));
-
-const clampRecommendationHexPoint = (point) => {
-  const x = clampUnit(point?.x);
-  const y = clampUnit(point?.y);
-  const scale = Math.max(1, Math.abs(x), Math.abs(y), Math.abs(x * 0.8660254 + y * 0.5), Math.abs(x * 0.8660254 - y * 0.5));
+const recommendationPreferencesToRatios = (preferences) => {
+  const normalized = normalizeRecommendationPreferences(preferences);
+  const due = Math.max(0, normalized.due_weight);
+  const created = Math.max(0, normalized.created_weight);
+  const score = Math.max(0, normalized.score_weight);
+  const total = due + created + score;
+  if (total <= 0) {
+    return {
+      due: DEFAULT_RECOMMENDATION_PREFERENCES.due_weight / RECOMMENDATION_TOTAL_WEIGHT,
+      created: DEFAULT_RECOMMENDATION_PREFERENCES.created_weight / RECOMMENDATION_TOTAL_WEIGHT,
+      score: DEFAULT_RECOMMENDATION_PREFERENCES.score_weight / RECOMMENDATION_TOTAL_WEIGHT,
+    };
+  }
   return {
-    x: Math.round((x / scale) * 1000) / 1000,
-    y: Math.round((y / scale) * 1000) / 1000,
+    due: due / total,
+    created: created / total,
+    score: score / total,
   };
 };
 
-const recommendationHexPointToPreferences = (point, base = {}) => {
+const recommendationRatiosToPreferences = (ratios, base = {}) => {
   const normalizedBase = normalizeRecommendationPreferences(base);
-  const { x, y } = clampRecommendationHexPoint(point);
-  const vertexScores = RECOMMENDATION_HEX_VERTICES.map((vertex) => Math.max(0, x * vertex.x + y * vertex.y));
-  const scoreSum = vertexScores.reduce((sum, value) => sum + value, 0);
-  const blend = Math.min(1, Math.hypot(x, y));
-  const vector = { ...RECOMMENDATION_HEX_CENTER_VECTOR };
-
-  if (scoreSum > 0) {
-    RECOMMENDATION_HEX_VERTICES.forEach((vertex, index) => {
-      const amount = vertexScores[index] / scoreSum;
-      vector.due += (vertex.vector.due - RECOMMENDATION_HEX_CENTER_VECTOR.due) * amount * blend;
-      vector.created += (vertex.vector.created - RECOMMENDATION_HEX_CENTER_VECTOR.created) * amount * blend;
-      vector.score += (vertex.vector.score - RECOMMENDATION_HEX_CENTER_VECTOR.score) * amount * blend;
-    });
-  }
-
   return normalizeRecommendationPreferences({
     ...normalizedBase,
-    due_weight: vector.due,
-    created_weight: Math.abs(vector.created),
-    score_weight: Math.abs(vector.score),
-    created_order: vector.created < 0 ? 'oldest' : 'recent',
-    score_order: vector.score > 0 ? 'high' : 'low',
+    due_weight: (Number(ratios?.due) || 0) * RECOMMENDATION_TOTAL_WEIGHT,
+    created_weight: (Number(ratios?.created) || 0) * RECOMMENDATION_TOTAL_WEIGHT,
+    score_weight: (Number(ratios?.score) || 0) * RECOMMENDATION_TOTAL_WEIGHT,
   });
 };
 
-const recommendationPreferencesToHexPoint = (preferences) => {
-  const normalized = normalizeRecommendationPreferences(preferences);
-  const created = normalized.created_weight / 5 * (normalized.created_order === 'oldest' ? -1 : 1);
-  const score = normalized.score_weight / 5 * (normalized.score_order === 'high' ? 1 : -1);
-  const due = normalized.due_weight / 5;
-  return clampRecommendationHexPoint({
-    x: (created - score) * 0.78,
-    y: (score + created) * 0.34 - due * 0.82 + (1 - due) * 0.18,
-  });
+const recommendationRatiosToTrianglePoint = (ratios) => ({
+  x: RECOMMENDATION_TRIANGLE_POINTS.due.x * ratios.due
+    + RECOMMENDATION_TRIANGLE_POINTS.created.x * ratios.created
+    + RECOMMENDATION_TRIANGLE_POINTS.score.x * ratios.score,
+  y: RECOMMENDATION_TRIANGLE_POINTS.due.y * ratios.due
+    + RECOMMENDATION_TRIANGLE_POINTS.created.y * ratios.created
+    + RECOMMENDATION_TRIANGLE_POINTS.score.y * ratios.score,
+});
+
+const recommendationTrianglePointToRatios = (point) => {
+  const a = RECOMMENDATION_TRIANGLE_POINTS.due;
+  const b = RECOMMENDATION_TRIANGLE_POINTS.created;
+  const c = RECOMMENDATION_TRIANGLE_POINTS.score;
+  const denominator = ((b.y - c.y) * (a.x - c.x)) + ((c.x - b.x) * (a.y - c.y));
+  const due = (((b.y - c.y) * (point.x - c.x)) + ((c.x - b.x) * (point.y - c.y))) / denominator;
+  const created = (((c.y - a.y) * (point.x - c.x)) + ((a.x - c.x) * (point.y - c.y))) / denominator;
+  const score = 1 - due - created;
+  const clamped = {
+    due: Math.max(0, due),
+    created: Math.max(0, created),
+    score: Math.max(0, score),
+  };
+  const total = clamped.due + clamped.created + clamped.score || 1;
+  return {
+    due: clamped.due / total,
+    created: clamped.created / total,
+    score: clamped.score / total,
+  };
 };
 
-const randomRecommendationHexPoint = () => {
-  const angle = Math.random() * Math.PI * 2;
-  const radius = Math.sqrt(Math.random()) * 0.96;
-  return clampRecommendationHexPoint({
-    x: Math.cos(angle) * radius,
-    y: Math.sin(angle) * radius,
+const recommendationPreferencesToTrianglePoint = (preferences) => (
+  recommendationRatiosToTrianglePoint(recommendationPreferencesToRatios(preferences))
+);
+
+const randomRecommendationTrianglePoint = () => {
+  const raw = [Math.random(), Math.random(), Math.random()];
+  const total = raw.reduce((sum, value) => sum + value, 0) || 1;
+  return recommendationRatiosToTrianglePoint({
+    due: raw[0] / total,
+    created: raw[1] / total,
+    score: raw[2] / total,
   });
 };
 
@@ -789,30 +817,91 @@ const formatRecommendationPreferenceSummary = (preferences) => {
   return `${created} · ${score}`;
 };
 
-function RecommendationHexTuner({
+function RecommendationSegmentControl({ label, value, options, onChange }) {
+  return (
+    <label className="vocab-recommend-segment-field">
+      <span>{label}</span>
+      <span className="vocab-recommend-segment" role="group" aria-label={label}>
+        {options.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            className={value === option.value ? 'active' : ''}
+            onClick={() => onChange(option.value)}
+          >
+            {option.label}
+          </button>
+        ))}
+      </span>
+    </label>
+  );
+}
+
+function RecommendationDirectionControls({ preferences, onChange }) {
+  const normalized = normalizeRecommendationPreferences(preferences);
+  return (
+    <div className="vocab-recommend-direction-grid">
+      <RecommendationSegmentControl
+        label="创建时间"
+        value={normalized.created_order}
+        options={[
+          { value: 'recent', label: '最近' },
+          { value: 'oldest', label: '最早' },
+        ]}
+        onChange={(created_order) => onChange({ created_order })}
+      />
+      <RecommendationSegmentControl
+        label="熟练度"
+        value={normalized.score_order}
+        options={[
+          { value: 'low', label: '低分' },
+          { value: 'high', label: '高分' },
+        ]}
+        onChange={(score_order) => onChange({ score_order })}
+      />
+    </div>
+  );
+}
+
+function RecommendationStrategyPresets({ preferences, onChange }) {
+  const currentKey = recommendationPreferencesKey(preferences);
+  return (
+    <div className="vocab-recommend-preset-grid">
+      {RECOMMENDATION_STRATEGY_PRESETS.map((preset) => {
+        const active = recommendationPreferencesKey(preset.preferences) === currentKey;
+        return (
+          <button
+            key={preset.key}
+            type="button"
+            className={`vocab-recommend-preset${active ? ' is-active' : ''}`}
+            onClick={() => onChange(preset.preferences)}
+          >
+            <strong>{preset.title}</strong>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function RecommendationTriangleTuner({
   preferences,
   point,
   onChange,
   onPointChange,
-  onClose,
 }) {
   const svgRef = useRef(null);
-  const hexDraggingRef = useRef(false);
+  const draggingRef = useRef(false);
   const normalized = normalizeRecommendationPreferences(preferences);
-  const activePoint = clampRecommendationHexPoint(point || recommendationPreferencesToHexPoint(normalized));
-  const pointerX = RECOMMENDATION_HEX_CENTER + activePoint.x * RECOMMENDATION_HEX_RADIUS;
-  const pointerY = RECOMMENDATION_HEX_CENTER + activePoint.y * RECOMMENDATION_HEX_RADIUS;
-  const polygonPoints = RECOMMENDATION_HEX_VERTICES
-    .map((vertex) => `${RECOMMENDATION_HEX_CENTER + vertex.x * RECOMMENDATION_HEX_RADIUS},${RECOMMENDATION_HEX_CENTER + vertex.y * RECOMMENDATION_HEX_RADIUS}`)
-    .join(' ');
-  const innerPolygonPoints = RECOMMENDATION_HEX_VERTICES
-    .map((vertex) => `${RECOMMENDATION_HEX_CENTER + vertex.x * RECOMMENDATION_HEX_RADIUS * 0.54},${RECOMMENDATION_HEX_CENTER + vertex.y * RECOMMENDATION_HEX_RADIUS * 0.54}`)
-    .join(' ');
+  const ratios = recommendationPreferencesToRatios(normalized);
+  const activePoint = point || recommendationPreferencesToTrianglePoint(normalized);
+  const polygonPoints = `${RECOMMENDATION_TRIANGLE_POINTS.due.x},${RECOMMENDATION_TRIANGLE_POINTS.due.y} ${RECOMMENDATION_TRIANGLE_POINTS.created.x},${RECOMMENDATION_TRIANGLE_POINTS.created.y} ${RECOMMENDATION_TRIANGLE_POINTS.score.x},${RECOMMENDATION_TRIANGLE_POINTS.score.y}`;
 
   const commitPoint = useCallback((nextPoint) => {
-    const normalizedPoint = clampRecommendationHexPoint(nextPoint);
+    const ratiosFromPoint = recommendationTrianglePointToRatios(nextPoint);
+    const normalizedPoint = recommendationRatiosToTrianglePoint(ratiosFromPoint);
     onPointChange?.(normalizedPoint);
-    onChange?.(recommendationHexPointToPreferences(normalizedPoint, normalized));
+    onChange?.(recommendationRatiosToPreferences(ratiosFromPoint, normalized));
   }, [normalized, onChange, onPointChange]);
 
   const pointFromEvent = useCallback((event) => {
@@ -822,68 +911,50 @@ function RecommendationHexTuner({
     const svgPoint = svg.createSVGPoint();
     svgPoint.x = event.clientX;
     svgPoint.y = event.clientY;
-    const localPoint = svgPoint.matrixTransform(matrix.inverse());
-    return clampRecommendationHexPoint({
-      x: (localPoint.x - RECOMMENDATION_HEX_CENTER) / RECOMMENDATION_HEX_RADIUS,
-      y: (localPoint.y - RECOMMENDATION_HEX_CENTER) / RECOMMENDATION_HEX_RADIUS,
-    });
+    return svgPoint.matrixTransform(matrix.inverse());
   }, []);
 
   const handlePointerDown = useCallback((event) => {
     event.preventDefault();
-    hexDraggingRef.current = true;
+    draggingRef.current = true;
     event.currentTarget.setPointerCapture?.(event.pointerId);
     const nextPoint = pointFromEvent(event);
     if (nextPoint) commitPoint(nextPoint);
   }, [commitPoint, pointFromEvent]);
 
   const handlePointerMove = useCallback((event) => {
-    if (!hexDraggingRef.current && !(event.buttons & 1)) return;
+    if (!draggingRef.current && !(event.buttons & 1)) return;
     event.preventDefault();
     const nextPoint = pointFromEvent(event);
     if (nextPoint) commitPoint(nextPoint);
   }, [commitPoint, pointFromEvent]);
 
   const handlePointerEnd = useCallback((event) => {
-    hexDraggingRef.current = false;
+    draggingRef.current = false;
     event.currentTarget.releasePointerCapture?.(event.pointerId);
   }, []);
 
   const handleKeyDown = useCallback((event) => {
-    const step = event.shiftKey ? 0.12 : 0.06;
-    let nextPoint = null;
-    if (event.key === 'ArrowLeft') nextPoint = { x: activePoint.x - step, y: activePoint.y };
-    if (event.key === 'ArrowRight') nextPoint = { x: activePoint.x + step, y: activePoint.y };
-    if (event.key === 'ArrowUp') nextPoint = { x: activePoint.x, y: activePoint.y - step };
-    if (event.key === 'ArrowDown') nextPoint = { x: activePoint.x, y: activePoint.y + step };
-    if (!nextPoint) return;
+    const step = event.shiftKey ? 18 : 9;
+    const nextPoint = { ...activePoint };
+    if (event.key === 'ArrowLeft') nextPoint.x -= step;
+    else if (event.key === 'ArrowRight') nextPoint.x += step;
+    else if (event.key === 'ArrowUp') nextPoint.y -= step;
+    else if (event.key === 'ArrowDown') nextPoint.y += step;
+    else return;
     event.preventDefault();
     commitPoint(nextPoint);
-  }, [activePoint.x, activePoint.y, commitPoint]);
+  }, [activePoint, commitPoint]);
 
   return (
-    <div className="vocab-recommend-hex-card">
-      <div className="vocab-recommend-hex-head">
-        <div>
-          <strong>策略取点</strong>
-          <span>{formatRecommendationPreferenceSummary(normalized)}</span>
-        </div>
-        <button
-          type="button"
-          className="vocab-recommend-hex-close"
-          aria-label="关闭随机设置"
-          onClick={onClose}
-        >
-          <UiIcon name="close" size={16} />
-        </button>
-      </div>
+    <div className="vocab-recommend-triangle-card">
       <svg
         ref={svgRef}
-        className="vocab-recommend-hex"
-        viewBox={`0 0 ${RECOMMENDATION_HEX_SIZE} ${RECOMMENDATION_HEX_SIZE}`}
+        className="vocab-recommend-triangle"
+        viewBox={`0 0 ${RECOMMENDATION_TRIANGLE_SIZE} ${RECOMMENDATION_TRIANGLE_SIZE}`}
         role="slider"
         tabIndex={0}
-        aria-label="随机推荐策略取点"
+        aria-label="随机推荐策略重心"
         aria-valuetext={`到期 ${formatRecommendationWeightValue(normalized.due_weight)}，创建 ${formatRecommendationWeightValue(normalized.created_weight)}，评分 ${formatRecommendationWeightValue(normalized.score_weight)}`}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
@@ -891,32 +962,97 @@ function RecommendationHexTuner({
         onPointerCancel={handlePointerEnd}
         onKeyDown={handleKeyDown}
       >
-        <polygon className="vocab-recommend-hex-bg" points={polygonPoints} />
-        <polygon className="vocab-recommend-hex-inner" points={innerPolygonPoints} />
-        {RECOMMENDATION_HEX_VERTICES.map((vertex) => (
-          <g key={vertex.key}>
+        <polygon className="vocab-recommend-triangle-bg" points={polygonPoints} />
+        {Object.entries(RECOMMENDATION_TRIANGLE_POINTS).map(([key, vertex]) => (
+          <g key={key}>
             <line
-              className="vocab-recommend-hex-axis"
-              x1={RECOMMENDATION_HEX_CENTER}
-              y1={RECOMMENDATION_HEX_CENTER}
-              x2={RECOMMENDATION_HEX_CENTER + vertex.x * RECOMMENDATION_HEX_RADIUS}
-              y2={RECOMMENDATION_HEX_CENTER + vertex.y * RECOMMENDATION_HEX_RADIUS}
+              className="vocab-recommend-triangle-axis"
+              x1={activePoint.x}
+              y1={activePoint.y}
+              x2={vertex.x}
+              y2={vertex.y}
             />
+            <circle className="vocab-recommend-triangle-node" cx={vertex.x} cy={vertex.y} r="5" />
             <text
-              className="vocab-recommend-hex-label"
-              x={RECOMMENDATION_HEX_CENTER + vertex.x * RECOMMENDATION_HEX_LABEL_RADIUS}
-              y={RECOMMENDATION_HEX_CENTER + vertex.y * RECOMMENDATION_HEX_LABEL_RADIUS}
+              className="vocab-recommend-triangle-label"
+              x={vertex.x}
+              y={vertex.y + (key === 'due' ? -12 : 18)}
               textAnchor="middle"
-              dominantBaseline="middle"
             >
               {vertex.label}
             </text>
           </g>
         ))}
-        <circle className="vocab-recommend-hex-pointer-shadow" cx={pointerX} cy={pointerY} r="11" />
-        <circle className="vocab-recommend-hex-pointer" cx={pointerX} cy={pointerY} r="8" />
+        <circle className="vocab-recommend-triangle-pointer-shadow" cx={activePoint.x} cy={activePoint.y} r="13" />
+        <circle className="vocab-recommend-triangle-pointer" cx={activePoint.x} cy={activePoint.y} r="8" />
       </svg>
-      <div className="vocab-recommend-hex-values">
+      <div className="vocab-recommend-ratio-row">
+        <span>到期 {Math.round(ratios.due * 100)}%</span>
+        <span>创建 {Math.round(ratios.created * 100)}%</span>
+        <span>熟练 {Math.round(ratios.score * 100)}%</span>
+      </div>
+    </div>
+  );
+}
+
+function RecommendationHybridTuner({
+  preferences,
+  point,
+  fineTuneOpen,
+  onChange,
+  onPointChange,
+  onFineTuneOpenChange,
+}) {
+  const normalized = normalizeRecommendationPreferences(preferences);
+  const finePanelRef = useRef(null);
+  const handlePresetChange = useCallback((nextPreferences) => {
+    const next = normalizeRecommendationPreferences(nextPreferences);
+    onPointChange?.(recommendationPreferencesToTrianglePoint(next));
+    onChange?.(next);
+  }, [onChange, onPointChange]);
+
+  useEffect(() => {
+    if (!fineTuneOpen) return undefined;
+    const frame = requestAnimationFrame(() => {
+      finePanelRef.current?.scrollIntoView?.({
+        block: 'center',
+        inline: 'nearest',
+        behavior: 'auto',
+      });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [fineTuneOpen]);
+
+  return (
+    <div className="vocab-recommend-hybrid-card">
+      <div className="vocab-recommend-hybrid-head">
+        <div>
+          <strong>推荐策略</strong>
+          <span>{formatRecommendationPreferenceSummary(normalized)}</span>
+        </div>
+      </div>
+      <RecommendationStrategyPresets preferences={normalized} onChange={handlePresetChange} />
+      <button
+        type="button"
+        className={`vocab-recommend-fine-toggle${fineTuneOpen ? ' is-active' : ''}`}
+        onClick={() => onFineTuneOpenChange(!fineTuneOpen)}
+        aria-expanded={fineTuneOpen}
+      >
+        <UiIcon name={fineTuneOpen ? 'chevron-up' : 'chevron-down'} size={16} />
+        <span>精调</span>
+      </button>
+      {fineTuneOpen ? (
+        <div className="vocab-recommend-fine-panel" ref={finePanelRef}>
+          <RecommendationTriangleTuner
+            preferences={normalized}
+            point={point}
+            onChange={onChange}
+            onPointChange={onPointChange}
+          />
+          <RecommendationDirectionControls preferences={normalized} onChange={onChange} />
+        </div>
+      ) : null}
+      <div className="vocab-recommend-values">
         <span><strong>到期</strong>{formatRecommendationWeightValue(normalized.due_weight)}</span>
         <span><strong>{normalized.created_order === 'oldest' ? '最早' : '最近'}</strong>{formatRecommendationWeightValue(normalized.created_weight)}</span>
         <span><strong>{normalized.score_order === 'high' ? '高分' : '低分'}</strong>{formatRecommendationWeightValue(normalized.score_weight)}</span>
@@ -1036,9 +1172,10 @@ export default function VocabularyReview({
   const [recommendPreferences, setRecommendPreferences] = useState(() => (
     normalizeRecommendationPreferences(DEFAULT_RECOMMENDATION_PREFERENCES)
   ));
-  const [recommendationHexPoint, setRecommendationHexPoint] = useState(() => (
-    recommendationPreferencesToHexPoint(DEFAULT_RECOMMENDATION_PREFERENCES)
+  const [recommendationTrianglePoint, setRecommendationTrianglePoint] = useState(() => (
+    recommendationPreferencesToTrianglePoint(DEFAULT_RECOMMENDATION_PREFERENCES)
   ));
+  const [recommendFineTuneOpen, setRecommendFineTuneOpen] = useState(false);
   const [recommendPreferenceHydrated, setRecommendPreferenceHydrated] = useState(false);
   const [recommendPreferenceDirty, setRecommendPreferenceDirty] = useState(false);
   const pendingLaunchRef = useRef(null);
@@ -1313,7 +1450,7 @@ export default function VocabularyReview({
           recommendPreferenceDirtyRef.current = false;
           setRecommendPreferenceDirty(false);
           setRecommendPreferences(nextPreferences);
-          setRecommendationHexPoint(recommendationPreferencesToHexPoint(nextPreferences));
+          setRecommendationTrianglePoint(recommendationPreferencesToTrianglePoint(nextPreferences));
         }
       })
       .catch((error) => {
@@ -1529,6 +1666,8 @@ export default function VocabularyReview({
       marked: Boolean(entryUpdateRequest.data?.marked),
       refineCached: false,
       refine_cached: false,
+      relationCached: false,
+      relation_cached: false,
       category: targetCategory,
     }, targetCategory);
     const browsingAllCategories = isAllCategoriesValue(selectedCategory);
@@ -1794,14 +1933,18 @@ export default function VocabularyReview({
   }, []);
 
   const handleRecommendPreferencesReset = useCallback(() => {
-    setRecommendationHexPoint(recommendationPreferencesToHexPoint(DEFAULT_RECOMMENDATION_PREFERENCES));
+    setRecommendationTrianglePoint(recommendationPreferencesToTrianglePoint(DEFAULT_RECOMMENDATION_PREFERENCES));
     handleRecommendPreferencesChange(DEFAULT_RECOMMENDATION_PREFERENCES);
   }, [handleRecommendPreferencesChange]);
 
   const handleRecommendPreferencesRandomize = useCallback(() => {
-    const nextPoint = randomRecommendationHexPoint();
-    setRecommendationHexPoint(nextPoint);
-    handleRecommendPreferencesChange(recommendationHexPointToPreferences(nextPoint, recommendPreferencesRef.current));
+    const nextPoint = randomRecommendationTrianglePoint();
+    setRecommendationTrianglePoint(nextPoint);
+    handleRecommendPreferencesChange(recommendationRatiosToPreferences(
+      recommendationTrianglePointToRatios(nextPoint),
+      recommendPreferencesRef.current,
+    ));
+    setRecommendFineTuneOpen(true);
   }, [handleRecommendPreferencesChange]);
 
   const handleRecommendPreferencesSave = useCallback(async () => {
@@ -1830,7 +1973,15 @@ export default function VocabularyReview({
 
       savedRecommendPreferenceKeyRef.current = savedKey;
       recommendPreferenceDirtyRef.current = dirty;
-      setRecommendPreferenceDirty(dirty);
+      if (currentKey === requestKey) {
+        recommendPreferencesRef.current = nextPreferences;
+        recommendPreferenceDirtyRef.current = false;
+        setRecommendPreferences(nextPreferences);
+        setRecommendationTrianglePoint(recommendationPreferencesToTrianglePoint(nextPreferences));
+        setRecommendPreferenceDirty(false);
+      } else {
+        setRecommendPreferenceDirty(dirty);
+      }
       window.dispatchEvent(new Event('config-updated'));
     } catch (error) {
       console.error('保存推荐偏好失败', error);
@@ -1843,6 +1994,8 @@ export default function VocabularyReview({
   }, [savingRecommendPreferences]);
 
   const runRecommendationRefresh = useCallback(async (excludeKeys = [], options = {}) => {
+    if (!recommendPreferenceHydratedRef.current) return null;
+
     const fallbackPool = Array.isArray(options?.fallbackPool) ? options.fallbackPool : visibleEntries;
     const fallbackOnEmpty = Boolean(options?.fallbackOnEmpty);
     const requestId = recommendationRefreshRequestRef.current + 1;
@@ -1885,7 +2038,7 @@ export default function VocabularyReview({
   }, [applyRecommendationResult, entryFilter, handleDrawRandomEntry, handleUseRecommendation, recommendScope, visibleEntries]);
 
   useEffect(() => {
-    if (!randomSelectionMode || !visibleEntries.length) {
+    if (!randomSelectionMode || !visibleEntries.length || !recommendPreferenceHydrated) {
       recommendationQueueRequestRef.current += 1;
       setLoadingRecommendationQueue(false);
       setRecommendationQueue([]);
@@ -1921,7 +2074,7 @@ export default function VocabularyReview({
       });
 
     return undefined;
-  }, [entryFilter, randomSelectionMode, recommendPreferences, recommendScope, visibleEntries]);
+  }, [entryFilter, randomSelectionMode, recommendPreferenceHydrated, recommendPreferences, recommendScope, visibleEntries]);
 
   const handleRecommendationNext = useCallback((poolArg = null) => {
     const fallbackPool = Array.isArray(poolArg) ? poolArg : visibleEntries;
@@ -1965,7 +2118,7 @@ export default function VocabularyReview({
   }, [detailCategory, detailData, entries, handleRecommendationNext, resolveEntryCandidate, resolveEntryCategory, selectedCategory, selectedEntry, visibleEntries]);
 
   useEffect(() => {
-    if (!mobileSimple || !randomSelectionMode) return;
+    if (!mobileSimple || !randomSelectionMode || !recommendPreferenceHydrated) return;
     if (loadingRecommendation) return;
     if (!selectedCategory) return;
     if (entriesCategory !== selectedCategory) return;
@@ -2002,7 +2155,7 @@ export default function VocabularyReview({
     queueMicrotask(() => {
       handleRecommendationNext(visibleEntries);
     });
-  }, [entriesCategory, entryFilter, handleRecommendationNext, loadingRecommendation, mobileSimple, normalizedWordQuery, randomSelectionMode, selectedCategory, selectedEntryId, visibleEntries]);
+  }, [entriesCategory, entryFilter, handleRecommendationNext, loadingRecommendation, mobileSimple, normalizedWordQuery, randomSelectionMode, recommendPreferenceHydrated, selectedCategory, selectedEntryId, visibleEntries]);
 
   useEffect(() => {
     if (!randomSelectionMode) {
@@ -2459,12 +2612,13 @@ export default function VocabularyReview({
         </select>
       </label>
 
-      <RecommendationHexTuner
+      <RecommendationHybridTuner
         preferences={recommendPreferences}
-        point={recommendationHexPoint}
+        point={recommendationTrianglePoint}
+        fineTuneOpen={recommendFineTuneOpen}
         onChange={handleRecommendPreferencesChange}
-        onPointChange={setRecommendationHexPoint}
-        onClose={() => setRecommendSettingsOpen(false)}
+        onPointChange={setRecommendationTrianglePoint}
+        onFineTuneOpenChange={setRecommendFineTuneOpen}
       />
 
       <div className="vocab-recommend-panel-actions">
@@ -2887,11 +3041,12 @@ export default function VocabularyReview({
                   type="button"
                   className={`vocab-review-info-button${mobileInfoOpen ? ' is-active' : ''}`}
                   onClick={toggleMobileInfo}
-                  aria-label="打开复习记录"
+                  aria-label="查看详情"
                   aria-expanded={mobileInfoOpen}
-                  title="复习记录"
+                  title="查看详情"
                 >
                   <UiIcon name="info" size={15} />
+                  <span>查看详情</span>
                 </button>
               ) : null}
             </div>

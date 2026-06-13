@@ -160,9 +160,40 @@ export const runFileRefine = async (category, filename, includeLlm = true, data 
   });
 };
 
+export const startFileRefineJob = async (category, filename, includeLlm = true, data = null, options = {}) => {
+  const finalCategory = requireCategory(category);
+  return requestJson('/api/refine/file/jobs', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      category: finalCategory,
+      filename,
+      include_llm: includeLlm,
+      data,
+      use_cache: options?.useCache !== false,
+      refresh_cache: Boolean(options?.refreshCache),
+      custom_prompt: String(options?.customPrompt || '').trim(),
+    }),
+  });
+};
+
 export const prefetchFileRefine = async (category, filenames = [], options = {}) => {
   const finalCategory = requireCategory(category);
   return requestJson('/api/refine/file/prefetch', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      category: finalCategory,
+      filenames: Array.isArray(filenames) ? filenames : [],
+      limit: options?.limit ?? 20,
+      refresh_cache: Boolean(options?.refreshCache),
+    }),
+  });
+};
+
+export const startFileRefinePrefetchJob = async (category, filenames = [], options = {}) => {
+  const finalCategory = requireCategory(category);
+  return requestJson('/api/refine/file/prefetch/jobs', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -198,8 +229,63 @@ export const suggestVocabRelations = async (category, filename, data = null, lim
       data,
       limit,
       custom_prompt: String(options?.customPrompt || '').trim(),
+      use_cache: options?.useCache !== false,
+      refresh_cache: Boolean(options?.refreshCache),
     }),
   });
+};
+
+export const startVocabRelationsSuggestJob = async (category, filename, data = null, limit = 12, options = {}) => {
+  const finalCategory = requireCategory(category);
+  return requestJson('/api/vocabulary/relations/suggest/jobs', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      category: finalCategory,
+      filename,
+      data,
+      limit,
+      custom_prompt: String(options?.customPrompt || '').trim(),
+      use_cache: options?.useCache !== false,
+      refresh_cache: Boolean(options?.refreshCache),
+    }),
+  });
+};
+
+export const prefetchVocabRelations = async (category, filenames = [], options = {}) => {
+  const finalCategory = requireCategory(category);
+  return requestJson('/api/vocabulary/relations/suggest/prefetch', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      category: finalCategory,
+      filenames: Array.isArray(filenames) ? filenames : [],
+      limit: options?.limit ?? 20,
+      refresh_cache: Boolean(options?.refreshCache),
+      suggestion_limit: options?.suggestionLimit ?? 12,
+      candidate_limit: options?.candidateLimit ?? 72,
+    }),
+  });
+};
+
+export const startVocabRelationsPrefetchJob = async (category, filenames = [], options = {}) => {
+  const finalCategory = requireCategory(category);
+  return requestJson('/api/vocabulary/relations/suggest/prefetch/jobs', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      category: finalCategory,
+      filenames: Array.isArray(filenames) ? filenames : [],
+      limit: options?.limit ?? 20,
+      refresh_cache: Boolean(options?.refreshCache),
+      suggestion_limit: options?.suggestionLimit ?? 12,
+      candidate_limit: options?.candidateLimit ?? 72,
+    }),
+  });
+};
+
+export const fetchReviewAnalysisJob = async (jobId) => {
+  return requestJson(`/api/review/analysis/jobs/${encodeURIComponent(jobId)}`);
 };
 
 export const renameVocabDetail = async (category, filename, word, data = null) => {

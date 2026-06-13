@@ -212,6 +212,60 @@ export const prefetchVocabularyRefine = async (category, filenames = [], options
   return handleResponse(res);
 };
 
+export const startVocabularyRefinePrefetchJob = async (category, filenames = [], options = {}) => {
+  const finalCategory = requireVocabularyCategory(category);
+  const res = await fetch(`${BACKEND_URL}/api/refine/file/prefetch/jobs`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      category: finalCategory,
+      filenames: Array.isArray(filenames) ? filenames : [],
+      limit: options?.limit ?? 20,
+      refresh_cache: Boolean(options?.refreshCache),
+    }),
+  });
+  return handleResponse(res);
+};
+
+export const prefetchVocabularyRelations = async (category, filenames = [], options = {}) => {
+  const finalCategory = requireVocabularyCategory(category);
+  const res = await fetch(`${BACKEND_URL}/api/vocabulary/relations/suggest/prefetch`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      category: finalCategory,
+      filenames: Array.isArray(filenames) ? filenames : [],
+      limit: options?.limit ?? 20,
+      refresh_cache: Boolean(options?.refreshCache),
+      suggestion_limit: options?.suggestionLimit ?? 12,
+      candidate_limit: options?.candidateLimit ?? 72,
+    }),
+  });
+  return handleResponse(res);
+};
+
+export const startVocabularyRelationsPrefetchJob = async (category, filenames = [], options = {}) => {
+  const finalCategory = requireVocabularyCategory(category);
+  const res = await fetch(`${BACKEND_URL}/api/vocabulary/relations/suggest/prefetch/jobs`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      category: finalCategory,
+      filenames: Array.isArray(filenames) ? filenames : [],
+      limit: options?.limit ?? 20,
+      refresh_cache: Boolean(options?.refreshCache),
+      suggestion_limit: options?.suggestionLimit ?? 12,
+      candidate_limit: options?.candidateLimit ?? 72,
+    }),
+  });
+  return handleResponse(res);
+};
+
+export const fetchReviewAnalysisJob = async (jobId) => {
+  const res = await fetch(`${BACKEND_URL}/api/review/analysis/jobs/${encodeURIComponent(jobId)}`);
+  return handleResponse(res);
+};
+
 export const saveVocabularyDetail = async (category, filename, data) => {
   const finalCategory = requireVocabularyCategory(category);
   const res = await fetch(`${BACKEND_URL}/api/vocabulary/save`, {

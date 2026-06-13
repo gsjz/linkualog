@@ -3,7 +3,11 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import VocabularyReview from './VocabularyReview.jsx';
 import ReviewWorkspace from '../review/App.jsx';
 import UiIcon from './UiIcon.jsx';
-import { prefetchVocabularyRefine } from '../api/client.js';
+import {
+  fetchReviewAnalysisJob,
+  startVocabularyRefinePrefetchJob,
+  startVocabularyRelationsPrefetchJob,
+} from '../api/client.js';
 
 const normalizeVocabularyLaunchWord = (value) => String(value || '')
   .trim()
@@ -40,6 +44,30 @@ const getStoredAutoLlmOnOpen = () => (
 );
 
 const buildAutoLlmLaunchToken = () => `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+const sleep = (ms) => new Promise((resolve) => {
+  window.setTimeout(resolve, ms);
+});
+
+const isTerminalAnalysisJob = (job) => ['success', 'error'].includes(String(job?.status || '').trim());
+
+const waitForAnalysisJob = async (jobOrId, onUpdate = null) => {
+  const jobId = String(jobOrId?.job_id || jobOrId?.id || jobOrId || '').trim();
+  if (!jobId) {
+    throw new Error('后台分析任务 id 为空');
+  }
+
+  let current = typeof jobOrId === 'object' ? jobOrId : null;
+  if (typeof onUpdate === 'function' && current) onUpdate(current);
+
+  while (!isTerminalAnalysisJob(current)) {
+    await sleep(1200);
+    current = await fetchReviewAnalysisJob(jobId);
+    if (typeof onUpdate === 'function') onUpdate(current);
+  }
+
+  return current;
+};
 
 function StudyModeSwitch({ mode, onChange }) {
   return (
@@ -113,7 +141,9 @@ export default function VocabularyWorkspace({
     totalCount: 0,
   });
   const [prefetchingRefine, setPrefetchingRefine] = useState(false);
+  const [prefetchingRelations, setPrefetchingRelations] = useState(false);
   const [prefetchProgress, setPrefetchProgress] = useState({ done: 0, total: 0 });
+  const [relationPrefetchProgress, setRelationPrefetchProgress] = useState({ done: 0, total: 0 });
   const reviewSurfaceMobileSimple = mobileSimple;
 
   const sharedLaunchRequest = useMemo(() => (
@@ -187,6 +217,28 @@ export default function VocabularyWorkspace({
     });
   }, []);
 
+  const markRelationCached = useCallback((category, files) => {
+    const normalizedCategory = String(category || '').trim();
+    const fileSet = new Set((Array.isArray(files) ? files : [])
+      .map((file) => String(file || '').trim())
+      .filter(Boolean));
+    if (!normalizedCategory || !fileSet.size) return;
+
+    setVisibleScope((current) => ({
+      ...current,
+      entries: (Array.isArray(current.entries) ? current.entries : []).map((entry) => (
+        String(entry.category || '').trim() === normalizedCategory && fileSet.has(String(entry.file || '').trim())
+          ? { ...entry, relationCached: true, relation_cached: true }
+          : entry
+      )),
+      selectedEntry: current.selectedEntry
+        && String(current.selectedEntry.category || '').trim() === normalizedCategory
+        && fileSet.has(String(current.selectedEntry.file || '').trim())
+        ? { ...current.selectedEntry, relationCached: true, relation_cached: true }
+        : current.selectedEntry,
+    }));
+  }, []);
+
   const handleVisibleScopeChange = useCallback((scope) => {
     setVisibleScope(scope || {});
   }, []);
@@ -215,28 +267,104 @@ export default function VocabularyWorkspace({
 
     setPrefetchingRefine(true);
     setPrefetchProgress({ done: 0, total });
-    let done = 0;
+    let completedBeforeCategory = 0;
     try {
       for (const [category, files] of targetsByCategory.entries()) {
-        for (const file of files) {
-          try {
-            const res = await prefetchVocabularyRefine(category, [file], { limit: 1 });
-            const item = Array.isArray(res?.results) ? res.results[0] : null;
-            if (item?.status === 'success' && !item.llm_error && ['hit', 'stored'].includes(String(item.cache?.status || ''))) {
-              markRefineCached(category, [item.file || file]);
-            }
-          } catch (error) {
-            console.error('预生成整理建议失败', error);
-          } finally {
-            done += 1;
-            setPrefetchProgress({ done, total });
+        try {
+          const job = await startVocabularyRefinePrefetchJob(category, files, { limit: files.length });
+          const finalJob = await waitForAnalysisJob(job, (currentJob) => {
+            const progress = currentJob?.progress || {};
+            setPrefetchProgress({
+              done: Math.min(total, completedBeforeCategory + Number(progress.done || 0)),
+              total,
+            });
+          });
+          const readyFiles = (Array.isArray(finalJob?.result?.results) ? finalJob.result.results : [])
+            .filter((item) => (
+              item?.status === 'success'
+              && !item.llm_error
+              && ['hit', 'stored'].includes(String(item.cache?.status || ''))
+              && Number(item.suggestion_count ?? item.suggestionCount ?? 0) > 0
+            ))
+            .map((item) => item.file)
+            .filter(Boolean);
+          if (readyFiles.length) {
+            markRefineCached(category, readyFiles);
           }
+        } catch (error) {
+          console.error('预生成整理建议失败', error);
+        } finally {
+          completedBeforeCategory += files.length;
+          setPrefetchProgress({ done: Math.min(total, completedBeforeCategory), total });
         }
       }
     } finally {
       setPrefetchingRefine(false);
     }
   }, [markRefineCached, visibleScope.entries]);
+
+  const handlePrefetchVisibleRelations = useCallback(async () => {
+    const rawEntries = Array.isArray(visibleScope.entries) ? visibleScope.entries : [];
+    const targetsByCategory = new Map();
+    rawEntries
+      .filter((entry) => !entry?.relationCached)
+      .slice(0, 50)
+      .forEach((entry) => {
+        const category = String(entry.category || '').trim();
+        const file = String(entry.file || '').trim();
+        if (!category || !file) return;
+        const files = targetsByCategory.get(category) || [];
+        files.push(file);
+        targetsByCategory.set(category, files);
+      });
+
+    const total = [...targetsByCategory.values()].reduce((sum, files) => sum + files.length, 0);
+    if (!total) return;
+
+    setPrefetchingRelations(true);
+    setRelationPrefetchProgress({ done: 0, total });
+    let completedBeforeCategory = 0;
+    try {
+      for (const [category, files] of targetsByCategory.entries()) {
+        try {
+          const job = await startVocabularyRelationsPrefetchJob(category, files, { limit: files.length });
+          const finalJob = await waitForAnalysisJob(job, (currentJob) => {
+            const progress = currentJob?.progress || {};
+            setRelationPrefetchProgress({
+              done: Math.min(total, completedBeforeCategory + Number(progress.done || 0)),
+              total,
+            });
+          });
+          const readyFiles = (Array.isArray(finalJob?.result?.results) ? finalJob.result.results : [])
+            .filter((item) => (
+              item?.status === 'success'
+              && !item.llm_error
+              && ['hit', 'stored'].includes(String(item.cache?.status || ''))
+              && Number(item.suggestion_count ?? item.suggestionCount ?? 0) > 0
+            ))
+            .map((item) => item.file)
+            .filter(Boolean);
+          if (readyFiles.length) {
+            markRelationCached(category, readyFiles);
+          }
+        } catch (error) {
+          console.error('预生成连接建议失败', error);
+        } finally {
+          completedBeforeCategory += files.length;
+          setRelationPrefetchProgress({ done: Math.min(total, completedBeforeCategory), total });
+        }
+      }
+    } finally {
+      setPrefetchingRelations(false);
+    }
+  }, [markRelationCached, visibleScope.entries]);
+
+  const handlePrefetchVisible = useCallback(async () => {
+    if (prefetchingRefine || prefetchingRelations) return;
+
+    await handlePrefetchVisibleRefine();
+    await handlePrefetchVisibleRelations();
+  }, [handlePrefetchVisibleRefine, handlePrefetchVisibleRelations, prefetchingRefine, prefetchingRelations]);
 
   const handleVocabularyEntryChange = (change) => {
     const normalizedCategory = String(change?.category || sharedLaunchRequest?.category || '').trim();
@@ -249,6 +377,12 @@ export default function VocabularyWorkspace({
       || change?.word,
     );
     if (!normalizedCategory || !savedFilename) return;
+
+    if (change?.relationCached || change?.relation_cached) {
+      const relationFile = savedFilename.endsWith('.json') ? savedFilename : `${savedFilename}.json`;
+      markRelationCached(normalizedCategory, [relationFile]);
+      return;
+    }
 
     const nextUpdate = {
       ...(change || {}),
@@ -275,10 +409,21 @@ export default function VocabularyWorkspace({
   const visibleEntries = Array.isArray(visibleScope.entries) ? visibleScope.entries : [];
   const selectedVisibleEntry = visibleScope.selectedEntry || null;
   const prefetchTargetCount = visibleEntries.filter((entry) => entry?.needsProcessing && !entry?.refineCached).length;
+  const relationPrefetchTargetCount = visibleEntries.filter((entry) => !entry?.relationCached).length;
   const selectedHasReadySuggestion = Boolean(selectedVisibleEntry?.refineCached);
+  const selectedHasReadyRelationSuggestion = Boolean(selectedVisibleEntry?.relationCached);
+  const prefetching = prefetchingRefine || prefetchingRelations;
+  const prefetchTargetTotal = prefetchTargetCount + relationPrefetchTargetCount;
   const prefetchLabel = prefetchingRefine
-    ? `预生成 ${prefetchProgress.done}/${prefetchProgress.total}`
+    ? `整理 ${prefetchProgress.done}/${prefetchProgress.total}`
+    : prefetchingRelations
+    ? `连边 ${relationPrefetchProgress.done}/${relationPrefetchProgress.total}`
     : '预生成';
+  const prefetchTitleTargets = [
+    prefetchTargetCount ? `整理 ${Math.min(prefetchTargetCount, 50)}` : '',
+    relationPrefetchTargetCount ? `连接 ${Math.min(relationPrefetchTargetCount, 50)}` : '',
+  ].filter(Boolean);
+  const prefetchTitle = `预生成当前范围内的整理和连接建议${prefetchTitleTargets.length ? ` (${prefetchTitleTargets.join('，')})` : ''}`;
   const editorSurfaceTitle = {
     editor: '手动整理',
     connection: '连接',
@@ -297,10 +442,10 @@ export default function VocabularyWorkspace({
           <button
             type="button"
             className="vocab-mode-switch vocab-prefetch-switch"
-            aria-label="预生成当前范围内的待处理词条"
-            title={`预生成当前范围内的待处理词条${prefetchTargetCount ? ` (${Math.min(prefetchTargetCount, 50)})` : ''}`}
-            onClick={() => void handlePrefetchVisibleRefine()}
-            disabled={prefetchingRefine || prefetchTargetCount <= 0}
+            aria-label="预生成当前范围内的整理和连接建议"
+            title={prefetchTitle}
+            onClick={() => void handlePrefetchVisible()}
+            disabled={prefetching || prefetchTargetTotal <= 0}
           >
             <span className="vocab-mode-switch-icon">
               <UiIcon name="wand" size={17} />
@@ -324,7 +469,8 @@ export default function VocabularyWorkspace({
             disabled={!hasSelection}
             onOpen={openWorkspaceSurface}
             active={editorSurface === 'connection'}
-            title="打开连接面板"
+            hasReadySuggestion={selectedHasReadyRelationSuggestion}
+            title={selectedHasReadyRelationSuggestion ? '打开连接面板；已有预生成连接建议' : '打开连接面板'}
           />
         </div>
       </div>

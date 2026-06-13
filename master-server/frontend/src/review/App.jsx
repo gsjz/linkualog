@@ -17,12 +17,37 @@ import {
   runFileRefine,
   saveConfig,
   saveVocabDetail,
-  suggestVocabRelations,
+  fetchReviewAnalysisJob,
+  startFileRefineJob,
+  startVocabRelationsSuggestJob,
   submitReviewScore,
 } from './api/client';
 
 const TODAY = new Date().toISOString().slice(0, 10);
 const ALL_SCOPE = '__all__';
+
+const sleep = (ms) => new Promise((resolve) => {
+  window.setTimeout(resolve, ms);
+});
+
+const isTerminalAnalysisJob = (job) => ['success', 'error'].includes(String(job?.status || '').trim());
+
+const waitForAnalysisJob = async (jobOrId) => {
+  const jobId = String(jobOrId?.job_id || jobOrId?.id || jobOrId || '').trim();
+  if (!jobId) {
+    throw new Error('后台分析任务 id 为空');
+  }
+
+  let current = typeof jobOrId === 'object' ? jobOrId : null;
+  while (!isTerminalAnalysisJob(current)) {
+    await sleep(1200);
+    current = await fetchReviewAnalysisJob(jobId);
+  }
+  if (current?.status === 'error' && !current?.result) {
+    throw new Error(current?.error || '后台分析失败');
+  }
+  return current;
+};
 
 const scoreLabels = {
   0: '完全忘记',
@@ -213,6 +238,7 @@ function normalizeManualEntry(entryLike) {
     word: collapseWhitespace(entryLike?.word || fallbackWord) || fallbackWord,
     marked: Boolean(entryLike?.marked),
     needsProcessing: Boolean(entryLike?.needsProcessing || entryLike?.needs_processing),
+    relationCached: Boolean(entryLike?.relationCached || entryLike?.relation_cached),
   };
 }
 
@@ -1863,6 +1889,14 @@ function ConnectionPanel({
   const categoryLoadKey = categories.map((item) => normalizeCategoryValue(item)).filter(Boolean).sort().join('|');
   const suggestions = Array.isArray(relationSuggestions) ? relationSuggestions : [];
   const candidateCount = Number(relationSuggestMeta?.candidate_count || 0);
+  const relationCacheStatus = String(relationSuggestMeta?.cache_status || '').trim();
+  const relationCacheLabel = relationCacheStatus === 'hit'
+    ? '预生成缓存'
+    : relationCacheStatus === 'stored'
+      ? '已缓存'
+      : relationCacheStatus === 'refresh'
+        ? '刷新缓存'
+        : '';
   const skippedCount = Array.isArray(relationSuggestMeta?.skipped)
     ? relationSuggestMeta.skipped.length
     : Number(relationSuggestMeta?.skipped || 0);
@@ -1928,6 +1962,7 @@ function ConnectionPanel({
               </div>
             </div>
             <div className="relation-editor-actions">
+              {relationCacheLabel ? <span className="badge medium">{relationCacheLabel}</span> : null}
               <button type="button" className="ghost" onClick={onRunRelationSuggest} disabled={relationSuggestLoading || !draft}>
                 <UiIcon name="wand" size={14} />
                 <span>{relationSuggestLoading ? '建议中...' : 'LLM 建议连边'}</span>
@@ -3507,6 +3542,8 @@ export default function App({
   };
 
   const requestRecommendation = async (excludeKeys = []) => {
+    if (!recommendPreferencesReady) return null;
+
     setLoadingRecommendation(true);
     try {
       setError('');
@@ -3595,7 +3632,7 @@ export default function App({
   }, [apiCategory, cacheEntriesForCategory, category]);
 
   useEffect(() => {
-    if (mode !== 'recommend' || !categories.length) return undefined;
+    if (mode !== 'recommend' || !categories.length || !recommendPreferencesReady) return undefined;
 
     let cancelled = false;
     setRecommendation(null);
@@ -3634,7 +3671,7 @@ export default function App({
     return () => {
       cancelled = true;
     };
-  }, [categories.length, entryFilter, mode, recommendScope, normalizedRecommendPreferences]);
+  }, [categories.length, entryFilter, mode, recommendPreferencesReady, recommendScope, normalizedRecommendPreferences]);
 
   useEffect(() => {
     if (mode !== 'recommend') return;
@@ -3796,7 +3833,7 @@ export default function App({
         ? sanitizeCurrentDraft(draft, filename.replace(/\.json$/i, ''))
         : null;
       const shouldRefreshCache = !analysisDraft && cleanData?.cache?.status === 'hit';
-      const res = await runFileRefine(
+      const job = await startFileRefineJob(
         apiCategory,
         filename,
         ORGANIZE_CURRENT_WORD_INCLUDE_LLM,
@@ -3807,6 +3844,11 @@ export default function App({
           customPrompt: organizeCustomPrompt,
         },
       );
+      const finalJob = await waitForAnalysisJob(job);
+      const res = finalJob?.result;
+      if (!res) {
+        throw new Error(finalJob?.error || '整理建议生成失败');
+      }
       setCleanData(res);
       if (res?.analyzed_from === 'draft') {
         showNotice('已基于当前草稿生成清洗建议');
@@ -3939,17 +3981,54 @@ export default function App({
     setRelationSuggestions([]);
     setRelationSuggestMeta(null);
     try {
-      const payload = sanitizeCurrentDraft(draft, filename.replace(/\.json$/i, ''));
-      const res = await suggestVocabRelations(apiCategory, filename, payload, 12, {
+      const hasCustomPrompt = Boolean(collapseWhitespace(relationSuggestPrompt));
+      const payload = draftDirty
+        ? sanitizeCurrentDraft(draft, filename.replace(/\.json$/i, ''))
+        : null;
+      const shouldRefreshCache = !draftDirty && !hasCustomPrompt && relationSuggestMeta?.cache_status === 'hit';
+      const job = await startVocabRelationsSuggestJob(apiCategory, filename, payload, 12, {
         customPrompt: relationSuggestPrompt,
+        useCache: !draftDirty && !hasCustomPrompt,
+        refreshCache: shouldRefreshCache,
       });
+      const finalJob = await waitForAnalysisJob(job);
+      const res = finalJob?.result;
+      if (!res) {
+        throw new Error(finalJob?.error || '连边建议生成失败');
+      }
       setRelationSuggestions(Array.isArray(res?.suggestions) ? res.suggestions : []);
-      setRelationSuggestMeta(res?.meta || null);
+      setRelationSuggestMeta({
+        ...(res?.meta || {}),
+        cache_status: res?.cache?.status || '',
+        cache: res?.cache || null,
+      });
+      if (
+        !payload
+        && !hasCustomPrompt
+        && !res?.llm_error
+        && ['hit', 'stored'].includes(String(res?.cache?.status || ''))
+        && Array.isArray(res?.suggestions)
+        && res.suggestions.length > 0
+        && typeof onVocabularyChange === 'function'
+      ) {
+        onVocabularyChange({
+          status: 'success',
+          category: apiCategory,
+          file: res?.file || filename,
+          relationCached: true,
+          relation_cached: true,
+          closeEditor: false,
+        });
+      }
       if (res?.llm_error) {
         setRelationSuggestError(res.llm_error);
       }
       if (Array.isArray(res?.suggestions) && res.suggestions.length) {
-        showNotice(`已生成 ${res.suggestions.length} 条连边建议`);
+        if (res?.cache?.status === 'hit') {
+          showNotice(`已加载预生成连边建议 ${res.suggestions.length} 条`);
+        } else {
+          showNotice(`已生成 ${res.suggestions.length} 条连边建议`);
+        }
       } else if (res?.llm_error) {
         showError(`连边 LLM 建议失败: ${res.llm_error}`);
       } else {
@@ -4216,6 +4295,7 @@ export default function App({
           file: savedFilename,
           target_file: savedFilename,
           data: res.data || payload,
+          keepSelection: true,
         });
       }
     } catch (err) {
@@ -4258,6 +4338,8 @@ export default function App({
           file: savedFilename,
           target_file: savedFilename,
           data: res.data || payload,
+          closeEditor: false,
+          keepSelection: true,
         });
       }
     } catch (err) {

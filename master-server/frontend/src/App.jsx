@@ -3,13 +3,14 @@ import TaskVisualizer from './components/TaskVisualizer';
 import ConfigForm from './components/ConfigForm';
 import VocabularyWorkspace from './components/VocabularyWorkspace';
 import VisualizationDashboard from './components/VisualizationDashboard';
+import ExperimentalFeatures from './components/ExperimentalFeatures';
 import UiIcon from './components/UiIcon';
 import { getVocabularyCategories } from './api/client';
 import './App.css';
 
 const COMPACT_LAYOUT_MEDIA_QUERY = '(max-width: 1180px)';
 const DESKTOP_MINIMAL_MODE_KEY = 'linkualogDesktopMinimalMode';
-const VALID_TABS = new Set(['tasks', 'vocabulary', 'visualization']);
+const VALID_TABS = new Set(['tasks', 'vocabulary', 'visualization', 'experiments']);
 const DEFAULT_TAB = 'visualization';
 const MOBILE_TOOLS_PANEL_ID = 'master-mobile-tools-panel';
 const ADD_VOCAB_CATEGORY_KEY = 'addVocabularyCategory';
@@ -256,11 +257,12 @@ function App() {
   }, []);
 
   useEffect(() => {
+    const shouldWriteVocabularyRoute = currentTab === 'vocabulary';
     writeUrlState({
       tab: currentTab,
       minimal: preferDesktopMinimalMode,
-      category: vocabularyRouteState.category,
-      word: vocabularyRouteState.word,
+      category: shouldWriteVocabularyRoute ? vocabularyRouteState.category : '',
+      word: shouldWriteVocabularyRoute ? vocabularyRouteState.word : '',
     });
   }, [currentTab, preferDesktopMinimalMode, vocabularyRouteState]);
 
@@ -421,6 +423,16 @@ function App() {
               </span>
               <span className="master-tab-label">{usesCompactLayout ? '待办' : '待办事项'}</span>
             </button>
+            <button
+              onClick={() => handleTabChange('experiments')}
+              aria-label="打开实验性功能"
+              className={`master-tab${currentTab === 'experiments' ? ' active' : ''}`}
+            >
+              <span className="master-tab-icon">
+                <UiIcon name="tune" size={17} />
+              </span>
+              <span className="master-tab-label">{usesCompactLayout ? '实验' : '实验性功能'}</span>
+            </button>
           </div>
         </div>
 
@@ -575,6 +587,12 @@ function App() {
               categories={categories}
               onOpenVocabularyEntry={handleOpenVocabularyEntry}
             />
+          </div>
+          <div
+            className={`master-pane${currentTab === 'experiments' ? ' is-active' : ''}`}
+            aria-hidden={currentTab !== 'experiments'}
+          >
+            <ExperimentalFeatures />
           </div>
         </div>
       </main>
