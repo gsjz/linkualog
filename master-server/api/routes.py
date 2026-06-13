@@ -22,7 +22,11 @@ from services.llm import (
     recommend_task_name,
 )
 from core.review_vocabulary import list_categories as list_vocab_categories
-from core.refine_cache import delete_refine_cache_for_entry, has_refine_cache_for_entry
+from core.refine_cache import (
+    delete_refine_cache_for_entry,
+    has_refine_cache_for_entry,
+    has_relation_suggest_cache_for_entry,
+)
 from core.vocabulary_quality import vocabulary_entry_needs_processing
 from core.vocabulary import (
     get_vocab_path,
@@ -761,6 +765,7 @@ def list_vocabulary(category: str = ""):
             created_at = str(payload.get("createdAt") or "").strip()
             needs_processing = vocabulary_entry_needs_processing(payload)
             refine_cached = has_refine_cache_for_entry(category, filename, payload)
+            relation_cached = has_relation_suggest_cache_for_entry(category, filename, payload)
             entries.append({
                 "key": word_key,
                 "file": filename,
@@ -770,6 +775,8 @@ def list_vocabulary(category: str = ""):
                 "needsProcessing": needs_processing,
                 "refine_cached": refine_cached,
                 "refineCached": refine_cached,
+                "relation_cached": relation_cached,
+                "relationCached": relation_cached,
                 "created_at": created_at,
                 "createdAt": created_at,
             })

@@ -14,10 +14,18 @@ from core.config import get_config_data
 from core.refine_cache import (
     build_refine_analysis_payload,
     build_refine_cache_key,
+    build_relation_suggest_analysis_payload,
+    build_relation_suggest_cache_key,
     delete_refine_cache_for_entry,
+    has_relation_suggest_cache_for_entry,
     load_refine_cache,
     payload_fingerprint,
     save_refine_cache,
+)
+from core.review_analysis_jobs import (
+    create_analysis_job,
+    get_analysis_job,
+    update_job_progress,
 )
 from core.review import (
     append_or_replace_today_review,
@@ -150,6 +158,17 @@ class RelationSuggestRequest(BaseModel):
     limit: int = 12
     candidate_limit: int = 72
     custom_prompt: str = ""
+    use_cache: bool = True
+    refresh_cache: bool = False
+
+
+class RelationSuggestPrefetchRequest(BaseModel):
+    category: str
+    filenames: list[str]
+    limit: int = 20
+    refresh_cache: bool = False
+    suggestion_limit: int = 12
+    candidate_limit: int = 72
 
 
 class ReviewSuggestRequest(BaseModel):
@@ -624,6 +643,7 @@ def _ensure_bidirectional_relation(
             origin=origin,
         )
         save_vocab_file(path, next_payload)
+        delete_refine_cache_for_entry(str(current_ref.get("category") or ""), str(current_ref.get("file") or ""))
 
 
 def _relation_key(relation: dict) -> tuple[str, str]:
@@ -665,6 +685,7 @@ def _remove_reverse_relation(target_ref: dict, source_ref: dict, relation_type: 
     else:
         normalized.pop("relations", None)
     save_vocab_file(path, normalized)
+    delete_refine_cache_for_entry(str(target_ref.get("category") or ""), str(target_ref.get("file") or ""))
 
 
 def _sync_bidirectional_relations_for_entry(
@@ -1597,7 +1618,9 @@ def _delete_refine_cache_if_analysis_changed(
 ) -> int:
     before_hash = payload_fingerprint(build_refine_analysis_payload(file_name, before_payload))
     after_hash = payload_fingerprint(build_refine_analysis_payload(file_name, after_payload))
-    if before_hash == after_hash:
+    before_relation_hash = payload_fingerprint(build_relation_suggest_analysis_payload(file_name, before_payload))
+    after_relation_hash = payload_fingerprint(build_relation_suggest_analysis_payload(file_name, after_payload))
+    if before_hash == after_hash and before_relation_hash == after_relation_hash:
         return 0
     return delete_refine_cache_for_entry(category, file_name)
 
@@ -2414,9 +2437,348 @@ def _build_file_refine_response(
     }
 
 
+def _normalize_prefetch_filenames(raw_filenames: list[str] | None, limit: int) -> list[str]:
+    normalized_limit = min(max(int(limit or 20), 1), 50)
+    filenames = []
+    seen = set()
+    for raw_filename in raw_filenames or []:
+        normalized = _normalize_json_filename(raw_filename)
+        if not normalized or normalized in seen:
+            continue
+        seen.add(normalized)
+        filenames.append(normalized)
+        if len(filenames) >= normalized_limit:
+            break
+    return filenames
+
+
+def _summarize_job_results(results: list[dict], counts: Counter) -> dict:
+    return {
+        "processed": len(results),
+        "counts": dict(counts),
+        "error_count": counts.get("error", 0),
+    }
+
+
+def _count_refine_response_suggestions(result: dict) -> int:
+    llm = result.get("llm") if isinstance(result, dict) and isinstance(result.get("llm"), dict) else {}
+    total = 0
+    for key in ("entry", "definitions", "examples"):
+        items = llm.get(key)
+        if isinstance(items, list):
+            total += len(items)
+    return total
+
+
+def _run_file_refine_prefetch_job(
+    job_id: str,
+    *,
+    category: str,
+    filenames: list[str],
+    requested: int,
+    limit: int,
+    refresh_cache: bool,
+) -> dict:
+    results = []
+    counts = Counter()
+    total = len(filenames)
+    for index, filename in enumerate(filenames, start=1):
+        update_job_progress(
+            job_id,
+            done=index - 1,
+            total=total,
+            current={"category": category, "file": filename},
+            summary=_summarize_job_results(results, counts),
+        )
+        try:
+            path, payload = load_vocab_entry(category, filename)
+            file_name = os.path.basename(path)
+            result = _build_file_refine_response(
+                category=category,
+                file_name=file_name,
+                payload_for_analysis=payload,
+                analyzed_from="file",
+                include_llm=True,
+                use_cache=True,
+                refresh_cache=bool(refresh_cache),
+            )
+            cache_status = str(result.get("cache", {}).get("status") or "")
+            suggestion_count = _count_refine_response_suggestions(result)
+            counts[cache_status] += 1
+            results.append(
+                {
+                    "file": file_name,
+                    "status": "success",
+                    "cache": result.get("cache"),
+                    "llm_error": result.get("llm_error"),
+                    "suggestion_count": suggestion_count,
+                }
+            )
+        except Exception as exc:
+            counts["error"] += 1
+            results.append(
+                {
+                    "file": filename,
+                    "status": "error",
+                    "error": str(exc),
+                }
+            )
+        finally:
+            update_job_progress(
+                job_id,
+                done=index,
+                total=total,
+                current={"category": category, "file": filename},
+                summary=_summarize_job_results(results, counts),
+            )
+
+    payload = {
+        "summary": _summarize_job_results(results, counts),
+        "result": {
+            "status": "success",
+            "category": category,
+            "requested": requested,
+            "processed": len(results),
+            "limit": limit,
+            "counts": dict(counts),
+            "results": results,
+        },
+    }
+    failed_items = [
+        item
+        for item in results
+        if item.get("status") == "error" or item.get("llm_error")
+    ]
+    if failed_items:
+        payload["error"] = failed_items[0].get("error") or failed_items[0].get("llm_error") or "预生成整理建议失败"
+    return payload
+
+
+def _start_file_refine_prefetch_job(req: FileRefinePrefetchRequest) -> dict:
+    category = _require_category(req.category)
+    limit = min(max(int(req.limit or 20), 1), 50)
+    filenames = _normalize_prefetch_filenames(req.filenames, limit)
+    return create_analysis_job(
+        kind="file_refine_prefetch",
+        description=f"预生成整理建议 {category}",
+        total=len(filenames),
+        meta={
+            "category": category,
+            "requested": len(req.filenames or []),
+            "limit": limit,
+            "refresh_cache": bool(req.refresh_cache),
+        },
+        runner=lambda job_id: _run_file_refine_prefetch_job(
+            job_id,
+            category=category,
+            filenames=filenames,
+            requested=len(req.filenames or []),
+            limit=limit,
+            refresh_cache=bool(req.refresh_cache),
+        ),
+    )
+
+
+def _run_file_refine_job(job_id: str, req: FileRefineRequest, category: str) -> dict:
+    path, payload = load_vocab_entry(category, req.filename)
+    fallback_word = os.path.splitext(os.path.basename(path))[0]
+    file_name = os.path.basename(path)
+    update_job_progress(job_id, done=0, total=1, current={"category": category, "file": file_name})
+
+    if isinstance(req.data, dict):
+        payload_for_analysis = _normalize_vocab_payload(
+            req.data,
+            fallback_word=fallback_word,
+            fallback_created_at=str(payload.get("createdAt", "")),
+        )
+        analyzed_from = "draft"
+    else:
+        payload_for_analysis = payload
+        analyzed_from = "file"
+
+    result = _build_file_refine_response(
+        category=category,
+        file_name=file_name,
+        payload_for_analysis=payload_for_analysis,
+        analyzed_from=analyzed_from,
+        include_llm=req.include_llm,
+        use_cache=req.use_cache,
+        refresh_cache=req.refresh_cache,
+        custom_prompt=req.custom_prompt,
+    )
+    update_job_progress(
+        job_id,
+        done=1,
+        total=1,
+        current={"category": category, "file": file_name},
+        summary={
+            "cache_status": result.get("cache", {}).get("status"),
+            "llm_error": result.get("llm_error"),
+        },
+    )
+    payload = {"result": result, "summary": {"cache_status": result.get("cache", {}).get("status")}}
+    if result.get("llm_error"):
+        payload["error"] = result.get("llm_error")
+    return payload
+
+
+def _run_relation_prefetch_job(
+    job_id: str,
+    *,
+    category: str,
+    filenames: list[str],
+    requested: int,
+    limit: int,
+    refresh_cache: bool,
+    suggestion_limit: int,
+    candidate_limit: int,
+) -> dict:
+    results = []
+    counts = Counter()
+    total = len(filenames)
+    for index, filename in enumerate(filenames, start=1):
+        update_job_progress(
+            job_id,
+            done=index - 1,
+            total=total,
+            current={"category": category, "file": filename},
+            summary=_summarize_job_results(results, counts),
+        )
+        try:
+            result = suggest_vocab_relations(
+                RelationSuggestRequest(
+                    category=category,
+                    filename=filename,
+                    data=None,
+                    limit=suggestion_limit,
+                    candidate_limit=candidate_limit,
+                    custom_prompt="",
+                    use_cache=True,
+                    refresh_cache=bool(refresh_cache),
+                )
+            )
+            cache_status = str(result.get("cache", {}).get("status") or "")
+            counts[cache_status] += 1
+            results.append(
+                {
+                    "file": result.get("file") or filename,
+                    "status": "success",
+                    "cache": result.get("cache"),
+                    "llm_error": result.get("llm_error"),
+                    "suggestion_count": len(result.get("suggestions", []) if isinstance(result.get("suggestions"), list) else []),
+                }
+            )
+        except Exception as exc:
+            counts["error"] += 1
+            results.append(
+                {
+                    "file": filename,
+                    "status": "error",
+                    "error": str(exc),
+                }
+            )
+        finally:
+            update_job_progress(
+                job_id,
+                done=index,
+                total=total,
+                current={"category": category, "file": filename},
+                summary=_summarize_job_results(results, counts),
+            )
+
+    payload = {
+        "summary": _summarize_job_results(results, counts),
+        "result": {
+            "status": "success",
+            "category": category,
+            "requested": requested,
+            "processed": len(results),
+            "limit": limit,
+            "counts": dict(counts),
+            "results": results,
+        },
+    }
+    failed_items = [
+        item
+        for item in results
+        if item.get("status") == "error" or item.get("llm_error")
+    ]
+    if failed_items:
+        payload["error"] = failed_items[0].get("error") or failed_items[0].get("llm_error") or "预生成连接建议失败"
+    return payload
+
+
+def _start_relation_prefetch_job(req: RelationSuggestPrefetchRequest) -> dict:
+    category = _require_category(req.category)
+    limit = min(max(int(req.limit or 20), 1), 50)
+    filenames = _normalize_prefetch_filenames(req.filenames, limit)
+    return create_analysis_job(
+        kind="relation_suggest_prefetch",
+        description=f"预生成连接建议 {category}",
+        total=len(filenames),
+        meta={
+            "category": category,
+            "requested": len(req.filenames or []),
+            "limit": limit,
+            "refresh_cache": bool(req.refresh_cache),
+            "suggestion_limit": req.suggestion_limit,
+            "candidate_limit": req.candidate_limit,
+        },
+        runner=lambda job_id: _run_relation_prefetch_job(
+            job_id,
+            category=category,
+            filenames=filenames,
+            requested=len(req.filenames or []),
+            limit=limit,
+            refresh_cache=bool(req.refresh_cache),
+            suggestion_limit=req.suggestion_limit,
+            candidate_limit=req.candidate_limit,
+        ),
+    )
+
+
+def _run_relation_suggest_job(job_id: str, req: RelationSuggestRequest, category: str) -> dict:
+    update_job_progress(
+        job_id,
+        done=0,
+        total=1,
+        current={"category": category, "file": _normalize_json_filename(req.filename)},
+    )
+    result = suggest_vocab_relations(req)
+    update_job_progress(
+        job_id,
+        done=1,
+        total=1,
+        current={"category": category, "file": result.get("file") or _normalize_json_filename(req.filename)},
+        summary={
+            "cache_status": result.get("cache", {}).get("status"),
+            "llm_error": result.get("llm_error"),
+            "suggestion_count": len(result.get("suggestions", []) if isinstance(result.get("suggestions"), list) else []),
+        },
+    )
+    payload = {
+        "result": result,
+        "summary": {
+            "cache_status": result.get("cache", {}).get("status"),
+            "suggestion_count": len(result.get("suggestions", []) if isinstance(result.get("suggestions"), list) else []),
+        },
+    }
+    if result.get("llm_error"):
+        payload["error"] = result.get("llm_error")
+    return payload
+
+
 @router.get("/api/health")
 def health_check():
     return {"status": "ok"}
+
+
+@router.get("/api/review/analysis/jobs/{job_id}")
+def get_review_analysis_job(job_id: str):
+    job = get_analysis_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="分析任务不存在")
+    return job
 
 
 @router.get("/api/review/visualization")
@@ -2861,10 +3223,39 @@ def suggest_vocab_relations(req: RelationSuggestRequest):
                 existing_relations.append(incoming_relation)
                 existing_relation_keys.add(_relation_key(incoming_relation))
         normalized_limit = max(1, min(int(req.limit or 12), 30))
+        normalized_candidate_limit = max(12, min(int(req.candidate_limit or 72), 180))
+        normalized_custom_prompt = str(req.custom_prompt or "").strip()
+        cache_meta = build_relation_suggest_cache_key(
+            category,
+            file_name,
+            source_payload,
+            limit=normalized_limit,
+            candidate_limit=normalized_candidate_limit,
+        )
+        can_use_cache = bool(
+            req.use_cache
+            and not isinstance(req.data, dict)
+            and not normalized_custom_prompt
+        )
+        cache_status = "disabled"
+        cached_response = None
+        if can_use_cache and not req.refresh_cache:
+            cached = load_refine_cache(cache_meta)
+            cached_response = cached.get("llm") if isinstance(cached, dict) else None
+            cached_error = cached.get("llm_error") if isinstance(cached, dict) else None
+            if isinstance(cached_response, dict) and not cached_error:
+                cached_response = deepcopy(cached_response)
+                cache_status = "hit"
+            else:
+                cached_response = None
+                cache_status = "miss"
+        elif can_use_cache and req.refresh_cache:
+            cache_status = "refresh"
+
         rule_candidates, rule_skipped = _build_relation_candidates(
             source_ref,
             source_payload,
-            candidate_limit=req.candidate_limit,
+            candidate_limit=normalized_candidate_limit,
         )
         heuristic = _build_relation_rule_suggestions(
             source_ref,
@@ -2873,78 +3264,93 @@ def suggest_vocab_relations(req: RelationSuggestRequest):
             limit=normalized_limit,
         )
 
+        cached_meta = cached_response.get("meta") if isinstance(cached_response, dict) and isinstance(cached_response.get("meta"), dict) else {}
         llm_result = {"suggestions": [], "notes": []}
         llm_selection = {"selected": {}, "notes": []}
         llm_error = None
-        vocabulary_index, compact_candidate_by_id, index_skipped = _build_compact_vocabulary_index(source_ref)
-        skipped = rule_skipped + index_skipped
+        compact_candidate_by_id = {}
+        skipped = list(rule_skipped)
         selected_candidate_refs = []
-        if vocabulary_index:
-            try:
-                logger.info(
-                    "[relations_suggest] llm select start file=%s categories=%s candidates=%s",
-                    file_name,
-                    len(vocabulary_index),
-                    len(compact_candidate_by_id),
-                )
-                llm_selection = select_vocab_relation_candidates_with_llm(
-                    source={
-                        **_relation_entry_summary(category, file_name, source_payload),
-                        "category": category,
-                        "file": file_name,
-                    },
-                    vocabulary_index=vocabulary_index,
-                    existing_relations=existing_relations,
-                    limit=5,
-                    custom_prompt=req.custom_prompt,
-                )
-                selected_candidate_refs = _candidate_refs_from_words(
-                    llm_selection.get("selected", {}) if isinstance(llm_selection, dict) else {},
-                    compact_candidate_by_id,
-                    fallback_category=category,
-                    limit=5,
-                )
-                logger.info(
-                    "[relations_suggest] llm select success file=%s selected=%s",
-                    file_name,
-                    len(selected_candidate_refs),
-                )
-            except Exception as exc:
-                llm_error = str(exc)
-                logger.exception("[relations_suggest] llm select failed file=%s: %s", file_name, exc)
+        llm_candidates = []
 
-        llm_candidates, llm_candidate_skipped = _load_relation_candidate_summaries(
-            selected_candidate_refs,
-            source_ref,
-            source_payload,
-        )
-        skipped.extend(llm_candidate_skipped)
-        if llm_candidates:
-            try:
-                logger.info(
-                    "[relations_suggest] llm confirm start file=%s candidates=%s",
-                    file_name,
-                    len(llm_candidates),
-                )
-                llm_result = suggest_vocab_relations_with_llm(
-                    source={
-                        **_relation_entry_summary(category, file_name, source_payload),
-                        "category": category,
-                        "file": file_name,
-                    },
-                    candidates=llm_candidates,
-                    existing_relations=existing_relations,
-                    limit=normalized_limit,
-                    custom_prompt=req.custom_prompt,
-                )
-                logger.info(
-                    "[relations_suggest] llm confirm success file=%s suggestion_count=%s",
-                    file_name,
-                    len(llm_result.get("suggestions", []) if isinstance(llm_result, dict) else []),
-                )
-            except Exception as exc:
-                llm_error = str(exc) if not llm_error else f"{llm_error}; {exc}"
-                logger.exception("[relations_suggest] llm confirm failed file=%s: %s", file_name, exc)
+        if cached_response is not None:
+            cached_llm = cached_response.get("llm") if isinstance(cached_response.get("llm"), dict) else {}
+            llm_selection = cached_llm.get("selection") if isinstance(cached_llm.get("selection"), dict) else {"selected": {}, "notes": []}
+            llm_result = {key: value for key, value in cached_llm.items() if key != "selection"}
+            if not isinstance(llm_result.get("suggestions"), list):
+                llm_result["suggestions"] = []
+            if not isinstance(llm_result.get("notes"), list):
+                llm_result["notes"] = []
+            llm_error = cached_response.get("llm_error")
+        else:
+            vocabulary_index, compact_candidate_by_id, index_skipped = _build_compact_vocabulary_index(source_ref)
+            skipped = rule_skipped + index_skipped
+            if vocabulary_index:
+                try:
+                    logger.info(
+                        "[relations_suggest] llm select start file=%s categories=%s candidates=%s",
+                        file_name,
+                        len(vocabulary_index),
+                        len(compact_candidate_by_id),
+                    )
+                    llm_selection = select_vocab_relation_candidates_with_llm(
+                        source={
+                            **_relation_entry_summary(category, file_name, source_payload),
+                            "category": category,
+                            "file": file_name,
+                        },
+                        vocabulary_index=vocabulary_index,
+                        existing_relations=existing_relations,
+                        limit=5,
+                        custom_prompt=normalized_custom_prompt,
+                    )
+                    selected_candidate_refs = _candidate_refs_from_words(
+                        llm_selection.get("selected", {}) if isinstance(llm_selection, dict) else {},
+                        compact_candidate_by_id,
+                        fallback_category=category,
+                        limit=5,
+                    )
+                    logger.info(
+                        "[relations_suggest] llm select success file=%s selected=%s",
+                        file_name,
+                        len(selected_candidate_refs),
+                    )
+                except Exception as exc:
+                    llm_error = str(exc)
+                    logger.exception("[relations_suggest] llm select failed file=%s: %s", file_name, exc)
+
+            llm_candidates, llm_candidate_skipped = _load_relation_candidate_summaries(
+                selected_candidate_refs,
+                source_ref,
+                source_payload,
+            )
+            skipped.extend(llm_candidate_skipped)
+            if llm_candidates:
+                try:
+                    logger.info(
+                        "[relations_suggest] llm confirm start file=%s candidates=%s",
+                        file_name,
+                        len(llm_candidates),
+                    )
+                    llm_result = suggest_vocab_relations_with_llm(
+                        source={
+                            **_relation_entry_summary(category, file_name, source_payload),
+                            "category": category,
+                            "file": file_name,
+                        },
+                        candidates=llm_candidates,
+                        existing_relations=existing_relations,
+                        limit=normalized_limit,
+                        custom_prompt=normalized_custom_prompt,
+                    )
+                    logger.info(
+                        "[relations_suggest] llm confirm success file=%s suggestion_count=%s",
+                        file_name,
+                        len(llm_result.get("suggestions", []) if isinstance(llm_result, dict) else []),
+                    )
+                except Exception as exc:
+                    llm_error = str(exc) if not llm_error else f"{llm_error}; {exc}"
+                    logger.exception("[relations_suggest] llm confirm failed file=%s: %s", file_name, exc)
 
         suggestions = _merge_relation_suggestions(
             heuristic,
@@ -2955,7 +3361,7 @@ def suggest_vocab_relations(req: RelationSuggestRequest):
             limit=normalized_limit,
         )
 
-        return {
+        response = {
             "status": "success",
             "category": category,
             "file": file_name,
@@ -2972,16 +3378,130 @@ def suggest_vocab_relations(req: RelationSuggestRequest):
                 + (llm_result.get("notes", []) if isinstance(llm_result, dict) else [])
             ),
             "meta": {
-                "candidate_count": len(llm_candidates),
-                "full_vocabulary_candidate_count": len(compact_candidate_by_id),
+                "candidate_count": int(cached_meta.get("candidate_count", len(llm_candidates)) or 0),
+                "full_vocabulary_candidate_count": int(cached_meta.get("full_vocabulary_candidate_count", len(compact_candidate_by_id)) or 0),
                 "rule_candidate_count": len(rule_candidates),
-                "candidate_limit": max(12, min(int(req.candidate_limit or 72), 180)),
-                "llm_selected_count": len(selected_candidate_refs),
+                "candidate_limit": normalized_candidate_limit,
+                "llm_selected_count": int(cached_meta.get("llm_selected_count", len(selected_candidate_refs)) or 0),
                 "skipped": skipped,
             },
+            "cache": {
+                "status": cache_status,
+                "enabled": can_use_cache,
+                "cache_key": cache_meta.get("cache_key"),
+                "content_hash": cache_meta.get("content_hash"),
+            },
         }
+        if can_use_cache and cache_status != "hit" and not llm_error:
+            response["cache"]["status"] = "stored"
+            save_refine_cache(cache_meta, response, None)
+        elif can_use_cache and llm_error:
+            response["cache"]["status"] = "error"
+        return response
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@router.post("/api/vocabulary/relations/suggest/jobs")
+def start_vocab_relations_suggest_job(req: RelationSuggestRequest):
+    try:
+        category = _require_category(req.category)
+        return create_analysis_job(
+            kind="relation_suggest",
+            description=f"连接建议 {category}/{_normalize_json_filename(req.filename)}",
+            total=1,
+            meta={
+                "category": category,
+                "filename": _normalize_json_filename(req.filename),
+                "use_cache": req.use_cache,
+                "refresh_cache": req.refresh_cache,
+                "has_draft": isinstance(req.data, dict),
+                "has_custom_prompt": bool(str(req.custom_prompt or "").strip()),
+            },
+            runner=lambda job_id: _run_relation_suggest_job(job_id, req, category),
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@router.post("/api/vocabulary/relations/suggest/prefetch")
+def prefetch_vocab_relations(req: RelationSuggestPrefetchRequest):
+    try:
+        category = _require_category(req.category)
+        limit = min(max(int(req.limit or 20), 1), 50)
+        filenames = []
+        seen = set()
+        for raw_filename in req.filenames or []:
+            normalized = _normalize_json_filename(raw_filename)
+            if not normalized or normalized in seen:
+                continue
+            seen.add(normalized)
+            filenames.append(normalized)
+            if len(filenames) >= limit:
+                break
+
+        results = []
+        counts = Counter()
+        for filename in filenames:
+            try:
+                result = suggest_vocab_relations(
+                    RelationSuggestRequest(
+                        category=category,
+                        filename=filename,
+                        data=None,
+                        limit=req.suggestion_limit,
+                        candidate_limit=req.candidate_limit,
+                        custom_prompt="",
+                        use_cache=True,
+                        refresh_cache=bool(req.refresh_cache),
+                    )
+                )
+                cache_status = str(result.get("cache", {}).get("status") or "")
+                counts[cache_status] += 1
+                results.append(
+                    {
+                        "file": result.get("file") or filename,
+                        "status": "success",
+                        "cache": result.get("cache"),
+                        "llm_error": result.get("llm_error"),
+                        "suggestion_count": len(result.get("suggestions", []) if isinstance(result.get("suggestions"), list) else []),
+                    }
+                )
+            except Exception as exc:
+                counts["error"] += 1
+                results.append(
+                    {
+                        "file": filename,
+                        "status": "error",
+                        "error": str(exc),
+                    }
+                )
+
+        return {
+            "status": "success",
+            "category": category,
+            "requested": len(req.filenames or []),
+            "processed": len(results),
+            "limit": limit,
+            "counts": dict(counts),
+            "results": results,
+        }
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@router.post("/api/vocabulary/relations/suggest/prefetch/jobs")
+def start_vocab_relations_prefetch_job(req: RelationSuggestPrefetchRequest):
+    try:
+        return _start_relation_prefetch_job(req)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     except Exception as exc:
@@ -3673,6 +4193,31 @@ def refine_file(req: FileRefineRequest):
         raise HTTPException(status_code=400, detail=str(exc))
 
 
+@router.post("/api/refine/file/jobs")
+def start_file_refine_job(req: FileRefineRequest):
+    try:
+        category = _require_category(req.category)
+        return create_analysis_job(
+            kind="file_refine",
+            description=f"整理建议 {category}/{_normalize_json_filename(req.filename)}",
+            total=1,
+            meta={
+                "category": category,
+                "filename": _normalize_json_filename(req.filename),
+                "include_llm": req.include_llm,
+                "use_cache": req.use_cache,
+                "refresh_cache": req.refresh_cache,
+                "has_draft": isinstance(req.data, dict),
+                "has_custom_prompt": bool(str(req.custom_prompt or "").strip()),
+            },
+            runner=lambda job_id: _run_file_refine_job(job_id, req, category),
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
 @router.post("/api/refine/file/prefetch")
 def prefetch_file_refine(req: FileRefinePrefetchRequest):
     try:
@@ -3733,6 +4278,16 @@ def prefetch_file_refine(req: FileRefinePrefetchRequest):
             "counts": dict(counts),
             "results": results,
         }
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@router.post("/api/refine/file/prefetch/jobs")
+def start_file_refine_prefetch_job(req: FileRefinePrefetchRequest):
+    try:
+        return _start_file_refine_prefetch_job(req)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     except Exception as exc:
@@ -3819,6 +4374,11 @@ def review_recommend(req: ReviewRecommendRequest):
 
                 marked = bool(payload.get("marked", False))
                 needs_processing = vocabulary_entry_needs_processing(payload)
+                relation_cached = has_relation_suggest_cache_for_entry(
+                    category_name,
+                    file_name,
+                    payload,
+                )
                 if mark_filter == "marked" and not marked:
                     continue
                 if mark_filter == "unmarked" and marked:
@@ -3842,6 +4402,8 @@ def review_recommend(req: ReviewRecommendRequest):
                         "marked": marked,
                         "needs_processing": needs_processing,
                         "needsProcessing": needs_processing,
+                        "relation_cached": relation_cached,
+                        "relationCached": relation_cached,
                         "created_at": created_at,
                         "priority_score": score_result["priority_score"],
                         "score_breakdown": score_result["score_breakdown"],

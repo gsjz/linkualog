@@ -13,6 +13,7 @@ from core.config import APP_DIR, get_config_data
 
 CACHE_SCHEMA_VERSION = 1
 FILE_REFINE_PROMPT_VERSION = 3
+RELATION_SUGGEST_PROMPT_VERSION = 1
 DEFAULT_CACHE_DIR = APP_DIR / "local_data/refine_cache"
 REFINE_CACHE_DIR = Path(os.environ.get("REFINE_CACHE_DIR", DEFAULT_CACHE_DIR))
 
@@ -122,6 +123,51 @@ def build_refine_analysis_payload(file_name: str, payload: dict) -> dict:
     }
 
 
+def _normalize_relation_cache_items(raw_relations) -> list[dict]:
+    if not isinstance(raw_relations, list):
+        return []
+
+    normalized = []
+    for raw_relation in raw_relations:
+        if not isinstance(raw_relation, dict):
+            continue
+        raw_target = raw_relation.get("target") if isinstance(raw_relation.get("target"), dict) else {}
+        target_file = _normalize_filename(raw_target.get("file") or raw_target.get("filename"))
+        target_category = _normalize_category(raw_target.get("category"))
+        target_word = str(raw_target.get("word") or Path(target_file).stem).strip()
+        if not target_file:
+            continue
+        normalized.append(
+            {
+                "type": str(raw_relation.get("type") or "related").strip().lower() or "related",
+                "target": {
+                    "category": target_category,
+                    "file": target_file,
+                    "word": target_word,
+                },
+            }
+        )
+
+    normalized.sort(
+        key=lambda item: (
+            item["target"]["category"],
+            item["target"]["file"].lower(),
+            item["type"],
+        )
+    )
+    return normalized
+
+
+def build_relation_suggest_analysis_payload(file_name: str, payload: dict) -> dict:
+    source = payload if isinstance(payload, dict) else {}
+    return {
+        "word": str(source.get("word") or Path(_normalize_filename(file_name)).stem).strip(),
+        "definitions": source.get("definitions") if isinstance(source.get("definitions"), list) else [],
+        "examples": _normalize_analysis_examples(source.get("examples")),
+        "relations": _normalize_relation_cache_items(source.get("relations")),
+    }
+
+
 def payload_fingerprint(payload: dict) -> str:
     return hashlib.sha256(_stable_json(payload if isinstance(payload, dict) else {}).encode("utf-8")).hexdigest()
 
@@ -156,9 +202,52 @@ def build_refine_cache_key(category: str, filename: str, payload: dict) -> dict:
     )
     return {
         "schema": CACHE_SCHEMA_VERSION,
+        "kind": "file_refine_llm",
         "prompt_version": FILE_REFINE_PROMPT_VERSION,
         "category": normalized_category,
         "filename": normalized_filename,
+        "content_hash": content_hash,
+        "config_hash": config_hash,
+        "cache_key": hashlib.sha256(raw_key.encode("utf-8")).hexdigest(),
+    }
+
+
+def build_relation_suggest_cache_key(
+    category: str,
+    filename: str,
+    payload: dict,
+    *,
+    limit: int = 12,
+    candidate_limit: int = 72,
+) -> dict:
+    normalized_category = _normalize_category(category)
+    normalized_filename = _normalize_filename(filename)
+    normalized_limit = max(1, min(int(limit or 12), 30))
+    normalized_candidate_limit = max(12, min(int(candidate_limit or 72), 180))
+    analysis_payload = build_relation_suggest_analysis_payload(normalized_filename, payload)
+    content_hash = payload_fingerprint(analysis_payload)
+    config_hash = llm_config_fingerprint()
+    raw_key = _stable_json(
+        {
+            "schema": CACHE_SCHEMA_VERSION,
+            "kind": "relation_suggest_llm",
+            "prompt_version": RELATION_SUGGEST_PROMPT_VERSION,
+            "category": normalized_category,
+            "filename": normalized_filename,
+            "limit": normalized_limit,
+            "candidate_limit": normalized_candidate_limit,
+            "content_hash": content_hash,
+            "config_hash": config_hash,
+        }
+    )
+    return {
+        "schema": CACHE_SCHEMA_VERSION,
+        "kind": "relation_suggest_llm",
+        "prompt_version": RELATION_SUGGEST_PROMPT_VERSION,
+        "category": normalized_category,
+        "filename": normalized_filename,
+        "limit": normalized_limit,
+        "candidate_limit": normalized_candidate_limit,
         "content_hash": content_hash,
         "config_hash": config_hash,
         "cache_key": hashlib.sha256(raw_key.encode("utf-8")).hexdigest(),
@@ -205,7 +294,44 @@ def has_refine_cache_for_entry(category: str, filename: str, payload: dict) -> b
         return False
     if cached.get("llm_error"):
         return False
-    return isinstance(cached.get("llm"), dict)
+    llm = cached.get("llm")
+    if not isinstance(llm, dict):
+        return False
+    return any(
+        isinstance(llm.get(key), list) and len(llm.get(key)) > 0
+        for key in ("entry", "definitions", "examples")
+    )
+
+
+def has_relation_suggest_cache_for_entry(
+    category: str,
+    filename: str,
+    payload: dict,
+    *,
+    limit: int = 12,
+    candidate_limit: int = 72,
+) -> bool:
+    cache_meta = build_relation_suggest_cache_key(
+        category,
+        filename,
+        payload,
+        limit=limit,
+        candidate_limit=candidate_limit,
+    )
+    cached = load_refine_cache(cache_meta)
+    if not isinstance(cached, dict):
+        return False
+    if cached.get("llm_error"):
+        return False
+    response = cached.get("llm")
+    if not isinstance(response, dict):
+        return False
+    suggestions = response.get("suggestions")
+    if isinstance(suggestions, list):
+        return len(suggestions) > 0
+    llm = response.get("llm") if isinstance(response.get("llm"), dict) else {}
+    llm_suggestions = llm.get("suggestions")
+    return isinstance(llm_suggestions, list) and len(llm_suggestions) > 0
 
 
 def save_refine_cache(cache_meta: dict, llm: dict | None, llm_error: str | None = None) -> dict:

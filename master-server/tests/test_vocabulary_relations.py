@@ -5,8 +5,11 @@ from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 import core.review_vocabulary as review_vocabulary
+from core import refine_cache
+from core.review_analysis_jobs import reset_analysis_jobs_for_tests, wait_for_analysis_job
 from api.review_routes import (
     ManualVocabMergeRequest,
+    RelationSuggestPrefetchRequest,
     RelationSuggestRequest,
     SplitApplyRequest,
     VocabSaveRequest,
@@ -16,6 +19,8 @@ from api.review_routes import (
     rename_vocab,
     review_visualization,
     save_vocab,
+    start_vocab_relations_prefetch_job,
+    start_vocab_relations_suggest_job,
     suggest_vocab_relations,
 )
 
@@ -30,10 +35,16 @@ class VocabularyRelationTests(unittest.TestCase):
     def setUp(self):
         self.tmp = TemporaryDirectory()
         self.root = Path(self.tmp.name)
+        self.refine_cache_dir = self.root / ".refine_cache"
         self.vocab_patch = patch.object(review_vocabulary, "VOCAB_DIR", str(self.root))
+        self.original_refine_cache_dir = refine_cache.REFINE_CACHE_DIR
         self.vocab_patch.start()
+        refine_cache.REFINE_CACHE_DIR = self.refine_cache_dir
+        reset_analysis_jobs_for_tests()
 
     def tearDown(self):
+        reset_analysis_jobs_for_tests()
+        refine_cache.REFINE_CACHE_DIR = self.original_refine_cache_dir
         self.vocab_patch.stop()
         self.tmp.cleanup()
 
@@ -532,6 +543,210 @@ class VocabularyRelationTests(unittest.TestCase):
         }
         self.assertIn(("phrase", "daily", "hazard-a-guess.json"), targets)
         self.assertIn(("same_word", "cet", "hazard.json"), targets)
+
+    def test_relation_suggest_job_returns_result_and_cache(self):
+        write_vocab(
+            self.root,
+            "daily",
+            "hazard.json",
+            {
+                "word": "hazard",
+                "createdAt": "2026-05-17",
+                "reviews": [],
+                "definitions": ["危害"],
+                "examples": [{"text": "Do you want to hazard a guess?"}],
+            },
+        )
+        write_vocab(
+            self.root,
+            "daily",
+            "hazard-a-guess.json",
+            {
+                "word": "hazard a guess",
+                "createdAt": "2026-05-18",
+                "reviews": [],
+                "definitions": ["试着猜"],
+                "examples": [],
+            },
+        )
+
+        with (
+            patch("api.review_routes.select_vocab_relation_candidates_with_llm") as mocked_select,
+            patch("api.review_routes.suggest_vocab_relations_with_llm") as mocked_confirm,
+        ):
+            mocked_select.return_value = {"selected": {"daily": ["hazard a guess"]}, "notes": []}
+            mocked_confirm.return_value = {
+                "suggestions": [
+                    {
+                        "type": "phrase",
+                        "target": {
+                            "category": "daily",
+                            "file": "hazard-a-guess.json",
+                            "word": "hazard a guess",
+                        },
+                        "reason": "固定短语",
+                        "confidence": 0.91,
+                    }
+                ],
+                "notes": [],
+            }
+            queued = start_vocab_relations_suggest_job(
+                RelationSuggestRequest(category="daily", filename="hazard.json", limit=8)
+            )
+            final = wait_for_analysis_job(queued["job_id"], timeout=5)
+            cached = suggest_vocab_relations(
+                RelationSuggestRequest(category="daily", filename="hazard.json", limit=8)
+            )
+
+        self.assertEqual(final["status"], "success")
+        self.assertEqual(final["result"]["status"], "success")
+        self.assertEqual(final["result"]["cache"]["status"], "stored")
+        self.assertEqual(cached["cache"]["status"], "hit")
+        self.assertEqual(mocked_select.call_count, 1)
+        self.assertEqual(mocked_confirm.call_count, 1)
+
+    def test_relation_prefetch_job_writes_and_reuses_cache(self):
+        write_vocab(
+            self.root,
+            "daily",
+            "hazard.json",
+            {
+                "word": "hazard",
+                "createdAt": "2026-05-17",
+                "reviews": [],
+                "definitions": ["危害"],
+                "examples": [{"text": "Do you want to hazard a guess?"}],
+            },
+        )
+        write_vocab(
+            self.root,
+            "daily",
+            "hazard-a-guess.json",
+            {
+                "word": "hazard a guess",
+                "createdAt": "2026-05-18",
+                "reviews": [],
+                "definitions": ["试着猜"],
+                "examples": [],
+            },
+        )
+
+        with (
+            patch("api.review_routes.select_vocab_relation_candidates_with_llm") as mocked_select,
+            patch("api.review_routes.suggest_vocab_relations_with_llm") as mocked_confirm,
+        ):
+            mocked_select.return_value = {"selected": {"daily": ["hazard a guess"]}, "notes": []}
+            mocked_confirm.return_value = {"suggestions": [], "notes": []}
+            queued = start_vocab_relations_prefetch_job(
+                RelationSuggestPrefetchRequest(
+                    category="daily",
+                    filenames=["hazard.json"],
+                    limit=1,
+                    suggestion_limit=8,
+                )
+            )
+            final = wait_for_analysis_job(queued["job_id"], timeout=5)
+            cached = suggest_vocab_relations(
+                RelationSuggestRequest(category="daily", filename="hazard.json", limit=8)
+            )
+
+        self.assertEqual(final["status"], "success")
+        self.assertEqual(final["result"]["processed"], 1)
+        self.assertEqual(final["result"]["counts"].get("stored"), 1)
+        self.assertEqual(cached["cache"]["status"], "hit")
+        self.assertEqual(mocked_select.call_count, 1)
+        self.assertEqual(mocked_confirm.call_count, 1)
+
+    def test_relation_suggest_job_marks_llm_error_without_caching(self):
+        write_vocab(
+            self.root,
+            "daily",
+            "hazard.json",
+            {
+                "word": "hazard",
+                "createdAt": "2026-05-17",
+                "reviews": [],
+                "definitions": ["危害"],
+                "examples": [{"text": "Do you want to hazard a guess?"}],
+            },
+        )
+        write_vocab(
+            self.root,
+            "daily",
+            "hazard-a-guess.json",
+            {
+                "word": "hazard a guess",
+                "createdAt": "2026-05-18",
+                "reviews": [],
+                "definitions": ["试着猜"],
+                "examples": [],
+            },
+        )
+
+        with patch("api.review_routes.select_vocab_relation_candidates_with_llm", side_effect=RuntimeError("llm down")):
+            queued = start_vocab_relations_suggest_job(
+                RelationSuggestRequest(category="daily", filename="hazard.json", limit=8)
+            )
+            final = wait_for_analysis_job(queued["job_id"], timeout=5)
+
+        self.assertEqual(final["status"], "error")
+        self.assertIn("llm down", final["error"])
+        self.assertEqual(final["result"]["cache"]["status"], "error")
+        cached = refine_cache.load_refine_cache(
+            refine_cache.build_relation_suggest_cache_key(
+                "daily",
+                "hazard.json",
+                review_vocabulary.load_vocab_file(str(self.root / "daily" / "hazard.json")),
+                limit=8,
+                candidate_limit=72,
+            )
+        )
+        self.assertIsNone(cached)
+
+    def test_relation_cache_marker_requires_suggestions(self):
+        payload = {
+            "word": "hazard",
+            "createdAt": "2026-05-17",
+            "reviews": [],
+            "definitions": ["危害"],
+            "examples": [],
+        }
+        write_vocab(self.root, "daily", "hazard.json", payload)
+        empty_meta = refine_cache.build_relation_suggest_cache_key("daily", "hazard.json", payload)
+        refine_cache.save_refine_cache(
+            empty_meta,
+            {
+                "status": "success",
+                "suggestions": [],
+                "llm": {"suggestions": [], "notes": []},
+            },
+        )
+
+        self.assertFalse(
+            refine_cache.has_relation_suggest_cache_for_entry("daily", "hazard.json", payload)
+        )
+
+        refine_cache.save_refine_cache(
+            empty_meta,
+            {
+                "status": "success",
+                "suggestions": [
+                    {
+                        "type": "related",
+                        "target": {
+                            "category": "daily",
+                            "file": "hazard-a-guess.json",
+                            "word": "hazard a guess",
+                        },
+                    }
+                ],
+                "llm": {"suggestions": [], "notes": []},
+            },
+        )
+
+        self.assertTrue(
+            refine_cache.has_relation_suggest_cache_for_entry("daily", "hazard.json", payload)
+        )
 
     def test_manual_merge_rewrites_incoming_undirected_relation_to_target(self):
         write_vocab(

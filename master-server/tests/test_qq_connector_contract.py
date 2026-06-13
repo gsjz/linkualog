@@ -10,6 +10,7 @@ from starlette.datastructures import UploadFile
 
 from api import review_routes, routes
 from core import config, refine_cache, review_vocabulary, storage, tasks, vocabulary
+from core.review_analysis_jobs import reset_analysis_jobs_for_tests, wait_for_analysis_job
 
 
 class QQConnectorContractTests(unittest.IsolatedAsyncioTestCase):
@@ -38,6 +39,7 @@ class QQConnectorContractTests(unittest.IsolatedAsyncioTestCase):
         tasks.LOCK_FILE = str(self.lock_file)
         config.CONFIG_FILE = self.base_dir / "local_data_runtime" / "llm_config.json"
         refine_cache.REFINE_CACHE_DIR = self.refine_cache_dir
+        reset_analysis_jobs_for_tests()
 
         self.storage_dir.mkdir(parents=True, exist_ok=True)
         self.vocab_dir.mkdir(parents=True, exist_ok=True)
@@ -51,6 +53,7 @@ class QQConnectorContractTests(unittest.IsolatedAsyncioTestCase):
         tasks.LOCK_FILE = self.original_lock_file
         config.CONFIG_FILE = self.original_config_file
         refine_cache.REFINE_CACHE_DIR = self.original_refine_cache_dir
+        reset_analysis_jobs_for_tests()
         self.tempdir.cleanup()
         super().tearDown()
 
@@ -1181,6 +1184,105 @@ class QQConnectorContractTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(first["counts"].get("stored"), 2)
         self.assertEqual(second["counts"].get("hit"), 2)
 
+    def test_prefetch_file_refine_job_writes_and_reuses_cache(self):
+        category_dir = self.vocab_dir / "daily"
+        category_dir.mkdir(parents=True, exist_ok=True)
+        for word in ["alpha", "beta"]:
+            review_vocabulary.save_vocab_file(
+                str(category_dir / f"{word}.json"),
+                {
+                    "word": word,
+                    "createdAt": "2026-05-01",
+                    "reviews": [],
+                    "definitions": [f"{word} definition"],
+                    "examples": [],
+                },
+            )
+
+        llm_payload = {"entry": [], "definitions": [], "examples": [], "global_notes": []}
+        with patch.object(review_routes, "suggest_file_cleaning_with_llm", return_value=llm_payload) as mocked_llm:
+            queued = review_routes.start_file_refine_prefetch_job(
+                review_routes.FileRefinePrefetchRequest(
+                    category="daily",
+                    filenames=["alpha.json", "beta.json"],
+                    limit=2,
+                )
+            )
+            self.assertIn(queued["status"], {"queued", "running", "success"})
+            self.assertTrue(queued["job_id"])
+            final = wait_for_analysis_job(queued["job_id"], timeout=5)
+            second = review_routes.prefetch_file_refine(
+                review_routes.FileRefinePrefetchRequest(
+                    category="daily",
+                    filenames=["alpha.json", "beta.json"],
+                    limit=2,
+                )
+            )
+
+        self.assertEqual(mocked_llm.call_count, 2)
+        self.assertEqual(final["status"], "success")
+        self.assertEqual(final["result"]["processed"], 2)
+        self.assertEqual(final["result"]["counts"].get("stored"), 2)
+        self.assertEqual(second["counts"].get("hit"), 2)
+
+    def test_file_refine_job_returns_result_and_cache(self):
+        category_dir = self.vocab_dir / "daily"
+        category_dir.mkdir(parents=True, exist_ok=True)
+        review_vocabulary.save_vocab_file(
+            str(category_dir / "job-refine.json"),
+            {
+                "word": "job-refine",
+                "createdAt": "2026-05-01",
+                "reviews": [],
+                "definitions": ["后台整理任务"],
+                "examples": [],
+            },
+        )
+
+        llm_payload = {"entry": [], "definitions": [], "examples": [], "global_notes": []}
+        with patch.object(review_routes, "suggest_file_cleaning_with_llm", return_value=llm_payload):
+            queued = review_routes.start_file_refine_job(
+                review_routes.FileRefineRequest(category="daily", filename="job-refine.json")
+            )
+            final = wait_for_analysis_job(queued["job_id"], timeout=5)
+
+        self.assertEqual(final["status"], "success")
+        self.assertEqual(final["result"]["status"], "success")
+        self.assertEqual(final["result"]["file"], "job-refine.json")
+        self.assertEqual(final["result"]["cache"]["status"], "stored")
+
+    def test_file_refine_job_marks_llm_error_without_caching(self):
+        category_dir = self.vocab_dir / "daily"
+        category_dir.mkdir(parents=True, exist_ok=True)
+        review_vocabulary.save_vocab_file(
+            str(category_dir / "job-error.json"),
+            {
+                "word": "job-error",
+                "createdAt": "2026-05-01",
+                "reviews": [],
+                "definitions": ["后台错误任务"],
+                "examples": [],
+            },
+        )
+
+        with patch.object(review_routes, "suggest_file_cleaning_with_llm", side_effect=RuntimeError("llm down")):
+            queued = review_routes.start_file_refine_job(
+                review_routes.FileRefineRequest(category="daily", filename="job-error.json")
+            )
+            final = wait_for_analysis_job(queued["job_id"], timeout=5)
+
+        self.assertEqual(final["status"], "error")
+        self.assertIn("llm down", final["error"])
+        self.assertEqual(final["result"]["cache"]["status"], "error")
+        cached = refine_cache.load_refine_cache(
+            refine_cache.build_refine_cache_key(
+                "daily",
+                "job-error.json",
+                review_vocabulary.load_vocab_file(str(category_dir / "job-error.json")),
+            )
+        )
+        self.assertIsNone(cached)
+
     def test_add_vocabulary_invalidates_cached_refine_suggestions(self):
         category_dir = self.vocab_dir / "daily"
         category_dir.mkdir(parents=True, exist_ok=True)
@@ -1363,6 +1465,34 @@ class QQConnectorContractTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertTrue(by_file["cached-marker.json"]["refineCached"])
         self.assertTrue(by_file["cached-marker.json"]["refine_cached"])
+
+    def test_list_vocabulary_does_not_mark_empty_refine_cache(self):
+        category_dir = self.vocab_dir / "daily"
+        category_dir.mkdir(parents=True, exist_ok=True)
+        payload = {
+            "word": "empty-cache-marker",
+            "createdAt": "2026-05-01",
+            "reviews": [],
+            "definitions": ["空缓存不应显示红点"],
+            "examples": [],
+        }
+        review_vocabulary.save_vocab_file(str(category_dir / "empty-cache-marker.json"), payload)
+        cache_meta = refine_cache.build_refine_cache_key("daily", "empty-cache-marker.json", payload)
+        refine_cache.save_refine_cache(
+            cache_meta,
+            {
+                "entry": [],
+                "definitions": [],
+                "examples": [],
+                "global_notes": ["只有备注不显示红点"],
+            },
+        )
+
+        result = routes.list_vocabulary("daily")
+        by_file = {item["file"]: item for item in result["entries"]}
+
+        self.assertFalse(by_file["empty-cache-marker.json"]["refineCached"])
+        self.assertFalse(by_file["empty-cache-marker.json"]["refine_cached"])
 
     def test_review_recommend_uses_saved_server_preferences_by_default(self):
         category_dir = self.vocab_dir / "daily"
