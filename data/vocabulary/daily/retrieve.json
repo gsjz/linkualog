@@ -1,0 +1,23 @@
+{
+  "word": "retrieve",
+  "createdAt": "2026-06-12",
+  "reviews": [],
+  "definitions": [],
+  "examples": [
+    {
+      "text": "At that time, the goddess was overseeing another sacred quest, pursued by a righteous monk named Tripitaka. He had set out to retrieve scriptures from the West, but the path was too long and dangerous to travel alone. So Guanyin promised to arrange Sun Wukong’s freedom",
+      "explanation": "",
+      "focusWords": [
+        "retrieve"
+      ],
+      "source": {
+        "text": "The tale of the Monkey King and the Buddha - Ji Hao",
+        "url": "https://www.youtube.com/watch?v=A-oxDZ3AO74"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=A-oxDZ3AO74",
+        "timestamp": 163
+      }
+    }
+  ]
+}

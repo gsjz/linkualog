@@ -1,0 +1,19 @@
+{
+  "word": "negligible",
+  "createdAt": "2026-06-12",
+  "reviews": [],
+  "definitions": [],
+  "examples": [
+    {
+      "text": "You can hack only if you solved all versions of this problem. There are nnn communicating vessels of infinite height arranged in a circle. The base area of each vessel is 111 cm22^2, and between the iii-th vessel and the (imodn)+1(imodn)+1(i \\bmod n) + 1-th vessel there is a connection of negligible volume at height hihih_i cm. For each vessel iii, find the maximum total volume of water in cm33^3 that can be placed in these vessels under the condition that the iii-th vessel remains empty. Formally, you are given an array h1,h2,…,hnh1,h2,…,hnh_1, h_2, \\ldots, h_n.",
+      "explanation": "",
+      "focusWords": [
+        "negligible"
+      ],
+      "source": {
+        "text": "Problem - C - Codeforces",
+        "url": "https://codeforces.com/contest/2234/problem/C"
+      }
+    }
+  ]
+}

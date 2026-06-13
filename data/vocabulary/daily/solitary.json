@@ -1,0 +1,23 @@
+{
+  "word": "solitary",
+  "createdAt": "2026-06-12",
+  "reviews": [],
+  "definitions": [],
+  "examples": [
+    {
+      "text": "At the very edge of this kingdom, there lay a small forest. Within it, an ancient solitary tree quietly watched over the inhabitants of the forest.",
+      "explanation": "",
+      "focusWords": [
+        "solitary"
+      ],
+      "source": {
+        "text": "The Legend of Zelda: Ocarina of Time – Nintendo Direct 6.9.2026",
+        "url": "https://www.youtube.com/watch?v=r8eMoxo4ipE"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=r8eMoxo4ipE",
+        "timestamp": 22
+      }
+    }
+  ]
+}

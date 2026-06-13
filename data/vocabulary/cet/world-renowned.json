@@ -21,6 +21,39 @@
         "text": "CET6 23 12 2 阅读2",
         "url": ""
       }
+    },
+    {
+      "text": "At the top end, some of the world-renowned fashion designers have avoided leather and fur for some time.",
+      "explanation": "这里的 world-renowned 用作形容词，修饰 fashion designers，表示“世界闻名的、享有国际声誉的”。整句意思是：在高端领域，一些世界闻名的时装设计师已经有一段时间避免使用皮革和毛皮。",
+      "focusWords": [
+        "world-renowned"
+      ],
+      "source": {
+        "text": "CET6 23 12 2 听力",
+        "url": ""
+      }
+    }
+  ],
+  "relations": [
+    {
+      "type": "synonym",
+      "target": {
+        "category": "cet",
+        "file": "acclaim.json",
+        "word": "acclaim"
+      },
+      "reason": "该候选词条虽然 headword 写作 acclaim，但数据中实际由 acclaimed 合并而来，释义为“备受赞誉的；享有盛誉的”，与 world-renowned“世界闻名的、享有盛名的”在描述人物或成就受到广泛认可时语义接近。",
+      "source": "llm"
+    },
+    {
+      "type": "related",
+      "target": {
+        "category": "daily",
+        "file": "notorious.json",
+        "word": "notorious"
+      },
+      "reason": "notorious 表示“臭名昭著的”，也是描述某人或事物广为人知的声誉形容词，但带明显负面评价；与 world-renowned 可形成“闻名/声名远扬”的正负语义对照，有助于区分 renowned 与 notorious 的褒贬色彩。",
+      "source": "llm"
     }
   ]
 }

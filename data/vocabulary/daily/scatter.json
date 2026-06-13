@@ -1,5 +1,5 @@
 {
-  "word": "scattered",
+  "word": "scatter",
   "createdAt": "2026-05-28",
   "reviews": [
     {
@@ -12,14 +12,14 @@
     }
   ],
   "definitions": [
-    "（光等）被散射的；分散开的"
+    "使散开；散射；分散（常用于光、声音、人群等）"
   ],
   "examples": [
     {
-      "text": "on a microscopic level, allowing light to strike it without being scattered in different directions. But this still doesn't explain why light is able to pass through glass",
-      "explanation": "这里的 scattered 指“被散射、向各个方向分开传播”。句子意思是：让光照到它上面时，光不会向不同方向散射。",
+      "text": "allowing light to strike it without being scattered in different directions.",
+      "explanation": "这里的 scattered 是 scatter 的过去分词，指“被散射、向不同方向分开传播”。句子意思是：让光照到它上面时，光不会向不同方向散射。",
       "focusWords": [
-        "scattered"
+        "scatter"
       ],
       "source": {
         "text": "玻璃为何是透明的? ——马克·米奥多尼克",

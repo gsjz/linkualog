@@ -41,6 +41,16 @@
       },
       "reason": "两者都可表示较正式的“存在”，但侧重点不同：reside 强调“存在于某处/位于”，persist 强调“持续存在/延续”。这种语义邻近且有区别的关系，适合互相跳转学习。",
       "source": "llm"
+    },
+    {
+      "type": "related",
+      "target": {
+        "category": "daily",
+        "file": "dweller.json",
+        "word": "dweller"
+      },
+      "reason": "dweller 是“居住者/栖居者”，reside 是较正式的“居住于、存在于某处”；两者共享“在某处居住/存在”的语义基础，但词性和用法不同，适合互相学习区分。",
+      "source": "llm"
     }
   ]
 }

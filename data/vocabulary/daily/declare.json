@@ -1,0 +1,25 @@
+{
+  "word": "declare",
+  "createdAt": "2026-06-12",
+  "reviews": [],
+  "definitions": [
+    "declare：宣布，声明；明确表示（某事）。"
+  ],
+  "examples": [
+    {
+      "text": "Sun Wukong was not one to grovel. He began boasting of his many talents and demanded the Emperor's crown. Smiling, the Buddha declared he would grant that wish— if Sun Wukong could somersault out of his palm. The Monkey King gladly pranced onto the Buddha’s hand and shot into the air,",
+      "explanation": "这里 declared 是 declare 的过去式，意思是“宣布、表示”。句中指佛祖微笑着表示：如果孙悟空能翻出他的手掌，就会满足他的愿望。",
+      "focusWords": [
+        "declare"
+      ],
+      "source": {
+        "text": "The tale of the Monkey King and the Buddha - Ji Hao",
+        "url": "https://www.youtube.com/watch?v=A-oxDZ3AO74"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=A-oxDZ3AO74",
+        "timestamp": 59
+      }
+    }
+  ]
+}

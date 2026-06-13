@@ -5,15 +5,19 @@
     {
       "date": "2026-06-08",
       "score": 4
+    },
+    {
+      "date": "2026-06-13",
+      "score": 5
     }
   ],
   "definitions": [
-    "纳米机器人：尺寸极小、通常设想用于医学或工程任务的微型机器人。"
+    "纳米机器人（nano 纳）"
   ],
   "examples": [
     {
-      "text": "medicine, or something else? Will future technologies, like cell-repairing nanobots, or gene therapy, artificially extend our years?",
-      "explanation": "这里的 nanobots 指“纳米机器人”。在句中 cell-repairing nanobots 表示“能够修复细胞的纳米机器人”，属于对未来医疗技术的设想。整句是在讨论：未来技术如纳米机器人或基因治疗，是否会人为延长人类寿命。",
+      "text": "Will future technologies, like cell-repairing nanobots, or gene therapy, artificially extend our years?",
+      "explanation": "这里的 nanobots 指“纳米机器人”。cell-repairing nanobots 表示“能够修复细胞的纳米机器人”，属于对未来医疗技术的设想。整句是在讨论：未来技术如纳米机器人或基因治疗，是否会人为延长人类寿命。",
       "focusWords": [
         "nanobot"
       ],

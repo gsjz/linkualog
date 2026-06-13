@@ -1,0 +1,25 @@
+{
+  "word": "divinity",
+  "createdAt": "2026-06-12",
+  "reviews": [],
+  "definitions": [
+    "神性；神圣；神圣力量（divine nature or power）"
+  ],
+  "examples": [
+    {
+      "text": "Long ago, there was a land called Hyrule, created by beings of supreme divinity. At the very edge of this kingdom, there lay a small forest.",
+      "explanation": "这里的 divinity 指“神性、神圣力量”。beings of supreme divinity 可以理解为“拥有至高神性的存在”或“至高神明”。",
+      "focusWords": [
+        "divinity"
+      ],
+      "source": {
+        "text": "The Legend of Zelda: Ocarina of Time – Nintendo Direct 6.9.2026",
+        "url": "https://www.youtube.com/watch?v=r8eMoxo4ipE"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=r8eMoxo4ipE",
+        "timestamp": 10
+      }
+    }
+  ]
+}

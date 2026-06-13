@@ -5,6 +5,10 @@
     {
       "date": "2026-04-21",
       "score": 5
+    },
+    {
+      "date": "2026-06-13",
+      "score": 4
     }
   ],
   "definitions": [
@@ -46,6 +50,18 @@
         "符合例句中 acclaimed basketball player 的意思"
       ],
       "missing_points": []
+    }
+  ],
+  "relations": [
+    {
+      "type": "synonym",
+      "target": {
+        "category": "cet",
+        "file": "world-renowned.json",
+        "word": "world-renowned"
+      },
+      "reason": "该候选词条虽然 headword 写作 acclaim，但数据中实际由 acclaimed 合并而来，释义为“备受赞誉的；享有盛誉的”，与 world-renowned“世界闻名的、享有盛名的”在描述人物或成就受到广泛认可时语义接近。",
+      "source": "llm"
     }
   ]
 }

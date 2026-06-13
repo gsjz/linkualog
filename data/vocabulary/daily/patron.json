@@ -1,0 +1,23 @@
+{
+  "word": "patron",
+  "createdAt": "2026-06-12",
+  "reviews": [],
+  "definitions": [],
+  "examples": [
+    {
+      "text": "alongside a mysterious spell. It was only when she vanished that Tripitaka recognized her as his holy patron. Meanwhile, Sun Wukong was having second thoughts. He'd sought refuge in the Dragon King's lair,",
+      "explanation": "",
+      "focusWords": [
+        "patron"
+      ],
+      "source": {
+        "text": "The tale of the Monkey King and the Buddha - Ji Hao",
+        "url": "https://www.youtube.com/watch?v=A-oxDZ3AO74"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=A-oxDZ3AO74",
+        "timestamp": 238
+      }
+    }
+  ]
+}

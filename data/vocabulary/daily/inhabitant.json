@@ -1,0 +1,37 @@
+{
+  "word": "inhabitant",
+  "createdAt": "2026-06-12",
+  "reviews": [],
+  "definitions": [
+    "居民；栖息者；居住在某地的人或动物"
+  ],
+  "examples": [
+    {
+      "text": "Within it, an ancient solitary tree quietly watched over the inhabitants of the forest.",
+      "explanation": "这里 inhabitants 指“居民、栖息者”，the inhabitants of the forest 就是“森林里的居民/生物”。",
+      "focusWords": [
+        "inhabitant"
+      ],
+      "source": {
+        "text": "The Legend of Zelda: Ocarina of Time – Nintendo Direct 6.9.2026",
+        "url": "https://www.youtube.com/watch?v=r8eMoxo4ipE"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=r8eMoxo4ipE",
+        "timestamp": 25
+      }
+    }
+  ],
+  "relations": [
+    {
+      "type": "synonym",
+      "target": {
+        "category": "daily",
+        "file": "dweller.json",
+        "word": "dweller"
+      },
+      "reason": "inhabitants 表示“居民、居住者”，与 dweller 的核心含义高度重合；当前例句中还直接出现 inhabitants of the forest 与 forest dwellers 的同指关系，适合建立近义跳转。",
+      "source": "llm"
+    }
+  ]
+}

@@ -34,5 +34,17 @@
         "timestamp": 29
       }
     }
+  ],
+  "relations": [
+    {
+      "type": "related",
+      "target": {
+        "category": "cet",
+        "file": "world-renowned.json",
+        "word": "world-renowned"
+      },
+      "reason": "notorious 表示“臭名昭著的”，也是描述某人或事物广为人知的声誉形容词，但带明显负面评价；与 world-renowned 可形成“闻名/声名远扬”的正负语义对照，有助于区分 renowned 与 notorious 的褒贬色彩。",
+      "source": "llm"
+    }
   ]
 }

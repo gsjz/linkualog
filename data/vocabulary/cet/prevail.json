@@ -1,0 +1,24 @@
+{
+  "word": "prevail",
+  "createdAt": "2026-06-12",
+  "reviews": [],
+  "definitions": [
+    "prevail：盛行，普遍存在；占优势，占上风。"
+  ],
+  "examples": [
+    {
+      "text": "Our prevailing mood of despair is irrational.",
+      "explanation": "句中 prevailing 是 prevail 的现在分词/形容词化用法，prevailing mood 指“普遍存在的、占主导的情绪”。整句意思是：我们当前普遍的绝望情绪是不理性的。",
+      "focusWords": [
+        "prevail"
+      ],
+      "source": {
+        "text": "CET6 23 12 2 听力",
+        "url": ""
+      },
+      "focusPositions": [
+        1
+      ]
+    }
+  ]
+}

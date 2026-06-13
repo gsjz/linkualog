@@ -16,8 +16,8 @@
     }
   ],
   "definitions": [
-    "adj. 极度渴望的",
-    "adj. 非常需要的；不顾一切的；绝望的"
+    "adj. 极度渴望的；非常想要的（常接 to do 或 for sth）",
+    "adj. 绝望的；危急的；不顾一切的"
   ],
   "examples": [
     {
@@ -33,6 +33,21 @@
       "youtube": {
         "url": "https://www.youtube.com/watch?v=c1nYtX-NUsc",
         "timestamp": 311
+      }
+    },
+    {
+      "text": "Desperate, the Jade Emperor called on the only being stronger than he, the supreme power in all the heavens: the Buddha himself.",
+      "explanation": "这里的 Desperate 表示“走投无路的、绝望的”。玉皇大帝因为局势危急，只能求助于比自己更强大的佛陀。",
+      "focusWords": [
+        "Desperate"
+      ],
+      "source": {
+        "text": "The tale of the Monkey King and the Buddha - Ji Hao",
+        "url": "https://www.youtube.com/watch?v=A-oxDZ3AO74"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=A-oxDZ3AO74",
+        "timestamp": 38
       }
     }
   ],

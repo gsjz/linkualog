@@ -1,0 +1,23 @@
+{
+  "word": "reminiscent",
+  "createdAt": "2026-06-12",
+  "reviews": [],
+  "definitions": [],
+  "examples": [
+    {
+      "text": "pentatonic scale is used. For one thing, the riff repeats each note multiple times in a fast rhythm, reminiscent of many traditional-sounding Asian songs, like",
+      "explanation": "",
+      "focusWords": [
+        "reminiscent"
+      ],
+      "source": {
+        "text": "Why this melody came to represent \"China\"",
+        "url": "https://www.youtube.com/watch?v=yFtNbsfBQ-I"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=yFtNbsfBQ-I",
+        "timestamp": 213
+      }
+    }
+  ]
+}

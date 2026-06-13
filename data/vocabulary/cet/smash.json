@@ -5,10 +5,14 @@
     {
       "date": "2026-04-21",
       "score": 5
+    },
+    {
+      "date": "2026-06-13",
+      "score": 3
     }
   ],
   "definitions": [
-    "vi./vt. （船只）猛烈撞击后破碎，撞毁"
+    "vi./vt. 猛撞；砸碎；撞毁；撞得粉碎"
   ],
   "examples": [
     {
@@ -24,17 +28,6 @@
       "focusPositions": [
         11
       ]
-    },
-    {
-      "text": "majestic Old World sailing ships smashed and sank on this irregular stretch of windy Florida coast.",
-      "explanation": "宏伟的旧世界帆船在这片崎岖多风的佛罗里达海岸上撞得粉碎并沉没了。",
-      "focusWords": [
-        "smashed"
-      ],
-      "source": {
-        "text": "CET6 2023 12 2 匹配",
-        "url": ""
-      }
     }
   ],
   "mergedFrom": [

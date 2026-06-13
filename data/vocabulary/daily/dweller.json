@@ -1,0 +1,47 @@
+{
+  "word": "dweller",
+  "createdAt": "2026-06-12",
+  "reviews": [],
+  "definitions": [
+    "居民；居住者；栖居者（someone who lives in a particular place）"
+  ],
+  "examples": [
+    {
+      "text": "quietly watched over the inhabitants of the forest. These forest dwellers were called the Kieri. Each had a fairy companion and they",
+      "explanation": "这里的 forest dwellers 指“森林里的居民/居住者”。dweller 常和地点词搭配，如 city dweller（城市居民）、forest dweller（森林居民）。",
+      "focusWords": [
+        "dweller"
+      ],
+      "source": {
+        "text": "The Legend of Zelda: Ocarina of Time – Nintendo Direct 6.9.2026",
+        "url": "https://www.youtube.com/watch?v=r8eMoxo4ipE"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=r8eMoxo4ipE",
+        "timestamp": 33
+      }
+    }
+  ],
+  "relations": [
+    {
+      "type": "related",
+      "target": {
+        "category": "daily",
+        "file": "reside.json",
+        "word": "reside"
+      },
+      "reason": "dweller 是“居住者/栖居者”，reside 是较正式的“居住于、存在于某处”；两者共享“在某处居住/存在”的语义基础，但词性和用法不同，适合互相学习区分。",
+      "source": "llm"
+    },
+    {
+      "type": "synonym",
+      "target": {
+        "category": "daily",
+        "file": "inhabitant.json",
+        "word": "inhabitant"
+      },
+      "reason": "inhabitants 表示“居民、居住者”，与 dweller 的核心含义高度重合；当前例句中还直接出现 inhabitants of the forest 与 forest dwellers 的同指关系，适合建立近义跳转。",
+      "source": "llm"
+    }
+  ]
+}

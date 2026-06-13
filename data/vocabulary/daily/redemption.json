@@ -1,0 +1,23 @@
+{
+  "word": "redemption",
+  "createdAt": "2026-06-12",
+  "reviews": [],
+  "definitions": [],
+  "examples": [
+    {
+      "text": "Finally, the Monkey King was ready for his greatest challenge yet: an epic journey to the West. And perhaps, to redemption.",
+      "explanation": "",
+      "focusWords": [
+        "redemption"
+      ],
+      "source": {
+        "text": "The tale of the Monkey King and the Buddha - Ji Hao",
+        "url": "https://www.youtube.com/watch?v=A-oxDZ3AO74"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=A-oxDZ3AO74",
+        "timestamp": 333
+      }
+    }
+  ]
+}

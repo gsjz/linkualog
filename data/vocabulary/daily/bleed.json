@@ -1,0 +1,28 @@
+{
+  "word": "bleed",
+  "createdAt": "2026-06-12",
+  "reviews": [],
+  "definitions": [
+    "bleed：流血；渗出；逐渐渗入、蔓延到（常用作 bleed into）。"
+  ],
+  "examples": [
+    {
+      "text": "And this tradition of using the melody to represent Chinese and Asian culture continued and eventually bled into pop music in the '70s and '80s.",
+      "explanation": "这里的 “bled into” 不是“流血”，而是比喻某种传统或影响逐渐渗入、扩散到另一个领域；句中指这种旋律传统后来进入了 70、80 年代的流行音乐。",
+      "focusWords": [
+        "bleed"
+      ],
+      "source": {
+        "text": "Why this melody came to represent \"China\"",
+        "url": "https://www.youtube.com/watch?v=yFtNbsfBQ-I"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=yFtNbsfBQ-I",
+        "timestamp": 87
+      },
+      "focusPositions": [
+        16
+      ]
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "word": "boast",
+  "createdAt": "2026-06-12",
+  "reviews": [],
+  "definitions": [
+    "吹嘘，夸耀；自夸地说"
+  ],
+  "examples": [
+    {
+      "text": "Even in the face of this almighty opponent, Sun Wukong was not one to grovel. He began boasting of his many talents and demanded the Emperor's crown. Smiling, the Buddha declared he would grant that wish— if Sun Wukong could somersault out of his palm.",
+      "explanation": "这里的 boasting 是 boast 的动名词形式，表示孙悟空开始吹嘘、夸耀自己的许多本领。",
+      "focusWords": [
+        "boast"
+      ],
+      "source": {
+        "text": "The tale of the Monkey King and the Buddha - Ji Hao",
+        "url": "https://www.youtube.com/watch?v=A-oxDZ3AO74"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=A-oxDZ3AO74",
+        "timestamp": 55
+      }
+    }
+  ]
+}
