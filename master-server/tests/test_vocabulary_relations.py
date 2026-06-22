@@ -8,17 +8,23 @@ import core.review_vocabulary as review_vocabulary
 from core import refine_cache
 from core.review_analysis_jobs import reset_analysis_jobs_for_tests, wait_for_analysis_job
 from api.review_routes import (
+    CombinedPrefetchRequest,
+    VocabDeleteRequest,
     ManualVocabMergeRequest,
     RelationSuggestPrefetchRequest,
     RelationSuggestRequest,
     SplitApplyRequest,
     VocabSaveRequest,
     VocabRenameRequest,
+    VocabularySearchRequest,
     apply_split,
+    delete_vocab,
     manual_merge_vocab,
     rename_vocab,
     review_visualization,
     save_vocab,
+    search_vocabulary,
+    start_vocab_combined_prefetch_job,
     start_vocab_relations_prefetch_job,
     start_vocab_relations_suggest_job,
     suggest_vocab_relations,
@@ -467,7 +473,7 @@ class VocabularyRelationTests(unittest.TestCase):
                 "createdAt": "2026-05-17",
                 "reviews": [],
                 "definitions": ["危害"],
-                "examples": [{"text": "Do you want to hazard a guess?"}],
+                "examples": [{"text": "Do you want to hazard a guess?", "explanation": "固定表达。"}],
             },
         )
         write_vocab(
@@ -747,6 +753,214 @@ class VocabularyRelationTests(unittest.TestCase):
         self.assertTrue(
             refine_cache.has_relation_suggest_cache_for_entry("daily", "hazard.json", payload)
         )
+
+    def test_delete_vocab_removes_file_and_incoming_relations(self):
+        write_vocab(
+            self.root,
+            "daily",
+            "hazard.json",
+            {
+                "word": "hazard",
+                "createdAt": "2026-05-17",
+                "reviews": [],
+                "definitions": ["危害"],
+                "examples": [],
+            },
+        )
+        write_vocab(
+            self.root,
+            "daily",
+            "hazard-a-guess.json",
+            {
+                "word": "hazard a guess",
+                "createdAt": "2026-05-18",
+                "reviews": [],
+                "definitions": ["试着猜"],
+                "examples": [],
+                "relations": [
+                    {
+                        "type": "phrase",
+                        "target": {
+                            "category": "daily",
+                            "file": "hazard.json",
+                            "word": "hazard",
+                        },
+                    }
+                ],
+            },
+        )
+
+        result = delete_vocab(VocabDeleteRequest(category="daily", filename="hazard.json"))
+
+        self.assertEqual(result["status"], "success")
+        self.assertTrue(result["deleted"])
+        self.assertEqual(result["updated_relation_files"], 1)
+        self.assertFalse((self.root / "daily" / "hazard.json").exists())
+        phrase = review_vocabulary.load_vocab_file(str(self.root / "daily" / "hazard-a-guess.json"))
+        self.assertNotIn("relations", phrase)
+
+    def test_vocabulary_search_matches_examples_definitions_and_relations(self):
+        write_vocab(
+            self.root,
+            "daily",
+            "hazard.json",
+            {
+                "word": "hazard",
+                "createdAt": "2026-05-17",
+                "reviews": [],
+                "definitions": ["危害；危险；风险"],
+                "examples": [
+                    {
+                        "text": "Do you want to hazard a guess?",
+                        "explanation": "hazard a guess 是固定表达。",
+                        "focusWords": ["hazard"],
+                    }
+                ],
+                "relations": [
+                    {
+                        "type": "phrase",
+                        "target": {
+                            "category": "daily",
+                            "file": "hazard-a-guess.json",
+                            "word": "hazard a guess",
+                        },
+                        "reason": "固定短语",
+                    }
+                ],
+            },
+        )
+        write_vocab(
+            self.root,
+            "daily",
+            "hazard-a-guess.json",
+            {
+                "word": "hazard a guess",
+                "createdAt": "2026-05-18",
+                "reviews": [],
+                "definitions": ["试着猜"],
+                "examples": [],
+            },
+        )
+
+        result = search_vocabulary(
+            VocabularySearchRequest(query="风险 guess", category="daily", limit=10)
+        )
+
+        self.assertEqual(result["status"], "success")
+        result_files = [item["file"] for item in result["results"]]
+        self.assertIn("hazard.json", result_files)
+        hazard = next(item for item in result["results"] if item["file"] == "hazard.json")
+        self.assertGreater(hazard["score"], 0)
+        self.assertTrue(hazard["snippet"])
+
+    def test_vocabulary_search_can_use_llm_ranked_candidates(self):
+        write_vocab(
+            self.root,
+            "daily",
+            "hazard.json",
+            {
+                "word": "hazard",
+                "definitions": ["危害；危险；风险"],
+                "examples": [],
+            },
+        )
+        write_vocab(
+            self.root,
+            "daily",
+            "hazard-a-guess.json",
+            {
+                "word": "hazard a guess",
+                "definitions": ["试着猜"],
+                "examples": [{"text": "Do you want to hazard a guess?"}],
+            },
+        )
+
+        with patch(
+            "api.review_routes.search_vocabulary_with_llm",
+            return_value={
+                "results": [
+                    {
+                        "id": "daily/hazard-a-guess.json",
+                        "score": 0.93,
+                        "reason": "LLM 判断该固定表达最符合查询。",
+                    }
+                ],
+                "notes": ["ok"],
+            },
+        ) as mocked_search:
+            result = search_vocabulary(
+                VocabularySearchRequest(query="试着猜", category="daily", limit=10, use_llm=True)
+            )
+
+        self.assertEqual(result["status"], "success")
+        self.assertTrue(result["use_llm"])
+        self.assertEqual(result["notes"], ["ok"])
+        self.assertEqual([item["file"] for item in result["results"]], ["hazard-a-guess.json"])
+        self.assertEqual(result["results"][0]["matched_field"], "llm")
+        mocked_search.assert_called_once()
+        candidate_ids = {item["id"] for item in mocked_search.call_args.args[1]}
+        self.assertEqual(candidate_ids, {"daily/hazard.json", "daily/hazard-a-guess.json"})
+
+    def test_combined_prefetch_job_runs_refine_and_relations_under_one_job(self):
+        write_vocab(
+            self.root,
+            "daily",
+            "hazard.json",
+            {
+                "word": "hazard",
+                "createdAt": "2026-05-17",
+                "reviews": [],
+                "definitions": ["危害"],
+                "examples": [{"text": "Do you want to hazard a guess?"}],
+            },
+        )
+        write_vocab(
+            self.root,
+            "daily",
+            "hazard-a-guess.json",
+            {
+                "word": "hazard a guess",
+                "createdAt": "2026-05-18",
+                "reviews": [],
+                "definitions": ["试着猜"],
+                "examples": [],
+            },
+        )
+
+        with (
+            patch("api.review_routes.suggest_file_cleaning_with_llm") as mocked_refine,
+            patch("api.review_routes.suggest_missing_example_explanations_with_llm") as mocked_missing_explanations,
+            patch("api.review_routes.select_vocab_relation_candidates_with_llm") as mocked_select,
+            patch("api.review_routes.suggest_vocab_relations_with_llm") as mocked_confirm,
+        ):
+            mocked_refine.return_value = {
+                "definitions": [
+                    {
+                        "action": "keep",
+                        "index": 0,
+                        "text": "危害",
+                        "reason": "清晰",
+                    }
+                ],
+                "examples": [],
+                "entry": [],
+            }
+            mocked_missing_explanations.return_value = []
+            mocked_select.return_value = {"selected": {"daily": ["hazard a guess"]}, "notes": []}
+            mocked_confirm.return_value = {"suggestions": [], "notes": []}
+            queued = start_vocab_combined_prefetch_job(
+                CombinedPrefetchRequest(category="daily", filenames=["hazard.json"], limit=1)
+            )
+            final = wait_for_analysis_job(queued["job_id"], timeout=5)
+
+        self.assertEqual(final["status"], "success")
+        item = final["result"]["results"][0]
+        self.assertEqual(item["status"], "success")
+        self.assertEqual(item["refine"]["cache"]["status"], "stored")
+        self.assertEqual(item["relations"]["cache"]["status"], "stored")
+        self.assertEqual(mocked_refine.call_count, 1)
+        self.assertEqual(mocked_select.call_count, 1)
+        self.assertEqual(mocked_confirm.call_count, 1)
 
     def test_manual_merge_rewrites_incoming_undirected_relation_to_target(self):
         write_vocab(

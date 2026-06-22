@@ -1,6 +1,8 @@
 import glob
 import json
 import os
+import threading
+from contextlib import contextmanager
 from pathlib import Path
 
 from filelock import FileLock
@@ -10,6 +12,7 @@ from core.data_paths import ensure_vocabulary_dir, get_vocabulary_dir
 DEFAULT_VOCAB_DIR = get_vocabulary_dir()
 VOCAB_DIR = str(ensure_vocabulary_dir())
 MAX_SCAN_FILES = int(os.environ.get("MAX_SCAN_FILES", "2000"))
+_OPERATION_LOCK_STATE = threading.local()
 
 
 def _vocab_root() -> str:
@@ -89,6 +92,27 @@ def save_vocab_file(file_path: str, data: dict) -> None:
     with FileLock(f"{path}.lock", timeout=5):
         with open(path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
+
+
+@contextmanager
+def vocabulary_operation_lock(timeout: int = 180):
+    depth = int(getattr(_OPERATION_LOCK_STATE, "depth", 0) or 0)
+    if depth > 0:
+        _OPERATION_LOCK_STATE.depth = depth + 1
+        try:
+            yield
+        finally:
+            _OPERATION_LOCK_STATE.depth = depth
+        return
+
+    root = _vocab_root()
+    lock_path = os.path.join(root, ".vocabulary-operation.lock")
+    with FileLock(lock_path, timeout=timeout):
+        _OPERATION_LOCK_STATE.depth = 1
+        try:
+            yield
+        finally:
+            _OPERATION_LOCK_STATE.depth = 0
 
 
 def load_vocab_entry(category: str, filename: str) -> tuple[str, dict]:

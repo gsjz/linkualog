@@ -766,6 +766,122 @@ def _normalize_text_list(value) -> list[str]:
     return result
 
 
+def _normalize_llm_search_results(raw_result, candidate_by_id: dict[str, dict], limit: int = 24) -> tuple[list[dict], list[str]]:
+    if isinstance(raw_result, dict):
+        raw_items = (
+            raw_result.get("results")
+            or raw_result.get("matches")
+            or raw_result.get("candidates")
+            or raw_result.get("items")
+            or []
+        )
+        raw_notes = raw_result.get("notes")
+    elif isinstance(raw_result, list):
+        raw_items = raw_result
+        raw_notes = []
+    else:
+        raw_items = []
+        raw_notes = []
+
+    normalized: list[dict] = []
+    seen = set()
+    for raw_item in raw_items if isinstance(raw_items, list) else []:
+        if isinstance(raw_item, str):
+            item_id = _safe_string(raw_item)
+            reason = ""
+            score = None
+        elif isinstance(raw_item, dict):
+            item_id = _first_non_empty_text(
+                raw_item.get("id"),
+                raw_item.get("candidate_id"),
+                raw_item.get("candidateId"),
+                raw_item.get("file"),
+            )
+            if "/" not in item_id:
+                category = _safe_string(raw_item.get("category"))
+                file_name = _normalize_relation_filename(raw_item.get("file") or raw_item.get("filename"))
+                if category and file_name:
+                    item_id = f"{category}/{file_name}"
+            reason = _first_non_empty_text(raw_item.get("reason"), raw_item.get("snippet"), raw_item.get("note"))
+            score = _normalize_optional_confidence(raw_item.get("score", raw_item.get("confidence")))
+        else:
+            continue
+
+        if not item_id or item_id in seen or item_id not in candidate_by_id:
+            continue
+        seen.add(item_id)
+        normalized.append(
+            {
+                "id": item_id,
+                "score": round(float(score if score is not None else 0.7), 4),
+                "reason": _clip_text(reason, 180),
+            }
+        )
+        if len(normalized) >= max(1, int(limit or 24)):
+            break
+
+    return normalized, _normalize_text_list(raw_notes)
+
+
+def search_vocabulary_with_llm(query: str, candidates: list[dict], limit: int = 24) -> dict:
+    normalized_query = _safe_string(query)
+    normalized_limit = max(1, min(int(limit or 24), 80))
+    compact_candidates = []
+    candidate_by_id = {}
+    for candidate in candidates if isinstance(candidates, list) else []:
+        if not isinstance(candidate, dict):
+            continue
+        item_id = _safe_string(candidate.get("id"))
+        if not item_id or item_id in candidate_by_id:
+            continue
+        compact_item = {
+            "id": item_id,
+            "category": _safe_string(candidate.get("category")),
+            "file": _normalize_relation_filename(candidate.get("file")),
+            "word": _safe_string(candidate.get("word")),
+            "definitions": _normalize_text_list(candidate.get("definitions"))[:3],
+            "examples": candidate.get("examples") if isinstance(candidate.get("examples"), list) else [],
+            "relations": _normalize_text_list(candidate.get("relations"))[:8],
+        }
+        rule_score = candidate.get("rule_score")
+        try:
+            compact_item["rule_score"] = round(float(rule_score or 0.0), 4)
+        except (TypeError, ValueError):
+            compact_item["rule_score"] = 0.0
+        snippet = _safe_string(candidate.get("snippet"))
+        if snippet:
+            compact_item["snippet"] = _clip_text(snippet, 160)
+        compact_candidates.append(compact_item)
+        candidate_by_id[item_id] = compact_item
+
+    if not normalized_query or not compact_candidates:
+        return {"results": [], "notes": []}
+
+    prompt = (
+        "你是英文生词本搜索排序器。请只输出 JSON，不要输出 markdown。"
+        "任务：根据用户查询，从候选词条中选择最相关的结果并排序。"
+        "可以基于词义、中文释义、例句、相关词和学习场景进行语义判断，也要尊重精确匹配。"
+        "只能返回 candidates 中存在的 id，不能编造词条。"
+        "如果没有足够相关的候选，返回空 results。"
+        '输出结构：{"results":[{"id":"daily/example.json","score":0.91,"reason":"简短中文理由"}],"notes":[]}'
+        f"最多返回 {normalized_limit} 条。"
+        f"query={json.dumps(normalized_query, ensure_ascii=False)}\n"
+        f"candidates={json.dumps(compact_candidates, ensure_ascii=False, separators=(',', ':'))}"
+    )
+    raw_result = _call_llm_json(
+        prompt,
+        max_tokens=max(700, min(2600, 360 + normalized_limit * 60)),
+        temperature=0.0,
+        request_tag="vocab_search",
+    )
+    results, notes = _normalize_llm_search_results(raw_result, candidate_by_id, limit=normalized_limit)
+    return {
+        "results": results,
+        "notes": notes,
+        "raw": raw_result if isinstance(raw_result, dict) else {},
+    }
+
+
 def _first_non_empty_text(*values) -> str:
     for value in values:
         text = _safe_string(value)
