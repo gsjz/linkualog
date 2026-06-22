@@ -284,6 +284,22 @@ export const startVocabRelationsPrefetchJob = async (category, filenames = [], o
   });
 };
 
+export const startVocabPreprocessJob = async (category, filenames = [], options = {}) => {
+  const finalCategory = requireCategory(category);
+  return requestJson('/api/vocabulary/preprocess/jobs', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      category: finalCategory,
+      filenames: Array.isArray(filenames) ? filenames : [],
+      limit: options?.limit ?? 20,
+      refresh_cache: Boolean(options?.refreshCache),
+      suggestion_limit: options?.suggestionLimit ?? 12,
+      candidate_limit: options?.candidateLimit ?? 72,
+    }),
+  });
+};
+
 export const fetchReviewAnalysisJob = async (jobId) => {
   return requestJson(`/api/review/analysis/jobs/${encodeURIComponent(jobId)}`);
 };
@@ -298,6 +314,32 @@ export const renameVocabDetail = async (category, filename, word, data = null) =
       filename,
       word,
       data,
+    }),
+  });
+};
+
+export const deleteVocabDetail = async (category, filename) => {
+  const finalCategory = requireCategory(category);
+  return requestJson('/api/vocabulary/delete', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      category: finalCategory,
+      filename,
+    }),
+  });
+};
+
+export const searchVocabulary = async (query, options = {}) => {
+  return requestJson('/api/vocabulary/search', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      query,
+      category: options?.category || null,
+      limit: options?.limit ?? 24,
+      include_all_categories: Boolean(options?.includeAllCategories),
+      use_llm: Boolean(options?.useLlm),
     }),
   });
 };

@@ -12,6 +12,7 @@ import {
   fetchRecommendedWord,
   fetchVocabDetail,
   getReviewAdvice,
+  deleteVocabDetail,
   manualMergeVocab,
   renameVocabDetail,
   runFileRefine,
@@ -3203,6 +3204,7 @@ export default function App({
   const [loadingReview, setLoadingReview] = useState(false);
   const [savingDraft, setSavingDraft] = useState(false);
   const [savingMarked, setSavingMarked] = useState(false);
+  const [deletingDraft, setDeletingDraft] = useState(false);
   const [renameApplyingKey, setRenameApplyingKey] = useState('');
   const [manualMergeLoading, setManualMergeLoading] = useState(false);
   const [manualMergeTargetRequest, setManualMergeTargetRequest] = useState(null);
@@ -4224,6 +4226,7 @@ export default function App({
         onVocabularyChange({
           ...res,
           category: savedCategory,
+          source_category: apiCategory,
           file: savedFilename,
           target_file: savedFilename,
           data: savedData,
@@ -4305,8 +4308,9 @@ export default function App({
     }
   };
 
-  const handleDraftSave = async () => {
+  const handleDraftSave = async (options = {}) => {
     if (!draft || !hasSelection) return;
+    const closeEditor = options?.closeEditor === true;
 
     setSavingDraft(true);
     try {
@@ -4338,7 +4342,7 @@ export default function App({
           file: savedFilename,
           target_file: savedFilename,
           data: res.data || payload,
-          closeEditor: false,
+          closeEditor,
           keepSelection: true,
         });
       }
@@ -4346,6 +4350,51 @@ export default function App({
       showError(err.message);
     } finally {
       setSavingDraft(false);
+    }
+  };
+
+  const handleDeleteDraft = async () => {
+    if (!hasSelection) return;
+
+    const label = `${formatCategoryLabel(apiCategory)} / ${filename}`;
+    if (!window.confirm(`确定删除当前词条吗？\n\n${label}\n\n删除后会同步清理其它词条指向它的连接。`)) {
+      return;
+    }
+
+    setDeletingDraft(true);
+    try {
+      setError('');
+      const res = await deleteVocabDetail(apiCategory, filename);
+      const deletedFile = res.file || filename;
+
+      pendingSelectionRef.current = { category: '', filename: '' };
+      setFilename('');
+      resetEntryState();
+      setEntries((prev) => prev.filter((item) => normalizeFilename(item.file).toLowerCase() !== normalizeFilename(deletedFile).toLowerCase()));
+      setEntriesByCategory((current) => {
+        const cached = current[apiCategory];
+        if (!Array.isArray(cached)) return current;
+        return {
+          ...current,
+          [apiCategory]: cached.filter((item) => normalizeFilename(item.file).toLowerCase() !== normalizeFilename(deletedFile).toLowerCase()),
+        };
+      });
+      void refreshFiles();
+
+      if (typeof onVocabularyChange === 'function') {
+        onVocabularyChange({
+          ...res,
+          category: apiCategory,
+          file: deletedFile,
+          target_file: deletedFile,
+          deleted: true,
+        });
+      }
+      showNotice('已删除词条并清理相关连接');
+    } catch (err) {
+      showError(err.message || '删除词条失败');
+    } finally {
+      setDeletingDraft(false);
     }
   };
 
@@ -4524,7 +4573,7 @@ export default function App({
         type="button"
         className={currentMarked ? 'primary workspace-mark-button is-marked' : 'ghost workspace-mark-button'}
         onClick={handleToggleMarked}
-        disabled={savingMarked}
+        disabled={savingMarked || deletingDraft}
       >
         {compact ? <UiIcon name="star" size={15} /> : null}
         <span>{savingMarked ? '保存中...' : (currentMarked ? '取消标记' : '标记词条')}</span>
@@ -4547,6 +4596,10 @@ export default function App({
           <span>停止</span>
         </button>
       ) : null}
+      <button type="button" className="danger" onClick={handleDeleteDraft} disabled={deletingDraft || savingDraft || !hasSelection}>
+        {compact ? <UiIcon name="trash" size={15} /> : null}
+        <span>{deletingDraft ? '删除中...' : '删除词条'}</span>
+      </button>
     </div>
   );
 
@@ -4568,8 +4621,9 @@ export default function App({
         </h3>
         <div className="panel-header-actions editor-header-actions">
           {draft ? <span className={`badge ${draftDirty ? 'medium' : 'high'}`}>{draftDirty ? 'draft' : 'synced'}</span> : null}
-          <button type="button" className="ghost" onClick={handleDraftReset} disabled={!draftDirty || savingDraft}>重置草稿</button>
-          <button type="button" className="primary" onClick={handleDraftSave} disabled={!draftDirty || savingDraft}>{savingDraft ? '保存中...' : '保存到 data'}</button>
+          <button type="button" className="danger" onClick={handleDeleteDraft} disabled={deletingDraft || savingDraft || !hasSelection}>{deletingDraft ? '删除中...' : '删除词条'}</button>
+          <button type="button" className="ghost" onClick={handleDraftReset} disabled={!draftDirty || savingDraft || deletingDraft}>重置草稿</button>
+          <button type="button" className="primary" onClick={() => handleDraftSave({ closeEditor: false })} disabled={!draftDirty || savingDraft || deletingDraft}>{savingDraft ? '保存中...' : '保存到 data'}</button>
         </div>
       </div>
       <EditorPanel
@@ -4769,7 +4823,7 @@ export default function App({
       onRelationAdd={handleRelationAdd}
       onRelationRemove={handleRelationRemove}
       onReset={handleDraftReset}
-      onSave={handleDraftSave}
+      onSave={() => handleDraftSave({ closeEditor: overlayMode })}
       onLoadEntriesForCategory={getEntriesForCategory}
     />
   );

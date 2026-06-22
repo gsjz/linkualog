@@ -304,6 +304,27 @@ export default function UiIcon({ name, size = 18 }) {
     );
   }
 
+  if (name === 'zoom-in') {
+    return (
+      <svg {...commonProps}>
+        <circle cx="10.5" cy="10.5" r="6" />
+        <path d="m15 15 5 5" />
+        <path d="M10.5 7.8v5.4" />
+        <path d="M7.8 10.5h5.4" />
+      </svg>
+    );
+  }
+
+  if (name === 'zoom-out') {
+    return (
+      <svg {...commonProps}>
+        <circle cx="10.5" cy="10.5" r="6" />
+        <path d="m15 15 5 5" />
+        <path d="M7.8 10.5h5.4" />
+      </svg>
+    );
+  }
+
   if (name === 'volume') {
     return (
       <svg {...commonProps}>

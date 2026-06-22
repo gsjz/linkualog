@@ -5,8 +5,7 @@ import ReviewWorkspace from '../review/App.jsx';
 import UiIcon from './UiIcon.jsx';
 import {
   fetchReviewAnalysisJob,
-  startVocabularyRefinePrefetchJob,
-  startVocabularyRelationsPrefetchJob,
+  startVocabularyPreprocessJob,
 } from '../api/client.js';
 
 const normalizeVocabularyLaunchWord = (value) => String(value || '')
@@ -247,11 +246,16 @@ export default function VocabularyWorkspace({
     setReviewToolbarControlsHost(node);
   }, []);
 
-  const handlePrefetchVisibleRefine = useCallback(async () => {
+  const handlePrefetchVisible = useCallback(async () => {
+    if (prefetchingRefine || prefetchingRelations) return;
+
     const rawEntries = Array.isArray(visibleScope.entries) ? visibleScope.entries : [];
     const targetsByCategory = new Map();
     rawEntries
-      .filter((entry) => entry?.needsProcessing && !entry?.refineCached)
+      .filter((entry) => (
+        (entry?.needsProcessing && !entry?.refineCached)
+        || !entry?.relationCached
+      ))
       .slice(0, 50)
       .forEach((entry) => {
         const category = String(entry.category || '').trim();
@@ -266,105 +270,61 @@ export default function VocabularyWorkspace({
     if (!total) return;
 
     setPrefetchingRefine(true);
-    setPrefetchProgress({ done: 0, total });
-    let completedBeforeCategory = 0;
-    try {
-      for (const [category, files] of targetsByCategory.entries()) {
-        try {
-          const job = await startVocabularyRefinePrefetchJob(category, files, { limit: files.length });
-          const finalJob = await waitForAnalysisJob(job, (currentJob) => {
-            const progress = currentJob?.progress || {};
-            setPrefetchProgress({
-              done: Math.min(total, completedBeforeCategory + Number(progress.done || 0)),
-              total,
-            });
-          });
-          const readyFiles = (Array.isArray(finalJob?.result?.results) ? finalJob.result.results : [])
-            .filter((item) => (
-              item?.status === 'success'
-              && !item.llm_error
-              && ['hit', 'stored'].includes(String(item.cache?.status || ''))
-              && Number(item.suggestion_count ?? item.suggestionCount ?? 0) > 0
-            ))
-            .map((item) => item.file)
-            .filter(Boolean);
-          if (readyFiles.length) {
-            markRefineCached(category, readyFiles);
-          }
-        } catch (error) {
-          console.error('预生成整理建议失败', error);
-        } finally {
-          completedBeforeCategory += files.length;
-          setPrefetchProgress({ done: Math.min(total, completedBeforeCategory), total });
-        }
-      }
-    } finally {
-      setPrefetchingRefine(false);
-    }
-  }, [markRefineCached, visibleScope.entries]);
-
-  const handlePrefetchVisibleRelations = useCallback(async () => {
-    const rawEntries = Array.isArray(visibleScope.entries) ? visibleScope.entries : [];
-    const targetsByCategory = new Map();
-    rawEntries
-      .filter((entry) => !entry?.relationCached)
-      .slice(0, 50)
-      .forEach((entry) => {
-        const category = String(entry.category || '').trim();
-        const file = String(entry.file || '').trim();
-        if (!category || !file) return;
-        const files = targetsByCategory.get(category) || [];
-        files.push(file);
-        targetsByCategory.set(category, files);
-      });
-
-    const total = [...targetsByCategory.values()].reduce((sum, files) => sum + files.length, 0);
-    if (!total) return;
-
     setPrefetchingRelations(true);
+    setPrefetchProgress({ done: 0, total });
     setRelationPrefetchProgress({ done: 0, total });
     let completedBeforeCategory = 0;
     try {
       for (const [category, files] of targetsByCategory.entries()) {
         try {
-          const job = await startVocabularyRelationsPrefetchJob(category, files, { limit: files.length });
+          const job = await startVocabularyPreprocessJob(category, files, { limit: files.length });
           const finalJob = await waitForAnalysisJob(job, (currentJob) => {
             const progress = currentJob?.progress || {};
+            const done = Math.min(total, completedBeforeCategory + Number(progress.done || 0));
+            setPrefetchProgress({ done, total });
             setRelationPrefetchProgress({
-              done: Math.min(total, completedBeforeCategory + Number(progress.done || 0)),
+              done,
               total,
             });
           });
-          const readyFiles = (Array.isArray(finalJob?.result?.results) ? finalJob.result.results : [])
+          const resultItems = Array.isArray(finalJob?.result?.results) ? finalJob.result.results : [];
+          const refineReadyFiles = resultItems
             .filter((item) => (
-              item?.status === 'success'
-              && !item.llm_error
-              && ['hit', 'stored'].includes(String(item.cache?.status || ''))
-              && Number(item.suggestion_count ?? item.suggestionCount ?? 0) > 0
+              ['success', 'partial'].includes(String(item?.status || ''))
+              && !item?.refine?.llm_error
+              && ['hit', 'stored'].includes(String(item?.refine?.cache?.status || ''))
+              && Number(item?.refine?.suggestion_count ?? item?.refine?.suggestionCount ?? 0) > 0
             ))
             .map((item) => item.file)
             .filter(Boolean);
-          if (readyFiles.length) {
-            markRelationCached(category, readyFiles);
+          const relationReadyFiles = resultItems
+            .filter((item) => (
+              ['success', 'partial'].includes(String(item?.status || ''))
+              && !item?.relations?.llm_error
+              && ['hit', 'stored'].includes(String(item?.relations?.cache?.status || ''))
+              && Number(item?.relations?.suggestion_count ?? item?.relations?.suggestionCount ?? 0) > 0
+            ))
+            .map((item) => item.file)
+            .filter(Boolean);
+          if (refineReadyFiles.length) {
+            markRefineCached(category, refineReadyFiles);
+          }
+          if (relationReadyFiles.length) {
+            markRelationCached(category, relationReadyFiles);
           }
         } catch (error) {
-          console.error('预生成连接建议失败', error);
+          console.error('预生成整理和连接建议失败', error);
         } finally {
           completedBeforeCategory += files.length;
+          setPrefetchProgress({ done: Math.min(total, completedBeforeCategory), total });
           setRelationPrefetchProgress({ done: Math.min(total, completedBeforeCategory), total });
         }
       }
     } finally {
+      setPrefetchingRefine(false);
       setPrefetchingRelations(false);
     }
-  }, [markRelationCached, visibleScope.entries]);
-
-  const handlePrefetchVisible = useCallback(async () => {
-    if (prefetchingRefine || prefetchingRelations) return;
-
-    await handlePrefetchVisibleRefine();
-    await handlePrefetchVisibleRelations();
-  }, [handlePrefetchVisibleRefine, handlePrefetchVisibleRelations, prefetchingRefine, prefetchingRelations]);
+  }, [markRefineCached, markRelationCached, prefetchingRefine, prefetchingRelations, visibleScope.entries]);
 
   const handleVocabularyEntryChange = (change) => {
     const normalizedCategory = String(change?.category || sharedLaunchRequest?.category || '').trim();

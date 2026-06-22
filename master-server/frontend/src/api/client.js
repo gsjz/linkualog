@@ -261,6 +261,23 @@ export const startVocabularyRelationsPrefetchJob = async (category, filenames = 
   return handleResponse(res);
 };
 
+export const startVocabularyPreprocessJob = async (category, filenames = [], options = {}) => {
+  const finalCategory = requireVocabularyCategory(category);
+  const res = await fetch(`${BACKEND_URL}/api/vocabulary/preprocess/jobs`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      category: finalCategory,
+      filenames: Array.isArray(filenames) ? filenames : [],
+      limit: options?.limit ?? 20,
+      refresh_cache: Boolean(options?.refreshCache),
+      suggestion_limit: options?.suggestionLimit ?? 12,
+      candidate_limit: options?.candidateLimit ?? 72,
+    }),
+  });
+  return handleResponse(res);
+};
+
 export const fetchReviewAnalysisJob = async (jobId) => {
   const res = await fetch(`${BACKEND_URL}/api/review/analysis/jobs/${encodeURIComponent(jobId)}`);
   return handleResponse(res);
@@ -275,6 +292,34 @@ export const saveVocabularyDetail = async (category, filename, data) => {
       category: finalCategory,
       filename,
       data,
+    }),
+  });
+  return handleResponse(res);
+};
+
+export const deleteVocabularyDetail = async (category, filename) => {
+  const finalCategory = requireVocabularyCategory(category);
+  const res = await fetch(`${BACKEND_URL}/api/vocabulary/delete`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      category: finalCategory,
+      filename,
+    }),
+  });
+  return handleResponse(res);
+};
+
+export const searchVocabulary = async (query, options = {}) => {
+  const res = await fetch(`${BACKEND_URL}/api/vocabulary/search`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      query,
+      category: options?.category || null,
+      limit: options?.limit ?? 24,
+      include_all_categories: Boolean(options?.includeAllCategories),
+      use_llm: Boolean(options?.useLlm),
     }),
   });
   return handleResponse(res);

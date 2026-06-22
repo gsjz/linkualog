@@ -35,6 +35,10 @@ const GRAPH_COMPONENT_COLORS = ['#0f766e', '#3b6f9f', '#b45309', '#7c3aed', '#be
 const GRAPH_NODE_DOUBLE_CLICK_MS = 420;
 const GRAPH_CURRENT_NODE_FILL = '#fff7ed';
 const GRAPH_CURRENT_NODE_STROKE = '#f97316';
+const GRAPH_MIN_ZOOM = 0.45;
+const GRAPH_MAX_ZOOM = 3;
+const GRAPH_ZOOM_STEP = 1.22;
+const GRAPH_INITIAL_VIEWPORT = Object.freeze({ scale: 1, x: 0, y: 0 });
 
 const formatNumber = (value) => new Intl.NumberFormat('zh-CN').format(Number(value) || 0);
 
@@ -306,6 +310,19 @@ function CategoryRank({ items = [], selectedCategory = '', onSelect }) {
 }
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+
+function clampGraphViewportTransform(transform, dimensions = {}) {
+  const scale = clamp(Number(transform?.scale) || 1, GRAPH_MIN_ZOOM, GRAPH_MAX_ZOOM);
+  const width = Math.max(320, Number(dimensions?.width) || 320);
+  const height = Math.max(132, Number(dimensions?.height) || 132);
+  const horizontalLimit = width * Math.max(1.25, scale + 0.5);
+  const verticalLimit = height * Math.max(1.25, scale + 0.5);
+  return {
+    scale,
+    x: clamp(Number(transform?.x) || 0, -horizontalLimit, horizontalLimit),
+    y: clamp(Number(transform?.y) || 0, -verticalLimit, verticalLimit),
+  };
+}
 
 function hashString(value) {
   return String(value || '').split('').reduce((hash, char) => (
@@ -864,6 +881,8 @@ export function RelationGraphPanel({
   const [canvasWidth, setCanvasWidth] = useState(760);
   const [canvasHeight, setCanvasHeight] = useState(420);
   const [layoutNodes, setLayoutNodes] = useState([]);
+  const [viewportTransform, setViewportTransform] = useState(GRAPH_INITIAL_VIEWPORT);
+  const [graphPanning, setGraphPanning] = useState(false);
   const viewportRef = useRef(null);
   const svgRef = useRef(null);
   const simNodesRef = useRef([]);
@@ -878,6 +897,10 @@ export function RelationGraphPanel({
   const deckViewportRef = useRef(null);
   const pointerSelectionRef = useRef(null);
   const lastNodeClickRef = useRef({ id: '', time: 0 });
+  const graphPointersRef = useRef(new Map());
+  const pinchRef = useRef(null);
+  const panRef = useRef(null);
+  const viewportTransformRef = useRef(GRAPH_INITIAL_VIEWPORT);
   const [selectedComponentId, setSelectedComponentId] = useState('');
 
   const graphHeight = useMemo(() => {
@@ -928,6 +951,11 @@ export function RelationGraphPanel({
   const handleNodeClick = useCallback((node) => {
     const nodeId = String(node?.id || '').trim();
     if (!nodeId) return;
+    const suppressClickUntil = Number(pointerSelectionRef.current?.suppressClickUntil) || 0;
+    if (suppressClickUntil && performance.now() <= suppressClickUntil) {
+      pointerSelectionRef.current = null;
+      return;
+    }
     const now = performance.now();
     const lastClick = lastNodeClickRef.current;
     const rapidSecondClick = lastClick?.id === nodeId
@@ -973,16 +1001,169 @@ export function RelationGraphPanel({
     }
   }, [runSimulation]);
 
-  const graphPointFromEvent = useCallback((event) => {
+  const getViewportPointFromClient = useCallback((clientX, clientY) => {
     const svg = svgRef.current;
     const rect = svg?.getBoundingClientRect();
     const dimensions = dimensionsRef.current;
     if (!rect || !rect.width || !rect.height) return null;
     return {
-      x: clamp(((event.clientX - rect.left) / rect.width) * dimensions.width, 0, dimensions.width),
-      y: clamp(((event.clientY - rect.top) / rect.height) * dimensions.height, 0, dimensions.height),
+      x: ((clientX - rect.left) / rect.width) * dimensions.width,
+      y: ((clientY - rect.top) / rect.height) * dimensions.height,
     };
   }, []);
+
+  const applyViewportTransform = useCallback((nextTransform) => {
+    const normalizedTransform = clampGraphViewportTransform(
+      typeof nextTransform === 'function'
+        ? nextTransform(viewportTransformRef.current)
+        : nextTransform,
+      dimensionsRef.current,
+    );
+    viewportTransformRef.current = normalizedTransform;
+    setViewportTransform(normalizedTransform);
+    return normalizedTransform;
+  }, []);
+
+  const zoomGraphAtPoint = useCallback((viewportPoint, scaleFactor) => {
+    if (!viewportPoint || !Number.isFinite(scaleFactor) || scaleFactor <= 0) return;
+    applyViewportTransform((previousTransform) => {
+      const previousScale = previousTransform.scale || 1;
+      const nextScale = clamp(previousScale * scaleFactor, GRAPH_MIN_ZOOM, GRAPH_MAX_ZOOM);
+      if (Math.abs(nextScale - previousScale) < 0.001) return previousTransform;
+      const graphX = (viewportPoint.x - (previousTransform.x || 0)) / previousScale;
+      const graphY = (viewportPoint.y - (previousTransform.y || 0)) / previousScale;
+      return {
+        scale: nextScale,
+        x: viewportPoint.x - graphX * nextScale,
+        y: viewportPoint.y - graphY * nextScale,
+      };
+    });
+  }, [applyViewportTransform]);
+
+  const handleViewportZoomButton = useCallback((scaleFactor) => {
+    const dimensions = dimensionsRef.current;
+    zoomGraphAtPoint({ x: dimensions.width / 2, y: dimensions.height / 2 }, scaleFactor);
+  }, [zoomGraphAtPoint]);
+
+  const resetViewportTransform = useCallback(() => {
+    applyViewportTransform(GRAPH_INITIAL_VIEWPORT);
+  }, [applyViewportTransform]);
+
+  const graphPointFromEvent = useCallback((event) => {
+    const viewportPoint = getViewportPointFromClient(event.clientX, event.clientY);
+    const dimensions = dimensionsRef.current;
+    const transform = viewportTransformRef.current;
+    if (!viewportPoint) return null;
+    const scale = transform.scale || 1;
+    return {
+      x: clamp((viewportPoint.x - (transform.x || 0)) / scale, 0, dimensions.width),
+      y: clamp((viewportPoint.y - (transform.y || 0)) / scale, 0, dimensions.height),
+    };
+  }, [getViewportPointFromClient]);
+
+  const getPinchMetrics = useCallback(() => {
+    const pointers = [...graphPointersRef.current.values()];
+    if (pointers.length < 2) return null;
+    const first = pointers[0];
+    const second = pointers[1];
+    const distance = Math.hypot(second.clientX - first.clientX, second.clientY - first.clientY);
+    const center = getViewportPointFromClient(
+      (first.clientX + second.clientX) / 2,
+      (first.clientY + second.clientY) / 2,
+    );
+    if (!center) return null;
+    return {
+      distance: Math.max(1, distance),
+      center,
+    };
+  }, [getViewportPointFromClient]);
+
+  const cancelNodeDrag = useCallback(() => {
+    const drag = dragRef.current;
+    if (!drag) return;
+    const simNode = simNodesRef.current.find((item) => item.id === drag.id);
+    if (simNode) {
+      simNode.fx = null;
+      simNode.fy = null;
+    }
+    dragRef.current = null;
+    alphaRef.current = Math.max(alphaRef.current, 0.72);
+    ensureSimulation();
+  }, [ensureSimulation]);
+
+  const startPinchZoom = useCallback((metrics) => {
+    if (!metrics) return;
+    pointerSelectionRef.current = { suppressClickUntil: performance.now() + 420 };
+    panRef.current = null;
+    setGraphPanning(false);
+    cancelNodeDrag();
+    pinchRef.current = {
+      distance: metrics.distance,
+      center: metrics.center,
+      transform: viewportTransformRef.current,
+    };
+  }, [cancelNodeDrag]);
+
+  const handleGraphPointerDown = useCallback((event) => {
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+    graphPointersRef.current.set(event.pointerId, {
+      clientX: event.clientX,
+      clientY: event.clientY,
+    });
+    if (graphPointersRef.current.size >= 2) {
+      event.preventDefault();
+      startPinchZoom(getPinchMetrics());
+      return;
+    }
+
+    const target = event.target;
+    const nodeTarget = target instanceof Element
+      ? target.closest('.visual-force-node')
+      : null;
+    if (nodeTarget) return;
+
+    const startPoint = getViewportPointFromClient(event.clientX, event.clientY);
+    if (!startPoint) return;
+    event.preventDefault();
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+    panRef.current = {
+      pointerId: event.pointerId,
+      startPoint,
+      transform: viewportTransformRef.current,
+    };
+    setGraphPanning(true);
+  }, [getPinchMetrics, getViewportPointFromClient, startPinchZoom]);
+
+  const stopGraphPan = useCallback(() => {
+    if (!panRef.current) return false;
+    panRef.current = null;
+    setGraphPanning(false);
+    return true;
+  }, []);
+
+  const handleGraphPanMove = useCallback((event) => {
+    const pan = panRef.current;
+    if (!pan || (event.pointerId != null && pan.pointerId !== event.pointerId)) return false;
+    const point = getViewportPointFromClient(event.clientX, event.clientY);
+    if (!point) return false;
+    event.preventDefault?.();
+    const baseTransform = pan.transform || GRAPH_INITIAL_VIEWPORT;
+    applyViewportTransform({
+      ...baseTransform,
+      x: (baseTransform.x || 0) + point.x - pan.startPoint.x,
+      y: (baseTransform.y || 0) + point.y - pan.startPoint.y,
+    });
+    return true;
+  }, [applyViewportTransform, getViewportPointFromClient]);
+
+  const handleGraphWheel = useCallback((event) => {
+    event.preventDefault();
+    const viewportPoint = getViewportPointFromClient(event.clientX, event.clientY);
+    if (!viewportPoint) return;
+    const deltaUnit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? 240 : 1;
+    const scaleFactor = Math.exp(-event.deltaY * deltaUnit * 0.001);
+    zoomGraphAtPoint(viewportPoint, scaleFactor);
+  }, [getViewportPointFromClient, zoomGraphAtPoint]);
 
   useEffect(() => {
     const node = viewportRef.current;
@@ -1049,6 +1230,16 @@ export function RelationGraphPanel({
     ensureSimulation();
   }, [canvasWidth, ensureSimulation, graphHeight, model.edges, model.key, model.nodes, model.summaries]);
 
+  useEffect(() => {
+    graphPointersRef.current.clear();
+    pinchRef.current = null;
+    panRef.current = null;
+    pointerSelectionRef.current = null;
+    dragRef.current = null;
+    setGraphPanning(false);
+    applyViewportTransform(GRAPH_INITIAL_VIEWPORT);
+  }, [applyViewportTransform, canvasWidth, graphHeight, model.key]);
+
   useEffect(() => () => {
     if (frameRef.current) {
       window.cancelAnimationFrame(frameRef.current);
@@ -1057,6 +1248,13 @@ export function RelationGraphPanel({
   }, []);
 
   const handleNodePointerDown = useCallback((event, node) => {
+    if (
+      pinchRef.current
+      || (graphPointersRef.current.size > 0 && !graphPointersRef.current.has(event.pointerId))
+    ) {
+      event.preventDefault();
+      return;
+    }
     event.preventDefault();
     event.currentTarget.setPointerCapture?.(event.pointerId);
     const point = graphPointFromEvent(event);
@@ -1100,6 +1298,38 @@ export function RelationGraphPanel({
   }, [ensureSimulation, graphPointFromEvent, selectedNodeId]);
 
   const handleGraphPointerMove = useCallback((event) => {
+    if (graphPointersRef.current.has(event.pointerId)) {
+      graphPointersRef.current.set(event.pointerId, {
+        clientX: event.clientX,
+        clientY: event.clientY,
+      });
+      if (graphPointersRef.current.size >= 2) {
+        event.preventDefault?.();
+        const metrics = getPinchMetrics();
+        if (!pinchRef.current) {
+          startPinchZoom(metrics);
+        }
+        const pinch = pinchRef.current;
+        if (metrics && pinch) {
+          const baseTransform = pinch.transform || GRAPH_INITIAL_VIEWPORT;
+          const baseScale = baseTransform.scale || 1;
+          const nextScale = clamp(
+            baseScale * (metrics.distance / Math.max(1, pinch.distance)),
+            GRAPH_MIN_ZOOM,
+            GRAPH_MAX_ZOOM,
+          );
+          const graphX = (pinch.center.x - (baseTransform.x || 0)) / baseScale;
+          const graphY = (pinch.center.y - (baseTransform.y || 0)) / baseScale;
+          applyViewportTransform({
+            scale: nextScale,
+            x: metrics.center.x - graphX * nextScale,
+            y: metrics.center.y - graphY * nextScale,
+          });
+        }
+        return;
+      }
+    }
+    if (handleGraphPanMove(event)) return;
     const drag = dragRef.current;
     if (!drag || (event.pointerId != null && drag.pointerId != null && drag.pointerId !== event.pointerId)) return;
     event.preventDefault?.();
@@ -1127,9 +1357,25 @@ export function RelationGraphPanel({
     setLayoutNodes(snapshotLayoutNodes(simNodesRef.current));
     alphaRef.current = Math.max(alphaRef.current, 0.78);
     ensureSimulation();
-  }, [ensureSimulation, graphPointFromEvent]);
+  }, [applyViewportTransform, ensureSimulation, getPinchMetrics, graphPointFromEvent, handleGraphPanMove, startPinchZoom]);
 
   const handleGraphPointerUp = useCallback((event) => {
+    const wasPinching = graphPointersRef.current.size >= 2 || Boolean(pinchRef.current);
+    if (graphPointersRef.current.has(event.pointerId)) {
+      graphPointersRef.current.delete(event.pointerId);
+    }
+    if (graphPointersRef.current.size < 2) {
+      pinchRef.current = null;
+    }
+    if (wasPinching) {
+      event.preventDefault?.();
+    }
+    const pan = panRef.current;
+    if (pan && (event.pointerId == null || pan.pointerId === event.pointerId)) {
+      stopGraphPan();
+      event.preventDefault?.();
+      return;
+    }
     const drag = dragRef.current;
     if (!drag || (event.pointerId != null && drag.pointerId != null && drag.pointerId !== event.pointerId)) return;
     event.preventDefault?.();
@@ -1143,7 +1389,7 @@ export function RelationGraphPanel({
     dragRef.current = null;
     alphaRef.current = Math.max(alphaRef.current, 0.9);
     ensureSimulation();
-  }, [ensureSimulation]);
+  }, [ensureSimulation, stopGraphPan]);
 
   useEffect(() => {
     window.addEventListener('pointermove', handleGraphPointerMove, { passive: false });
@@ -1283,6 +1529,8 @@ export function RelationGraphPanel({
   const zones = [...zonesRef.current.values()];
   const summaryById = new Map(model.summaries.map((summary) => [summary.id, summary]));
   const edgeTypeLegend = buildGraphEdgeTypeLegend(model.edges);
+  const zoomLevel = `${Math.round((viewportTransform.scale || 1) * 100)}%`;
+  const viewportTransformValue = `translate(${viewportTransform.x} ${viewportTransform.y}) scale(${viewportTransform.scale})`;
 
   return (
     <section className={`visual-panel visual-graph-panel${compact ? ' is-compact' : ''}${className ? ` ${className}` : ''}`}>
@@ -1314,94 +1562,130 @@ export function RelationGraphPanel({
         </div>
       </div>
       <div className="visual-graph-workspace">
-        <div className="visual-graph-canvas" ref={viewportRef}>
+        <div className={`visual-graph-canvas${graphPanning ? ' is-panning' : ''}`} ref={viewportRef}>
           <svg
             ref={svgRef}
             className="visual-force-graph"
             viewBox={`0 0 ${width} ${height}`}
             role="img"
             aria-label={`${scopeLabel} 词条关系图`}
+            onPointerDown={handleGraphPointerDown}
+            onWheel={handleGraphWheel}
           >
-            <g className="visual-force-zones">
-              {zones.map((zone, index) => {
-                const summary = summaryById.get(zone.id);
-                return (
-                  <g key={zone.id}>
-                    <rect
-                      x={zone.x}
-                      y={zone.y}
-                      width={zone.width}
-                      height={zone.height}
-                      rx="8"
-                      fill={summary?.color || GRAPH_COMPONENT_COLORS[index % GRAPH_COMPONENT_COLORS.length]}
+            <g className="visual-force-viewport" transform={viewportTransformValue}>
+              <g className="visual-force-zones">
+                {zones.map((zone, index) => {
+                  const summary = summaryById.get(zone.id);
+                  return (
+                    <g key={zone.id}>
+                      <rect
+                        x={zone.x}
+                        y={zone.y}
+                        width={zone.width}
+                        height={zone.height}
+                        rx="8"
+                        fill={summary?.color || GRAPH_COMPONENT_COLORS[index % GRAPH_COMPONENT_COLORS.length]}
+                      />
+                      <text x={zone.x + 9} y={zone.y + 18} className="visual-force-zone-label">
+                        {`块${index + 1} · ${summary?.nodeCount || 0}`}
+                      </text>
+                    </g>
+                  );
+                })}
+              </g>
+              <g className="visual-force-links">
+                {model.edges.map((edge, edgeIndex) => {
+                  const source = placedById.get(edge.source);
+                  const target = placedById.get(edge.target);
+                  if (!source || !target) return null;
+                  const scope = edge.scope === 'cross_category' ? 'cross_category' : 'same_category';
+                  return (
+                    <line
+                      key={`${edge.source}-${edge.target}-${edge.type}-${edgeIndex}`}
+                      className={`visual-force-link ${scope === 'cross_category' ? 'is-cross' : 'is-same'}`}
+                      x1={source.x}
+                      y1={source.y}
+                      x2={target.x}
+                      y2={target.y}
+                      stroke={getGraphEdgeTypeColor(edge.type)}
                     />
-                    <text x={zone.x + 9} y={zone.y + 18} className="visual-force-zone-label">
-                      {`块${index + 1} · ${summary?.nodeCount || 0}`}
-                    </text>
-                  </g>
-                );
-              })}
-            </g>
-            <g className="visual-force-links">
-              {model.edges.map((edge, edgeIndex) => {
-                const source = placedById.get(edge.source);
-                const target = placedById.get(edge.target);
-                if (!source || !target) return null;
-                const scope = edge.scope === 'cross_category' ? 'cross_category' : 'same_category';
-                return (
-                  <line
-                    key={`${edge.source}-${edge.target}-${edge.type}-${edgeIndex}`}
-                    className={`visual-force-link ${scope === 'cross_category' ? 'is-cross' : 'is-same'}`}
-                    x1={source.x}
-                    y1={source.y}
-                    x2={target.x}
-                    y2={target.y}
-                    stroke={getGraphEdgeTypeColor(edge.type)}
-                  />
-                );
-              })}
-            </g>
-            <g className="visual-force-nodes">
-              {layoutNodes.map((node) => {
-                const selected = selectedNodeId === node.id;
-                const current = normalizedCurrentNodeId === node.id;
-                return (
-                  <g
-                    key={node.id}
-                    className={`visual-force-node${selected ? ' is-selected' : ''}${current ? ' is-current' : ''}`}
-                    transform={`translate(${node.x} ${node.y})`}
-                    role="button"
-                    tabIndex={0}
-                    aria-label={`${node.word} ${node.category}`}
-                    onPointerDown={(event) => handleNodePointerDown(event, node)}
-                    onClick={() => handleNodeClick(node)}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter' || event.key === ' ') {
-                        event.preventDefault();
-                        handleNodeClick(node);
-                      }
-                    }}
-                  >
-                    <rect
-                      x={-node.boxWidth / 2}
-                      y={-node.boxHeight / 2}
-                      width={node.boxWidth}
-                      height={node.boxHeight}
-                      rx="8"
-                      fill={current ? GRAPH_CURRENT_NODE_FILL : '#fff'}
-                      stroke={current ? GRAPH_CURRENT_NODE_STROKE : (selected ? '#111827' : node.color)}
-                    />
-                    <text className="visual-force-node-word" y="-2" textAnchor="middle">
-                      {truncateGraphLabel(node.word || node.file)}
-                    </text>
-                    <text className="visual-force-node-category" y="11" textAnchor="middle">
-                      {node.category}
-                    </text>
-                  </g>
-                );
-              })}
+                  );
+                })}
+              </g>
+              <g className="visual-force-nodes">
+                {layoutNodes.map((node) => {
+                  const selected = selectedNodeId === node.id;
+                  const current = normalizedCurrentNodeId === node.id;
+                  return (
+                    <g
+                      key={node.id}
+                      className={`visual-force-node${selected ? ' is-selected' : ''}${current ? ' is-current' : ''}`}
+                      transform={`translate(${node.x} ${node.y})`}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`${node.word} ${node.category}`}
+                      onPointerDown={(event) => handleNodePointerDown(event, node)}
+                      onClick={() => handleNodeClick(node)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          handleNodeClick(node);
+                        }
+                      }}
+                    >
+                      <rect
+                        x={-node.boxWidth / 2}
+                        y={-node.boxHeight / 2}
+                        width={node.boxWidth}
+                        height={node.boxHeight}
+                        rx="8"
+                        fill={current ? GRAPH_CURRENT_NODE_FILL : '#fff'}
+                        stroke={current ? GRAPH_CURRENT_NODE_STROKE : (selected ? '#111827' : node.color)}
+                      />
+                      <text className="visual-force-node-word" y="-2" textAnchor="middle">
+                        {truncateGraphLabel(node.word || node.file)}
+                      </text>
+                      <text className="visual-force-node-category" y="11" textAnchor="middle">
+                        {node.category}
+                      </text>
+                    </g>
+                  );
+                })}
+              </g>
             </g>
           </svg>
+          <div className="visual-graph-zoom-controls" aria-label="关系图缩放">
+            <button
+              type="button"
+              className="visual-graph-zoom-button"
+              onClick={() => handleViewportZoomButton(1 / GRAPH_ZOOM_STEP)}
+              disabled={viewportTransform.scale <= GRAPH_MIN_ZOOM + 0.01}
+              title="缩小"
+              aria-label="缩小关系图"
+            >
+              <UiIcon name="zoom-out" size={14} />
+            </button>
+            <button
+              type="button"
+              className="visual-graph-zoom-reset"
+              onClick={resetViewportTransform}
+              title="重置缩放"
+              aria-label={`重置关系图缩放，当前 ${zoomLevel}`}
+            >
+              <UiIcon name="refresh" size={13} />
+              <span>{zoomLevel}</span>
+            </button>
+            <button
+              type="button"
+              className="visual-graph-zoom-button"
+              onClick={() => handleViewportZoomButton(GRAPH_ZOOM_STEP)}
+              disabled={viewportTransform.scale >= GRAPH_MAX_ZOOM - 0.01}
+              title="放大"
+              aria-label="放大关系图"
+            >
+              <UiIcon name="zoom-in" size={14} />
+            </button>
+          </div>
         </div>
 
         <aside className="visual-graph-inspector">

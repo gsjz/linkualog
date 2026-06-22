@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import UiIcon from './UiIcon';
 
 import {
+  deleteVocabularyDetail,
   fetchConfig,
   fetchRecommendedWord,
   getVocabularyCategories,
@@ -11,6 +12,7 @@ import {
   getReviewVisualization,
   saveConfig,
   saveVocabularyDetail,
+  searchVocabulary,
   submitReviewScore,
 } from '../api/client';
 import { RelationGraphPanel } from './VisualizationDashboard.jsx';
@@ -54,6 +56,8 @@ const MANUAL_SORT_OPTIONS = [
   { value: 'recent', label: '最近' },
   { value: 'oldest', label: '最早' },
 ];
+const SEARCH_MODE_LOCAL = 'local';
+const SEARCH_MODE_LLM = 'llm';
 const ALL_RECOMMEND_SCOPE = '__all_recommend_scope__';
 const DEFAULT_RECOMMENDATION_PREFERENCES = {
   due_weight: 2.2,
@@ -1148,6 +1152,10 @@ export default function VocabularyReview({
       : (getStoredReviewCategory() || ALL_CATEGORIES_VALUE)
   ));
   const [wordQuery, setWordQuery] = useState('');
+  const [searchMode, setSearchMode] = useState(SEARCH_MODE_LOCAL);
+  const [semanticSearchLoading, setSemanticSearchLoading] = useState(false);
+  const [semanticSearchResults, setSemanticSearchResults] = useState(null);
+  const [semanticSearchError, setSemanticSearchError] = useState('');
   const [entryFilter, setEntryFilter] = useState(() => ((mobileSimple || compactDesktop || randomSelectionMode) ? 'all' : 'marked'));
   const [manualSortOrder, setManualSortOrder] = useState('name');
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
@@ -1195,6 +1203,7 @@ export default function VocabularyReview({
   const relationGraphRequestRef = useRef(0);
   const fullComponentGraphCacheRef = useRef(null);
   const autoRecommendationPoolKeyRef = useRef('');
+  const keepSelectionEntryIdRef = useRef('');
   const randomSelectionModeRef = useRef(randomSelectionMode);
   const infoButtonRef = useRef(null);
   const sidebarWordListRef = useRef(null);
@@ -1273,12 +1282,24 @@ export default function VocabularyReview({
 
   const resetCurrentEntry = useCallback((nextEntries = []) => {
     detailRequestRef.current += 1;
+    keepSelectionEntryIdRef.current = '';
     setEntries(nextEntries);
     setEntriesCategory('');
     setSelectedEntryId('');
     setSelectedEntrySnapshot(null);
     setDetailData(null);
     setDetailCategory('');
+  }, []);
+
+  const invalidateRecommendationQueue = useCallback(({ loading = false } = {}) => {
+    recommendationRefreshRequestRef.current += 1;
+    recommendationQueueRequestRef.current += 1;
+    autoRecommendationPoolKeyRef.current = '';
+    setRecommendExcludeKeys([]);
+    setRecommendation(null);
+    setRecommendationQueue([]);
+    setLoadingRecommendation(false);
+    setLoadingRecommendationQueue(Boolean(loading && randomSelectionModeRef.current));
   }, []);
 
   const applySelectedCategory = useCallback((nextCategory, { resetQuery = true } = {}) => {
@@ -1289,13 +1310,10 @@ export default function VocabularyReview({
         ? normalizedCategory
         : ALL_RECOMMEND_SCOPE,
     );
-    setRecommendExcludeKeys([]);
-    setRecommendation(null);
-    setRecommendationQueue([]);
-    autoRecommendationPoolKeyRef.current = '';
+    invalidateRecommendationQueue();
     resetCurrentEntry([]);
     if (resetQuery) setWordQuery('');
-  }, [resetCurrentEntry]);
+  }, [invalidateRecommendationQueue, resetCurrentEntry]);
 
   const resolveEntryCandidate = useCallback((entryLike, categoryOverride = selectedCategory, pool = entries) => {
     if (entryLike && typeof entryLike === 'object' && !Array.isArray(entryLike)) {
@@ -1304,12 +1322,18 @@ export default function VocabularyReview({
 
     const lookup = normalizeVocabularyLaunchWord(entryLike);
     if (!lookup) return null;
-
-    return pool.find((item) => (
+    const normalizedCategory = String(categoryOverride || '').trim();
+    const categoryConstrained = Boolean(normalizedCategory && !isAllCategoriesValue(normalizedCategory));
+    const matchesLookup = (item) => (
       buildVocabularyWordKey(item.file) === buildVocabularyWordKey(lookup)
       || buildVocabularyWordKey(item.key) === buildVocabularyWordKey(lookup)
       || buildVocabularyWordKey(item.word) === buildVocabularyWordKey(lookup)
-    )) || normalizeVocabularyEntry({
+    );
+
+    return pool.find((item) => (
+      matchesLookup(item)
+      && (!categoryConstrained || String(item.category || '').trim() === normalizedCategory)
+    )) || pool.find(matchesLookup) || normalizeVocabularyEntry({
       key: lookup,
       file: `${lookup}.json`,
       word: lookup,
@@ -1391,6 +1415,16 @@ export default function VocabularyReview({
     }
   }, [categories]);
 
+  const refreshVocabularyPool = useCallback(async ({ refreshCategories = false, resetQueue = true } = {}) => {
+    if (resetQueue) {
+      invalidateRecommendationQueue({ loading: true });
+    }
+    if (refreshCategories) {
+      await loadCategories();
+    }
+    await loadEntries(selectedCategory);
+  }, [invalidateRecommendationQueue, loadCategories, loadEntries, selectedCategory]);
+
   const handleSelectEntry = useCallback(async (
     entryLike,
     categoryOverride = selectedCategory,
@@ -1406,6 +1440,7 @@ export default function VocabularyReview({
     const keepDetailWhileLoading = Boolean(options?.keepDetailWhileLoading);
     const requestId = detailRequestRef.current + 1;
     detailRequestRef.current = requestId;
+    keepSelectionEntryIdRef.current = '';
     setSelectedEntryId(resolvedEntry.id);
     setSelectedEntrySnapshot(resolvedEntry);
     if (!keepDetailWhileLoading) {
@@ -1559,10 +1594,8 @@ export default function VocabularyReview({
       : ALL_RECOMMEND_SCOPE;
     if (recommendScope === nextScope) return;
     setRecommendScope(nextScope);
-    setRecommendExcludeKeys([]);
-    setRecommendation(null);
-    setRecommendationQueue([]);
-  }, [recommendScope, selectedCategory]);
+    invalidateRecommendationQueue();
+  }, [invalidateRecommendationQueue, recommendScope, selectedCategory]);
 
   useEffect(() => {
     if (!String(selectedCategory || '').trim()) {
@@ -1572,9 +1605,9 @@ export default function VocabularyReview({
     }
 
     queueMicrotask(() => {
-      void loadEntries(selectedCategory);
+      void refreshVocabularyPool({ resetQueue: true });
     });
-  }, [loadEntries, resetCurrentEntry, selectedCategory]);
+  }, [refreshVocabularyPool, resetCurrentEntry, selectedCategory]);
 
   useEffect(() => {
     if (!launchRequest?.word && !launchRequest?.filename && !launchRequest?.fileKey) return;
@@ -1610,14 +1643,14 @@ export default function VocabularyReview({
       return;
     }
 
-    const fallbackCategory = browsingAllCategories ? (targetCategory || selectedCategory) : targetCategory;
+    const fallbackCategory = targetCategory || selectedCategory;
     const matchedEntry = resolveEntryCandidate(targetFileKey || targetWord, fallbackCategory, entries)
       || resolveEntryCandidate(targetWord, fallbackCategory, entries);
     pendingLaunchRef.current = null;
     queueMicrotask(() => {
       void handleSelectEntry(
         matchedEntry || targetFileKey || targetWord,
-        browsingAllCategories ? selectedCategory : targetCategory,
+        fallbackCategory,
         entries,
       );
     });
@@ -1629,16 +1662,14 @@ export default function VocabularyReview({
     if (pendingLaunch.category !== selectedCategory && !isAllCategoriesValue(selectedCategory)) return;
     if (entriesCategory !== selectedCategory) return;
 
-    const fallbackCategory = isAllCategoriesValue(selectedCategory)
-      ? (pendingLaunch.category || selectedCategory)
-      : pendingLaunch.category;
+    const fallbackCategory = pendingLaunch.category || selectedCategory;
     const matchedEntry = resolveEntryCandidate(pendingLaunch.fileKey || pendingLaunch.word, fallbackCategory, entries)
       || resolveEntryCandidate(pendingLaunch.word, fallbackCategory, entries);
     pendingLaunchRef.current = null;
     queueMicrotask(() => {
       void handleSelectEntry(
         matchedEntry || pendingLaunch.fileKey || pendingLaunch.word,
-        isAllCategoriesValue(selectedCategory) ? selectedCategory : pendingLaunch.category,
+        fallbackCategory,
         entries,
       );
     });
@@ -1659,6 +1690,32 @@ export default function VocabularyReview({
     );
     if (!targetCategory || !targetFile) return;
 
+    if (entryUpdateRequest.deleted) {
+      const targetId = buildVocabularyEntryId(targetCategory, targetFile);
+      invalidateRecommendationQueue({ loading: true });
+      setEntries((prev) => prev.filter((item) => item.id !== targetId));
+      if (selectedEntryId === targetId) {
+        detailRequestRef.current += 1;
+        keepSelectionEntryIdRef.current = '';
+        setSelectedEntryId('');
+        setSelectedEntrySnapshot(null);
+        setDetailData(null);
+        setDetailCategory('');
+      }
+      setSemanticSearchResults((current) => (
+        current
+          ? {
+              ...current,
+              entries: (Array.isArray(current.entries) ? current.entries : []).filter((item) => item.id !== targetId),
+            }
+          : current
+      ));
+      queueMicrotask(() => {
+        void refreshVocabularyPool({ resetQueue: true });
+      });
+      return;
+    }
+
     const nextEntry = normalizeVocabularyEntry({
       key: targetFile,
       file: targetFile.endsWith('.json') ? targetFile : `${targetFile}.json`,
@@ -1674,11 +1731,17 @@ export default function VocabularyReview({
     const shouldSelectUpdatedEntry = browsingAllCategories || selectedCategory === targetCategory;
 
     if (shouldSelectUpdatedEntry) {
+      const keepSelection = Boolean(entryUpdateRequest.keepSelection || entryUpdateRequest.keep_selection);
+      if (keepSelection) {
+        keepSelectionEntryIdRef.current = nextEntry.id;
+      }
+      invalidateRecommendationQueue({ loading: true });
       setEntries((prev) => {
         const sourceFile = normalizeVocabularyLaunchWord(entryUpdateRequest.source_file || '');
+        const sourceCategory = String(entryUpdateRequest.source_category || entryUpdateRequest.sourceCategory || targetCategory).trim();
         const filtered = sourceFile
           ? prev.filter((item) => !(
-              item.category === targetCategory
+              item.category === sourceCategory
               && buildVocabularyWordKey(item.file || item.key || item.word) === buildVocabularyWordKey(sourceFile)
             ))
           : prev;
@@ -1700,12 +1763,28 @@ export default function VocabularyReview({
       if (entryUpdateRequest.data) {
         setDetailData(entryUpdateRequest.data);
       }
+      setSemanticSearchResults((current) => {
+        if (!current) return current;
+        const currentEntries = Array.isArray(current.entries) ? current.entries : [];
+        if (!currentEntries.some((item) => item.id === nextEntry.id)) return current;
+        return {
+          ...current,
+          entries: currentEntries.map((item) => (
+            item.id === nextEntry.id
+              ? { ...item, ...nextEntry }
+              : item
+          )),
+        };
+      });
     }
 
     queueMicrotask(() => {
-      void loadEntries(selectedCategory);
+      if (shouldSelectUpdatedEntry) {
+        void handleSelectEntry(nextEntry, targetCategory, [nextEntry, ...entries]);
+      }
+      void refreshVocabularyPool({ resetQueue: true });
     });
-  }, [entryUpdateRequest, loadEntries, selectedCategory]);
+  }, [entries, entryUpdateRequest, handleSelectEntry, invalidateRecommendationQueue, refreshVocabularyPool, selectedCategory, selectedEntryId]);
 
   useEffect(() => {
     const updateToken = String(prefetchedRefineRequest?.token || '');
@@ -1828,6 +1907,8 @@ export default function VocabularyReview({
   }, [relationGraphFetchScope, relationGraphRefreshToken]);
 
   const normalizedWordQuery = String(wordQuery || '').trim().toLowerCase();
+  const llmSearchMode = searchMode === SEARCH_MODE_LLM;
+  const semanticSearchActive = Boolean(semanticSearchResults && String(semanticSearchResults.query || '').trim());
   const filterCounts = {
     marked: entries.filter((item) => item.marked).length,
     needs_processing: entries.filter((item) => item.needsProcessing).length,
@@ -1841,6 +1922,10 @@ export default function VocabularyReview({
     return true;
   }), [entries, entryFilter]);
   const visibleEntries = useMemo(() => {
+    if (semanticSearchActive) {
+      return Array.isArray(semanticSearchResults?.entries) ? semanticSearchResults.entries : [];
+    }
+
     const searchedEntries = filteredEntries.filter((entry) => {
       if (!normalizedWordQuery) return true;
       return [entry.word, entry.key, entry.file]
@@ -1851,7 +1936,7 @@ export default function VocabularyReview({
     return randomSelectionMode
       ? searchedEntries
       : sortManualEntries(searchedEntries, manualSortOrder);
-  }, [filteredEntries, manualSortOrder, normalizedWordQuery, randomSelectionMode]);
+  }, [filteredEntries, manualSortOrder, normalizedWordQuery, randomSelectionMode, semanticSearchActive, semanticSearchResults]);
 
   useEffect(() => {
     if (typeof onVisibleScopeChange !== 'function') return;
@@ -1917,6 +2002,72 @@ export default function VocabularyReview({
     );
   }, [entries, handleSelectEntry, relationGraphFullComponent, selectedCategory]);
 
+  const handleSemanticSearch = useCallback(async () => {
+    const query = String(wordQuery || '').trim();
+    if (!query) {
+      setSemanticSearchResults(null);
+      setSemanticSearchError('');
+      return;
+    }
+
+    setSemanticSearchLoading(true);
+    setSemanticSearchError('');
+    setSemanticSearchResults(null);
+    try {
+      const res = await searchVocabulary(query, {
+        category: isAllCategoriesValue(selectedCategory) ? '' : selectedCategory,
+        includeAllCategories: isAllCategoriesValue(selectedCategory),
+        limit: 40,
+        useLlm: llmSearchMode,
+      });
+      const nextEntries = (Array.isArray(res?.results) ? res.results : [])
+        .map((item) => {
+          const entry = normalizeVocabularyEntry({
+            ...item,
+            key: item.key || item.file || item.word,
+            file: item.file,
+            word: item.word,
+            category: item.category,
+          }, item.category);
+          return {
+            ...entry,
+            searchScore: Number(item?.score || 0),
+            snippet: item?.snippet || '',
+            matchedField: item?.matchedField || item?.matched_field || '',
+          };
+        });
+      setSemanticSearchResults({
+        query: res?.query || query,
+        entries: nextEntries,
+        total: Number(res?.total || nextEntries.length),
+      });
+    } catch (error) {
+      console.error('搜索失败', error);
+      setSemanticSearchError(error.message || '搜索失败');
+    } finally {
+      setSemanticSearchLoading(false);
+    }
+  }, [llmSearchMode, selectedCategory, wordQuery]);
+
+  const clearSemanticSearch = useCallback(() => {
+    setSemanticSearchResults(null);
+    setSemanticSearchError('');
+  }, []);
+
+  const handleSearchModeChange = useCallback((nextMode) => {
+    const normalizedMode = nextMode === SEARCH_MODE_LLM ? SEARCH_MODE_LLM : SEARCH_MODE_LOCAL;
+    setSearchMode(normalizedMode);
+    clearSemanticSearch();
+  }, [clearSemanticSearch]);
+
+  const closeMobileTools = useCallback(() => setMobileFiltersOpen(false), []);
+
+  const handleUseSearchResult = useCallback((entry) => {
+    if (!entry?.file) return;
+    if (mobileSimple) closeMobileTools();
+    void handleSelectEntry(entry, isAllCategoriesValue(selectedCategory) ? selectedCategory : entry.category, entries);
+  }, [closeMobileTools, entries, handleSelectEntry, mobileSimple, selectedCategory]);
+
   const handleRecommendPreferencesChange = useCallback((patch) => {
     const next = normalizeRecommendationPreferences({
       ...recommendPreferencesRef.current,
@@ -1927,10 +2078,8 @@ export default function VocabularyReview({
     recommendPreferenceDirtyRef.current = dirty;
     setRecommendPreferenceDirty(dirty);
     setRecommendPreferences(next);
-    setRecommendExcludeKeys([]);
-    setRecommendation(null);
-    setRecommendationQueue([]);
-  }, []);
+    invalidateRecommendationQueue();
+  }, [invalidateRecommendationQueue]);
 
   const handleRecommendPreferencesReset = useCallback(() => {
     setRecommendationTrianglePoint(recommendationPreferencesToTrianglePoint(DEFAULT_RECOMMENDATION_PREFERENCES));
@@ -2122,6 +2271,12 @@ export default function VocabularyReview({
     if (loadingRecommendation) return;
     if (!selectedCategory) return;
     if (entriesCategory !== selectedCategory) return;
+    if (keepSelectionEntryIdRef.current && keepSelectionEntryIdRef.current === selectedEntryId) {
+      autoRecommendationPoolKeyRef.current = '';
+      keepSelectionEntryIdRef.current = '';
+      return;
+    }
+
     if (!visibleEntries.length) {
       autoRecommendationPoolKeyRef.current = '';
       detailRequestRef.current += 1;
@@ -2135,6 +2290,7 @@ export default function VocabularyReview({
     const stillVisible = visibleEntries.some((item) => item.id === selectedEntryId);
     if (stillVisible) {
       autoRecommendationPoolKeyRef.current = '';
+      keepSelectionEntryIdRef.current = '';
       return;
     }
 
@@ -2160,15 +2316,9 @@ export default function VocabularyReview({
   useEffect(() => {
     if (!randomSelectionMode) {
       setRecommendSettingsOpen(false);
-      recommendationRefreshRequestRef.current += 1;
-      recommendationQueueRequestRef.current += 1;
-      setLoadingRecommendation(false);
-      setLoadingRecommendationQueue(false);
     }
-    setRecommendExcludeKeys([]);
-    setRecommendation(null);
-    setRecommendationQueue([]);
-  }, [randomSelectionMode, recommendPreferences, recommendScope]);
+    invalidateRecommendationQueue();
+  }, [invalidateRecommendationQueue, randomSelectionMode, recommendPreferences, recommendScope]);
 
   useEffect(() => {
     if (randomSelectionMode || !selectedEntryId) return;
@@ -2242,6 +2392,48 @@ export default function VocabularyReview({
       setSavingMarked(false);
     }
   }, [detailCategory, detailData, entries, resolveEntryCandidate, resolveEntryCategory, selectedCategory, selectedEntry]);
+
+  const handleDeleteCurrentEntry = useCallback(async () => {
+    const currentEntry = selectedEntry || resolveEntryCandidate(detailData?.word, selectedCategory, entries);
+    const currentEntryCategory = detailCategory || resolveEntryCategory(currentEntry, selectedCategory);
+    if (!currentEntry?.file || !currentEntryCategory) return;
+
+    const label = `${formatCategoryLabel(currentEntryCategory)} / ${currentEntry.file}`;
+    if (!window.confirm(`确定删除当前词条吗？\n\n${label}\n\n删除后会同步清理其它词条指向它的连接。`)) {
+      return;
+    }
+
+    setSavingMarked(true);
+    try {
+      await deleteVocabularyDetail(currentEntryCategory, currentEntry.file);
+      const targetId = currentEntry.id;
+      detailRequestRef.current += 1;
+      keepSelectionEntryIdRef.current = '';
+      invalidateRecommendationQueue({ loading: true });
+      setEntries((prev) => prev.filter((item) => item.id !== targetId));
+      setSelectedEntryId('');
+      setSelectedEntrySnapshot(null);
+      setDetailData(null);
+      setDetailCategory('');
+      setRelationGraphData(null);
+      setSemanticSearchResults((current) => (
+        current
+          ? {
+              ...current,
+              entries: (Array.isArray(current.entries) ? current.entries : []).filter((item) => item.id !== targetId),
+            }
+          : current
+      ));
+      queueMicrotask(() => {
+        void refreshVocabularyPool({ resetQueue: true });
+      });
+    } catch (error) {
+      console.error('删除词条失败', error);
+      alert('删除词条失败');
+    } finally {
+      setSavingMarked(false);
+    }
+  }, [detailCategory, detailData?.word, entries, invalidateRecommendationQueue, refreshVocabularyPool, resolveEntryCandidate, resolveEntryCategory, selectedCategory, selectedEntry]);
 
   const reviews = Array.isArray(detailData?.reviews) ? detailData.reviews : [];
   const definitions = Array.isArray(detailData?.definitions) ? detailData.definitions : [];
@@ -2327,7 +2519,7 @@ export default function VocabularyReview({
       </div>
 
       {detailData ? (
-        <div className="score-grid vocab-review-bottom-score-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(6, minmax(0, 1fr))', gap: '6px' }}>
+        <div className="score-grid vocab-review-bottom-score-grid" role="group" aria-label="本次打分">
           {[0, 1, 2, 3, 4, 5].map((score) => (
             <button
               key={score}
@@ -2335,19 +2527,8 @@ export default function VocabularyReview({
               className="score-btn"
               onClick={() => void handleSubmitReviewScore(score)}
               disabled={savingReviewScore}
-              style={{
-                padding: '8px 4px',
-                borderRadius: '6px',
-                border: '1px solid var(--ms-border)',
-                background: '#fff',
-                color: 'var(--ms-text)',
-                fontSize: '11px',
-                fontWeight: 650,
-                lineHeight: 1.35,
-                cursor: savingReviewScore ? 'not-allowed' : 'pointer',
-              }}
             >
-              <strong style={{ display: 'block', fontSize: '16px' }}>{score}</strong>
+              <strong>{score}</strong>
               <span>{SCORE_SHORT_LABELS[score]}</span>
             </button>
           ))}
@@ -2358,11 +2539,23 @@ export default function VocabularyReview({
         {detailData ? (
           <button
             type="button"
-            className="vocab-review-mark-button"
+            className={`vocab-review-mark-button${detailData?.marked ? ' is-active' : ''}`}
             onClick={() => void handleToggleMarked()}
             disabled={savingMarked}
           >
-            {savingMarked ? '保存中' : (detailData?.marked ? '已标记' : '标记')}
+            <UiIcon name="star" size={14} />
+            <span>{savingMarked ? '保存中' : (detailData?.marked ? '已标记' : '标记')}</span>
+          </button>
+        ) : null}
+        {detailData ? (
+          <button
+            type="button"
+            className="vocab-review-mark-button vocab-review-delete-button"
+            onClick={() => void handleDeleteCurrentEntry()}
+            disabled={savingMarked}
+          >
+            <UiIcon name="trash" size={14} />
+            <span>删除</span>
           </button>
         ) : null}
         <button
@@ -2371,7 +2564,7 @@ export default function VocabularyReview({
           onClick={randomSelectionMode ? (() => handleRecommendationNext()) : (() => handleDrawRandomEntry())}
           disabled={randomSelectionMode ? (loadingRecommendation || !visibleEntries.length) : !visibleEntries.length}
         >
-          {loadingRecommendation && randomSelectionMode ? '抽取中' : (detailData ? '下一个词' : '随机抽词')}
+          <span>{loadingRecommendation && randomSelectionMode ? '抽取中' : (detailData ? '下一个词' : '随机抽词')}</span>
         </button>
       </div>
     </div>
@@ -2386,7 +2579,6 @@ export default function VocabularyReview({
     activeFilterOption.label,
   ];
 
-  const closeMobileTools = () => setMobileFiltersOpen(false);
   const closeMobileInfo = () => {
     setMobileInfoOpen(false);
     setMobileInfoPanelPosition(null);
@@ -2460,6 +2652,72 @@ export default function VocabularyReview({
     </>
   );
 
+  const semanticSearchControlsNode = (
+    <label className="vocab-review-floating-field vocab-review-search-field">
+      <span className="vocab-review-field-label">搜索</span>
+      <span className="vocab-review-search-row">
+        <input
+          className="vocab-review-search-input"
+          type="search"
+          placeholder="筛选单词、释义、例句"
+          value={wordQuery}
+          onChange={(e) => {
+            setWordQuery(e.target.value);
+            if (!String(e.target.value || '').trim()) {
+              clearSemanticSearch();
+            }
+          }}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') {
+              event.preventDefault();
+              void handleSemanticSearch();
+            }
+          }}
+          style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--ms-border)', borderRadius: '6px', fontSize: '13px', outline: 'none', background: '#fff', color: 'var(--ms-text)' }}
+        />
+        <span className="vocab-review-search-mode-toggle" role="group" aria-label="搜索模式">
+          <button
+            type="button"
+            className={searchMode === SEARCH_MODE_LOCAL ? 'is-active' : ''}
+            onClick={() => handleSearchModeChange(SEARCH_MODE_LOCAL)}
+            aria-pressed={searchMode === SEARCH_MODE_LOCAL}
+            title="普通筛选"
+          >
+            普通
+          </button>
+          <button
+            type="button"
+            className={llmSearchMode ? 'is-active' : ''}
+            onClick={() => handleSearchModeChange(SEARCH_MODE_LLM)}
+            aria-pressed={llmSearchMode}
+            title="基于 LLM 搜索"
+          >
+            LLM
+          </button>
+        </span>
+        <button
+          type="button"
+          className={`vocab-review-search-action${llmSearchMode ? ' is-llm' : ''}`}
+          onClick={() => void handleSemanticSearch()}
+          disabled={semanticSearchLoading || !String(wordQuery || '').trim()}
+          title={llmSearchMode ? '基于 LLM 搜索' : '普通搜索'}
+          aria-label={llmSearchMode ? '基于 LLM 搜索' : '普通搜索'}
+        >
+          <UiIcon name="search" size={14} />
+          <span>{semanticSearchLoading ? '搜索中' : '搜索'}</span>
+        </button>
+      </span>
+      {semanticSearchActive ? (
+        <span className="vocab-review-search-meta">
+          搜索结果: {semanticSearchResults.total} 条
+        </span>
+      ) : null}
+      {semanticSearchError ? (
+        <span className="vocab-review-search-error">{semanticSearchError}</span>
+      ) : null}
+    </label>
+  );
+
   const movePrimaryControlsToWorkspaceToolbar = Boolean(workspaceToolbarControlsHost) && !compactViewport && (!mobileSimple || compactDesktop);
 
   const manualSortControlsNode = !randomSelectionMode ? (
@@ -2471,7 +2729,7 @@ export default function VocabularyReview({
     </div>
   ) : null;
 
-  const desktopPoolControlsNode = (!movePrimaryControlsToWorkspaceToolbar || !randomSelectionMode) ? (
+  const desktopPoolControlsNode = (
     <div
       className="vocab-review-sidebar-pool-controls"
       style={{
@@ -2483,24 +2741,10 @@ export default function VocabularyReview({
       }}
     >
       {movePrimaryControlsToWorkspaceToolbar ? null : reviewFilterControlsNode}
-      {!randomSelectionMode ? (
-        <>
-          {manualSortControlsNode}
-          <label className="vocab-review-floating-field">
-            <span className="vocab-review-field-label">搜索</span>
-            <input
-              className="vocab-review-search-input"
-              type="search"
-              placeholder="筛选单词或文件名"
-              value={wordQuery}
-              onChange={(e) => setWordQuery(e.target.value)}
-              style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--ms-border)', borderRadius: '6px', fontSize: '13px', outline: 'none', background: '#fff', color: 'var(--ms-text)' }}
-            />
-          </label>
-        </>
-      ) : null}
+      {semanticSearchControlsNode}
+      {!randomSelectionMode ? manualSortControlsNode : null}
     </div>
-  ) : null;
+  );
 
   const desktopReviewControlsNode = !mobileSimple ? (
     <div className="vocab-review-desktop-review-controls">
@@ -2550,6 +2794,17 @@ export default function VocabularyReview({
             <span>{savingMarked ? '保存中' : (detailData?.marked ? '已标记' : '标记')}</span>
           </button>
         ) : null}
+        {detailData ? (
+          <button
+            type="button"
+            className="vocab-review-mark-button vocab-review-delete-button"
+            onClick={() => void handleDeleteCurrentEntry()}
+            disabled={savingMarked}
+          >
+            <UiIcon name="trash" size={14} />
+            <span>删除</span>
+          </button>
+        ) : null}
         <button
           type="button"
           className="master-primary-button vocab-review-draw-button"
@@ -2597,6 +2852,8 @@ export default function VocabularyReview({
 
   const recommendationSettingsControlsNode = (
     <>
+      {semanticSearchControlsNode}
+
       <label className="vocab-review-floating-field vocab-recommend-scope-field">
         推荐范围
         <select
@@ -2650,17 +2907,7 @@ export default function VocabularyReview({
 
   const mobileManualPoolNode = (
     <div className="vocab-review-mobile-manual-pool">
-      <label className="vocab-review-floating-field">
-        搜索
-        <input
-          className="vocab-review-search-input"
-          type="search"
-          placeholder="筛选单词或文件名"
-          value={wordQuery}
-          onChange={(e) => setWordQuery(e.target.value)}
-          style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--ms-border)', borderRadius: '6px', fontSize: '13px', outline: 'none', background: '#fff', color: 'var(--ms-text)' }}
-        />
-      </label>
+      {semanticSearchControlsNode}
 
       {manualSortControlsNode}
 
@@ -2689,6 +2936,9 @@ export default function VocabularyReview({
               {entry.marked ? ' / 标记' : ''}
               {entry.refineCached ? ' / 已预处理' : ''}
             </span>
+            {entry.snippet ? (
+              <span className="vocab-review-search-snippet">{entry.snippet}</span>
+            ) : null}
           </button>
         ))}
         {!visibleEntries.length ? (
@@ -2697,6 +2947,47 @@ export default function VocabularyReview({
           </div>
         ) : null}
       </div>
+    </div>
+  );
+
+  const sidebarSearchResultsNode = (
+    <div className="vocab-review-search-results">
+      <div className="vocab-review-random-preview-header">
+        <strong>搜索结果</strong>
+        <span className="vocab-review-random-preview-count">{visibleEntries.length}</span>
+      </div>
+      {visibleEntries.length ? (
+        <ul className="vocab-review-search-result-list">
+          {visibleEntries.map((entry) => (
+            <li key={entry.id}>
+              <button
+                type="button"
+                className={`vocab-review-search-result-item${selectedEntryId === entry.id ? ' is-selected' : ''}`}
+                onClick={() => handleUseSearchResult(entry)}
+                aria-pressed={selectedEntryId === entry.id}
+              >
+                <span className="vocab-review-search-result-main">
+                  <span className="vocab-review-search-result-word">{entry.word}</span>
+                  <span className="vocab-review-search-result-meta">
+                    {formatCategoryLabel(entry.category)} / {entry.file}
+                    {entry.matchedField ? ` / ${entry.matchedField}` : ''}
+                  </span>
+                  {entry.snippet ? (
+                    <span className="vocab-review-search-snippet">{entry.snippet}</span>
+                  ) : null}
+                </span>
+                {Number.isFinite(entry.searchScore) && entry.searchScore > 0 ? (
+                  <span className="vocab-review-search-result-score">{entry.searchScore.toFixed(2)}</span>
+                ) : null}
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <div className="vocab-review-empty" style={{ padding: '18px 16px', textAlign: 'center', color: '#a1a1aa', fontSize: '13px' }}>
+          {semanticSearchLoading ? '正在搜索' : '没有匹配的词条'}
+        </div>
+      )}
     </div>
   );
 
@@ -2741,6 +3032,9 @@ export default function VocabularyReview({
               {getEntryCreatedAt(entry) ? ` / ${getEntryCreatedAt(entry)}` : ''}
               {entry.refineCached ? ' / 已预处理' : ''}
             </div>
+            {entry.snippet ? (
+              <div className="vocab-review-search-snippet">{entry.snippet}</div>
+            ) : null}
           </div>
         </li>
       ))}
@@ -2756,15 +3050,27 @@ export default function VocabularyReview({
     <div className="vocab-review-random-preview">
       <div className="vocab-review-random-preview-header">
         <strong>推荐队列</strong>
-        {loadingRecommendationQueue ? (
-          <span className="vocab-review-random-preview-count">
-            更新中
-          </span>
-        ) : recommendationQueue.length ? (
-          <span className="vocab-review-random-preview-count">
-            {recommendationQueue.length}
-          </span>
-        ) : null}
+        <div className="vocab-review-random-preview-actions">
+          {loadingRecommendationQueue ? (
+            <span className="vocab-review-random-preview-count">
+              更新中
+            </span>
+          ) : recommendationQueue.length ? (
+            <span className="vocab-review-random-preview-count">
+              {recommendationQueue.length}
+            </span>
+          ) : null}
+          <button
+            type="button"
+            className="vocab-review-random-refresh-button"
+            onClick={() => void refreshVocabularyPool({ refreshCategories: true, resetQueue: true })}
+            disabled={loadingRecommendationQueue || !String(selectedCategory || '').trim()}
+            aria-label="刷新推荐队列"
+            title="刷新推荐队列"
+          >
+            <UiIcon name="refresh" size={13} />
+          </button>
+        </div>
       </div>
       {recommendationQueue.length ? (
         <ul className="vocab-review-random-preview-list">
@@ -2844,6 +3150,7 @@ export default function VocabularyReview({
           <div className="vocab-review-mobile-tools-section">
             <div className="vocab-review-mobile-tools-section-title">随机策略</div>
             {recommendationSettingsControlsNode}
+            {semanticSearchActive ? sidebarSearchResultsNode : null}
           </div>
         ) : mobileManualPoolNode}
       </section>
@@ -3501,7 +3808,7 @@ export default function VocabularyReview({
               </strong>
               <button
                 className="vocab-review-icon-button"
-                onClick={() => { void loadCategories(); void loadEntries(selectedCategory); }}
+                onClick={() => void refreshVocabularyPool({ refreshCategories: true, resetQueue: true })}
                 disabled={!String(selectedCategory || '').trim()}
                 title="刷新词池"
                 style={{ cursor: String(selectedCategory || '').trim() ? 'pointer' : 'not-allowed', opacity: String(selectedCategory || '').trim() ? 1 : 0.4 }}
@@ -3526,6 +3833,15 @@ export default function VocabularyReview({
                 </button>
                 <button
                   type="button"
+                  className="vocab-review-filter-pill"
+                  onClick={() => void refreshVocabularyPool({ refreshCategories: true, resetQueue: true })}
+                  disabled={loadingRecommendationQueue || !String(selectedCategory || '').trim()}
+                  aria-label="刷新推荐队列"
+                >
+                  刷新
+                </button>
+                <button
+                  type="button"
                   className={`vocab-review-filter-pill${recommendSettingsOpen ? ' is-active' : ''}`}
                   onClick={() => setRecommendSettingsOpen((open) => !open)}
                   aria-label="打开随机设置"
@@ -3537,7 +3853,7 @@ export default function VocabularyReview({
             ) : null}
           </div>
 
-          {randomMode ? sidebarRandomPreviewNode : sidebarWordListNode}
+        {semanticSearchActive ? sidebarSearchResultsNode : (randomMode ? sidebarRandomPreviewNode : sidebarWordListNode)}
         </div>
 
         <div
@@ -3678,21 +3994,32 @@ export default function VocabularyReview({
             {randomSelectionMode ? '推荐范围' : '生词本'} ({visibleEntries.length}{normalizedWordQuery ? ` / ${filteredEntries.length}` : ''})
           </strong>
           {randomSelectionMode ? (
-            <button
-              className="vocab-review-refresh-button"
-              onClick={() => setRecommendSettingsOpen((open) => !open)}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ms-text)', fontSize: '12px' }}
-              aria-label="打开随机设置"
-              aria-expanded={recommendSettingsOpen}
-            >
-              设置
-            </button>
+            <div className="vocab-review-sidebar-meta-actions">
+              <button
+                className="vocab-review-refresh-button"
+                onClick={() => void refreshVocabularyPool({ refreshCategories: true, resetQueue: true })}
+                disabled={loadingRecommendationQueue || !String(selectedCategory || '').trim()}
+                style={{ background: 'none', border: 'none', cursor: String(selectedCategory || '').trim() ? 'pointer' : 'not-allowed', color: 'var(--ms-text)', fontSize: '12px', opacity: String(selectedCategory || '').trim() ? 1 : 0.4 }}
+                aria-label="刷新推荐队列"
+              >
+                刷新
+              </button>
+              <button
+                className="vocab-review-refresh-button"
+                onClick={() => setRecommendSettingsOpen((open) => !open)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ms-text)', fontSize: '12px' }}
+                aria-label="打开随机设置"
+                aria-expanded={recommendSettingsOpen}
+              >
+                设置
+              </button>
+            </div>
           ) : (
-            <button className="vocab-review-refresh-button" onClick={() => { void loadCategories(); void loadEntries(selectedCategory); }} disabled={!String(selectedCategory || '').trim()} style={{ background: 'none', border: 'none', cursor: String(selectedCategory || '').trim() ? 'pointer' : 'not-allowed', color: 'var(--ms-text)', fontSize: '12px', opacity: String(selectedCategory || '').trim() ? 1 : 0.4 }}>刷新</button>
+            <button className="vocab-review-refresh-button" onClick={() => void refreshVocabularyPool({ refreshCategories: true, resetQueue: true })} disabled={!String(selectedCategory || '').trim()} style={{ background: 'none', border: 'none', cursor: String(selectedCategory || '').trim() ? 'pointer' : 'not-allowed', color: 'var(--ms-text)', fontSize: '12px', opacity: String(selectedCategory || '').trim() ? 1 : 0.4 }}>刷新</button>
           )}
         </div>
 
-        {randomSelectionMode ? sidebarRandomPreviewNode : sidebarWordListNode}
+        {semanticSearchActive ? sidebarSearchResultsNode : (randomSelectionMode ? sidebarRandomPreviewNode : sidebarWordListNode)}
       </aside>
     </div>
   );
