@@ -1,0 +1,30 @@
+{
+  "word": "deter",
+  "createdAt": "2026-06-15",
+  "reviews": [
+    {
+      "date": "2026-06-22",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "阻止；威慑；使不敢做某事"
+  ],
+  "examples": [
+    {
+      "text": "The Kiri forest has stood as a barrier, deterring outsiders and maintaining the order of the world.",
+      "explanation": "这里 deterring 是 deter 的现在分词，意思是“阻止、威慑”。句子表示 Kiri 森林像一道屏障一样，阻止外来者进入，并维持世界的秩序。",
+      "focusWords": [
+        "deter"
+      ],
+      "source": {
+        "text": "Ocarina of Time Remake Trailer Analysis",
+        "url": "https://www.youtube.com/watch?v=OgO9-cYv8yM"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=OgO9-cYv8yM",
+        "timestamp": 133
+      }
+    }
+  ]
+}

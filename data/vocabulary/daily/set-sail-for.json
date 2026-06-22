@@ -37,6 +37,16 @@
       },
       "reason": "expedition vessel 是执行航行任务的船只，set sail for 表示乘船起航前往某地，二者处于明显一致的航海/出航场景中，适合建立场景跳转。",
       "source": "llm"
+    },
+    {
+      "type": "same_scene",
+      "target": {
+        "category": "daily",
+        "file": "depart.json",
+        "word": "depart"
+      },
+      "reason": "set sail for 表示乘船起航前往某地，是 depart/启程 的具体航海场景表达；当前例句中的 depart 也表示离开某地，二者在“出发、启程”语义场景中高度相关。",
+      "source": "llm"
     }
   ]
 }

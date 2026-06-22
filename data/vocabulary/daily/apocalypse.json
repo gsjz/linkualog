@@ -62,5 +62,17 @@
         "需要回忆出目标词 apocalypse"
       ]
     }
+  ],
+  "relations": [
+    {
+      "type": "related",
+      "target": {
+        "category": "daily",
+        "file": "apocalyptic.json",
+        "word": "apocalyptic"
+      },
+      "reason": "apocalyptic 是由 apocalypse 派生出的形容词，表示“末世的、世界末日般的”；当前例句中的 post-apocalyptic 直接指“世界末日/大灾难之后的”，与 apocalypse 核心语义高度对应。",
+      "source": "llm"
+    }
   ]
 }

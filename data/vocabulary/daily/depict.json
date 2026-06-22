@@ -1,0 +1,30 @@
+{
+  "word": "depict",
+  "createdAt": "2026-06-15",
+  "reviews": [
+    {
+      "date": "2026-06-22",
+      "score": 2
+    }
+  ],
+  "definitions": [
+    "描绘；描述；表现（depict）"
+  ],
+  "examples": [
+    {
+      "text": "A famous example is the Bayer tapestry, which depicts the Norman conquest of England.",
+      "explanation": "这里 depicts 表示“描绘、表现”：这幅挂毯描绘了诺曼征服英格兰的历史事件。",
+      "focusWords": [
+        "depict"
+      ],
+      "source": {
+        "text": "Ocarina of Time Remake Trailer Analysis",
+        "url": "https://www.youtube.com/watch?v=OgO9-cYv8yM"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=OgO9-cYv8yM",
+        "timestamp": 48
+      }
+    }
+  ]
+}

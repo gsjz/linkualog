@@ -1,0 +1,42 @@
+{
+  "word": "depart",
+  "createdAt": "2026-06-15",
+  "reviews": [
+    {
+      "date": "2026-06-22",
+      "score": 2
+    }
+  ],
+  "definitions": [
+    "离开；启程；出发（depart）"
+  ],
+  "examples": [
+    {
+      "text": "Nou, and Ferrar, who created the land, the laws, and life itself, respectively. When they departed their newly created world for the heavens, they left behind the Triforce, an artifact of limitless",
+      "explanation": "departed 是 depart 的过去式，表示“离开”。句中指他们离开了自己新创造的世界，前往天界。",
+      "focusWords": [
+        "depart"
+      ],
+      "source": {
+        "text": "Ocarina of Time Remake Trailer Analysis",
+        "url": "https://www.youtube.com/watch?v=OgO9-cYv8yM"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=OgO9-cYv8yM",
+        "timestamp": 77
+      }
+    }
+  ],
+  "relations": [
+    {
+      "type": "same_scene",
+      "target": {
+        "category": "daily",
+        "file": "set-sail-for.json",
+        "word": "set sail for"
+      },
+      "reason": "set sail for 表示乘船起航前往某地，是 depart/启程 的具体航海场景表达；当前例句中的 depart 也表示离开某地，二者在“出发、启程”语义场景中高度相关。",
+      "source": "llm"
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "word": "narration",
+  "createdAt": "2026-06-15",
+  "reviews": [],
+  "definitions": [],
+  "examples": [
+    {
+      "text": "a legend immortalized on this ornate tapestry. This is interesting because it not only means that this narration is taking place after the game's events, making it an actual legend of Zelda, but",
+      "explanation": "",
+      "focusWords": [
+        "narration"
+      ],
+      "source": {
+        "text": "Ocarina of Time Remake Trailer Analysis",
+        "url": "https://www.youtube.com/watch?v=OgO9-cYv8yM"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=OgO9-cYv8yM",
+        "timestamp": 98
+      }
+    }
+  ]
+}

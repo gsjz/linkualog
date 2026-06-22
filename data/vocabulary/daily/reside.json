@@ -16,7 +16,7 @@
   ],
   "examples": [
     {
-      "text": "But the response also kicks in more as we age, halting cell growth and cutting short their ability to replicate. Aging also involves stem cells that reside in many tissues and have the property of dividing without limits to replenish other cells. As we get older, stem cells decrease in number",
+      "text": "Aging also involves stem cells that reside in many tissues and have the property of dividing without limits to replenish other cells.",
       "explanation": "这里的 reside 表示“存在于、位于”。stem cells that reside in many tissues 指“存在于许多组织中的干细胞”。该词比 live 更正式，常用于说明某事物存在于某个地方。",
       "focusWords": [
         "reside"
@@ -28,6 +28,21 @@
       "youtube": {
         "url": "https://www.youtube.com/watch?v=GASaqPv0t0g",
         "timestamp": 220
+      }
+    },
+    {
+      "text": "Now that those qualities reside in you, you are worthy of wielding the power the old gods left behind for our kind.",
+      "explanation": "这里的 reside in you 表示“存在于你身上、内在于你”。句子意思是：既然那些品质已经存在于你身上，你就配得上使用古神留下的力量。",
+      "focusWords": [
+        "reside"
+      ],
+      "source": {
+        "text": "Ocarina of Time Remake Trailer Analysis",
+        "url": "https://www.youtube.com/watch?v=OgO9-cYv8yM"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=OgO9-cYv8yM",
+        "timestamp": 500
       }
     }
   ],

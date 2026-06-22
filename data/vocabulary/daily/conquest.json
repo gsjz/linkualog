@@ -1,0 +1,30 @@
+{
+  "word": "conquest",
+  "createdAt": "2026-06-15",
+  "reviews": [
+    {
+      "date": "2026-06-20",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "征服；攻占；占领（尤指用武力取得对某地或某群体的控制）"
+  ],
+  "examples": [
+    {
+      "text": "A famous example is the Bayer tapestry, which depicts the Norman conquest of England.",
+      "explanation": "这里的 conquest 指“征服、攻占”。the Norman conquest of England 指诺曼人对英格兰的征服。",
+      "focusWords": [
+        "conquest"
+      ],
+      "source": {
+        "text": "Ocarina of Time Remake Trailer Analysis",
+        "url": "https://www.youtube.com/watch?v=OgO9-cYv8yM"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=OgO9-cYv8yM",
+        "timestamp": 48
+      }
+    }
+  ]
+}

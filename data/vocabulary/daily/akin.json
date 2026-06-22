@@ -1,0 +1,33 @@
+{
+  "word": "akin",
+  "createdAt": "2026-06-15",
+  "reviews": [
+    {
+      "date": "2026-06-18",
+      "score": 2
+    }
+  ],
+  "definitions": [
+    "相似的；类似的。常用搭配：be akin to sth，表示“与某物相似/类似”。"
+  ],
+  "examples": [
+    {
+      "text": "These are deliberate design choices to limit variables and randomness, making the game more akin to a competitive sport.",
+      "explanation": "这里的 akin 出现在 more akin to a competitive sport 中，意思是“更类似于竞技体育”。句子是在说这些设计选择减少变量和随机性，让游戏更像一项竞技运动。",
+      "focusWords": [
+        "akin"
+      ],
+      "source": {
+        "text": "How Counter-Strike Solved FPS Games",
+        "url": "https://www.youtube.com/watch?v=-x_uiZ-86Ps"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=-x_uiZ-86Ps",
+        "timestamp": 92
+      },
+      "focusPositions": [
+        15
+      ]
+    }
+  ]
+}

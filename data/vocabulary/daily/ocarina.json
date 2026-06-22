@@ -1,0 +1,23 @@
+{
+  "word": "Ocarina",
+  "createdAt": "2026-06-15",
+  "reviews": [],
+  "definitions": [],
+  "examples": [
+    {
+      "text": "It's real. Nintendo officially announced that a full remake of Ocarina of Time is dropping sometime this year. And yeah, it's a remake, not a re master, not an",
+      "explanation": "",
+      "focusWords": [
+        "Ocarina"
+      ],
+      "source": {
+        "text": "Ocarina of Time Remake Trailer Analysis",
+        "url": "https://www.youtube.com/watch?v=OgO9-cYv8yM"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=OgO9-cYv8yM",
+        "timestamp": 5
+      }
+    }
+  ]
+}

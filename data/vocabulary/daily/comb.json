@@ -1,0 +1,30 @@
+{
+  "word": "comb",
+  "createdAt": "2026-06-15",
+  "reviews": [
+    {
+      "date": "2026-06-18",
+      "score": 2
+    }
+  ],
+  "definitions": [
+    "comb：n. 梳子；v. 梳理、梳头；引申为“仔细搜寻、细查”。常用 comb through 表示“仔细翻查/逐项检查”，和中文说“梳理信息”很接近。"
+  ],
+  "examples": [
+    {
+      "text": "But still, let's comb through it and see what we can learn.",
+      "explanation": "这里的 comb through it 指“仔细查看、逐项分析它”，不是用梳子梳头，而是把内容像“梳理”一样认真检查，找出有用信息。",
+      "focusWords": [
+        "comb"
+      ],
+      "source": {
+        "text": "Ocarina of Time Remake Trailer Analysis",
+        "url": "https://www.youtube.com/watch?v=OgO9-cYv8yM"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=OgO9-cYv8yM",
+        "timestamp": 35
+      }
+    }
+  ]
+}

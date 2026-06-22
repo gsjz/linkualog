@@ -1,12 +1,19 @@
 {
   "word": "mortality",
   "createdAt": "2026-06-12",
-  "reviews": [],
-  "definitions": [],
+  "reviews": [
+    {
+      "date": "2026-06-22",
+      "score": 1
+    }
+  ],
+  "definitions": [
+    "死亡率；死亡数量（尤指某一群体或时期内的死亡情况）"
+  ],
   "examples": [
     {
       "text": "Child mortality was roughly half what it was as recently as 1990.",
-      "explanation": "",
+      "explanation": "句意：儿童死亡率大约只有 1990 年时的一半。mortality 在这里指某一群体中的死亡率，child mortality 即“儿童死亡率”。",
       "focusWords": [
         "mortality"
       ],

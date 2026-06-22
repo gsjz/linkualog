@@ -1,0 +1,23 @@
+{
+  "word": "narrator",
+  "createdAt": "2026-06-15",
+  "reviews": [],
+  "definitions": [],
+  "examples": [
+    {
+      "text": "example is the Bayer tapestry, which depicts the Norman conquest of England. The narrator introduces Hyrule, a land created by beings of supreme divinity. And we can see Hyrule Castle itself",
+      "explanation": "",
+      "focusWords": [
+        "narrator"
+      ],
+      "source": {
+        "text": "Ocarina of Time Remake Trailer Analysis",
+        "url": "https://www.youtube.com/watch?v=OgO9-cYv8yM"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=OgO9-cYv8yM",
+        "timestamp": 51
+      }
+    }
+  ]
+}

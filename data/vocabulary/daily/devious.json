@@ -1,0 +1,25 @@
+{
+  "word": "devious",
+  "createdAt": "2026-06-15",
+  "reviews": [],
+  "definitions": [
+    "狡猾的；不直率的；（道路、方法、问题等）曲折复杂的、难对付的"
+  ],
+  "examples": [
+    {
+      "text": "You learned wisdom from solving devious puzzles and traps.",
+      "explanation": "这里 devious 修饰 puzzles and traps，表示这些谜题和陷阱设计得很狡猾、曲折复杂，不容易直接解决。",
+      "focusWords": [
+        "devious"
+      ],
+      "source": {
+        "text": "Ocarina of Time Remake Trailer Analysis",
+        "url": "https://www.youtube.com/watch?v=OgO9-cYv8yM"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=OgO9-cYv8yM",
+        "timestamp": 486
+      }
+    }
+  ]
+}

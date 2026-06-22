@@ -1,0 +1,23 @@
+{
+  "word": "franchise",
+  "createdAt": "2026-06-15",
+  "reviews": [],
+  "definitions": [],
+  "examples": [
+    {
+      "text": "Counter-Strike has shaped every tactical shooter since its release in 1998 as a mod for halflife nowadays the most recent iteration of the franchise Counterstrike 2 breaks player records regularly and routinely shatters viewership records so how did a mod from two college students shape every FPS",
+      "explanation": "",
+      "focusWords": [
+        "franchise"
+      ],
+      "source": {
+        "text": "How Counter-Strike Solved FPS Games",
+        "url": "https://www.youtube.com/watch?v=-x_uiZ-86Ps"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=-x_uiZ-86Ps",
+        "timestamp": 4
+      }
+    }
+  ]
+}

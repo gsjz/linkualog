@@ -1,0 +1,30 @@
+{
+  "word": "bestow",
+  "createdAt": "2026-06-15",
+  "reviews": [
+    {
+      "date": "2026-06-18",
+      "score": 1
+    }
+  ],
+  "definitions": [
+    "bestow：授予，赐予，赋予（常用结构：bestow sth on/upon sb）。"
+  ],
+  "examples": [
+    {
+      "text": "claim only the peace that he represents best, power, with the others being bestowed on those who embodied their virtues. Zelda claiming the Triforce of Wisdom and Link the Triforce of Courage.",
+      "explanation": "这里 bestowed 是 bestow 的过去分词，用在被动结构 being bestowed on those... 中，意思是“被授予给那些体现其美德的人”。",
+      "focusWords": [
+        "bestow"
+      ],
+      "source": {
+        "text": "Ocarina of Time Remake Trailer Analysis",
+        "url": "https://www.youtube.com/watch?v=OgO9-cYv8yM"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=OgO9-cYv8yM",
+        "timestamp": 425
+      }
+    }
+  ]
+}
