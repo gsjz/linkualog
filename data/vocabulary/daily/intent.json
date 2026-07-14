@@ -1,0 +1,23 @@
+{
+  "word": "intent",
+  "createdAt": "2026-07-08",
+  "reviews": [],
+  "definitions": [],
+  "examples": [
+    {
+      "text": "And so we want to strip that standing privilege. What we really want is for this AI agent, at the time of the session and at the time of evaluating an action, to know what it's gonna request access to and get dynamic credentials into each one of these that is session bound and intent bound. How do you do that? The first is dynamic creds.",
+      "explanation": "",
+      "focusWords": [
+        "intent"
+      ],
+      "source": {
+        "text": "What is Agentic Security Runtime? Securing AI Agents",
+        "url": "https://www.youtube.com/watch?v=NH0plIdqDMk"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=NH0plIdqDMk",
+        "timestamp": 104
+      }
+    }
+  ]
+}

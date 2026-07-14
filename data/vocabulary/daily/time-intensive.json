@@ -1,0 +1,19 @@
+{
+  "word": "time-intensive",
+  "createdAt": "2026-07-14",
+  "reviews": [],
+  "definitions": [],
+  "examples": [
+    {
+      "text": ", appends adversarial suffixes to prompts, circumventing the model’s safety mechanisms. These suffixes compel the model to respond to harmful queries instead of issuing refusal statements like \"I’m sorry, but I can’t provide that information.\" However, generating effective adversarial suffixes typically involves iterative token searches, a computationally expensive and time-intensive process requiring tens of thousands of queries per adversarial prompt (Geisler et al. , 2024). This inefficiency not only limits the ability to thoroughly test model vulnerabilities but also impedes the development of robust defenses.",
+      "explanation": "",
+      "focusWords": [
+        "time-intensive"
+      ],
+      "source": {
+        "text": "扩散攻击：用于 LLM 越狱的扩散驱动提示操控技术 --- DiffusionAttacker: Diffusion-Driven Prompt Manipulation for LLM Jailbreak",
+        "url": "https://arxiv.org/html/2412.17522v2"
+      }
+    }
+  ]
+}

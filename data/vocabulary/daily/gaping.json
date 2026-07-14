@@ -1,0 +1,23 @@
+{
+  "word": "gaping",
+  "createdAt": "2026-07-08",
+  "reviews": [],
+  "definitions": [],
+  "examples": [
+    {
+      "text": "They're TypeScript, they're Python, they're running on a container, on a Lambda, on a virtual machine, and we provide them identities, which is the non-humans identity. Exactly. So what we're going to show you are what are the truly gaping holes that organizations introduce into their end-to-end identity access management processes when they deploy agentic AI. And that means almost everybody.",
+      "explanation": "",
+      "focusWords": [
+        "gaping"
+      ],
+      "source": {
+        "text": "Agentic Runtime Security Explained: Securing Non‑Human Identities",
+        "url": "https://www.youtube.com/watch?v=HtnlUosO3XA"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=HtnlUosO3XA",
+        "timestamp": 89
+      }
+    }
+  ]
+}

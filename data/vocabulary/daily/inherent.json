@@ -1,0 +1,19 @@
+{
+  "word": "inherent",
+  "createdAt": "2026-07-14",
+  "reviews": [],
+  "definitions": [],
+  "examples": [
+    {
+      "text": "Abstract 摘要Report issue for preceding element The rapid advancement of Diffusion Large Language Models (dLLMs) introduces unprecedented vulnerabilities that are fundamentally distinct from Autoregressive LLMs, stemming from their iterative and parallel generation mechanisms. In this paper, we conduct an in-depth analysis of dLLM vulnerabilities to jailbreak attacks across two distinct dimensions: intra-step and inter-step dynamics. Experimental results reveal a harmful bias inherent in the standard greedy remasking strategy and identify a critical phenomenon we term Denoising-path Dependence, where the safety of early-stage tokens decisively influences the final output. These findings also indicate that while current decoding strategies constitute a significant vulnerability, dLLMs possess a substantial intrinsic safety potential. To unlock this potential, we propose DiffuGuard, a training-free defense framework that addresses vulnerabilities through a dual-stage approach: Stochastic Annealing Remasking dynamically introduces controlled randomness to mitigate greedy selection bias, while Block-level Audit and Repair exploits internal model representations for autonomous risk detection and guided correction.",
+      "explanation": "",
+      "focusWords": [
+        "inherent"
+      ],
+      "source": {
+        "text": "DiffuGuard：扩散式大语言模型中如何实现本质安全的“失去与重获” --- DiffuGuard: How Intrinsic Safety is Lost and Found in Diffusion Large Language Models",
+        "url": "https://arxiv.org/html/2509.24296v1"
+      }
+    }
+  ]
+}

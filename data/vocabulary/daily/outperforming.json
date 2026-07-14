@@ -1,0 +1,19 @@
+{
+  "word": "outperforming",
+  "createdAt": "2026-07-14",
+  "reviews": [],
+  "definitions": [],
+  "examples": [
+    {
+      "text": "[2025. 05. 23] We introduce LLaDA-V, a competitive diffusion-based vision-language model, outperforming other diffusion MLLMs. [2025. 05.",
+      "explanation": "",
+      "focusWords": [
+        "outperforming"
+      ],
+      "source": {
+        "text": "GitHub - ML-GSAI/LLaDA: Official PyTorch implementation for \"Large Language Diffusion Models\" · GitHub",
+        "url": "https://github.com/ML-GSAI/LLaDA"
+      }
+    }
+  ]
+}

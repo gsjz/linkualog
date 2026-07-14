@@ -1,0 +1,23 @@
+{
+  "word": "portfolio",
+  "createdAt": "2026-07-08",
+  "reviews": [],
+  "definitions": [],
+  "examples": [
+    {
+      "text": "You've likely seen this interaction. When you go to click log on with Google, log on with Microsoft, you'll see a redirect, and that redirect page will ask you: do you authorize this application to access your portfolio, your profile, your email address, or act on your behalf? That is the OAuth standard implemented here. But what about sensitive operations?",
+      "explanation": "",
+      "focusWords": [
+        "portfolio"
+      ],
+      "source": {
+        "text": "What is Agentic Security Runtime? Securing AI Agents",
+        "url": "https://www.youtube.com/watch?v=NH0plIdqDMk"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=NH0plIdqDMk",
+        "timestamp": 188
+      }
+    }
+  ]
+}

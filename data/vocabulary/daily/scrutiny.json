@@ -1,0 +1,23 @@
+{
+  "word": "scrutiny",
+  "createdAt": "2026-07-08",
+  "reviews": [],
+  "definitions": [],
+  "examples": [
+    {
+      "text": "If you're building an HR application internally, and that HR application, the AI agent, can onboard off-board employees, those are sensitive operations that can have real world impacts to your risk and to your employees and even financial security. When we have those higher-level operations that need to have additional scrutiny, this is when we recommend something called OAuth 2.0 CIBA. And what that means is this is like passkeys for agents. This will actually hit a prompt to the user's phone, completely outside of the browser context.",
+      "explanation": "",
+      "focusWords": [
+        "scrutiny"
+      ],
+      "source": {
+        "text": "What is Agentic Security Runtime? Securing AI Agents",
+        "url": "https://www.youtube.com/watch?v=NH0plIdqDMk"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=NH0plIdqDMk",
+        "timestamp": 214
+      }
+    }
+  ]
+}

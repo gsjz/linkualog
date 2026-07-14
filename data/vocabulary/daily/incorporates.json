@@ -1,0 +1,19 @@
+{
+  "word": "incorporates",
+  "createdAt": "2026-07-14",
+  "reviews": [],
+  "definitions": [],
+  "examples": [
+    {
+      "text": "05. 25] We introduce LLaDA 1. 5, which incorporates VRPO to reduce gradient variance and enhance preference alignment in LLaDA. [2025. 09.",
+      "explanation": "",
+      "focusWords": [
+        "incorporates"
+      ],
+      "source": {
+        "text": "GitHub - ML-GSAI/LLaDA: Official PyTorch implementation for \"Large Language Diffusion Models\" · GitHub",
+        "url": "https://github.com/ML-GSAI/LLaDA"
+      }
+    }
+  ]
+}

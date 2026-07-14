@@ -1,0 +1,19 @@
+{
+  "word": "amplified",
+  "createdAt": "2026-07-14",
+  "reviews": [],
+  "definitions": [],
+  "examples": [
+    {
+      "text": "05. Example output dtype is bfloat16 when autocast is disabled. This mismatch later gets amplified by softmax/topk in generation, causing decoding divergence. we eval math500 dataset and get a +2% performance gain in Pro6000. What I already tried: torch.",
+      "explanation": "",
+      "focusWords": [
+        "amplified"
+      ],
+      "source": {
+        "text": "LLaDA inference logits differ across NVIDIA GPUs (Blackwell vs 4090) with same weights/code · Issue #131 · ML-GSAI/LLaDA",
+        "url": "https://github.com/ML-GSAI/LLaDA/issues/131"
+      }
+    }
+  ]
+}
