@@ -5,6 +5,7 @@ import Settings from '../components/Settings';
 import VocabQueue from '../components/VocabQueue';
 import MobileFullscreenButton from '../components/MobileFullscreenButton';
 import UniversalVocabWidget from '../components/UniversalVocabWidget';
+import ArticleTranslator from '../components/ArticleTranslator';
 import { Subtitle } from '../types';
 import { IVideoAdapter } from '../adapters/BaseAdapter';
 import { ConfigService } from '../services/configService';
@@ -355,6 +356,7 @@ const App: React.FC<AppProps> = ({ adapter }) => {
         </div>
       </div>
       <UniversalVocabWidget onOpenSettings={() => setIsSettingsOpen(true)} />
+      {!inVideo && <ArticleTranslator onOpenSettings={() => setIsSettingsOpen(true)} />}
       {showMobileFullscreenButton && <MobileFullscreenButton adapter={adapter} />}
       <VocabQueue />
       {isSettingsOpen && <Settings adapter={adapter} onClose={() => setIsSettingsOpen(false)} />}

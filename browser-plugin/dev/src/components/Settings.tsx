@@ -93,6 +93,8 @@ const Settings: React.FC<SettingsProps> = ({ adapter, onClose }) => {
     key: ConfigService.get('api_key') as string,
     model: ConfigService.get('api_model') as string,
     prompt: ConfigService.get('api_prompt') as string,
+    webTargetLanguage: ConfigService.get('web_target_language') as string,
+    webTranslationPrompt: ConfigService.get('web_translation_prompt') as string,
     timeout: ConfigService.get('api_timeout') as string,
     ctxSize: ConfigService.get('api_ctxSize') as string,
     lanUrl: ConfigService.get('lan_sync_url') as string,
@@ -149,6 +151,8 @@ const Settings: React.FC<SettingsProps> = ({ adapter, onClose }) => {
     ConfigService.set('api_key', cfg.key);
     ConfigService.set('api_model', cfg.model);
     ConfigService.set('api_prompt', cfg.prompt);
+    ConfigService.set('web_target_language', cfg.webTargetLanguage);
+    ConfigService.set('web_translation_prompt', cfg.webTranslationPrompt);
     ConfigService.set('api_timeout', cfg.timeout);
     ConfigService.set('api_ctxSize', cfg.ctxSize);
     ConfigService.set('lan_sync_url', cfg.lanUrl.trim());
@@ -265,6 +269,15 @@ const Settings: React.FC<SettingsProps> = ({ adapter, onClose }) => {
               <div className="setting-col">
                 <label>提示词 (Prompt)</label>
                 <textarea name="prompt" value={cfg.prompt} onChange={handleChange} placeholder="请输入系统提示词..." />
+              </div>
+              <div className="setting-col">
+                <label>网页翻译目标语言</label>
+                <input name="webTargetLanguage" value={cfg.webTargetLanguage} onChange={handleChange} placeholder="例如：简体中文" />
+              </div>
+              <div className="setting-col">
+                <label>网页翻译提示词</label>
+                <textarea name="webTranslationPrompt" value={cfg.webTranslationPrompt} onChange={handleChange} placeholder="留空则使用默认学术翻译提示词" />
+                <div className="setting-help">网页翻译会按段请求模型；提示词应要求模型只输出译文。</div>
               </div>
             </div>
           )}
