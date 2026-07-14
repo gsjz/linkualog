@@ -1,22 +1,19 @@
 // ==UserScript==
 // @name         Linkual Log
 // @namespace    npm/vite-plugin-monkey
-// @version      0.0.33
+// @version      0.0.35
 // @author       Sergio Gao
 // @icon         https://vitejs.dev/logo.svg
 // @downloadURL  https://raw.githubusercontent.com/gsjz/linkualog/main/browser-plugin/user/linkualog.user.js
 // @updateURL    https://raw.githubusercontent.com/gsjz/linkualog/main/browser-plugin/user/linkualog.user.js
 // @match        *://*/*
 // @connect      *
-// @grant        GM_addStyle
 // @grant        GM_deleteValue
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_xmlhttpRequest
 // @grant        unsafeWindow
 // ==/UserScript==
-
-(i=>{if(typeof GM_addStyle=="function"){GM_addStyle(i);return}const l=document.createElement("style");l.textContent=i,document.head.append(l)})(' #linkual-root .modal{position:fixed;top:0;left:0;width:100%;height:100%;background:#00000080;display:flex;justify-content:center;align-items:center;z-index:2147483647;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);pointer-events:auto}#linkual-root .modal-box{background:#fff;border-radius:12px;width:380px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 10px 30px #0003;animation:linkualSlideIn .2s ease-out}@keyframes linkualSlideIn{0%{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}#linkual-root .modal-header{padding:16px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #eee}#linkual-root .modal-header h3{margin:0;font-size:16px;color:#333}#linkual-root .close-btn{font-size:24px;line-height:1;color:#999;cursor:pointer;transition:color .2s}#linkual-root .close-btn:hover{color:#333}#linkual-root .tabs{display:flex;background:#fafafa;border-bottom:1px solid #eee}#linkual-root .tab{flex:1;text-align:center;padding:12px 0;font-size:14px;color:#666;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;-webkit-user-select:none;user-select:none}#linkual-root .tab:hover{color:#333;background:#00000005}#linkual-root .tab.active{color:var(--linkual-theme, #6a1b9a);font-weight:700;border-bottom:2px solid var(--linkual-theme, #6a1b9a);background:#fff}#linkual-root .tab-content{padding:20px;overflow-y:auto;flex:1}#linkual-root .fade-in{animation:linkualFadeIn .3s ease}@keyframes linkualFadeIn{0%{opacity:0}to{opacity:1}}#linkual-root .setting-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}#linkual-root .setting-row label{font-size:13px;font-weight:700;flex:1;color:#444}#linkual-root .setting-row input[type=color]{width:50px;height:32px;padding:0;cursor:pointer;border:1px solid #ddd;border-radius:4px}#linkual-root .setting-col{margin-bottom:16px}#linkual-root .setting-col label{font-size:13px;font-weight:700;display:block;margin-bottom:6px;color:#444}#linkual-root .setting-col input,#linkual-root .setting-col textarea,#linkual-root .setting-col select{width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box;font-family:inherit;font-size:13px;transition:border-color .2s}#linkual-root .setting-col input:focus,#linkual-root .setting-col textarea:focus,#linkual-root .setting-col select:focus{outline:none;border-color:var(--linkual-theme, #6a1b9a)}#linkual-root .setting-col textarea{resize:vertical;min-height:80px;line-height:1.5}#linkual-root .url-prefix-row{display:flex;align-items:stretch}#linkual-root .url-prefix-row input{border-radius:0;min-width:0}#linkual-root .url-protocol-select{width:auto!important;flex:0 0 78px;border-right:0!important;border-radius:6px 0 0 6px!important;background:#f7f7f7;color:#555}#linkual-root .url-path-select{width:auto!important;flex:0 0 138px;border-left:0!important;border-radius:0 6px 6px 0!important;background:#f7f7f7;color:#555;font-size:12px!important;padding-left:8px!important;padding-right:8px!important}#linkual-root .url-fixed-prefix,#linkual-root .url-fixed-suffix{display:inline-flex;align-items:center;padding:0 10px;border:1px solid #ddd;background:#f7f7f7;color:#666;font-size:12px;white-space:nowrap}#linkual-root .url-fixed-prefix{border-right:0;border-radius:6px 0 0 6px}#linkual-root .url-fixed-suffix{border-left:0;border-radius:0 6px 6px 0}#linkual-root .url-prefix-row:focus-within .url-fixed-prefix{border-color:var(--linkual-theme, #6a1b9a);border-right:0}#linkual-root .url-prefix-row:focus-within .url-protocol-select{border-color:var(--linkual-theme, #6a1b9a);border-right:0}#linkual-root .url-prefix-row:focus-within .url-path-select{border-color:var(--linkual-theme, #6a1b9a);border-left:0}#linkual-root .url-prefix-row:focus-within .url-fixed-suffix{border-color:var(--linkual-theme, #6a1b9a);border-left:0}#linkual-root .setting-help{margin-top:6px;color:#888;font-size:12px;line-height:1.4}#linkual-root .linkual-cache-manager-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}#linkual-root .linkual-cache-manager-heading label{margin-bottom:0}#linkual-root .linkual-cache-clear-btn,#linkual-root .linkual-cache-item button{flex:0 0 auto;padding:5px 8px;border:1px solid #ddd;border-radius:5px;background:#fff;color:#666;cursor:pointer;font:12px/1.2 inherit}#linkual-root .linkual-cache-clear-btn:hover,#linkual-root .linkual-cache-item button:hover{border-color:#c62828;color:#c62828}#linkual-root .linkual-cache-list{display:flex;flex-direction:column;gap:6px;max-height:180px;overflow-y:auto}#linkual-root .linkual-cache-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px;border:1px solid #eee;border-radius:6px;background:#fafafa}#linkual-root .linkual-cache-item-main{display:flex;min-width:0;flex-direction:column;gap:3px}#linkual-root .linkual-cache-item-main strong,#linkual-root .linkual-cache-item-main span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#linkual-root .linkual-cache-item-main strong{color:#444;font-size:12px;font-weight:600}#linkual-root .linkual-cache-item-main span{color:#888;font-size:11px}#linkual-root .modal-footer{padding:16px 20px;display:flex;gap:12px;border-top:1px solid #eee;background:#fafafa}#linkual-root .btn{flex:1;padding:10px;border:none;border-radius:6px;cursor:pointer;font-weight:700;font-size:14px;transition:opacity .2s}#linkual-root .btn:hover{opacity:.9}#linkual-root .reset-btn{background:#e0e0e0;color:#555}#linkual-root .save-btn{box-shadow:0 2px 6px #0000001a}::highlight(linkual-article-source-active){background:#68459a1a;text-decoration:underline;text-decoration-color:#68459a8c;text-decoration-thickness:1px;text-underline-offset:3px}#linkual-root{--linkual-theme: #6a1b9a;--linkual-done: #e8f5e9;--linkual-error: #ffebee}#linkual-root .linkual-wrap{position:fixed;z-index:2147483647;background:#fff;display:flex;flex-direction:column;font-family:sans-serif;color:#333;pointer-events:auto}#linkual-root .linkual-wrap.layout-right{top:0;right:0;max-width:min(100vw,var(--linkual-sidebar-width, 500px));height:calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px));max-height:calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px));box-shadow:-5px 0 15px #0000001a}#linkual-root .linkual-wrap.layout-bottom{bottom:calc(var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom,0px));left:0;width:100vw!important;max-width:100vw;max-height:calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px));box-shadow:0 -5px 15px #0000001a}#linkual-root .resizer{position:absolute;background:transparent;z-index:999;transition:background .2s}#linkual-root .linkual-wrap.layout-right .resizer{left:0;top:0;bottom:0;width:5px;cursor:ew-resize}#linkual-root .linkual-wrap.layout-bottom .resizer{top:0;left:0;right:0;height:5px;cursor:ns-resize}#linkual-root .resizer:hover,#linkual-root .resizer:active{background:var(--linkual-theme)}#linkual-root .header{background:var(--linkual-theme);color:#fff;padding:12px 16px;font-weight:700;display:flex;justify-content:space-between;align-items:center;gap:10px;min-height:44px;box-sizing:border-box}#linkual-root .header span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#linkual-root .settings-icon{cursor:pointer;-webkit-user-select:none;user-select:none}#linkual-root .linkual-mobile-fullscreen{position:fixed;right:20px;bottom:calc(20px + var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom,0px));z-index:2147483647;min-width:78px;min-height:40px;padding:10px 15px;background:#000;color:#fff;border:0;border-radius:5px;box-shadow:0 2px 8px #00000040;cursor:grab;font-size:14px;font-weight:700;line-height:1.2;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;-webkit-user-select:none;user-select:none;touch-action:none;-webkit-tap-highlight-color:transparent;pointer-events:auto}#linkual-root .linkual-mobile-fullscreen.is-dragging{cursor:grabbing}html.linkual-mobile-fullscreen-fallback,html.linkual-mobile-fullscreen-fallback body{width:var(--linkual-mobile-viewport-width, 100vw)!important;height:var(--linkual-mobile-viewport-height, 100vh)!important;max-width:var(--linkual-mobile-viewport-width, 100vw)!important;max-height:var(--linkual-mobile-viewport-height, 100vh)!important;margin:0!important;overflow:hidden!important;overscroll-behavior:none!important;touch-action:none!important;background:#000!important}html.linkual-mobile-fullscreen-fallback{position:fixed!important;top:0!important;right:0!important;bottom:0!important;left:0!important}#linkual-root .linkual-player-controls{position:fixed;left:clamp(6px,2vw,12px);bottom:calc(var(--linkual-sidebar-height, 0px) + var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom,0px) + 14px);z-index:2147483647;width:calc(100vw - var(--linkual-sidebar-width, 0px) - clamp(12px,4vw,24px));max-width:calc(100vw - var(--linkual-sidebar-width, 0px) - clamp(12px,4vw,24px));max-height:calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px) - 12px);box-sizing:border-box;display:flex;flex-direction:column;gap:9px;padding:10px 12px;border-radius:8px;background:#000000b8;color:#fff;box-shadow:0 6px 20px #0000003d;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;pointer-events:auto;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);overflow:auto;overscroll-behavior:contain}#linkual-root .linkual-player-progress-row{display:grid;grid-template-columns:52px minmax(0,1fr) 52px;align-items:center;gap:10px}#linkual-root .linkual-player-time{color:#ffffffe0;font-size:12px;font-variant-numeric:tabular-nums;line-height:1;text-align:center;white-space:nowrap}#linkual-root .linkual-player-progress{width:100%;height:18px;margin:0;padding:0;-moz-appearance:none;appearance:none;-webkit-appearance:none;background:transparent;cursor:pointer}#linkual-root .linkual-player-progress::-webkit-slider-runnable-track{height:5px;border-radius:999px;background:linear-gradient(to right,var(--linkual-theme, #6a1b9a) 0%,var(--linkual-theme, #6a1b9a) var(--linkual-progress, 0%),rgba(255,255,255,.32) var(--linkual-progress, 0%),rgba(255,255,255,.32) 100%)}#linkual-root .linkual-player-progress::-moz-range-track{height:5px;border-radius:999px;background:#ffffff52}#linkual-root .linkual-player-progress::-moz-range-progress{height:5px;border-radius:999px;background:var(--linkual-theme, #6a1b9a)}#linkual-root .linkual-player-progress::-webkit-slider-thumb{-moz-appearance:none;appearance:none;-webkit-appearance:none;width:15px;height:15px;margin-top:-5px;border-radius:50%;border:2px solid #fff;background:var(--linkual-theme, #6a1b9a);box-shadow:0 2px 8px #00000052}#linkual-root .linkual-player-progress::-moz-range-thumb{width:15px;height:15px;border-radius:50%;border:2px solid #fff;background:var(--linkual-theme, #6a1b9a);box-shadow:0 2px 8px #00000052}#linkual-root .linkual-player-button-row{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}#linkual-root .linkual-player-btn{height:31px;min-width:44px;padding:0 12px;border:1px solid rgba(255,255,255,.16);border-radius:6px;background:#ffffff1f;color:#fff;cursor:pointer;font:700 12px/1 system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif}#linkual-root .linkual-player-btn.primary{min-width:58px;background:var(--linkual-theme, #6a1b9a);border-color:transparent}#linkual-root .linkual-player-btn:hover{background:#fff3}#linkual-root .linkual-player-btn.primary:hover{filter:brightness(1.08)}#linkual-root .list{flex:1;min-height:0;overflow-y:auto;padding:10px 12px;scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch}#linkual-root .list::-webkit-scrollbar{display:none}#linkual-root .empty-tip{padding:50px 20px;text-align:center;color:#999;font-style:italic}.linkual-article-translation-host{display:block!important;margin:.7em 0 1.3em!important;padding:0!important;border:0!important;background:transparent!important;color:inherit!important;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif!important;text-align:left!important}.linkual-article-translation{box-sizing:border-box!important;padding:.85em 1em!important;border-left:3px solid #7e57c2!important;border-radius:0 6px 6px 0!important;background:#7e57c214!important;color:#3f3a49!important;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif!important;font-size:.92em!important;line-height:1.65!important;text-align:left!important}.linkual-article-translation.loading{border-left-color:#42a5f5!important}.linkual-article-translation.error{border-left-color:#e57373!important;background:#e573731a!important}.linkual-article-translation-toolbar{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:.75em!important;margin-bottom:.35em!important;font-size:.78em!important;line-height:1.3!important}.linkual-article-translation-label{color:#7652a6!important;font-weight:700!important;letter-spacing:.01em!important}.linkual-article-translation-toolbar button,.linkual-universal-translation-row button{box-sizing:border-box!important;min-height:28px!important;padding:4px 9px!important;border:1px solid rgba(83,65,111,.25)!important;border-radius:5px!important;background:#fff!important;color:#55406f!important;cursor:pointer!important;font:600 12px/1.2 system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif!important}.linkual-article-translation-toolbar button:hover,.linkual-universal-translation-row button:hover{background:#f1ecf8!important}.linkual-article-translation-toolbar button:disabled,.linkual-universal-translation-row button:disabled{cursor:wait!important;opacity:.65!important}.linkual-article-translation-text,.linkual-article-translation-placeholder{white-space:pre-wrap!important;overflow-wrap:anywhere!important}.linkual-article-source-locatable{cursor:crosshair!important}.linkual-article-translation-sentence{display:inline!important;margin:0!important;padding:0!important;border:0!important;border-radius:3px!important;background:transparent!important;color:inherit!important;cursor:pointer!important;font:inherit!important;line-height:inherit!important;text-align:left!important;white-space:pre-wrap!important}.linkual-article-translation-sentence:after{content:" "!important}.linkual-article-translation-sentence:hover,.linkual-article-translation-sentence.active{background:#68459a2e!important;box-shadow:0 0 0 2px #68459a14!important}.linkual-article-translation-placeholder{color:#7b7286!important;font-size:.9em!important;font-style:italic!important}@media (max-width: 600px){.linkual-article-translation{padding:.75em .8em!important}.linkual-article-translation-toolbar{align-items:flex-start!important;flex-direction:column!important;gap:5px!important}}#linkual-root .load-more-tip{padding:16px 12px 22px;text-align:center;color:#999;font-size:12px}#linkual-root .item{padding:12px;margin-bottom:10px;border-radius:8px;border:1px solid #f0f0f0;transition:.2s}#linkual-root .item.active{border-left:5px solid var(--linkual-theme);background:#6a1b9a0d}#linkual-root .ctrl-bar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;align-items:center;padding:4px;border-radius:4px;background:transparent;transition:background .2s}#linkual-root .ctrl-bar.done{background-color:var(--linkual-done, #e8f5e9)}#linkual-root .ctrl-bar.error{background-color:var(--linkual-error, #ffebee);border:1px solid rgba(255,0,0,.1)}#linkual-root .tag-btn{font-size:11px;padding:3px 8px;border-radius:12px;display:inline-flex;align-items:center;cursor:pointer;transition:.2s;-webkit-user-select:none;user-select:none}#linkual-root .tag-play{background:#eee;color:#666}#linkual-root .tag-play:hover{background:var(--linkual-theme);color:#fff}#linkual-root .tag-pin{background:#e3f2fd;color:#1976d2}#linkual-root .tag-pin:hover{background:#1976d2;color:#fff}#linkual-root .btn-parse{flex:0 0 auto;margin-left:auto;display:inline-flex;align-items:center;justify-content:center;font-size:11px;color:#aaa;background:transparent;border:1px solid transparent;border-radius:4px;cursor:pointer;-webkit-user-select:none;user-select:none;padding:4px 7px;line-height:1.2;transition:.2s}#linkual-root .btn-parse:hover{color:#333;background:#0000000d;border-color:#00000014}#linkual-root .btn-chevron{font-size:12px;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:4px;cursor:pointer;transition:.2s;-webkit-user-select:none;user-select:none;color:#666}#linkual-root .btn-chevron:hover{background:#0000001a}#linkual-root .text-content{font-size:14px;line-height:1.5;padding:2px 0;color:#333;cursor:text;-webkit-user-select:text;user-select:text;overflow-wrap:anywhere;-webkit-touch-callout:default}#linkual-root .linkual-selection-add{position:fixed;z-index:999999;min-height:38px;max-width:min(320px,calc(100vw - 24px));padding:8px 12px;background:var(--linkual-theme, #6a1b9a);color:#fff;border:none;border-radius:6px;box-shadow:0 4px 12px #0003;cursor:pointer;font-size:13px;font-weight:700;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;-webkit-tap-highlight-color:transparent;touch-action:manipulation;pointer-events:auto}#linkual-root .linkual-selection-add-floating{transform:translate(-50%)}#linkual-root .linkual-selection-add-dock{left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));width:calc(100vw - 24px);max-width:none;min-height:46px;justify-content:center;font-size:14px}#linkual-root .linkual-selection-add-text{overflow:hidden;text-overflow:ellipsis}#linkual-root .ai-box{border-top:1px dashed #ccc;margin-top:8px;padding-top:8px;font-size:13px;white-space:pre-wrap;line-height:1.6;cursor:text}#linkual-root .lan-sync-module{border-top:1px solid #eee;padding:12px 16px;background:#fafafa;display:flex;flex-direction:column;gap:10px;margin-top:auto}#linkual-root .sync-input{width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;font-size:12px;box-sizing:border-box;outline:none;transition:border-color .2s}#linkual-root .sync-input:focus{border-color:var(--linkual-theme)}#linkual-root .sync-btn{width:100%;padding:10px;border:none;border-radius:6px;font-size:13px;font-weight:700;color:#fff;background-color:var(--linkual-theme);cursor:pointer;transition:all .2s}#linkual-root .sync-btn:hover{opacity:.9}#linkual-root .sync-btn:disabled{opacity:.6;cursor:not-allowed}#linkual-root .sync-btn.success{background-color:#4caf50}#linkual-root .sync-btn.error{background-color:#f44336}#linkual-root .linkual-universal-widget{position:fixed;left:0;right:0;bottom:0;z-index:2147483647;width:100vw;max-width:100vw;min-height:calc(var(--linkual-universal-widget-height, 58px) + env(safe-area-inset-bottom,0px));max-height:calc(var(--linkual-visual-viewport-height, 100vh) - 8px);padding:8px 12px calc(8px + env(safe-area-inset-bottom,0px));box-sizing:border-box;display:flex;flex-wrap:wrap;align-items:center;gap:10px;background:#fff;color:#222;border-top:1px solid rgba(0,0,0,.12);box-shadow:0 -8px 24px #00000024;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;pointer-events:auto;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}#linkual-root .linkual-universal-floating-window{left:8px;top:8px;right:auto;bottom:auto;width:min(600px,calc(100vw - 16px));max-width:min(600px,calc(100vw - 16px));min-height:0;max-height:min(620px,calc(100vh - 16px));border:1px solid rgba(0,0,0,.14);border-radius:12px;box-shadow:0 12px 34px #0000003d;overflow-x:hidden}#linkual-root .linkual-universal-floating-window .linkual-universal-top{flex:1 0 100%;min-width:0}#linkual-root .linkual-universal-floating-window .linkual-universal-form{flex:1 0 100%;grid-template-columns:minmax(0,1fr) 34px 36px auto;gap:6px;min-width:0}#linkual-root .linkual-universal-floating-window .linkual-universal-field.field-context{grid-column:1 / -1;grid-row:2}#linkual-root .linkual-universal-floating-window .linkual-universal-clear{grid-column:2;grid-row:1;width:34px}#linkual-root .linkual-universal-floating-window .linkual-universal-send{grid-column:3;grid-row:1;width:36px;padding:0}#linkual-root .linkual-universal-floating-window .linkual-universal-inline-actions{grid-column:4;grid-row:1;justify-content:flex-end}#linkual-root .linkual-universal-widget~.linkual-mobile-fullscreen{bottom:calc(20px + var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom,0px))}#linkual-root .linkual-universal-top{flex:0 1 390px;display:flex;align-items:center;justify-content:space-between;gap:10px;width:auto;max-width:100%;min-width:min(260px,100%);min-height:34px}#linkual-root .linkual-universal-selection{min-width:0;flex:1;display:flex;align-items:center;gap:8px;color:#444;font-size:13px}#linkual-root .linkual-universal-selection-label{flex:0 0 auto;color:#666;font-weight:700}#linkual-root .linkual-universal-selection-text{min-width:0;max-width:min(180px,14vw);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#111;font-weight:700}#linkual-root .linkual-universal-muted{color:#888}#linkual-root .linkual-universal-actions{flex:0 0 auto;display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0}#linkual-root .linkual-universal-status{max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;color:#666}#linkual-root .linkual-universal-status.status-success{color:#17803d}#linkual-root .linkual-universal-status.status-error{color:#c62828}#linkual-root .linkual-universal-add-btn,#linkual-root .linkual-universal-icon-btn,#linkual-root .linkual-universal-clear,#linkual-root .linkual-universal-send{border:0;border-radius:6px;min-height:30px;padding:0 12px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit}#linkual-root .linkual-universal-icon-btn,#linkual-root .linkual-universal-send{display:inline-flex;align-items:center;justify-content:center;gap:6px}#linkual-root .linkual-universal-add-btn,#linkual-root .linkual-universal-send{background:var(--linkual-theme, #000);color:#fff}#linkual-root .linkual-universal-icon-btn{background:#f1f1f1;color:#333}#linkual-root .linkual-universal-queue-btn{position:relative;background:var(--linkual-theme, #000);color:#fff}#linkual-root .linkual-universal-button-icon{display:none;flex:0 0 auto;width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}#linkual-root .linkual-universal-button-text{min-width:0}#linkual-root .linkual-universal-queue-count{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:#f44336;color:#fff;font-size:10px;line-height:1}#linkual-root .linkual-universal-clear{width:34px;padding:0;background:#f3f3f3;color:#555}#linkual-root .linkual-universal-form{flex:1;display:grid;grid-template-columns:minmax(120px,190px) minmax(160px,1fr) 34px auto auto;align-items:stretch;gap:8px;min-width:min(520px,100%);max-width:100%}#linkual-root .linkual-universal-inline-actions{align-self:center;display:flex;align-items:center;gap:6px;min-height:34px;min-width:0}#linkual-root .linkual-universal-field{min-width:0;display:flex;flex-direction:row;align-items:center;gap:6px}#linkual-root .linkual-universal-mode-tab{flex:0 0 auto;min-width:48px;height:34px;padding:0 8px;border:1px solid #d7d7d7;border-radius:6px;background:#f6f6f6;color:#555;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit}#linkual-root .linkual-universal-mode-tab.active{border-color:var(--linkual-theme, #000);background:var(--linkual-theme, #000);color:#fff}#linkual-root .linkual-universal-field input{min-width:0;width:100%;height:34px;box-sizing:border-box;border:1px solid #d7d7d7;border-radius:6px;padding:7px 9px;color:#222;background:#fff;outline:none;font:13px/1.35 system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;letter-spacing:0}#linkual-root .linkual-universal-field input:focus{border-color:var(--linkual-theme, #000);box-shadow:0 0 0 2px #00000014}#linkual-root .linkual-universal-field.field-context input{overflow-x:auto;overflow-y:hidden;white-space:nowrap;scrollbar-width:none;-ms-overflow-style:none}#linkual-root .linkual-universal-field.field-context input::-webkit-scrollbar{display:none}#linkual-root .linkual-universal-clear,#linkual-root .linkual-universal-send{align-self:center;height:34px}#linkual-root .linkual-universal-send:disabled,#linkual-root .linkual-universal-clear:disabled{opacity:.45;cursor:not-allowed}#linkual-root .linkual-universal-expand-bar{position:fixed;right:14px;bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:2147483647;display:flex;align-items:center;gap:6px;width:auto;min-height:42px;padding:5px 6px 5px 9px;border:1px solid rgba(255,255,255,.3);border-radius:999px;background:var(--linkual-theme, #000);color:#fff;box-shadow:0 6px 20px #00000040;cursor:grab;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;-webkit-user-select:none;user-select:none;pointer-events:auto;touch-action:none}#linkual-root .linkual-universal-expand-bar:active{cursor:grabbing}#linkual-root .linkual-universal-expand-bar:hover,#linkual-root .linkual-universal-expand-bar:focus-within{filter:brightness(1.08)}#linkual-root .linkual-universal-bubble-grip{color:#ffffffa6;font-size:12px;letter-spacing:-3px;line-height:1;transform:rotate(90deg)}#linkual-root .linkual-universal-bubble-translate,#linkual-root .linkual-universal-bubble-expand{min-height:30px;border:0;border-radius:999px;background:#ffffff26;color:#fff;cursor:pointer;font:700 12px/1 system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif}#linkual-root .linkual-universal-bubble-translate{padding:0 11px}#linkual-root .linkual-universal-bubble-translate:disabled{cursor:not-allowed;opacity:.5}#linkual-root .linkual-universal-bubble-expand{display:inline-flex;align-items:center;justify-content:center;width:30px;padding:0}#linkual-root .linkual-universal-bubble-expand .linkual-universal-expand-chevron{transform:translateY(0) rotate(45deg)}#linkual-root .linkual-universal-expand-chevron{width:12px;height:12px;border-left:3px solid currentColor;border-top:3px solid currentColor;transform:translateY(3px) rotate(45deg);box-sizing:border-box}#linkual-root .linkual-universal-floating-add{position:fixed;z-index:2147483647;transform:translate(-50%);min-height:30px;padding:0 12px;border:0;border-radius:6px;background:var(--linkual-theme, #000);color:#fff;box-shadow:0 4px 12px #0003;cursor:pointer;font-size:12px;font-weight:800;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;pointer-events:auto}#linkual-root .linkual-vocab-queue-panel-wrap{position:fixed;right:12px;bottom:calc(var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom,0px) + 12px);z-index:2147483647;display:flex;flex-direction:column;align-items:flex-end;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;pointer-events:auto}#linkual-root .linkual-vocab-queue-panel{width:min(400px,calc(100vw - 24px));height:min(580px,calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px) - 24px));min-height:min(280px,calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px) - 24px));max-height:calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px) - 24px);background:#fff;border-radius:8px;box-shadow:0 10px 30px #0003;border:1px solid #e4e4e7;display:flex;flex-direction:column;overflow:hidden;box-sizing:border-box}@media (max-width: 1024px){#linkual-root .linkual-universal-widget{align-items:stretch;gap:7px;padding-left:8px;padding-right:8px}#linkual-root .linkual-universal-top{flex:1 0 100%;min-width:min(240px,100%)}#linkual-root .linkual-universal-form{flex:1 0 100%;grid-template-columns:minmax(0,1fr) 32px 36px minmax(96px,auto);gap:4px;min-width:min(360px,100%)}#linkual-root .linkual-universal-field.field-context{grid-column:1 / -1;grid-row:2}#linkual-root .linkual-universal-clear{grid-column:2;grid-row:1;width:32px;min-width:32px}#linkual-root .linkual-universal-send{grid-column:3;grid-row:1;width:36px;min-width:36px;padding:0}#linkual-root .linkual-universal-inline-actions{grid-column:4;grid-row:1;justify-content:flex-end;gap:3px}#linkual-root .linkual-universal-inline-actions .linkual-universal-icon-btn{width:30px;min-width:30px;min-height:30px;padding:0}#linkual-root .linkual-universal-button-icon{display:block}#linkual-root .linkual-universal-button-text{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}#linkual-root .linkual-universal-queue-count{position:absolute;top:-4px;right:-4px;min-width:14px;height:14px;padding:0 3px;font-size:9px}}#linkual-root .linkual-universal-translation-row{flex:1 0 100%;display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:0;padding:6px 8px;border:1px solid rgba(104,69,154,.16);border-radius:7px;background:#68459a0f;color:#423650;font-size:12px}#linkual-root .linkual-universal-translation-summary{display:flex;align-items:center;gap:8px;min-width:0}#linkual-root .linkual-universal-translation-summary span{color:#766b80;font-variant-numeric:tabular-nums}#linkual-root .linkual-universal-translation-actions{display:flex;flex:0 0 auto;gap:6px}#linkual-root .linkual-universal-translation-actions button{min-height:28px;padding:4px 9px}#linkual-root .linkual-universal-translation-actions button.primary{border-color:#68459a;background:#68459a;color:#fff}#linkual-root .linkual-universal-translation-row button{border:1px solid rgba(83,65,111,.25);border-radius:5px;background:#fff;color:#55406f;cursor:pointer;font:600 12px/1.2 system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif}@media (max-width: 720px){#linkual-root .linkual-universal-widget{width:100vw;max-width:100vw;padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px));flex-direction:column;align-items:stretch;gap:7px}#linkual-root .linkual-universal-floating-window{width:min(420px,calc(100vw - 16px));max-width:min(420px,calc(100vw - 16px));max-height:min(620px,calc(100vh - 16px))}#linkual-root .linkual-universal-floating-window .linkual-universal-translation-row{align-items:flex-start;flex-direction:column}#linkual-root .linkual-universal-top{width:100%;min-width:0;gap:8px}#linkual-root .linkual-universal-selection{flex-wrap:wrap;gap:6px}#linkual-root .linkual-universal-selection-text{max-width:calc(100vw - 190px)}#linkual-root .linkual-universal-actions{gap:5px}#linkual-root .linkual-universal-status{display:none}#linkual-root .linkual-universal-form{grid-template-columns:minmax(0,1fr) 32px 36px minmax(87px,auto);gap:4px;min-width:0}#linkual-root .linkual-universal-field{flex-direction:row}#linkual-root .linkual-universal-field.field-context{grid-column:1 / -1;grid-row:2}#linkual-root .linkual-universal-clear{grid-column:2;grid-row:1;width:32px;min-width:32px}#linkual-root .linkual-universal-send{grid-column:3;grid-row:1;width:36px;min-width:36px;padding:0}#linkual-root .linkual-universal-floating-add{display:none}#linkual-root .linkual-vocab-queue-panel-wrap{left:8px;right:8px;bottom:calc(var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom,0px) + 8px)}#linkual-root .linkual-vocab-queue-panel-wrap>div{width:100%!important;max-width:none!important;height:min(520px,calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px) - 16px))!important;max-height:calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px) - 16px)!important;min-height:min(220px,calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px) - 16px))!important}#linkual-root .linkual-player-controls{left:8px;width:calc(100vw - var(--linkual-sidebar-width, 0px) - 16px);max-width:calc(100vw - var(--linkual-sidebar-width, 0px) - 16px);padding:8px;gap:7px}#linkual-root .linkual-player-progress-row{grid-template-columns:42px minmax(0,1fr) 42px;gap:6px}#linkual-root .linkual-player-time{font-size:11px}#linkual-root .linkual-player-button-row{gap:5px}#linkual-root .linkual-player-btn{min-width:34px;padding:0 8px}#linkual-root .linkual-player-btn.primary{min-width:48px}}@media (max-width: 360px){#linkual-root .linkual-universal-widget{padding-left:6px;padding-right:6px}#linkual-root .linkual-universal-form{grid-template-columns:minmax(0,1fr) 28px 32px minmax(81px,auto);gap:3px}#linkual-root .linkual-universal-mode-tab{min-width:42px;padding:0 5px}#linkual-root .linkual-universal-field{gap:4px}#linkual-root .linkual-universal-clear{width:28px;min-width:28px}#linkual-root .linkual-universal-send{width:32px;min-width:32px}#linkual-root .linkual-universal-inline-actions{gap:2px}#linkual-root .linkual-universal-inline-actions .linkual-universal-icon-btn{width:27px;min-width:27px}#linkual-root .linkual-player-controls{padding:7px 6px}#linkual-root .linkual-player-progress-row{grid-template-columns:38px minmax(0,1fr) 38px}#linkual-root .linkual-player-btn{min-width:30px;padding:0 6px}}@media (max-width: 320px){#linkual-root .linkual-universal-form{grid-template-columns:minmax(0,1fr) 28px 32px}#linkual-root .linkual-universal-inline-actions{grid-column:1 / -1;grid-row:3;justify-content:flex-end}#linkual-root .linkual-universal-inline-actions .linkual-universal-icon-btn{width:30px;min-width:30px}#linkual-root .linkual-universal-selection-text{max-width:calc(100vw - 150px)}}@media (max-height: 520px){#linkual-root .linkual-universal-widget{padding-top:6px;padding-bottom:calc(6px + env(safe-area-inset-bottom,0px));gap:5px}#linkual-root .linkual-universal-top{min-height:30px}#linkual-root .linkual-universal-field input,#linkual-root .linkual-universal-mode-tab,#linkual-root .linkual-universal-clear,#linkual-root .linkual-universal-send,#linkual-root .linkual-universal-inline-actions{height:30px;min-height:30px}#linkual-root .linkual-vocab-queue-panel-wrap{bottom:calc(var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom,0px) + 6px)}}@media (max-height: 420px){#linkual-root .linkual-universal-widget{align-content:flex-start}#linkual-root .linkual-universal-selection,#linkual-root .linkual-universal-field input,#linkual-root .linkual-universal-add-btn,#linkual-root .linkual-universal-icon-btn,#linkual-root .linkual-universal-clear,#linkual-root .linkual-universal-send{font-size:12px}#linkual-root .linkual-vocab-queue-panel{border-radius:6px}} ');
 
 (function () {
   'use strict';
@@ -27,43 +24,440 @@
   function getDefaultExportFromCjs(x) {
     return x && x.__esModule && Object.prototype.hasOwnProperty.call(x, "default") ? x["default"] : x;
   }
-  var jsxRuntime = { exports: {} };
-  var reactJsxRuntime_production = {};
+  var react = { exports: {} };
+  var react_production = {};
   /**
    * @license React
-   * react-jsx-runtime.production.js
+   * react.production.js
    *
    * Copyright (c) Meta Platforms, Inc. and affiliates.
    *
    * This source code is licensed under the MIT license found in the
    * LICENSE file in the root directory of this source tree.
    */
-  var REACT_ELEMENT_TYPE$2 = Symbol.for("react.transitional.element"), REACT_FRAGMENT_TYPE$2 = Symbol.for("react.fragment");
-  function jsxProd(type, config, maybeKey) {
-    var key = null;
-    void 0 !== maybeKey && (key = "" + maybeKey);
-    void 0 !== config.key && (key = "" + config.key);
-    if ("key" in config) {
-      maybeKey = {};
-      for (var propName in config)
-        "key" !== propName && (maybeKey[propName] = config[propName]);
-    } else maybeKey = config;
-    config = maybeKey.ref;
+  var REACT_ELEMENT_TYPE$2 = Symbol.for("react.transitional.element"), REACT_PORTAL_TYPE$2 = Symbol.for("react.portal"), REACT_FRAGMENT_TYPE$2 = Symbol.for("react.fragment"), REACT_STRICT_MODE_TYPE$1 = Symbol.for("react.strict_mode"), REACT_PROFILER_TYPE$1 = Symbol.for("react.profiler"), REACT_CONSUMER_TYPE$1 = Symbol.for("react.consumer"), REACT_CONTEXT_TYPE$1 = Symbol.for("react.context"), REACT_FORWARD_REF_TYPE$1 = Symbol.for("react.forward_ref"), REACT_SUSPENSE_TYPE$1 = Symbol.for("react.suspense"), REACT_MEMO_TYPE$1 = Symbol.for("react.memo"), REACT_LAZY_TYPE$1 = Symbol.for("react.lazy"), REACT_ACTIVITY_TYPE$1 = Symbol.for("react.activity"), MAYBE_ITERATOR_SYMBOL$1 = Symbol.iterator;
+  function getIteratorFn$1(maybeIterable) {
+    if (null === maybeIterable || "object" !== typeof maybeIterable) return null;
+    maybeIterable = MAYBE_ITERATOR_SYMBOL$1 && maybeIterable[MAYBE_ITERATOR_SYMBOL$1] || maybeIterable["@@iterator"];
+    return "function" === typeof maybeIterable ? maybeIterable : null;
+  }
+  var ReactNoopUpdateQueue = {
+    isMounted: function() {
+      return false;
+    },
+    enqueueForceUpdate: function() {
+    },
+    enqueueReplaceState: function() {
+    },
+    enqueueSetState: function() {
+    }
+  }, assign$1 = Object.assign, emptyObject = {};
+  function Component(props, context, updater) {
+    this.props = props;
+    this.context = context;
+    this.refs = emptyObject;
+    this.updater = updater || ReactNoopUpdateQueue;
+  }
+  Component.prototype.isReactComponent = {};
+  Component.prototype.setState = function(partialState, callback) {
+    if ("object" !== typeof partialState && "function" !== typeof partialState && null != partialState)
+      throw Error(
+        "takes an object of state variables to update or a function which returns an object of state variables."
+      );
+    this.updater.enqueueSetState(this, partialState, callback, "setState");
+  };
+  Component.prototype.forceUpdate = function(callback) {
+    this.updater.enqueueForceUpdate(this, callback, "forceUpdate");
+  };
+  function ComponentDummy() {
+  }
+  ComponentDummy.prototype = Component.prototype;
+  function PureComponent(props, context, updater) {
+    this.props = props;
+    this.context = context;
+    this.refs = emptyObject;
+    this.updater = updater || ReactNoopUpdateQueue;
+  }
+  var pureComponentPrototype = PureComponent.prototype = new ComponentDummy();
+  pureComponentPrototype.constructor = PureComponent;
+  assign$1(pureComponentPrototype, Component.prototype);
+  pureComponentPrototype.isPureReactComponent = true;
+  var isArrayImpl$1 = Array.isArray;
+  function noop$3() {
+  }
+  var ReactSharedInternals$2 = { H: null, A: null, T: null, S: null }, hasOwnProperty$1 = Object.prototype.hasOwnProperty;
+  function ReactElement(type, key, props) {
+    var refProp = props.ref;
     return {
       $$typeof: REACT_ELEMENT_TYPE$2,
       type,
       key,
-      ref: void 0 !== config ? config : null,
-      props: maybeKey
+      ref: void 0 !== refProp ? refProp : null,
+      props
     };
   }
-  reactJsxRuntime_production.Fragment = REACT_FRAGMENT_TYPE$2;
-  reactJsxRuntime_production.jsx = jsxProd;
-  reactJsxRuntime_production.jsxs = jsxProd;
-  {
-    jsxRuntime.exports = reactJsxRuntime_production;
+  function cloneAndReplaceKey(oldElement, newKey) {
+    return ReactElement(oldElement.type, newKey, oldElement.props);
   }
-  var jsxRuntimeExports = jsxRuntime.exports;
+  function isValidElement(object) {
+    return "object" === typeof object && null !== object && object.$$typeof === REACT_ELEMENT_TYPE$2;
+  }
+  function escape(key) {
+    var escaperLookup = { "=": "=0", ":": "=2" };
+    return "$" + key.replace(/[=:]/g, function(match) {
+      return escaperLookup[match];
+    });
+  }
+  var userProvidedKeyEscapeRegex = /\/+/g;
+  function getElementKey(element, index2) {
+    return "object" === typeof element && null !== element && null != element.key ? escape("" + element.key) : index2.toString(36);
+  }
+  function resolveThenable(thenable) {
+    switch (thenable.status) {
+      case "fulfilled":
+        return thenable.value;
+      case "rejected":
+        throw thenable.reason;
+      default:
+        switch ("string" === typeof thenable.status ? thenable.then(noop$3, noop$3) : (thenable.status = "pending", thenable.then(
+          function(fulfilledValue) {
+            "pending" === thenable.status && (thenable.status = "fulfilled", thenable.value = fulfilledValue);
+          },
+          function(error) {
+            "pending" === thenable.status && (thenable.status = "rejected", thenable.reason = error);
+          }
+        )), thenable.status) {
+          case "fulfilled":
+            return thenable.value;
+          case "rejected":
+            throw thenable.reason;
+        }
+    }
+    throw thenable;
+  }
+  function mapIntoArray(children, array, escapedPrefix, nameSoFar, callback) {
+    var type = typeof children;
+    if ("undefined" === type || "boolean" === type) children = null;
+    var invokeCallback = false;
+    if (null === children) invokeCallback = true;
+    else
+      switch (type) {
+        case "bigint":
+        case "string":
+        case "number":
+          invokeCallback = true;
+          break;
+        case "object":
+          switch (children.$$typeof) {
+            case REACT_ELEMENT_TYPE$2:
+            case REACT_PORTAL_TYPE$2:
+              invokeCallback = true;
+              break;
+            case REACT_LAZY_TYPE$1:
+              return invokeCallback = children._init, mapIntoArray(
+                invokeCallback(children._payload),
+                array,
+                escapedPrefix,
+                nameSoFar,
+                callback
+              );
+          }
+      }
+    if (invokeCallback)
+      return callback = callback(children), invokeCallback = "" === nameSoFar ? "." + getElementKey(children, 0) : nameSoFar, isArrayImpl$1(callback) ? (escapedPrefix = "", null != invokeCallback && (escapedPrefix = invokeCallback.replace(userProvidedKeyEscapeRegex, "$&/") + "/"), mapIntoArray(callback, array, escapedPrefix, "", function(c) {
+        return c;
+      })) : null != callback && (isValidElement(callback) && (callback = cloneAndReplaceKey(
+        callback,
+        escapedPrefix + (null == callback.key || children && children.key === callback.key ? "" : ("" + callback.key).replace(
+          userProvidedKeyEscapeRegex,
+          "$&/"
+        ) + "/") + invokeCallback
+      )), array.push(callback)), 1;
+    invokeCallback = 0;
+    var nextNamePrefix = "" === nameSoFar ? "." : nameSoFar + ":";
+    if (isArrayImpl$1(children))
+      for (var i = 0; i < children.length; i++)
+        nameSoFar = children[i], type = nextNamePrefix + getElementKey(nameSoFar, i), invokeCallback += mapIntoArray(
+          nameSoFar,
+          array,
+          escapedPrefix,
+          type,
+          callback
+        );
+    else if (i = getIteratorFn$1(children), "function" === typeof i)
+      for (children = i.call(children), i = 0; !(nameSoFar = children.next()).done; )
+        nameSoFar = nameSoFar.value, type = nextNamePrefix + getElementKey(nameSoFar, i++), invokeCallback += mapIntoArray(
+          nameSoFar,
+          array,
+          escapedPrefix,
+          type,
+          callback
+        );
+    else if ("object" === type) {
+      if ("function" === typeof children.then)
+        return mapIntoArray(
+          resolveThenable(children),
+          array,
+          escapedPrefix,
+          nameSoFar,
+          callback
+        );
+      array = String(children);
+      throw Error(
+        "Objects are not valid as a React child (found: " + ("[object Object]" === array ? "object with keys {" + Object.keys(children).join(", ") + "}" : array) + "). If you meant to render a collection of children, use an array instead."
+      );
+    }
+    return invokeCallback;
+  }
+  function mapChildren(children, func, context) {
+    if (null == children) return children;
+    var result = [], count = 0;
+    mapIntoArray(children, result, "", "", function(child) {
+      return func.call(context, child, count++);
+    });
+    return result;
+  }
+  function lazyInitializer(payload) {
+    if (-1 === payload._status) {
+      var ctor = payload._result;
+      ctor = ctor();
+      ctor.then(
+        function(moduleObject) {
+          if (0 === payload._status || -1 === payload._status)
+            payload._status = 1, payload._result = moduleObject;
+        },
+        function(error) {
+          if (0 === payload._status || -1 === payload._status)
+            payload._status = 2, payload._result = error;
+        }
+      );
+      -1 === payload._status && (payload._status = 0, payload._result = ctor);
+    }
+    if (1 === payload._status) return payload._result.default;
+    throw payload._result;
+  }
+  var reportGlobalError$1 = "function" === typeof reportError ? reportError : function(error) {
+    if ("object" === typeof window && "function" === typeof window.ErrorEvent) {
+      var event = new window.ErrorEvent("error", {
+        bubbles: true,
+        cancelable: true,
+        message: "object" === typeof error && null !== error && "string" === typeof error.message ? String(error.message) : String(error),
+        error
+      });
+      if (!window.dispatchEvent(event)) return;
+    } else if ("object" === typeof process && "function" === typeof process.emit) {
+      process.emit("uncaughtException", error);
+      return;
+    }
+    console.error(error);
+  }, Children = {
+    map: mapChildren,
+    forEach: function(children, forEachFunc, forEachContext) {
+      mapChildren(
+        children,
+        function() {
+          forEachFunc.apply(this, arguments);
+        },
+        forEachContext
+      );
+    },
+    count: function(children) {
+      var n = 0;
+      mapChildren(children, function() {
+        n++;
+      });
+      return n;
+    },
+    toArray: function(children) {
+      return mapChildren(children, function(child) {
+        return child;
+      }) || [];
+    },
+    only: function(children) {
+      if (!isValidElement(children))
+        throw Error(
+          "React.Children.only expected to receive a single React element child."
+        );
+      return children;
+    }
+  };
+  react_production.Activity = REACT_ACTIVITY_TYPE$1;
+  react_production.Children = Children;
+  react_production.Component = Component;
+  react_production.Fragment = REACT_FRAGMENT_TYPE$2;
+  react_production.Profiler = REACT_PROFILER_TYPE$1;
+  react_production.PureComponent = PureComponent;
+  react_production.StrictMode = REACT_STRICT_MODE_TYPE$1;
+  react_production.Suspense = REACT_SUSPENSE_TYPE$1;
+  react_production.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE = ReactSharedInternals$2;
+  react_production.__COMPILER_RUNTIME = {
+    __proto__: null,
+    c: function(size) {
+      return ReactSharedInternals$2.H.useMemoCache(size);
+    }
+  };
+  react_production.cache = function(fn) {
+    return function() {
+      return fn.apply(null, arguments);
+    };
+  };
+  react_production.cacheSignal = function() {
+    return null;
+  };
+  react_production.cloneElement = function(element, config, children) {
+    if (null === element || void 0 === element)
+      throw Error(
+        "The argument must be a React element, but you passed " + element + "."
+      );
+    var props = assign$1({}, element.props), key = element.key;
+    if (null != config)
+      for (propName in void 0 !== config.key && (key = "" + config.key), config)
+        !hasOwnProperty$1.call(config, propName) || "key" === propName || "__self" === propName || "__source" === propName || "ref" === propName && void 0 === config.ref || (props[propName] = config[propName]);
+    var propName = arguments.length - 2;
+    if (1 === propName) props.children = children;
+    else if (1 < propName) {
+      for (var childArray = Array(propName), i = 0; i < propName; i++)
+        childArray[i] = arguments[i + 2];
+      props.children = childArray;
+    }
+    return ReactElement(element.type, key, props);
+  };
+  react_production.createContext = function(defaultValue) {
+    defaultValue = {
+      $$typeof: REACT_CONTEXT_TYPE$1,
+      _currentValue: defaultValue,
+      _currentValue2: defaultValue,
+      _threadCount: 0,
+      Provider: null,
+      Consumer: null
+    };
+    defaultValue.Provider = defaultValue;
+    defaultValue.Consumer = {
+      $$typeof: REACT_CONSUMER_TYPE$1,
+      _context: defaultValue
+    };
+    return defaultValue;
+  };
+  react_production.createElement = function(type, config, children) {
+    var propName, props = {}, key = null;
+    if (null != config)
+      for (propName in void 0 !== config.key && (key = "" + config.key), config)
+        hasOwnProperty$1.call(config, propName) && "key" !== propName && "__self" !== propName && "__source" !== propName && (props[propName] = config[propName]);
+    var childrenLength = arguments.length - 2;
+    if (1 === childrenLength) props.children = children;
+    else if (1 < childrenLength) {
+      for (var childArray = Array(childrenLength), i = 0; i < childrenLength; i++)
+        childArray[i] = arguments[i + 2];
+      props.children = childArray;
+    }
+    if (type && type.defaultProps)
+      for (propName in childrenLength = type.defaultProps, childrenLength)
+        void 0 === props[propName] && (props[propName] = childrenLength[propName]);
+    return ReactElement(type, key, props);
+  };
+  react_production.createRef = function() {
+    return { current: null };
+  };
+  react_production.forwardRef = function(render) {
+    return { $$typeof: REACT_FORWARD_REF_TYPE$1, render };
+  };
+  react_production.isValidElement = isValidElement;
+  react_production.lazy = function(ctor) {
+    return {
+      $$typeof: REACT_LAZY_TYPE$1,
+      _payload: { _status: -1, _result: ctor },
+      _init: lazyInitializer
+    };
+  };
+  react_production.memo = function(type, compare) {
+    return {
+      $$typeof: REACT_MEMO_TYPE$1,
+      type,
+      compare: void 0 === compare ? null : compare
+    };
+  };
+  react_production.startTransition = function(scope) {
+    var prevTransition = ReactSharedInternals$2.T, currentTransition = {};
+    ReactSharedInternals$2.T = currentTransition;
+    try {
+      var returnValue = scope(), onStartTransitionFinish = ReactSharedInternals$2.S;
+      null !== onStartTransitionFinish && onStartTransitionFinish(currentTransition, returnValue);
+      "object" === typeof returnValue && null !== returnValue && "function" === typeof returnValue.then && returnValue.then(noop$3, reportGlobalError$1);
+    } catch (error) {
+      reportGlobalError$1(error);
+    } finally {
+      null !== prevTransition && null !== currentTransition.types && (prevTransition.types = currentTransition.types), ReactSharedInternals$2.T = prevTransition;
+    }
+  };
+  react_production.unstable_useCacheRefresh = function() {
+    return ReactSharedInternals$2.H.useCacheRefresh();
+  };
+  react_production.use = function(usable) {
+    return ReactSharedInternals$2.H.use(usable);
+  };
+  react_production.useActionState = function(action, initialState, permalink) {
+    return ReactSharedInternals$2.H.useActionState(action, initialState, permalink);
+  };
+  react_production.useCallback = function(callback, deps) {
+    return ReactSharedInternals$2.H.useCallback(callback, deps);
+  };
+  react_production.useContext = function(Context) {
+    return ReactSharedInternals$2.H.useContext(Context);
+  };
+  react_production.useDebugValue = function() {
+  };
+  react_production.useDeferredValue = function(value, initialValue) {
+    return ReactSharedInternals$2.H.useDeferredValue(value, initialValue);
+  };
+  react_production.useEffect = function(create, deps) {
+    return ReactSharedInternals$2.H.useEffect(create, deps);
+  };
+  react_production.useEffectEvent = function(callback) {
+    return ReactSharedInternals$2.H.useEffectEvent(callback);
+  };
+  react_production.useId = function() {
+    return ReactSharedInternals$2.H.useId();
+  };
+  react_production.useImperativeHandle = function(ref, create, deps) {
+    return ReactSharedInternals$2.H.useImperativeHandle(ref, create, deps);
+  };
+  react_production.useInsertionEffect = function(create, deps) {
+    return ReactSharedInternals$2.H.useInsertionEffect(create, deps);
+  };
+  react_production.useLayoutEffect = function(create, deps) {
+    return ReactSharedInternals$2.H.useLayoutEffect(create, deps);
+  };
+  react_production.useMemo = function(create, deps) {
+    return ReactSharedInternals$2.H.useMemo(create, deps);
+  };
+  react_production.useOptimistic = function(passthrough, reducer) {
+    return ReactSharedInternals$2.H.useOptimistic(passthrough, reducer);
+  };
+  react_production.useReducer = function(reducer, initialArg, init) {
+    return ReactSharedInternals$2.H.useReducer(reducer, initialArg, init);
+  };
+  react_production.useRef = function(initialValue) {
+    return ReactSharedInternals$2.H.useRef(initialValue);
+  };
+  react_production.useState = function(initialState) {
+    return ReactSharedInternals$2.H.useState(initialState);
+  };
+  react_production.useSyncExternalStore = function(subscribe, getSnapshot, getServerSnapshot) {
+    return ReactSharedInternals$2.H.useSyncExternalStore(
+      subscribe,
+      getSnapshot,
+      getServerSnapshot
+    );
+  };
+  react_production.useTransition = function() {
+    return ReactSharedInternals$2.H.useTransition();
+  };
+  react_production.version = "19.2.4";
+  {
+    react.exports = react_production;
+  }
+  var reactExports = react.exports;
+  const React$2 = /* @__PURE__ */ getDefaultExportFromCjs(reactExports);
   var client = { exports: {} };
   var reactDomClient_production = {};
   var scheduler = { exports: {} };
@@ -330,440 +724,6 @@
     scheduler.exports = scheduler_production;
   }
   var schedulerExports = scheduler.exports;
-  var react = { exports: {} };
-  var react_production = {};
-  /**
-   * @license React
-   * react.production.js
-   *
-   * Copyright (c) Meta Platforms, Inc. and affiliates.
-   *
-   * This source code is licensed under the MIT license found in the
-   * LICENSE file in the root directory of this source tree.
-   */
-  var REACT_ELEMENT_TYPE$1 = Symbol.for("react.transitional.element"), REACT_PORTAL_TYPE$2 = Symbol.for("react.portal"), REACT_FRAGMENT_TYPE$1 = Symbol.for("react.fragment"), REACT_STRICT_MODE_TYPE$1 = Symbol.for("react.strict_mode"), REACT_PROFILER_TYPE$1 = Symbol.for("react.profiler"), REACT_CONSUMER_TYPE$1 = Symbol.for("react.consumer"), REACT_CONTEXT_TYPE$1 = Symbol.for("react.context"), REACT_FORWARD_REF_TYPE$1 = Symbol.for("react.forward_ref"), REACT_SUSPENSE_TYPE$1 = Symbol.for("react.suspense"), REACT_MEMO_TYPE$1 = Symbol.for("react.memo"), REACT_LAZY_TYPE$1 = Symbol.for("react.lazy"), REACT_ACTIVITY_TYPE$1 = Symbol.for("react.activity"), MAYBE_ITERATOR_SYMBOL$1 = Symbol.iterator;
-  function getIteratorFn$1(maybeIterable) {
-    if (null === maybeIterable || "object" !== typeof maybeIterable) return null;
-    maybeIterable = MAYBE_ITERATOR_SYMBOL$1 && maybeIterable[MAYBE_ITERATOR_SYMBOL$1] || maybeIterable["@@iterator"];
-    return "function" === typeof maybeIterable ? maybeIterable : null;
-  }
-  var ReactNoopUpdateQueue = {
-    isMounted: function() {
-      return false;
-    },
-    enqueueForceUpdate: function() {
-    },
-    enqueueReplaceState: function() {
-    },
-    enqueueSetState: function() {
-    }
-  }, assign$1 = Object.assign, emptyObject = {};
-  function Component(props, context, updater) {
-    this.props = props;
-    this.context = context;
-    this.refs = emptyObject;
-    this.updater = updater || ReactNoopUpdateQueue;
-  }
-  Component.prototype.isReactComponent = {};
-  Component.prototype.setState = function(partialState, callback) {
-    if ("object" !== typeof partialState && "function" !== typeof partialState && null != partialState)
-      throw Error(
-        "takes an object of state variables to update or a function which returns an object of state variables."
-      );
-    this.updater.enqueueSetState(this, partialState, callback, "setState");
-  };
-  Component.prototype.forceUpdate = function(callback) {
-    this.updater.enqueueForceUpdate(this, callback, "forceUpdate");
-  };
-  function ComponentDummy() {
-  }
-  ComponentDummy.prototype = Component.prototype;
-  function PureComponent(props, context, updater) {
-    this.props = props;
-    this.context = context;
-    this.refs = emptyObject;
-    this.updater = updater || ReactNoopUpdateQueue;
-  }
-  var pureComponentPrototype = PureComponent.prototype = new ComponentDummy();
-  pureComponentPrototype.constructor = PureComponent;
-  assign$1(pureComponentPrototype, Component.prototype);
-  pureComponentPrototype.isPureReactComponent = true;
-  var isArrayImpl$1 = Array.isArray;
-  function noop$3() {
-  }
-  var ReactSharedInternals$2 = { H: null, A: null, T: null, S: null }, hasOwnProperty$1 = Object.prototype.hasOwnProperty;
-  function ReactElement(type, key, props) {
-    var refProp = props.ref;
-    return {
-      $$typeof: REACT_ELEMENT_TYPE$1,
-      type,
-      key,
-      ref: void 0 !== refProp ? refProp : null,
-      props
-    };
-  }
-  function cloneAndReplaceKey(oldElement, newKey) {
-    return ReactElement(oldElement.type, newKey, oldElement.props);
-  }
-  function isValidElement(object) {
-    return "object" === typeof object && null !== object && object.$$typeof === REACT_ELEMENT_TYPE$1;
-  }
-  function escape(key) {
-    var escaperLookup = { "=": "=0", ":": "=2" };
-    return "$" + key.replace(/[=:]/g, function(match) {
-      return escaperLookup[match];
-    });
-  }
-  var userProvidedKeyEscapeRegex = /\/+/g;
-  function getElementKey(element, index2) {
-    return "object" === typeof element && null !== element && null != element.key ? escape("" + element.key) : index2.toString(36);
-  }
-  function resolveThenable(thenable) {
-    switch (thenable.status) {
-      case "fulfilled":
-        return thenable.value;
-      case "rejected":
-        throw thenable.reason;
-      default:
-        switch ("string" === typeof thenable.status ? thenable.then(noop$3, noop$3) : (thenable.status = "pending", thenable.then(
-          function(fulfilledValue) {
-            "pending" === thenable.status && (thenable.status = "fulfilled", thenable.value = fulfilledValue);
-          },
-          function(error) {
-            "pending" === thenable.status && (thenable.status = "rejected", thenable.reason = error);
-          }
-        )), thenable.status) {
-          case "fulfilled":
-            return thenable.value;
-          case "rejected":
-            throw thenable.reason;
-        }
-    }
-    throw thenable;
-  }
-  function mapIntoArray(children, array, escapedPrefix, nameSoFar, callback) {
-    var type = typeof children;
-    if ("undefined" === type || "boolean" === type) children = null;
-    var invokeCallback = false;
-    if (null === children) invokeCallback = true;
-    else
-      switch (type) {
-        case "bigint":
-        case "string":
-        case "number":
-          invokeCallback = true;
-          break;
-        case "object":
-          switch (children.$$typeof) {
-            case REACT_ELEMENT_TYPE$1:
-            case REACT_PORTAL_TYPE$2:
-              invokeCallback = true;
-              break;
-            case REACT_LAZY_TYPE$1:
-              return invokeCallback = children._init, mapIntoArray(
-                invokeCallback(children._payload),
-                array,
-                escapedPrefix,
-                nameSoFar,
-                callback
-              );
-          }
-      }
-    if (invokeCallback)
-      return callback = callback(children), invokeCallback = "" === nameSoFar ? "." + getElementKey(children, 0) : nameSoFar, isArrayImpl$1(callback) ? (escapedPrefix = "", null != invokeCallback && (escapedPrefix = invokeCallback.replace(userProvidedKeyEscapeRegex, "$&/") + "/"), mapIntoArray(callback, array, escapedPrefix, "", function(c) {
-        return c;
-      })) : null != callback && (isValidElement(callback) && (callback = cloneAndReplaceKey(
-        callback,
-        escapedPrefix + (null == callback.key || children && children.key === callback.key ? "" : ("" + callback.key).replace(
-          userProvidedKeyEscapeRegex,
-          "$&/"
-        ) + "/") + invokeCallback
-      )), array.push(callback)), 1;
-    invokeCallback = 0;
-    var nextNamePrefix = "" === nameSoFar ? "." : nameSoFar + ":";
-    if (isArrayImpl$1(children))
-      for (var i = 0; i < children.length; i++)
-        nameSoFar = children[i], type = nextNamePrefix + getElementKey(nameSoFar, i), invokeCallback += mapIntoArray(
-          nameSoFar,
-          array,
-          escapedPrefix,
-          type,
-          callback
-        );
-    else if (i = getIteratorFn$1(children), "function" === typeof i)
-      for (children = i.call(children), i = 0; !(nameSoFar = children.next()).done; )
-        nameSoFar = nameSoFar.value, type = nextNamePrefix + getElementKey(nameSoFar, i++), invokeCallback += mapIntoArray(
-          nameSoFar,
-          array,
-          escapedPrefix,
-          type,
-          callback
-        );
-    else if ("object" === type) {
-      if ("function" === typeof children.then)
-        return mapIntoArray(
-          resolveThenable(children),
-          array,
-          escapedPrefix,
-          nameSoFar,
-          callback
-        );
-      array = String(children);
-      throw Error(
-        "Objects are not valid as a React child (found: " + ("[object Object]" === array ? "object with keys {" + Object.keys(children).join(", ") + "}" : array) + "). If you meant to render a collection of children, use an array instead."
-      );
-    }
-    return invokeCallback;
-  }
-  function mapChildren(children, func, context) {
-    if (null == children) return children;
-    var result = [], count = 0;
-    mapIntoArray(children, result, "", "", function(child) {
-      return func.call(context, child, count++);
-    });
-    return result;
-  }
-  function lazyInitializer(payload) {
-    if (-1 === payload._status) {
-      var ctor = payload._result;
-      ctor = ctor();
-      ctor.then(
-        function(moduleObject) {
-          if (0 === payload._status || -1 === payload._status)
-            payload._status = 1, payload._result = moduleObject;
-        },
-        function(error) {
-          if (0 === payload._status || -1 === payload._status)
-            payload._status = 2, payload._result = error;
-        }
-      );
-      -1 === payload._status && (payload._status = 0, payload._result = ctor);
-    }
-    if (1 === payload._status) return payload._result.default;
-    throw payload._result;
-  }
-  var reportGlobalError$1 = "function" === typeof reportError ? reportError : function(error) {
-    if ("object" === typeof window && "function" === typeof window.ErrorEvent) {
-      var event = new window.ErrorEvent("error", {
-        bubbles: true,
-        cancelable: true,
-        message: "object" === typeof error && null !== error && "string" === typeof error.message ? String(error.message) : String(error),
-        error
-      });
-      if (!window.dispatchEvent(event)) return;
-    } else if ("object" === typeof process && "function" === typeof process.emit) {
-      process.emit("uncaughtException", error);
-      return;
-    }
-    console.error(error);
-  }, Children = {
-    map: mapChildren,
-    forEach: function(children, forEachFunc, forEachContext) {
-      mapChildren(
-        children,
-        function() {
-          forEachFunc.apply(this, arguments);
-        },
-        forEachContext
-      );
-    },
-    count: function(children) {
-      var n = 0;
-      mapChildren(children, function() {
-        n++;
-      });
-      return n;
-    },
-    toArray: function(children) {
-      return mapChildren(children, function(child) {
-        return child;
-      }) || [];
-    },
-    only: function(children) {
-      if (!isValidElement(children))
-        throw Error(
-          "React.Children.only expected to receive a single React element child."
-        );
-      return children;
-    }
-  };
-  react_production.Activity = REACT_ACTIVITY_TYPE$1;
-  react_production.Children = Children;
-  react_production.Component = Component;
-  react_production.Fragment = REACT_FRAGMENT_TYPE$1;
-  react_production.Profiler = REACT_PROFILER_TYPE$1;
-  react_production.PureComponent = PureComponent;
-  react_production.StrictMode = REACT_STRICT_MODE_TYPE$1;
-  react_production.Suspense = REACT_SUSPENSE_TYPE$1;
-  react_production.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE = ReactSharedInternals$2;
-  react_production.__COMPILER_RUNTIME = {
-    __proto__: null,
-    c: function(size) {
-      return ReactSharedInternals$2.H.useMemoCache(size);
-    }
-  };
-  react_production.cache = function(fn) {
-    return function() {
-      return fn.apply(null, arguments);
-    };
-  };
-  react_production.cacheSignal = function() {
-    return null;
-  };
-  react_production.cloneElement = function(element, config, children) {
-    if (null === element || void 0 === element)
-      throw Error(
-        "The argument must be a React element, but you passed " + element + "."
-      );
-    var props = assign$1({}, element.props), key = element.key;
-    if (null != config)
-      for (propName in void 0 !== config.key && (key = "" + config.key), config)
-        !hasOwnProperty$1.call(config, propName) || "key" === propName || "__self" === propName || "__source" === propName || "ref" === propName && void 0 === config.ref || (props[propName] = config[propName]);
-    var propName = arguments.length - 2;
-    if (1 === propName) props.children = children;
-    else if (1 < propName) {
-      for (var childArray = Array(propName), i = 0; i < propName; i++)
-        childArray[i] = arguments[i + 2];
-      props.children = childArray;
-    }
-    return ReactElement(element.type, key, props);
-  };
-  react_production.createContext = function(defaultValue) {
-    defaultValue = {
-      $$typeof: REACT_CONTEXT_TYPE$1,
-      _currentValue: defaultValue,
-      _currentValue2: defaultValue,
-      _threadCount: 0,
-      Provider: null,
-      Consumer: null
-    };
-    defaultValue.Provider = defaultValue;
-    defaultValue.Consumer = {
-      $$typeof: REACT_CONSUMER_TYPE$1,
-      _context: defaultValue
-    };
-    return defaultValue;
-  };
-  react_production.createElement = function(type, config, children) {
-    var propName, props = {}, key = null;
-    if (null != config)
-      for (propName in void 0 !== config.key && (key = "" + config.key), config)
-        hasOwnProperty$1.call(config, propName) && "key" !== propName && "__self" !== propName && "__source" !== propName && (props[propName] = config[propName]);
-    var childrenLength = arguments.length - 2;
-    if (1 === childrenLength) props.children = children;
-    else if (1 < childrenLength) {
-      for (var childArray = Array(childrenLength), i = 0; i < childrenLength; i++)
-        childArray[i] = arguments[i + 2];
-      props.children = childArray;
-    }
-    if (type && type.defaultProps)
-      for (propName in childrenLength = type.defaultProps, childrenLength)
-        void 0 === props[propName] && (props[propName] = childrenLength[propName]);
-    return ReactElement(type, key, props);
-  };
-  react_production.createRef = function() {
-    return { current: null };
-  };
-  react_production.forwardRef = function(render) {
-    return { $$typeof: REACT_FORWARD_REF_TYPE$1, render };
-  };
-  react_production.isValidElement = isValidElement;
-  react_production.lazy = function(ctor) {
-    return {
-      $$typeof: REACT_LAZY_TYPE$1,
-      _payload: { _status: -1, _result: ctor },
-      _init: lazyInitializer
-    };
-  };
-  react_production.memo = function(type, compare) {
-    return {
-      $$typeof: REACT_MEMO_TYPE$1,
-      type,
-      compare: void 0 === compare ? null : compare
-    };
-  };
-  react_production.startTransition = function(scope) {
-    var prevTransition = ReactSharedInternals$2.T, currentTransition = {};
-    ReactSharedInternals$2.T = currentTransition;
-    try {
-      var returnValue = scope(), onStartTransitionFinish = ReactSharedInternals$2.S;
-      null !== onStartTransitionFinish && onStartTransitionFinish(currentTransition, returnValue);
-      "object" === typeof returnValue && null !== returnValue && "function" === typeof returnValue.then && returnValue.then(noop$3, reportGlobalError$1);
-    } catch (error) {
-      reportGlobalError$1(error);
-    } finally {
-      null !== prevTransition && null !== currentTransition.types && (prevTransition.types = currentTransition.types), ReactSharedInternals$2.T = prevTransition;
-    }
-  };
-  react_production.unstable_useCacheRefresh = function() {
-    return ReactSharedInternals$2.H.useCacheRefresh();
-  };
-  react_production.use = function(usable) {
-    return ReactSharedInternals$2.H.use(usable);
-  };
-  react_production.useActionState = function(action, initialState, permalink) {
-    return ReactSharedInternals$2.H.useActionState(action, initialState, permalink);
-  };
-  react_production.useCallback = function(callback, deps) {
-    return ReactSharedInternals$2.H.useCallback(callback, deps);
-  };
-  react_production.useContext = function(Context) {
-    return ReactSharedInternals$2.H.useContext(Context);
-  };
-  react_production.useDebugValue = function() {
-  };
-  react_production.useDeferredValue = function(value, initialValue) {
-    return ReactSharedInternals$2.H.useDeferredValue(value, initialValue);
-  };
-  react_production.useEffect = function(create, deps) {
-    return ReactSharedInternals$2.H.useEffect(create, deps);
-  };
-  react_production.useEffectEvent = function(callback) {
-    return ReactSharedInternals$2.H.useEffectEvent(callback);
-  };
-  react_production.useId = function() {
-    return ReactSharedInternals$2.H.useId();
-  };
-  react_production.useImperativeHandle = function(ref, create, deps) {
-    return ReactSharedInternals$2.H.useImperativeHandle(ref, create, deps);
-  };
-  react_production.useInsertionEffect = function(create, deps) {
-    return ReactSharedInternals$2.H.useInsertionEffect(create, deps);
-  };
-  react_production.useLayoutEffect = function(create, deps) {
-    return ReactSharedInternals$2.H.useLayoutEffect(create, deps);
-  };
-  react_production.useMemo = function(create, deps) {
-    return ReactSharedInternals$2.H.useMemo(create, deps);
-  };
-  react_production.useOptimistic = function(passthrough, reducer) {
-    return ReactSharedInternals$2.H.useOptimistic(passthrough, reducer);
-  };
-  react_production.useReducer = function(reducer, initialArg, init) {
-    return ReactSharedInternals$2.H.useReducer(reducer, initialArg, init);
-  };
-  react_production.useRef = function(initialValue) {
-    return ReactSharedInternals$2.H.useRef(initialValue);
-  };
-  react_production.useState = function(initialState) {
-    return ReactSharedInternals$2.H.useState(initialState);
-  };
-  react_production.useSyncExternalStore = function(subscribe, getSnapshot, getServerSnapshot) {
-    return ReactSharedInternals$2.H.useSyncExternalStore(
-      subscribe,
-      getSnapshot,
-      getServerSnapshot
-    );
-  };
-  react_production.useTransition = function() {
-    return ReactSharedInternals$2.H.useTransition();
-  };
-  react_production.version = "19.2.4";
-  {
-    react.exports = react_production;
-  }
-  var reactExports = react.exports;
-  const React$2 = /* @__PURE__ */ getDefaultExportFromCjs(reactExports);
   var reactDom = { exports: {} };
   var reactDom_production = {};
   /**
@@ -1062,7 +1022,7 @@
     }
     return null;
   }
-  var assign = Object.assign, REACT_LEGACY_ELEMENT_TYPE = Symbol.for("react.element"), REACT_ELEMENT_TYPE = Symbol.for("react.transitional.element"), REACT_PORTAL_TYPE = Symbol.for("react.portal"), REACT_FRAGMENT_TYPE = Symbol.for("react.fragment"), REACT_STRICT_MODE_TYPE = Symbol.for("react.strict_mode"), REACT_PROFILER_TYPE = Symbol.for("react.profiler"), REACT_CONSUMER_TYPE = Symbol.for("react.consumer"), REACT_CONTEXT_TYPE = Symbol.for("react.context"), REACT_FORWARD_REF_TYPE = Symbol.for("react.forward_ref"), REACT_SUSPENSE_TYPE = Symbol.for("react.suspense"), REACT_SUSPENSE_LIST_TYPE = Symbol.for("react.suspense_list"), REACT_MEMO_TYPE = Symbol.for("react.memo"), REACT_LAZY_TYPE = Symbol.for("react.lazy");
+  var assign = Object.assign, REACT_LEGACY_ELEMENT_TYPE = Symbol.for("react.element"), REACT_ELEMENT_TYPE$1 = Symbol.for("react.transitional.element"), REACT_PORTAL_TYPE = Symbol.for("react.portal"), REACT_FRAGMENT_TYPE$1 = Symbol.for("react.fragment"), REACT_STRICT_MODE_TYPE = Symbol.for("react.strict_mode"), REACT_PROFILER_TYPE = Symbol.for("react.profiler"), REACT_CONSUMER_TYPE = Symbol.for("react.consumer"), REACT_CONTEXT_TYPE = Symbol.for("react.context"), REACT_FORWARD_REF_TYPE = Symbol.for("react.forward_ref"), REACT_SUSPENSE_TYPE = Symbol.for("react.suspense"), REACT_SUSPENSE_LIST_TYPE = Symbol.for("react.suspense_list"), REACT_MEMO_TYPE = Symbol.for("react.memo"), REACT_LAZY_TYPE = Symbol.for("react.lazy");
   var REACT_ACTIVITY_TYPE = Symbol.for("react.activity");
   var REACT_MEMO_CACHE_SENTINEL = Symbol.for("react.memo_cache_sentinel");
   var MAYBE_ITERATOR_SYMBOL = Symbol.iterator;
@@ -1078,7 +1038,7 @@
       return type.$$typeof === REACT_CLIENT_REFERENCE ? null : type.displayName || type.name || null;
     if ("string" === typeof type) return type;
     switch (type) {
-      case REACT_FRAGMENT_TYPE:
+      case REACT_FRAGMENT_TYPE$1:
         return "Fragment";
       case REACT_PROFILER_TYPE:
         return "Profiler";
@@ -2708,7 +2668,7 @@
       a: switch (type) {
         case REACT_ACTIVITY_TYPE:
           return type = createFiberImplClass(31, pendingProps, key, mode), type.elementType = REACT_ACTIVITY_TYPE, type.lanes = lanes, type;
-        case REACT_FRAGMENT_TYPE:
+        case REACT_FRAGMENT_TYPE$1:
           return createFiberFromFragment(pendingProps.children, mode, lanes, key);
         case REACT_STRICT_MODE_TYPE:
           fiberTag = 8;
@@ -3346,7 +3306,7 @@
     }
     function updateElement(returnFiber, current, element, lanes) {
       var elementType = element.type;
-      if (elementType === REACT_FRAGMENT_TYPE)
+      if (elementType === REACT_FRAGMENT_TYPE$1)
         return updateFragment(
           returnFiber,
           current,
@@ -3396,7 +3356,7 @@
         ), newChild.return = returnFiber, newChild;
       if ("object" === typeof newChild && null !== newChild) {
         switch (newChild.$$typeof) {
-          case REACT_ELEMENT_TYPE:
+          case REACT_ELEMENT_TYPE$1:
             return lanes = createFiberFromTypeAndProps(
               newChild.type,
               newChild.key,
@@ -3439,7 +3399,7 @@
         return null !== key ? null : updateTextNode(returnFiber, oldFiber, "" + newChild, lanes);
       if ("object" === typeof newChild && null !== newChild) {
         switch (newChild.$$typeof) {
-          case REACT_ELEMENT_TYPE:
+          case REACT_ELEMENT_TYPE$1:
             return newChild.key === key ? updateElement(returnFiber, oldFiber, newChild, lanes) : null;
           case REACT_PORTAL_TYPE:
             return newChild.key === key ? updatePortal(returnFiber, oldFiber, newChild, lanes) : null;
@@ -3471,7 +3431,7 @@
         return existingChildren = existingChildren.get(newIdx) || null, updateTextNode(returnFiber, existingChildren, "" + newChild, lanes);
       if ("object" === typeof newChild && null !== newChild) {
         switch (newChild.$$typeof) {
-          case REACT_ELEMENT_TYPE:
+          case REACT_ELEMENT_TYPE$1:
             return existingChildren = existingChildren.get(
               null === newChild.key ? newIdx : newChild.key
             ) || null, updateElement(returnFiber, existingChildren, newChild, lanes);
@@ -3593,15 +3553,15 @@
       return resultingFirstChild;
     }
     function reconcileChildFibersImpl(returnFiber, currentFirstChild, newChild, lanes) {
-      "object" === typeof newChild && null !== newChild && newChild.type === REACT_FRAGMENT_TYPE && null === newChild.key && (newChild = newChild.props.children);
+      "object" === typeof newChild && null !== newChild && newChild.type === REACT_FRAGMENT_TYPE$1 && null === newChild.key && (newChild = newChild.props.children);
       if ("object" === typeof newChild && null !== newChild) {
         switch (newChild.$$typeof) {
-          case REACT_ELEMENT_TYPE:
+          case REACT_ELEMENT_TYPE$1:
             a: {
               for (var key = newChild.key; null !== currentFirstChild; ) {
                 if (currentFirstChild.key === key) {
                   key = newChild.type;
-                  if (key === REACT_FRAGMENT_TYPE) {
+                  if (key === REACT_FRAGMENT_TYPE$1) {
                     if (7 === currentFirstChild.tag) {
                       deleteRemainingChildren(
                         returnFiber,
@@ -3631,7 +3591,7 @@
                 } else deleteChild(returnFiber, currentFirstChild);
                 currentFirstChild = currentFirstChild.sibling;
               }
-              newChild.type === REACT_FRAGMENT_TYPE ? (lanes = createFiberFromFragment(
+              newChild.type === REACT_FRAGMENT_TYPE$1 ? (lanes = createFiberFromFragment(
                 newChild.props.children,
                 returnFiber.mode,
                 lanes,
@@ -12466,6 +12426,43 @@
     client.exports = reactDomClient_production;
   }
   var clientExports = client.exports;
+  var jsxRuntime = { exports: {} };
+  var reactJsxRuntime_production = {};
+  /**
+   * @license React
+   * react-jsx-runtime.production.js
+   *
+   * Copyright (c) Meta Platforms, Inc. and affiliates.
+   *
+   * This source code is licensed under the MIT license found in the
+   * LICENSE file in the root directory of this source tree.
+   */
+  var REACT_ELEMENT_TYPE = Symbol.for("react.transitional.element"), REACT_FRAGMENT_TYPE = Symbol.for("react.fragment");
+  function jsxProd(type, config, maybeKey) {
+    var key = null;
+    void 0 !== maybeKey && (key = "" + maybeKey);
+    void 0 !== config.key && (key = "" + config.key);
+    if ("key" in config) {
+      maybeKey = {};
+      for (var propName in config)
+        "key" !== propName && (maybeKey[propName] = config[propName]);
+    } else maybeKey = config;
+    config = maybeKey.ref;
+    return {
+      $$typeof: REACT_ELEMENT_TYPE,
+      type,
+      key,
+      ref: void 0 !== config ? config : null,
+      props: maybeKey
+    };
+  }
+  reactJsxRuntime_production.Fragment = REACT_FRAGMENT_TYPE;
+  reactJsxRuntime_production.jsx = jsxProd;
+  reactJsxRuntime_production.jsxs = jsxProd;
+  {
+    jsxRuntime.exports = reactJsxRuntime_production;
+  }
+  var jsxRuntimeExports = jsxRuntime.exports;
   function useVideoSync(subs, adapter) {
     const [activeIndex, setActiveIndex] = reactExports.useState(-1);
     const activeIndexRef = reactExports.useRef(-1);
@@ -12963,7 +12960,7 @@
     const target = node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
     return !!target && container.contains(target);
   };
-  const getVisibleRangeRect$1 = (range) => {
+  const getVisibleRangeRect$2 = (range) => {
     const rects = Array.from(range.getClientRects()).filter((rect2) => rect2.width > 0 && rect2.height > 0);
     if (rects.length > 0) return rects[0];
     const rect = range.getBoundingClientRect();
@@ -13044,7 +13041,7 @@
         return;
       }
       const range = selection.getRangeAt(0);
-      const rect = getVisibleRangeRect$1(range);
+      const rect = getVisibleRangeRect$2(range);
       if (rect) {
         const position = getSelectionBoxPosition(rect, text);
         const placement = shouldDockSelectionBox() ? "dock" : "floating";
@@ -14431,7 +14428,7 @@ JSON 格式：
     ".ltx_authors",
     ".ltx_note"
   ].join(",");
-  const normalizeText$1 = (value) => value.replace(/\s+/g, " ").trim();
+  const normalizeText$2 = (value) => value.replace(/\s+/g, " ").trim();
   const ARXIV_HOSTNAMES = /* @__PURE__ */ new Set(["arxiv.org", "www.arxiv.org"]);
   function isArxivHtmlPage() {
     return ARXIV_HOSTNAMES.has(window.location.hostname) && window.location.pathname.startsWith("/html/");
@@ -14467,7 +14464,7 @@ JSON 格式：
     if (!isArxivHtmlPage()) return [];
     const root2 = getArticleRoot();
     if (!root2) return [];
-    const candidates = Array.from(root2.querySelectorAll(getCandidateSelector())).filter((element) => !isExcluded(element)).map((element) => ({ element, text: normalizeText$1(element.innerText || element.textContent || "") })).filter(({ element, text }) => text.length >= MIN_PARAGRAPH_LENGTH && !element.querySelector("img, video, iframe"));
+    const candidates = Array.from(root2.querySelectorAll(getCandidateSelector())).filter((element) => !isExcluded(element)).map((element) => ({ element, text: normalizeText$2(element.innerText || element.textContent || "") })).filter(({ element, text }) => text.length >= MIN_PARAGRAPH_LENGTH && !element.querySelector("img, video, iframe"));
     const seen = /* @__PURE__ */ new Set();
     return candidates.slice(0, MAX_PARAGRAPHS).filter(({ element }) => {
       if (seen.has(element)) return false;
@@ -14485,12 +14482,12 @@ JSON 格式：
       if (!keep.has(host)) host.remove();
     });
   }
-  const SENTENCE_PATTERN$1 = /[^.!?。！？]+[.!?。！？]+["'”’）)]*|[^.!?。！？]+$/g;
+  const SENTENCE_PATTERN$2 = /[^.!?。！？]+[.!?。！？]+["'”’）)]*|[^.!?。！？]+$/g;
   function normalizeSentence(value) {
     return value.replace(/\s+/g, " ").trim();
   }
   function splitSentences(value) {
-    return Array.from(value.matchAll(SENTENCE_PATTERN$1)).map((match) => normalizeSentence(match[0] || "")).filter(Boolean);
+    return Array.from(value.matchAll(SENTENCE_PATTERN$2)).map((match) => normalizeSentence(match[0] || "")).filter(Boolean);
   }
   function alignSentencePairs(source, translation) {
     const sourceSentences = splitSentences(source);
@@ -14866,12 +14863,12 @@ ${paragraph.text}`,
   const MOBILE_WIDGET_HEIGHT = 132;
   const COLLAPSED_WIDGET_HEIGHT = 28;
   const WIDGET_VIEWPORT_MARGIN = 8;
-  const MAX_WORD_SELECTION_LENGTH = 180;
+  const MAX_WORD_SELECTION_LENGTH$1 = 180;
   const MAX_CONTEXT_SELECTION_LENGTH = 4e3;
-  const CONTEXT_SENTENCE_RADIUS = 2;
-  const SENTENCE_PATTERN = /[^.!?。！？]+[.!?。！？]+["'”’）)]*|[^.!?。！？]+$/g;
+  const CONTEXT_SENTENCE_RADIUS$1 = 2;
+  const SENTENCE_PATTERN$1 = /[^.!?。！？]+[.!?。！？]+["'”’）)]*|[^.!?。！？]+$/g;
   const LINKUAL_NAVIGATION_EVENT$2 = "linkual_navigation";
-  const FLOATING_BUTTON_MARGIN = 10;
+  const FLOATING_BUTTON_MARGIN$1 = 10;
   const BUBBLE_MARGIN = 12;
   const BUBBLE_STORAGE_KEYS = ["universal_bubble_left", "universal_bubble_top"];
   const getDefaultExpandedHeight = () => window.matchMedia("(max-width: 720px)").matches ? MOBILE_WIDGET_HEIGHT : DESKTOP_WIDGET_HEIGHT;
@@ -14913,33 +14910,33 @@ ${paragraph.text}`,
     };
     return /* @__PURE__ */ jsxRuntimeExports.jsx("svg", { className: "linkual-universal-button-icon", viewBox: "0 0 24 24", "aria-hidden": "true", children: paths[name] });
   };
-  const normalizeText = (value) => value.replace(/\s+/g, " ").trim();
-  const getSourceTitle = () => {
-    const title = normalizeText(document.title.replace(/^\(\d+\)\s+/, ""));
+  const normalizeText$1 = (value) => value.replace(/\s+/g, " ").trim();
+  const getSourceTitle$1 = () => {
+    const title = normalizeText$1(document.title.replace(/^\(\d+\)\s+/, ""));
     return title || window.location.hostname || window.location.href;
   };
   const getPageUrl = () => window.location.href;
-  const getElementFromNode = (node) => {
+  const getElementFromNode$1 = (node) => {
     if (!node) return null;
     if (node instanceof Element) return node;
     return node.parentElement;
   };
   const isInsideLinkualRoot = (node) => {
-    const element = getElementFromNode(node);
+    const element = getElementFromNode$1(node);
     return Boolean(element == null ? void 0 : element.closest("#linkual-root"));
   };
-  const isInsideEditableElement = (node) => {
-    const element = getElementFromNode(node);
+  const isInsideEditableElement$1 = (node) => {
+    const element = getElementFromNode$1(node);
     if (!element) return false;
     return Boolean(element.closest("input, textarea, select, [contenteditable]"));
   };
-  const getSelectionScope = (range) => {
-    let element = getElementFromNode(range.commonAncestorContainer);
+  const getSelectionScope$1 = (range) => {
+    let element = getElementFromNode$1(range.commonAncestorContainer);
     let fallback = null;
     while (element && element !== document.body && element instanceof HTMLElement) {
       if (element.id === "linkual-root") return null;
       const tagName = element.tagName.toLowerCase();
-      const textLength = normalizeText(element.textContent || "").length;
+      const textLength = normalizeText$1(element.textContent || "").length;
       if (["article", "main", "section"].includes(tagName) || element.getAttribute("role") === "main") {
         return element;
       }
@@ -14952,7 +14949,7 @@ ${paragraph.text}`,
     }
     return fallback || document.body;
   };
-  const getRangeText = (scope, range, side) => {
+  const getRangeText$1 = (scope, range, side) => {
     const scopedRange = document.createRange();
     scopedRange.selectNodeContents(scope);
     try {
@@ -14968,39 +14965,39 @@ ${paragraph.text}`,
       scopedRange.detach();
     }
   };
-  const extractSentenceContext = (beforeText, selectedText, afterText) => {
-    const normalizedBefore = normalizeText(beforeText);
-    const normalizedSelected = normalizeText(selectedText);
-    const normalizedAfter = normalizeText(afterText);
-    const fullText = normalizeText([normalizedBefore, normalizedSelected, normalizedAfter].filter(Boolean).join(" "));
+  const extractSentenceContext$1 = (beforeText, selectedText, afterText) => {
+    const normalizedBefore = normalizeText$1(beforeText);
+    const normalizedSelected = normalizeText$1(selectedText);
+    const normalizedAfter = normalizeText$1(afterText);
+    const fullText = normalizeText$1([normalizedBefore, normalizedSelected, normalizedAfter].filter(Boolean).join(" "));
     if (!fullText) return normalizedSelected;
     const targetStart = normalizedBefore.length + (normalizedBefore ? 1 : 0);
     const targetEnd = targetStart + normalizedSelected.length;
-    const sentences = Array.from(fullText.matchAll(SENTENCE_PATTERN)).map((match) => ({
-      text: normalizeText(match[0] || ""),
+    const sentences = Array.from(fullText.matchAll(SENTENCE_PATTERN$1)).map((match) => ({
+      text: normalizeText$1(match[0] || ""),
       start: match.index ?? 0,
       end: (match.index ?? 0) + (match[0] || "").length
     })).filter((sentence) => sentence.text);
     if (sentences.length === 0) {
       const sliceStart = Math.max(0, targetStart - 360);
       const sliceEnd = Math.min(fullText.length, targetEnd + 360);
-      return normalizeText(fullText.slice(sliceStart, sliceEnd));
+      return normalizeText$1(fullText.slice(sliceStart, sliceEnd));
     }
     const targetSentenceIndex = sentences.findIndex((sentence) => sentence.start <= targetEnd && sentence.end >= targetStart);
     if (targetSentenceIndex < 0) {
-      return normalizeText(fullText.slice(Math.max(0, targetStart - 360), Math.min(fullText.length, targetEnd + 360)));
+      return normalizeText$1(fullText.slice(Math.max(0, targetStart - 360), Math.min(fullText.length, targetEnd + 360)));
     }
-    const startIndex = Math.max(0, targetSentenceIndex - CONTEXT_SENTENCE_RADIUS);
-    const endIndex = Math.min(sentences.length, targetSentenceIndex + CONTEXT_SENTENCE_RADIUS + 1);
-    return normalizeText(sentences.slice(startIndex, endIndex).map((sentence) => sentence.text).join(" "));
+    const startIndex = Math.max(0, targetSentenceIndex - CONTEXT_SENTENCE_RADIUS$1);
+    const endIndex = Math.min(sentences.length, targetSentenceIndex + CONTEXT_SENTENCE_RADIUS$1 + 1);
+    return normalizeText$1(sentences.slice(startIndex, endIndex).map((sentence) => sentence.text).join(" "));
   };
-  const getVisibleRangeRect = (range) => {
+  const getVisibleRangeRect$1 = (range) => {
     const rects = Array.from(range.getClientRects()).filter((rect2) => rect2.width > 0 && rect2.height > 0);
     if (rects.length > 0) return rects[0];
     const rect = range.getBoundingClientRect();
     return rect.width > 0 && rect.height > 0 ? rect : null;
   };
-  const getFloatingButtonPosition = (rect) => {
+  const getFloatingButtonPosition$1 = (rect) => {
     var _a, _b, _c, _d;
     const viewportWidth = ((_a = window.visualViewport) == null ? void 0 : _a.width) ?? window.innerWidth;
     const viewportHeight = ((_b = window.visualViewport) == null ? void 0 : _b.height) ?? window.innerHeight;
@@ -15011,48 +15008,48 @@ ${paragraph.text}`,
       Math.max(viewportLeft + 44, rect.left + rect.width / 2)
     );
     let top = rect.top - 38;
-    if (top < viewportTop + FLOATING_BUTTON_MARGIN) {
+    if (top < viewportTop + FLOATING_BUTTON_MARGIN$1) {
       top = rect.bottom + 8;
     }
     return {
       left,
       top: Math.min(
         viewportTop + viewportHeight - 38,
-        Math.max(viewportTop + FLOATING_BUTTON_MARGIN, top)
+        Math.max(viewportTop + FLOATING_BUTTON_MARGIN$1, top)
       )
     };
   };
-  const captureSelection = (mode) => {
+  const captureSelection$1 = (mode) => {
     const selection = window.getSelection();
-    const selectedText = normalizeText((selection == null ? void 0 : selection.toString()) || "");
+    const selectedText = normalizeText$1((selection == null ? void 0 : selection.toString()) || "");
     if (!selection || selection.rangeCount === 0 || selection.isCollapsed || !selectedText) {
       return null;
     }
-    const maxSelectionLength = mode === "word" ? MAX_WORD_SELECTION_LENGTH : MAX_CONTEXT_SELECTION_LENGTH;
+    const maxSelectionLength = mode === "word" ? MAX_WORD_SELECTION_LENGTH$1 : MAX_CONTEXT_SELECTION_LENGTH;
     if (selectedText.length > maxSelectionLength) {
       return null;
     }
-    if (isInsideLinkualRoot(selection.anchorNode) || isInsideLinkualRoot(selection.focusNode) || isInsideEditableElement(selection.anchorNode) || isInsideEditableElement(selection.focusNode)) {
+    if (isInsideLinkualRoot(selection.anchorNode) || isInsideLinkualRoot(selection.focusNode) || isInsideEditableElement$1(selection.anchorNode) || isInsideEditableElement$1(selection.focusNode)) {
       return null;
     }
     const range = selection.getRangeAt(0);
-    const scope = getSelectionScope(range);
+    const scope = getSelectionScope$1(range);
     if (!scope) return null;
-    const rect = getVisibleRangeRect(range);
+    const rect = getVisibleRangeRect$1(range);
     if (!rect) return null;
-    const beforeText = getRangeText(scope, range, "before");
-    const afterText = getRangeText(scope, range, "after");
-    const position = getFloatingButtonPosition(rect);
+    const beforeText = getRangeText$1(scope, range, "before");
+    const afterText = getRangeText$1(scope, range, "after");
+    const position = getFloatingButtonPosition$1(rect);
     return {
       text: selectedText,
-      context: mode === "word" ? extractSentenceContext(beforeText, selectedText, afterText) : selectedText,
-      source: getSourceTitle(),
+      context: mode === "word" ? extractSentenceContext$1(beforeText, selectedText, afterText) : selectedText,
+      source: getSourceTitle$1(),
       url: getPageUrl(),
       top: position.top,
       left: position.left
     };
   };
-  const UniversalVocabWidget = ({ onOpenSettings }) => {
+  const UniversalVocabWidget = ({ onOpenSettings, persistentControls }) => {
     const [isExpanded, setIsExpanded] = reactExports.useState(false);
     const [selection, setSelection] = reactExports.useState(null);
     const [word, setWord] = reactExports.useState("");
@@ -15079,6 +15076,7 @@ ${paragraph.text}`,
     const expandedDragRef = reactExports.useRef(null);
     const selectionTimerRef = reactExports.useRef(null);
     const articleTranslation = useArticleTranslation();
+    const shouldTrackSelection = isExpanded || !persistentControls;
     const hasPayload = Boolean(word.trim());
     const canSend = hasPayload;
     const statusText = reactExports.useMemo(() => {
@@ -15088,13 +15086,15 @@ ${paragraph.text}`,
       return "";
     }, [message, status]);
     const measureWidgetHeight = reactExports.useCallback(() => {
+      if (!persistentControls) return;
       const baseHeight = getDefaultExpandedHeight();
       const measuredHeight = widgetRef.current ? Math.ceil(widgetRef.current.scrollHeight) : 0;
       const nextHeight = Math.min(getMaxWidgetHeight(), Math.max(baseHeight, measuredHeight));
       setReservedHeight((currentHeight) => Math.abs(currentHeight - nextHeight) > 1 ? nextHeight : currentHeight);
-    }, []);
+    }, [persistentControls]);
     reactExports.useEffect(() => {
       var _a;
+      if (!persistentControls) return void 0;
       const updateReservedHeight = () => {
         syncVisualViewportHeightProperty();
         setReservedHeight(Math.min(getDefaultExpandedHeight(), getMaxWidgetHeight()));
@@ -15109,7 +15109,7 @@ ${paragraph.text}`,
         desktopQuery.removeEventListener("change", updateReservedHeight);
         (_a2 = window.visualViewport) == null ? void 0 : _a2.removeEventListener("resize", updateReservedHeight);
       };
-    }, [measureWidgetHeight]);
+    }, [measureWidgetHeight, persistentControls]);
     reactExports.useEffect(() => {
       if (!isExpanded) return void 0;
       const frameId = window.requestAnimationFrame(measureWidgetHeight);
@@ -15128,17 +15128,18 @@ ${paragraph.text}`,
         const nextCount = Number((detail == null ? void 0 : detail.pendingCount) || 0);
         setQueueCount(Number.isFinite(nextCount) ? nextCount : 0);
       };
+      if (!persistentControls) return void 0;
       window.addEventListener(QUEUE_COUNT_EVENT, updateQueueCount);
       window.dispatchEvent(new Event(QUEUE_REQUEST_COUNT_EVENT));
       return () => window.removeEventListener(QUEUE_COUNT_EVENT, updateQueueCount);
-    }, []);
+    }, [persistentControls]);
     reactExports.useEffect(() => {
       const handleNavigationRefresh = () => {
         setSelection(null);
         setSourceUrl(getPageUrl());
         window.requestAnimationFrame(() => {
           if (isExpanded) measureWidgetHeight();
-          syncVisualViewportHeightProperty();
+          if (persistentControls) syncVisualViewportHeightProperty();
         });
       };
       window.addEventListener(LINKUAL_NAVIGATION_EVENT$2, handleNavigationRefresh);
@@ -15147,13 +15148,13 @@ ${paragraph.text}`,
         window.removeEventListener(LINKUAL_NAVIGATION_EVENT$2, handleNavigationRefresh);
         window.removeEventListener("pageshow", handleNavigationRefresh);
       };
-    }, [isExpanded, measureWidgetHeight]);
+    }, [isExpanded, measureWidgetHeight, persistentControls]);
     const refreshSelection = reactExports.useCallback(() => {
-      if (!isExpanded) return;
-      setSelection(captureSelection(selectionMode));
-    }, [isExpanded, selectionMode]);
+      if (!shouldTrackSelection) return;
+      setSelection(captureSelection$1(selectionMode));
+    }, [selectionMode, shouldTrackSelection]);
     const scheduleSelectionRefresh = reactExports.useCallback((delay = 80) => {
-      if (!isExpanded) return;
+      if (!shouldTrackSelection) return;
       if (selectionTimerRef.current !== null) {
         window.clearTimeout(selectionTimerRef.current);
       }
@@ -15161,9 +15162,9 @@ ${paragraph.text}`,
         selectionTimerRef.current = null;
         refreshSelection();
       }, delay);
-    }, [isExpanded, refreshSelection]);
+    }, [refreshSelection, shouldTrackSelection]);
     reactExports.useEffect(() => {
-      if (!isExpanded) return void 0;
+      if (!shouldTrackSelection) return void 0;
       const handleSelectionChange = () => scheduleSelectionRefresh(90);
       const handlePointerUp = () => scheduleSelectionRefresh(20);
       const handleKeyUp = () => scheduleSelectionRefresh(20);
@@ -15179,7 +15180,7 @@ ${paragraph.text}`,
           selectionTimerRef.current = null;
         }
       };
-    }, [isExpanded, scheduleSelectionRefresh]);
+    }, [scheduleSelectionRefresh, shouldTrackSelection]);
     const handleAddSelection = () => {
       var _a;
       if (!selection) return;
@@ -15220,7 +15221,7 @@ ${paragraph.text}`,
         enqueueVocabTask({
           word: finalWord,
           context: finalContext,
-          source: source || getSourceTitle(),
+          source: source || getSourceTitle$1(),
           source_url: sourceUrl || getPageUrl()
         });
       } catch (err) {
@@ -15234,10 +15235,29 @@ ${paragraph.text}`,
       setSelection(null);
       (_a = window.getSelection()) == null ? void 0 : _a.removeAllRanges();
     };
+    const handleQuickAddSelection = () => {
+      var _a;
+      if (!selection) return;
+      try {
+        enqueueVocabTask({
+          word: selection.text,
+          context: selection.context,
+          source: selection.source,
+          source_url: selection.url
+        });
+        setStatus("success");
+        setMessage("已加入队列");
+      } catch (err) {
+        setStatus("error");
+        setMessage(err instanceof Error ? err.message : "加入失败");
+      }
+      setSelection(null);
+      (_a = window.getSelection()) == null ? void 0 : _a.removeAllRanges();
+    };
     const handleModeChange = (mode) => {
       setSelectionMode(mode);
       setMessage("");
-      window.setTimeout(() => setSelection(captureSelection(mode)), 0);
+      window.setTimeout(() => setSelection(captureSelection$1(mode)), 0);
     };
     const handleContextWheel = (event) => {
       const input = event.currentTarget;
@@ -15391,6 +15411,7 @@ ${paragraph.text}`,
       setIsExpanded(true);
     };
     reactExports.useEffect(() => {
+      if (!persistentControls) return void 0;
       if (!isExpanded) return void 0;
       const clampExpandedPosition2 = () => setExpandedPosition((current) => {
         var _a;
@@ -15409,7 +15430,26 @@ ${paragraph.text}`,
         window.cancelAnimationFrame(frameId);
         window.removeEventListener("resize", clampExpandedPosition2);
       };
-    }, [isExpanded, reservedHeight]);
+    }, [isExpanded, persistentControls, reservedHeight]);
+    if (!persistentControls) {
+      return selection ? /* @__PURE__ */ jsxRuntimeExports.jsx(
+        "button",
+        {
+          type: "button",
+          className: "linkual-universal-floating-add linkual-universal-quick-add",
+          onMouseDown: (event) => event.preventDefault(),
+          onPointerDown: (event) => event.preventDefault(),
+          onClick: handleQuickAddSelection,
+          style: {
+            top: selection.top,
+            left: selection.left,
+            "--linkual-theme": themeColor
+          },
+          title: status === "error" ? message : "加入 Linkual 生词队列",
+          children: "加入生词"
+        }
+      ) : null;
+    }
     if (!isExpanded) {
       return /* @__PURE__ */ jsxRuntimeExports.jsxs(
         "div",
@@ -15773,6 +15813,7 @@ ${paragraph.text}`,
     const isVideoSite = isYouTubeHost$1();
     const isArticleTranslationEnabled = isArxivHtmlPage();
     const [inVideo, setInVideo] = reactExports.useState(adapter.isVideoPage());
+    const hasPersistentControls = isVideoSite && inVideo || isArticleTranslationEnabled;
     const getAdpCfg = (key) => {
       const val = ConfigService.get(`${key}_${adapter.platformName}`);
       return val !== null && val !== void 0 && val !== "" ? val : ConfigService.get(key);
@@ -15988,11 +16029,17 @@ ${paragraph.text}`,
           ] })
         ] }) })
       ] }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx(UniversalVocabWidget, { onOpenSettings: () => setIsSettingsOpen(true) }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx(
+        UniversalVocabWidget,
+        {
+          onOpenSettings: () => setIsSettingsOpen(true),
+          persistentControls: hasPersistentControls
+        }
+      ),
       /* @__PURE__ */ jsxRuntimeExports.jsx(ArticleTranslator, {}),
       showMobileFullscreenButton && /* @__PURE__ */ jsxRuntimeExports.jsx(MobileFullscreenButton, { adapter }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx(VocabQueue, {}),
-      isSettingsOpen && /* @__PURE__ */ jsxRuntimeExports.jsx(Settings, { adapter, onClose: () => setIsSettingsOpen(false) })
+      hasPersistentControls && /* @__PURE__ */ jsxRuntimeExports.jsx(VocabQueue, {}),
+      hasPersistentControls && isSettingsOpen && /* @__PURE__ */ jsxRuntimeExports.jsx(Settings, { adapter, onClose: () => setIsSettingsOpen(false) })
     ] }) });
   };
   const PLAYER_RESPONSE_KEYS = [
@@ -17250,6 +17297,1756 @@ ${paragraph.text}`,
     }
     return getCachedAdapter("empty", () => new EmptyAdapter());
   }
+  const MAX_WORD_SELECTION_LENGTH = 180;
+  const CONTEXT_SENTENCE_RADIUS = 2;
+  const SENTENCE_PATTERN = /[^.!?。！？]+[.!?。！？]+["'”’）)]*|[^.!?。！？]+$/g;
+  const FLOATING_BUTTON_MARGIN = 10;
+  const BUTTON_WIDTH_ESTIMATE = 88;
+  const BUTTON_HEIGHT_ESTIMATE = 34;
+  const normalizeText = (value) => value.replace(/\s+/g, " ").trim();
+  const getSourceTitle = () => {
+    const title = normalizeText(document.title.replace(/^\(\d+\)\s+/, ""));
+    return title || window.location.hostname || window.location.href;
+  };
+  const getElementFromNode = (node) => {
+    if (!node) return null;
+    if (node instanceof Element) return node;
+    return node.parentElement;
+  };
+  const isInsideLinkualElement = (node) => {
+    const element = getElementFromNode(node);
+    return Boolean(element == null ? void 0 : element.closest('[data-linkual-quick-selection="true"], #linkual-root'));
+  };
+  const isInsideEditableElement = (node) => {
+    const element = getElementFromNode(node);
+    if (!element) return false;
+    return Boolean(element.closest("input, textarea, select, [contenteditable]"));
+  };
+  const getSelectionScope = (range) => {
+    let element = getElementFromNode(range.commonAncestorContainer);
+    let fallback = null;
+    while (element && element !== document.body && element instanceof HTMLElement) {
+      if (isInsideLinkualElement(element)) return null;
+      const tagName = element.tagName.toLowerCase();
+      const textLength = normalizeText(element.textContent || "").length;
+      if (["article", "main", "section"].includes(tagName) || element.getAttribute("role") === "main") {
+        return element;
+      }
+      if (["p", "li", "blockquote", "td", "th"].includes(tagName)) {
+        fallback = element;
+      } else if (tagName === "div" && textLength > 220 && textLength < 8e3) {
+        return element;
+      }
+      element = element.parentElement;
+    }
+    return fallback || document.body;
+  };
+  const getRangeText = (scope, range, side) => {
+    const scopedRange = document.createRange();
+    scopedRange.selectNodeContents(scope);
+    try {
+      if (side === "before") {
+        scopedRange.setEnd(range.startContainer, range.startOffset);
+      } else {
+        scopedRange.setStart(range.endContainer, range.endOffset);
+      }
+      return scopedRange.toString();
+    } catch {
+      return "";
+    } finally {
+      scopedRange.detach();
+    }
+  };
+  const extractSentenceContext = (beforeText, selectedText, afterText) => {
+    const normalizedBefore = normalizeText(beforeText);
+    const normalizedSelected = normalizeText(selectedText);
+    const normalizedAfter = normalizeText(afterText);
+    const fullText = normalizeText([normalizedBefore, normalizedSelected, normalizedAfter].filter(Boolean).join(" "));
+    if (!fullText) return normalizedSelected;
+    const targetStart = normalizedBefore.length + (normalizedBefore ? 1 : 0);
+    const targetEnd = targetStart + normalizedSelected.length;
+    const sentences = Array.from(fullText.matchAll(SENTENCE_PATTERN)).map((match) => ({
+      text: normalizeText(match[0] || ""),
+      start: match.index ?? 0,
+      end: (match.index ?? 0) + (match[0] || "").length
+    })).filter((sentence) => sentence.text);
+    if (sentences.length === 0) {
+      const sliceStart = Math.max(0, targetStart - 360);
+      const sliceEnd = Math.min(fullText.length, targetEnd + 360);
+      return normalizeText(fullText.slice(sliceStart, sliceEnd));
+    }
+    const targetSentenceIndex = sentences.findIndex((sentence) => sentence.start <= targetEnd && sentence.end >= targetStart);
+    if (targetSentenceIndex < 0) {
+      return normalizeText(fullText.slice(Math.max(0, targetStart - 360), Math.min(fullText.length, targetEnd + 360)));
+    }
+    const startIndex = Math.max(0, targetSentenceIndex - CONTEXT_SENTENCE_RADIUS);
+    const endIndex = Math.min(sentences.length, targetSentenceIndex + CONTEXT_SENTENCE_RADIUS + 1);
+    return normalizeText(sentences.slice(startIndex, endIndex).map((sentence) => sentence.text).join(" "));
+  };
+  const getVisibleRangeRect = (range) => {
+    const rects = Array.from(range.getClientRects()).filter((rect2) => rect2.width > 0 && rect2.height > 0);
+    if (rects.length > 0) return rects[0];
+    const rect = range.getBoundingClientRect();
+    return rect.width > 0 && rect.height > 0 ? rect : null;
+  };
+  const getFloatingButtonPosition = (rect) => {
+    var _a, _b, _c, _d;
+    const viewportWidth = ((_a = window.visualViewport) == null ? void 0 : _a.width) ?? window.innerWidth;
+    const viewportHeight = ((_b = window.visualViewport) == null ? void 0 : _b.height) ?? window.innerHeight;
+    const viewportLeft = ((_c = window.visualViewport) == null ? void 0 : _c.offsetLeft) ?? 0;
+    const viewportTop = ((_d = window.visualViewport) == null ? void 0 : _d.offsetTop) ?? 0;
+    const left = Math.min(
+      viewportLeft + viewportWidth - BUTTON_WIDTH_ESTIMATE / 2 - FLOATING_BUTTON_MARGIN,
+      Math.max(viewportLeft + BUTTON_WIDTH_ESTIMATE / 2 + FLOATING_BUTTON_MARGIN, rect.left + rect.width / 2)
+    );
+    let top = rect.top - BUTTON_HEIGHT_ESTIMATE - 8;
+    if (top < viewportTop + FLOATING_BUTTON_MARGIN) {
+      top = rect.bottom + 8;
+    }
+    return {
+      left,
+      top: Math.min(
+        viewportTop + viewportHeight - BUTTON_HEIGHT_ESTIMATE - FLOATING_BUTTON_MARGIN,
+        Math.max(viewportTop + FLOATING_BUTTON_MARGIN, top)
+      )
+    };
+  };
+  const captureSelection = () => {
+    const selection = window.getSelection();
+    const selectedText = normalizeText((selection == null ? void 0 : selection.toString()) || "");
+    if (!selection || selection.rangeCount === 0 || selection.isCollapsed || !selectedText) {
+      return null;
+    }
+    if (selectedText.length > MAX_WORD_SELECTION_LENGTH) {
+      return null;
+    }
+    if (isInsideLinkualElement(selection.anchorNode) || isInsideLinkualElement(selection.focusNode) || isInsideEditableElement(selection.anchorNode) || isInsideEditableElement(selection.focusNode)) {
+      return null;
+    }
+    const range = selection.getRangeAt(0);
+    const scope = getSelectionScope(range);
+    if (!scope) return null;
+    const rect = getVisibleRangeRect(range);
+    if (!rect) return null;
+    const beforeText = getRangeText(scope, range, "before");
+    const afterText = getRangeText(scope, range, "after");
+    const position = getFloatingButtonPosition(rect);
+    return {
+      text: selectedText,
+      context: extractSentenceContext(beforeText, selectedText, afterText),
+      source: getSourceTitle(),
+      url: window.location.href,
+      top: position.top,
+      left: position.left
+    };
+  };
+  const applyButtonStyle = (button, selection) => {
+    const themeColor = ConfigService.get("theme_color") || "#6a1b9a";
+    button.style.cssText = [
+      "all: initial",
+      "position: fixed",
+      `top: ${selection.top}px`,
+      `left: ${selection.left}px`,
+      "transform: translateX(-50%)",
+      "z-index: 2147483647",
+      "min-height: 30px",
+      "max-width: min(180px, calc(100vw - 24px))",
+      "box-sizing: border-box",
+      "padding: 0 12px",
+      "border: 0",
+      "border-radius: 6px",
+      `background: ${themeColor}`,
+      "color: #fff",
+      "box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2)",
+      "cursor: pointer",
+      'font: 800 12px/30px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+      "white-space: nowrap",
+      "text-align: center",
+      "user-select: none",
+      "-webkit-user-select: none",
+      "pointer-events: auto"
+    ].join(";");
+  };
+  function installQuickSelectionAdd() {
+    let button = null;
+    let currentSelection = null;
+    let refreshTimer = null;
+    let removeTimer = null;
+    const removeButton = () => {
+      if (removeTimer !== null) {
+        window.clearTimeout(removeTimer);
+        removeTimer = null;
+      }
+      button == null ? void 0 : button.remove();
+      button = null;
+      currentSelection = null;
+    };
+    const showButton = (selection) => {
+      var _a;
+      currentSelection = selection;
+      if (!button) {
+        button = document.createElement("button");
+        button.type = "button";
+        button.dataset.linkualQuickSelection = "true";
+        button.textContent = "加入生词";
+        button.title = "加入 Linkual 生词队列";
+        button.addEventListener("pointerdown", (event) => event.preventDefault());
+        button.addEventListener("mousedown", (event) => event.preventDefault());
+        button.addEventListener("click", () => {
+          var _a2;
+          if (!currentSelection) return;
+          try {
+            enqueueVocabTask({
+              word: currentSelection.text,
+              context: currentSelection.context,
+              source: currentSelection.source,
+              source_url: currentSelection.url
+            });
+            button.textContent = "已加入";
+            (_a2 = window.getSelection()) == null ? void 0 : _a2.removeAllRanges();
+            removeTimer = window.setTimeout(removeButton, 700);
+          } catch (err) {
+            button.textContent = "加入失败";
+            button.title = err instanceof Error ? err.message : "加入失败";
+            removeTimer = window.setTimeout(removeButton, 1200);
+          }
+        });
+      }
+      if (!button.isConnected) {
+        (_a = document.body) == null ? void 0 : _a.append(button);
+      }
+      button.textContent = "加入生词";
+      button.title = "加入 Linkual 生词队列";
+      applyButtonStyle(button, selection);
+    };
+    const refreshSelection = () => {
+      refreshTimer = null;
+      const selection = captureSelection();
+      if (selection) {
+        showButton(selection);
+      } else if (!(button == null ? void 0 : button.matches(":hover"))) {
+        removeButton();
+      }
+    };
+    const scheduleSelectionRefresh = (delay = 70) => {
+      if (refreshTimer !== null) {
+        window.clearTimeout(refreshTimer);
+      }
+      refreshTimer = window.setTimeout(refreshSelection, delay);
+    };
+    const handlePointerDown = (event) => {
+      if (event.target instanceof Element && event.target.closest('[data-linkual-quick-selection="true"]')) return;
+      removeButton();
+    };
+    const handleSelectionChange = () => scheduleSelectionRefresh(90);
+    const handlePointerUp = () => scheduleSelectionRefresh(20);
+    const handleKeyUp = () => scheduleSelectionRefresh(20);
+    document.addEventListener("selectionchange", handleSelectionChange);
+    window.addEventListener("pointerup", handlePointerUp, true);
+    window.addEventListener("keyup", handleKeyUp, true);
+    window.addEventListener("pointerdown", handlePointerDown, true);
+    window.addEventListener("scroll", removeButton, true);
+    window.addEventListener("pagehide", removeButton);
+    return () => {
+      if (refreshTimer !== null) {
+        window.clearTimeout(refreshTimer);
+        refreshTimer = null;
+      }
+      document.removeEventListener("selectionchange", handleSelectionChange);
+      window.removeEventListener("pointerup", handlePointerUp, true);
+      window.removeEventListener("keyup", handleKeyUp, true);
+      window.removeEventListener("pointerdown", handlePointerDown, true);
+      window.removeEventListener("scroll", removeButton, true);
+      window.removeEventListener("pagehide", removeButton);
+      removeButton();
+    };
+  }
+  const appCss = `::highlight(linkual-article-source-active) {
+  background: rgba(104, 69, 154, 0.1);
+  text-decoration: underline;
+  text-decoration-color: rgba(104, 69, 154, 0.55);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+#linkual-root {
+  --linkual-theme: #6a1b9a;
+  --linkual-done: #e8f5e9;
+  --linkual-error: #ffebee;
+}
+
+#linkual-root .linkual-wrap {
+  position: fixed;
+  z-index: 2147483647;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  font-family: sans-serif;
+  color: #333;
+  pointer-events: auto;
+}
+
+#linkual-root .linkual-wrap.layout-right {
+  top: 0;
+  right: 0;
+  max-width: min(100vw, var(--linkual-sidebar-width, 500px));
+  height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom, 0px));
+  max-height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom, 0px));
+  box-shadow: -5px 0 15px rgba(0,0,0,0.1);
+}
+
+#linkual-root .linkual-wrap.layout-bottom {
+  bottom: calc(var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom, 0px));
+  left: 0;
+  width: 100vw !important;
+  max-width: 100vw;
+  max-height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom, 0px));
+  box-shadow: 0 -5px 15px rgba(0,0,0,0.1);
+}
+
+#linkual-root .resizer {
+  position: absolute;
+  background: transparent;
+  z-index: 999;
+  transition: background 0.2s;
+}
+
+#linkual-root .linkual-wrap.layout-right .resizer {
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 5px;
+  cursor: ew-resize;
+}
+
+#linkual-root .linkual-wrap.layout-bottom .resizer {
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  cursor: ns-resize;
+}
+
+#linkual-root .resizer:hover,
+#linkual-root .resizer:active {
+  background: var(--linkual-theme);
+}
+
+#linkual-root .header {
+  background: var(--linkual-theme);
+  color: #fff;
+  padding: 12px 16px;
+  font-weight: bold;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  box-sizing: border-box;
+}
+
+#linkual-root .header span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#linkual-root .settings-icon {
+  cursor: pointer;
+  user-select: none;
+}
+
+#linkual-root .linkual-mobile-fullscreen {
+  position: fixed;
+  right: 20px;
+  bottom: calc(20px + var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom, 0px));
+  z-index: 2147483647;
+  min-width: 78px;
+  min-height: 40px;
+  padding: 10px 15px;
+  background: #000;
+  color: #fff;
+  border: 0;
+  border-radius: 5px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  cursor: grab;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.2;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  user-select: none;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  pointer-events: auto;
+}
+
+#linkual-root .linkual-mobile-fullscreen.is-dragging {
+  cursor: grabbing;
+}
+
+html.linkual-mobile-fullscreen-fallback,
+html.linkual-mobile-fullscreen-fallback body {
+  width: var(--linkual-mobile-viewport-width, 100vw) !important;
+  height: var(--linkual-mobile-viewport-height, 100vh) !important;
+  max-width: var(--linkual-mobile-viewport-width, 100vw) !important;
+  max-height: var(--linkual-mobile-viewport-height, 100vh) !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
+  touch-action: none !important;
+  background: #000 !important;
+}
+
+html.linkual-mobile-fullscreen-fallback {
+  position: fixed !important;
+  inset: 0 !important;
+}
+
+#linkual-root .linkual-player-controls {
+  position: fixed;
+  left: clamp(6px, 2vw, 12px);
+  bottom: calc(var(--linkual-sidebar-height, 0px) + var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom, 0px) + 14px);
+  z-index: 2147483647;
+  width: calc(100vw - var(--linkual-sidebar-width, 0px) - clamp(12px, 4vw, 24px));
+  max-width: calc(100vw - var(--linkual-sidebar-width, 0px) - clamp(12px, 4vw, 24px));
+  max-height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom, 0px) - 12px);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.72);
+  color: #fff;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.24);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  pointer-events: auto;
+  backdrop-filter: blur(8px);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+#linkual-root .linkual-player-progress-row {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) 52px;
+  align-items: center;
+  gap: 10px;
+}
+
+#linkual-root .linkual-player-time {
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+}
+
+#linkual-root .linkual-player-progress {
+  width: 100%;
+  height: 18px;
+  margin: 0;
+  padding: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+#linkual-root .linkual-player-progress::-webkit-slider-runnable-track {
+  height: 5px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    var(--linkual-theme, #6a1b9a) 0%,
+    var(--linkual-theme, #6a1b9a) var(--linkual-progress, 0%),
+    rgba(255,255,255,0.32) var(--linkual-progress, 0%),
+    rgba(255,255,255,0.32) 100%
+  );
+}
+
+#linkual-root .linkual-player-progress::-moz-range-track {
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.32);
+}
+
+#linkual-root .linkual-player-progress::-moz-range-progress {
+  height: 5px;
+  border-radius: 999px;
+  background: var(--linkual-theme, #6a1b9a);
+}
+
+#linkual-root .linkual-player-progress::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 15px;
+  height: 15px;
+  margin-top: -5px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  background: var(--linkual-theme, #6a1b9a);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.32);
+}
+
+#linkual-root .linkual-player-progress::-moz-range-thumb {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  background: var(--linkual-theme, #6a1b9a);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.32);
+}
+
+#linkual-root .linkual-player-button-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+#linkual-root .linkual-player-btn {
+  height: 31px;
+  min-width: 44px;
+  padding: 0 12px;
+  border: 1px solid rgba(255,255,255,0.16);
+  border-radius: 6px;
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+  cursor: pointer;
+  font: 700 12px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+#linkual-root .linkual-player-btn.primary {
+  min-width: 58px;
+  background: var(--linkual-theme, #6a1b9a);
+  border-color: transparent;
+}
+
+#linkual-root .linkual-player-btn:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+#linkual-root .linkual-player-btn.primary:hover {
+  filter: brightness(1.08);
+}
+
+#linkual-root .list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 10px 12px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+#linkual-root .list::-webkit-scrollbar {
+  display: none;
+}
+
+#linkual-root .empty-tip {
+  padding: 50px 20px;
+  text-align: center;
+  color: #999;
+  font-style: italic;
+}
+
+/* These nodes are portaled into the article so the translation follows each paragraph. */
+.linkual-article-translation-host {
+  display: block !important;
+  margin: 0.7em 0 1.3em !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: inherit !important;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+  text-align: left !important;
+}
+
+.linkual-article-translation {
+  box-sizing: border-box !important;
+  padding: 0.85em 1em !important;
+  border-left: 3px solid #7e57c2 !important;
+  border-radius: 0 6px 6px 0 !important;
+  background: rgba(126, 87, 194, 0.08) !important;
+  color: #3f3a49 !important;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+  font-size: 0.92em !important;
+  line-height: 1.65 !important;
+  text-align: left !important;
+}
+
+.linkual-article-translation.loading {
+  border-left-color: #42a5f5 !important;
+}
+
+.linkual-article-translation.error {
+  border-left-color: #e57373 !important;
+  background: rgba(229, 115, 115, 0.1) !important;
+}
+
+.linkual-article-translation-toolbar {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 0.75em !important;
+  margin-bottom: 0.35em !important;
+  font-size: 0.78em !important;
+  line-height: 1.3 !important;
+}
+
+.linkual-article-translation-label {
+  color: #7652a6 !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.01em !important;
+}
+
+.linkual-article-translation-toolbar button,
+.linkual-universal-translation-row button {
+  box-sizing: border-box !important;
+  min-height: 28px !important;
+  padding: 4px 9px !important;
+  border: 1px solid rgba(83, 65, 111, 0.25) !important;
+  border-radius: 5px !important;
+  background: #fff !important;
+  color: #55406f !important;
+  cursor: pointer !important;
+  font: 600 12px/1.2 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+}
+
+.linkual-article-translation-toolbar button:hover,
+.linkual-universal-translation-row button:hover {
+  background: #f1ecf8 !important;
+}
+
+.linkual-article-translation-toolbar button:disabled,
+.linkual-universal-translation-row button:disabled {
+  cursor: wait !important;
+  opacity: 0.65 !important;
+}
+
+.linkual-article-translation-text,
+.linkual-article-translation-placeholder {
+  white-space: pre-wrap !important;
+  overflow-wrap: anywhere !important;
+}
+
+.linkual-article-source-locatable {
+  cursor: crosshair !important;
+}
+
+.linkual-article-translation-sentence {
+  display: inline !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 3px !important;
+  background: transparent !important;
+  color: inherit !important;
+  cursor: pointer !important;
+  font: inherit !important;
+  line-height: inherit !important;
+  text-align: left !important;
+  white-space: pre-wrap !important;
+}
+
+.linkual-article-translation-sentence::after {
+  content: ' ' !important;
+}
+
+.linkual-article-translation-sentence:hover,
+.linkual-article-translation-sentence.active {
+  background: rgba(104, 69, 154, 0.18) !important;
+  box-shadow: 0 0 0 2px rgba(104, 69, 154, 0.08) !important;
+}
+
+.linkual-article-translation-placeholder {
+  color: #7b7286 !important;
+  font-size: 0.9em !important;
+  font-style: italic !important;
+}
+
+@media (max-width: 600px) {
+  .linkual-article-translation {
+    padding: 0.75em 0.8em !important;
+  }
+
+  .linkual-article-translation-toolbar {
+    align-items: flex-start !important;
+    flex-direction: column !important;
+    gap: 5px !important;
+  }
+}
+
+#linkual-root .load-more-tip {
+  padding: 16px 12px 22px;
+  text-align: center;
+  color: #999;
+  font-size: 12px;
+}
+
+#linkual-root .item {
+  padding: 12px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  border: 1px solid #f0f0f0;
+  transition: 0.2s;
+}
+
+#linkual-root .item.active {
+  border-left: 5px solid var(--linkual-theme);
+  background: rgba(106, 27, 154, 0.05);
+}
+
+#linkual-root .ctrl-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+  align-items: center;
+  padding: 4px;
+  border-radius: 4px;
+  background: transparent;
+  transition: background 0.2s;
+}
+
+#linkual-root .ctrl-bar.done {
+  background-color: var(--linkual-done, #e8f5e9);
+}
+
+#linkual-root .ctrl-bar.error {
+  background-color: var(--linkual-error, #ffebee);
+  border: 1px solid rgba(255,0,0,0.1);
+}
+
+#linkual-root .tag-btn {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  transition: 0.2s;
+  user-select: none;
+}
+
+#linkual-root .tag-play {
+  background: #eee;
+  color: #666;
+}
+
+#linkual-root .tag-play:hover {
+  background: var(--linkual-theme);
+  color: white;
+}
+
+#linkual-root .tag-pin {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+#linkual-root .tag-pin:hover {
+  background: #1976d2;
+  color: white;
+}
+
+#linkual-root .btn-parse {
+  flex: 0 0 auto;
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: #aaa;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  user-select: none;
+  padding: 4px 7px;
+  line-height: 1.2;
+  transition: 0.2s;
+}
+
+#linkual-root .btn-parse:hover {
+  color: #333;
+  background: rgba(0,0,0,0.05);
+  border-color: rgba(0,0,0,0.08);
+}
+
+#linkual-root .btn-chevron {
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: 0.2s;
+  user-select: none;
+  color: #666;
+}
+
+#linkual-root .btn-chevron:hover {
+  background: rgba(0,0,0,0.1);
+}
+
+#linkual-root .text-content {
+  font-size: 14px;
+  line-height: 1.5;
+  padding: 2px 0;
+  color: #333;
+  cursor: text;
+  -webkit-user-select: text;
+  user-select: text;
+  overflow-wrap: anywhere;
+  -webkit-touch-callout: default;
+}
+
+#linkual-root .linkual-selection-add {
+  position: fixed;
+  z-index: 999999;
+  min-height: 38px;
+  max-width: min(320px, calc(100vw - 24px));
+  padding: 8px 12px;
+  background: var(--linkual-theme, #6a1b9a);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: bold;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  pointer-events: auto;
+}
+
+#linkual-root .linkual-selection-add-floating {
+  transform: translateX(-50%);
+}
+
+#linkual-root .linkual-selection-add-dock {
+  left: 12px;
+  right: 12px;
+  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  width: calc(100vw - 24px);
+  max-width: none;
+  min-height: 46px;
+  justify-content: center;
+  font-size: 14px;
+}
+
+#linkual-root .linkual-selection-add-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#linkual-root .ai-box {
+  border-top: 1px dashed #ccc;
+  margin-top: 8px;
+  padding-top: 8px;
+  font-size: 13px;
+  white-space: pre-wrap;
+  line-height: 1.6;
+  cursor: text;
+}
+
+#linkual-root .lan-sync-module {
+  border-top: 1px solid #eee;
+  padding: 12px 16px;
+  background: #fafafa;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: auto;
+}
+
+#linkual-root .sync-input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 12px;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+#linkual-root .sync-input:focus {
+  border-color: var(--linkual-theme);
+}
+
+#linkual-root .sync-btn {
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: bold;
+  color: #fff;
+  background-color: var(--linkual-theme);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+#linkual-root .sync-btn:hover {
+  opacity: 0.9;
+}
+
+#linkual-root .sync-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+#linkual-root .sync-btn.success {
+  background-color: #4caf50;
+}
+
+#linkual-root .sync-btn.error {
+  background-color: #f44336;
+}
+
+#linkual-root .linkual-universal-widget {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2147483647;
+  width: 100vw;
+  max-width: 100vw;
+  min-height: calc(var(--linkual-universal-widget-height, 58px) + env(safe-area-inset-bottom, 0px));
+  max-height: calc(var(--linkual-visual-viewport-height, 100vh) - 8px);
+  padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
+  box-sizing: border-box;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  background: #fff;
+  color: #222;
+  border-top: 1px solid rgba(0, 0, 0, 0.12);
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.14);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  pointer-events: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+#linkual-root .linkual-universal-floating-window {
+  left: 8px;
+  top: 8px;
+  right: auto;
+  bottom: auto;
+  width: min(600px, calc(100vw - 16px));
+  max-width: min(600px, calc(100vw - 16px));
+  min-height: 0;
+  max-height: min(620px, calc(100vh - 16px));
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  border-radius: 12px;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.24);
+  overflow-x: hidden;
+}
+
+#linkual-root .linkual-universal-floating-window .linkual-universal-top {
+  flex: 1 0 100%;
+  min-width: 0;
+}
+
+#linkual-root .linkual-universal-floating-window .linkual-universal-form {
+  flex: 1 0 100%;
+  grid-template-columns: minmax(0, 1fr) 34px 36px auto;
+  gap: 6px;
+  min-width: 0;
+}
+
+#linkual-root .linkual-universal-floating-window .linkual-universal-field.field-context {
+  grid-column: 1 / -1;
+  grid-row: 2;
+}
+
+#linkual-root .linkual-universal-floating-window .linkual-universal-clear {
+  grid-column: 2;
+  grid-row: 1;
+  width: 34px;
+}
+
+#linkual-root .linkual-universal-floating-window .linkual-universal-send {
+  grid-column: 3;
+  grid-row: 1;
+  width: 36px;
+  padding: 0;
+}
+
+#linkual-root .linkual-universal-floating-window .linkual-universal-inline-actions {
+  grid-column: 4;
+  grid-row: 1;
+  justify-content: flex-end;
+}
+
+#linkual-root .linkual-universal-widget ~ .linkual-mobile-fullscreen {
+  bottom: calc(20px + var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom, 0px));
+}
+
+#linkual-root .linkual-universal-top {
+  flex: 0 1 390px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: auto;
+  max-width: 100%;
+  min-width: min(260px, 100%);
+  min-height: 34px;
+}
+
+#linkual-root .linkual-universal-selection {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #444;
+  font-size: 13px;
+}
+
+#linkual-root .linkual-universal-selection-label {
+  flex: 0 0 auto;
+  color: #666;
+  font-weight: 700;
+}
+
+#linkual-root .linkual-universal-selection-text {
+  min-width: 0;
+  max-width: min(180px, 14vw);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #111;
+  font-weight: 700;
+}
+
+#linkual-root .linkual-universal-muted {
+  color: #888;
+}
+
+#linkual-root .linkual-universal-actions {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
+}
+
+#linkual-root .linkual-universal-status {
+  max-width: 130px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  color: #666;
+}
+
+#linkual-root .linkual-universal-status.status-success {
+  color: #17803d;
+}
+
+#linkual-root .linkual-universal-status.status-error {
+  color: #c62828;
+}
+
+#linkual-root .linkual-universal-add-btn,
+#linkual-root .linkual-universal-icon-btn,
+#linkual-root .linkual-universal-clear,
+#linkual-root .linkual-universal-send {
+  border: 0;
+  border-radius: 6px;
+  min-height: 30px;
+  padding: 0 12px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: inherit;
+}
+
+#linkual-root .linkual-universal-icon-btn,
+#linkual-root .linkual-universal-send {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+#linkual-root .linkual-universal-add-btn,
+#linkual-root .linkual-universal-send {
+  background: var(--linkual-theme, #000);
+  color: #fff;
+}
+
+#linkual-root .linkual-universal-icon-btn {
+  background: #f1f1f1;
+  color: #333;
+}
+
+#linkual-root .linkual-universal-queue-btn {
+  position: relative;
+  background: var(--linkual-theme, #000);
+  color: #fff;
+}
+
+#linkual-root .linkual-universal-button-icon {
+  display: none;
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+#linkual-root .linkual-universal-button-text {
+  min-width: 0;
+}
+
+#linkual-root .linkual-universal-queue-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #f44336;
+  color: #fff;
+  font-size: 10px;
+  line-height: 1;
+}
+
+#linkual-root .linkual-universal-clear {
+  width: 34px;
+  padding: 0;
+  background: #f3f3f3;
+  color: #555;
+}
+
+#linkual-root .linkual-universal-form {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(120px, 190px) minmax(160px, 1fr) 34px auto auto;
+  align-items: stretch;
+  gap: 8px;
+  min-width: min(520px, 100%);
+  max-width: 100%;
+}
+
+#linkual-root .linkual-universal-inline-actions {
+  align-self: center;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  min-width: 0;
+}
+
+#linkual-root .linkual-universal-field {
+  min-width: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+}
+
+#linkual-root .linkual-universal-mode-tab {
+  flex: 0 0 auto;
+  min-width: 48px;
+  height: 34px;
+  padding: 0 8px;
+  border: 1px solid #d7d7d7;
+  border-radius: 6px;
+  background: #f6f6f6;
+  color: #555;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+#linkual-root .linkual-universal-mode-tab.active {
+  border-color: var(--linkual-theme, #000);
+  background: var(--linkual-theme, #000);
+  color: #fff;
+}
+
+#linkual-root .linkual-universal-field input {
+  min-width: 0;
+  width: 100%;
+  height: 34px;
+  box-sizing: border-box;
+  border: 1px solid #d7d7d7;
+  border-radius: 6px;
+  padding: 7px 9px;
+  color: #222;
+  background: #fff;
+  outline: none;
+  font: 13px/1.35 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  letter-spacing: 0;
+}
+
+#linkual-root .linkual-universal-field input:focus {
+  border-color: var(--linkual-theme, #000);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.08);
+}
+
+#linkual-root .linkual-universal-field.field-context input {
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+#linkual-root .linkual-universal-field.field-context input::-webkit-scrollbar {
+  display: none;
+}
+
+#linkual-root .linkual-universal-clear,
+#linkual-root .linkual-universal-send {
+  align-self: center;
+  height: 34px;
+}
+
+#linkual-root .linkual-universal-send:disabled,
+#linkual-root .linkual-universal-clear:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+#linkual-root .linkual-universal-expand-bar {
+  position: fixed;
+  right: 14px;
+  bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  z-index: 2147483647;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: auto;
+  min-height: 42px;
+  padding: 5px 6px 5px 9px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 999px;
+  background: var(--linkual-theme, #000);
+  color: #fff;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  cursor: grab;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  user-select: none;
+  pointer-events: auto;
+  touch-action: none;
+}
+
+#linkual-root .linkual-universal-expand-bar:active {
+  cursor: grabbing;
+}
+
+#linkual-root .linkual-universal-expand-bar:hover,
+#linkual-root .linkual-universal-expand-bar:focus-within {
+  filter: brightness(1.08);
+}
+
+#linkual-root .linkual-universal-bubble-grip {
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 12px;
+  letter-spacing: -3px;
+  line-height: 1;
+  transform: rotate(90deg);
+}
+
+#linkual-root .linkual-universal-bubble-translate,
+#linkual-root .linkual-universal-bubble-expand {
+  min-height: 30px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  cursor: pointer;
+  font: 700 12px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+#linkual-root .linkual-universal-bubble-translate {
+  padding: 0 11px;
+}
+
+#linkual-root .linkual-universal-bubble-translate:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+#linkual-root .linkual-universal-bubble-expand {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  padding: 0;
+}
+
+#linkual-root .linkual-universal-bubble-expand .linkual-universal-expand-chevron {
+  transform: translateY(0) rotate(45deg);
+}
+
+#linkual-root .linkual-universal-expand-chevron {
+  width: 12px;
+  height: 12px;
+  border-left: 3px solid currentColor;
+  border-top: 3px solid currentColor;
+  transform: translateY(3px) rotate(45deg);
+  box-sizing: border-box;
+}
+
+#linkual-root .linkual-universal-floating-add {
+  position: fixed;
+  z-index: 2147483647;
+  transform: translateX(-50%);
+  min-height: 30px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--linkual-theme, #000);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  pointer-events: auto;
+}
+
+#linkual-root .linkual-vocab-queue-panel-wrap {
+  position: fixed;
+  right: 12px;
+  bottom: calc(var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom, 0px) + 12px);
+  z-index: 2147483647;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  pointer-events: auto;
+}
+
+#linkual-root .linkual-vocab-queue-panel {
+  width: min(400px, calc(100vw - 24px));
+  height: min(580px, calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom, 0px) - 24px));
+  min-height: min(280px, calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom, 0px) - 24px));
+  max-height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom, 0px) - 24px);
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  border: 1px solid #e4e4e7;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+@media (max-width: 1024px) {
+#linkual-root .linkual-universal-widget {
+    align-items: stretch;
+    gap: 7px;
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  #linkual-root .linkual-universal-top {
+    flex: 1 0 100%;
+    min-width: min(240px, 100%);
+  }
+
+  #linkual-root .linkual-universal-form {
+    flex: 1 0 100%;
+    grid-template-columns: minmax(0, 1fr) 32px 36px minmax(96px, auto);
+    gap: 4px;
+    min-width: min(360px, 100%);
+  }
+
+  #linkual-root .linkual-universal-field.field-context {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  #linkual-root .linkual-universal-clear {
+    grid-column: 2;
+    grid-row: 1;
+    width: 32px;
+    min-width: 32px;
+  }
+
+  #linkual-root .linkual-universal-send {
+    grid-column: 3;
+    grid-row: 1;
+    width: 36px;
+    min-width: 36px;
+    padding: 0;
+  }
+
+  #linkual-root .linkual-universal-inline-actions {
+    grid-column: 4;
+    grid-row: 1;
+    justify-content: flex-end;
+    gap: 3px;
+  }
+
+  #linkual-root .linkual-universal-inline-actions .linkual-universal-icon-btn {
+    width: 30px;
+    min-width: 30px;
+    min-height: 30px;
+    padding: 0;
+  }
+
+  #linkual-root .linkual-universal-button-icon {
+    display: block;
+  }
+
+  #linkual-root .linkual-universal-button-text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  #linkual-root .linkual-universal-queue-count {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 14px;
+    height: 14px;
+    padding: 0 3px;
+    font-size: 9px;
+  }
+}
+
+#linkual-root .linkual-universal-translation-row {
+  flex: 1 0 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid rgba(104, 69, 154, 0.16);
+  border-radius: 7px;
+  background: rgba(104, 69, 154, 0.06);
+  color: #423650;
+  font-size: 12px;
+}
+
+#linkual-root .linkual-universal-translation-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+#linkual-root .linkual-universal-translation-summary span {
+  color: #766b80;
+  font-variant-numeric: tabular-nums;
+}
+
+#linkual-root .linkual-universal-translation-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 6px;
+}
+
+#linkual-root .linkual-universal-translation-actions button {
+  min-height: 28px;
+  padding: 4px 9px;
+}
+
+#linkual-root .linkual-universal-translation-actions button.primary {
+  border-color: #68459a;
+  background: #68459a;
+  color: #fff;
+}
+
+#linkual-root .linkual-universal-translation-row button {
+  border: 1px solid rgba(83, 65, 111, 0.25);
+  border-radius: 5px;
+  background: #fff;
+  color: #55406f;
+  cursor: pointer;
+  font: 600 12px/1.2 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+@media (max-width: 720px) {
+  #linkual-root .linkual-universal-widget {
+    width: 100vw;
+    max-width: 100vw;
+    padding: 8px 8px calc(8px + env(safe-area-inset-bottom, 0px));
+    flex-direction: column;
+    align-items: stretch;
+    gap: 7px;
+  }
+
+  #linkual-root .linkual-universal-floating-window {
+    width: min(420px, calc(100vw - 16px));
+    max-width: min(420px, calc(100vw - 16px));
+    max-height: min(620px, calc(100vh - 16px));
+  }
+
+  #linkual-root .linkual-universal-floating-window .linkual-universal-translation-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  #linkual-root .linkual-universal-top {
+    width: 100%;
+    min-width: 0;
+    gap: 8px;
+  }
+
+  #linkual-root .linkual-universal-selection {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  #linkual-root .linkual-universal-selection-text {
+    max-width: calc(100vw - 190px);
+  }
+
+  #linkual-root .linkual-universal-actions {
+    gap: 5px;
+  }
+
+  #linkual-root .linkual-universal-status {
+    display: none;
+  }
+
+  #linkual-root .linkual-universal-form {
+    grid-template-columns: minmax(0, 1fr) 32px 36px minmax(87px, auto);
+    gap: 4px;
+    min-width: 0;
+  }
+
+  #linkual-root .linkual-universal-field {
+    flex-direction: row;
+  }
+
+  #linkual-root .linkual-universal-field.field-context {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  #linkual-root .linkual-universal-clear {
+    grid-column: 2;
+    grid-row: 1;
+    width: 32px;
+    min-width: 32px;
+  }
+
+  #linkual-root .linkual-universal-send {
+    grid-column: 3;
+    grid-row: 1;
+    width: 36px;
+    min-width: 36px;
+    padding: 0;
+  }
+
+  #linkual-root .linkual-universal-floating-add {
+    display: none;
+  }
+
+  #linkual-root .linkual-vocab-queue-panel-wrap {
+    left: 8px;
+    right: 8px;
+    bottom: calc(var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom, 0px) + 8px);
+  }
+
+  #linkual-root .linkual-vocab-queue-panel-wrap > div {
+    width: 100% !important;
+    max-width: none !important;
+    height: min(520px, calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom, 0px) - 16px)) !important;
+    max-height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom, 0px) - 16px) !important;
+    min-height: min(220px, calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom, 0px) - 16px)) !important;
+  }
+
+  #linkual-root .linkual-player-controls {
+    left: 8px;
+    width: calc(100vw - var(--linkual-sidebar-width, 0px) - 16px);
+    max-width: calc(100vw - var(--linkual-sidebar-width, 0px) - 16px);
+    padding: 8px;
+    gap: 7px;
+  }
+
+  #linkual-root .linkual-player-progress-row {
+    grid-template-columns: 42px minmax(0, 1fr) 42px;
+    gap: 6px;
+  }
+
+  #linkual-root .linkual-player-time {
+    font-size: 11px;
+  }
+
+  #linkual-root .linkual-player-button-row {
+    gap: 5px;
+  }
+
+  #linkual-root .linkual-player-btn {
+    min-width: 34px;
+    padding: 0 8px;
+  }
+
+  #linkual-root .linkual-player-btn.primary {
+    min-width: 48px;
+  }
+}
+
+@media (max-width: 360px) {
+  #linkual-root .linkual-universal-widget {
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+
+  #linkual-root .linkual-universal-form {
+    grid-template-columns: minmax(0, 1fr) 28px 32px minmax(81px, auto);
+    gap: 3px;
+  }
+
+  #linkual-root .linkual-universal-mode-tab {
+    min-width: 42px;
+    padding: 0 5px;
+  }
+
+  #linkual-root .linkual-universal-field {
+    gap: 4px;
+  }
+
+  #linkual-root .linkual-universal-clear {
+    width: 28px;
+    min-width: 28px;
+  }
+
+  #linkual-root .linkual-universal-send {
+    width: 32px;
+    min-width: 32px;
+  }
+
+  #linkual-root .linkual-universal-inline-actions {
+    gap: 2px;
+  }
+
+  #linkual-root .linkual-universal-inline-actions .linkual-universal-icon-btn {
+    width: 27px;
+    min-width: 27px;
+  }
+
+  #linkual-root .linkual-player-controls {
+    padding: 7px 6px;
+  }
+
+  #linkual-root .linkual-player-progress-row {
+    grid-template-columns: 38px minmax(0, 1fr) 38px;
+  }
+
+  #linkual-root .linkual-player-btn {
+    min-width: 30px;
+    padding: 0 6px;
+  }
+}
+
+@media (max-width: 320px) {
+  #linkual-root .linkual-universal-form {
+    grid-template-columns: minmax(0, 1fr) 28px 32px;
+  }
+
+  #linkual-root .linkual-universal-inline-actions {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    justify-content: flex-end;
+  }
+
+  #linkual-root .linkual-universal-inline-actions .linkual-universal-icon-btn {
+    width: 30px;
+    min-width: 30px;
+  }
+
+  #linkual-root .linkual-universal-selection-text {
+    max-width: calc(100vw - 150px);
+  }
+}
+
+@media (max-height: 520px) {
+  #linkual-root .linkual-universal-widget {
+    padding-top: 6px;
+    padding-bottom: calc(6px + env(safe-area-inset-bottom, 0px));
+    gap: 5px;
+  }
+
+  #linkual-root .linkual-universal-top {
+    min-height: 30px;
+  }
+
+  #linkual-root .linkual-universal-field input,
+  #linkual-root .linkual-universal-mode-tab,
+  #linkual-root .linkual-universal-clear,
+  #linkual-root .linkual-universal-send,
+  #linkual-root .linkual-universal-inline-actions {
+    height: 30px;
+    min-height: 30px;
+  }
+
+  #linkual-root .linkual-vocab-queue-panel-wrap {
+    bottom: calc(var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom, 0px) + 6px);
+  }
+}
+
+@media (max-height: 420px) {
+  #linkual-root .linkual-universal-widget {
+    align-content: flex-start;
+  }
+
+  #linkual-root .linkual-universal-selection,
+  #linkual-root .linkual-universal-field input,
+  #linkual-root .linkual-universal-add-btn,
+  #linkual-root .linkual-universal-icon-btn,
+  #linkual-root .linkual-universal-clear,
+  #linkual-root .linkual-universal-send {
+    font-size: 12px;
+  }
+
+  #linkual-root .linkual-vocab-queue-panel {
+    border-radius: 6px;
+  }
+}
+`;
+  const settingsCss = '#linkual-root .modal {\n  position: fixed;\n  top: 0;\n  left: 0;\n  width: 100%;\n  height: 100%;\n  background: rgba(0, 0, 0, 0.5);\n  display: flex;\n  justify-content: center;\n  align-items: center;\n  z-index: 2147483647;\n  backdrop-filter: blur(2px);\n  pointer-events: auto;\n}\n\n#linkual-root .modal-box {\n  background: #fff;\n  border-radius: 12px;\n  width: 380px;\n  max-height: 85vh;\n  display: flex;\n  flex-direction: column;\n  overflow: hidden;\n  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);\n  animation: linkualSlideIn 0.2s ease-out;\n}\n\n@keyframes linkualSlideIn {\n  from { transform: translateY(20px); opacity: 0; }\n  to { transform: translateY(0); opacity: 1; }\n}\n\n#linkual-root .modal-header {\n  padding: 16px 20px;\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n  border-bottom: 1px solid #eee;\n}\n\n#linkual-root .modal-header h3 {\n  margin: 0;\n  font-size: 16px;\n  color: #333;\n}\n\n#linkual-root .close-btn {\n  font-size: 24px;\n  line-height: 1;\n  color: #999;\n  cursor: pointer;\n  transition: color 0.2s;\n}\n\n#linkual-root .close-btn:hover {\n  color: #333;\n}\n\n/* Tab 样式 */\n#linkual-root .tabs {\n  display: flex;\n  background: #fafafa;\n  border-bottom: 1px solid #eee;\n}\n\n#linkual-root .tab {\n  flex: 1;\n  text-align: center;\n  padding: 12px 0;\n  font-size: 14px;\n  color: #666;\n  cursor: pointer;\n  border-bottom: 2px solid transparent;\n  transition: all 0.2s;\n  user-select: none;\n}\n\n#linkual-root .tab:hover {\n  color: #333;\n  background: rgba(0,0,0,0.02);\n}\n\n#linkual-root .tab.active {\n  color: var(--linkual-theme, #6a1b9a);\n  font-weight: bold;\n  border-bottom: 2px solid var(--linkual-theme, #6a1b9a);\n  background: #fff;\n}\n\n#linkual-root .tab-content {\n  padding: 20px;\n  overflow-y: auto;\n  flex: 1;\n}\n\n#linkual-root .fade-in {\n  animation: linkualFadeIn 0.3s ease;\n}\n\n@keyframes linkualFadeIn {\n  from { opacity: 0; }\n  to { opacity: 1; }\n}\n\n#linkual-root .setting-row {\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n  margin-bottom: 16px;\n}\n#linkual-root .setting-row label { font-size: 13px; font-weight: bold; flex: 1; color: #444; }\n#linkual-root .setting-row input[type="color"] {\n  width: 50px;\n  height: 32px;\n  padding: 0;\n  cursor: pointer;\n  border: 1px solid #ddd;\n  border-radius: 4px;\n}\n\n#linkual-root .setting-col { margin-bottom: 16px; }\n#linkual-root .setting-col label {\n  font-size: 13px;\n  font-weight: bold;\n  display: block;\n  margin-bottom: 6px;\n  color: #444;\n}\n#linkual-root .setting-col input,\n#linkual-root .setting-col textarea,\n#linkual-root .setting-col select {\n  width: 100%;\n  padding: 10px;\n  border: 1px solid #ddd;\n  border-radius: 6px;\n  box-sizing: border-box;\n  font-family: inherit;\n  font-size: 13px;\n  transition: border-color 0.2s;\n}\n#linkual-root .setting-col input:focus,\n#linkual-root .setting-col textarea:focus,\n#linkual-root .setting-col select:focus {\n  outline: none;\n  border-color: var(--linkual-theme, #6a1b9a);\n}\n#linkual-root .setting-col textarea {\n  resize: vertical;\n  min-height: 80px;\n  line-height: 1.5;\n}\n\n#linkual-root .url-prefix-row {\n  display: flex;\n  align-items: stretch;\n}\n\n#linkual-root .url-prefix-row input {\n  border-radius: 0;\n  min-width: 0;\n}\n\n#linkual-root .url-protocol-select {\n  width: auto !important;\n  flex: 0 0 78px;\n  border-right: 0 !important;\n  border-radius: 6px 0 0 6px !important;\n  background: #f7f7f7;\n  color: #555;\n}\n\n#linkual-root .url-path-select {\n  width: auto !important;\n  flex: 0 0 138px;\n  border-left: 0 !important;\n  border-radius: 0 6px 6px 0 !important;\n  background: #f7f7f7;\n  color: #555;\n  font-size: 12px !important;\n  padding-left: 8px !important;\n  padding-right: 8px !important;\n}\n\n#linkual-root .url-fixed-prefix,\n#linkual-root .url-fixed-suffix {\n  display: inline-flex;\n  align-items: center;\n  padding: 0 10px;\n  border: 1px solid #ddd;\n  background: #f7f7f7;\n  color: #666;\n  font-size: 12px;\n  white-space: nowrap;\n}\n\n#linkual-root .url-fixed-prefix {\n  border-right: 0;\n  border-radius: 6px 0 0 6px;\n}\n\n#linkual-root .url-fixed-suffix {\n  border-left: 0;\n  border-radius: 0 6px 6px 0;\n}\n\n#linkual-root .url-prefix-row:focus-within .url-fixed-prefix {\n  border-color: var(--linkual-theme, #6a1b9a);\n  border-right: 0;\n}\n\n#linkual-root .url-prefix-row:focus-within .url-protocol-select {\n  border-color: var(--linkual-theme, #6a1b9a);\n  border-right: 0;\n}\n\n#linkual-root .url-prefix-row:focus-within .url-path-select {\n  border-color: var(--linkual-theme, #6a1b9a);\n  border-left: 0;\n}\n\n#linkual-root .url-prefix-row:focus-within .url-fixed-suffix {\n  border-color: var(--linkual-theme, #6a1b9a);\n  border-left: 0;\n}\n\n#linkual-root .setting-help {\n  margin-top: 6px;\n  color: #888;\n  font-size: 12px;\n  line-height: 1.4;\n}\n\n#linkual-root .linkual-cache-manager-heading {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 8px;\n  margin-bottom: 6px;\n}\n\n#linkual-root .linkual-cache-manager-heading label {\n  margin-bottom: 0;\n}\n\n#linkual-root .linkual-cache-clear-btn,\n#linkual-root .linkual-cache-item button {\n  flex: 0 0 auto;\n  padding: 5px 8px;\n  border: 1px solid #ddd;\n  border-radius: 5px;\n  background: #fff;\n  color: #666;\n  cursor: pointer;\n  font: 12px/1.2 inherit;\n}\n\n#linkual-root .linkual-cache-clear-btn:hover,\n#linkual-root .linkual-cache-item button:hover {\n  border-color: #c62828;\n  color: #c62828;\n}\n\n#linkual-root .linkual-cache-list {\n  display: flex;\n  flex-direction: column;\n  gap: 6px;\n  max-height: 180px;\n  overflow-y: auto;\n}\n\n#linkual-root .linkual-cache-item {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 8px;\n  padding: 8px;\n  border: 1px solid #eee;\n  border-radius: 6px;\n  background: #fafafa;\n}\n\n#linkual-root .linkual-cache-item-main {\n  display: flex;\n  min-width: 0;\n  flex-direction: column;\n  gap: 3px;\n}\n\n#linkual-root .linkual-cache-item-main strong,\n#linkual-root .linkual-cache-item-main span {\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n\n#linkual-root .linkual-cache-item-main strong {\n  color: #444;\n  font-size: 12px;\n  font-weight: 600;\n}\n\n#linkual-root .linkual-cache-item-main span {\n  color: #888;\n  font-size: 11px;\n}\n\n#linkual-root .modal-footer {\n  padding: 16px 20px;\n  display: flex;\n  gap: 12px;\n  border-top: 1px solid #eee;\n  background: #fafafa;\n}\n\n#linkual-root .btn {\n  flex: 1;\n  padding: 10px;\n  border: none;\n  border-radius: 6px;\n  cursor: pointer;\n  font-weight: bold;\n  font-size: 14px;\n  transition: opacity 0.2s;\n}\n#linkual-root .btn:hover { opacity: 0.9; }\n#linkual-root .reset-btn { background: #e0e0e0; color: #555; }\n#linkual-root .save-btn { box-shadow: 0 2px 6px rgba(0,0,0,0.1); }\n';
+  const STYLE_ID = "linkual-app-style";
+  function injectLinkualAppStyles() {
+    if (document.getElementById(STYLE_ID)) return;
+    const style2 = document.createElement("style");
+    style2.id = STYLE_ID;
+    style2.textContent = `${settingsCss}
+${appCss}`;
+    document.head.append(style2);
+  }
   if (window.self !== window.top) {
     throw new Error("[Linkual] 阻止在 iframe 中重复执行");
   }
@@ -17258,6 +19055,9 @@ ${paragraph.text}`,
   const LINKUAL_NAVIGATION_EVENT = "linkual_navigation";
   function isYouTubeHost() {
     return /(^|\.)youtube(?:-nocookie)?\.com$/i.test(window.location.hostname);
+  }
+  function shouldLoadFullApp() {
+    return isYouTubeHost() || isArxivHtmlPage();
   }
   function getPageWindow() {
     try {
@@ -17302,12 +19102,14 @@ ${paragraph.text}`,
     }
     attachRootToActiveHost(app);
     isolateRoot(app);
+    injectLinkualAppStyles();
     const adapter = getAdapter();
+    const appElement = reactExports.createElement(App, { adapter });
     if (rootInstance) {
-      rootInstance.render(/* @__PURE__ */ jsxRuntimeExports.jsx(App, { adapter }));
+      rootInstance.render(appElement);
     } else {
       rootInstance = clientExports.createRoot(app);
-      rootInstance.render(/* @__PURE__ */ jsxRuntimeExports.jsx(App, { adapter }));
+      rootInstance.render(appElement);
     }
   }
   function dispatchNavigationRefresh() {
@@ -17353,37 +19155,41 @@ ${paragraph.text}`,
     pageWindow.addEventListener("hashchange", scheduleNavigationRefresh, true);
     window.addEventListener("pageshow", scheduleNavigationRefresh);
   }
-  if (document.body) {
-    mountApp();
-  } else {
-    document.addEventListener("DOMContentLoaded", mountApp);
-  }
-  if (isYouTubeHost()) {
-    installNavigationHooks();
-    window.addEventListener("yt-navigate-finish", scheduleNavigationRefresh);
-  }
-  document.addEventListener("fullscreenchange", () => {
-    const app = document.getElementById("linkual-root");
-    if (app) attachRootToActiveHost(app);
-  });
-  const observer = new MutationObserver(() => {
-    if (document.body && !document.getElementById("linkual-root")) {
-      console.log("[Linkual] 检测到根节点被意外移除，正在尝试恢复...");
+  if (shouldLoadFullApp()) {
+    if (document.body) {
       mountApp();
     } else {
+      document.addEventListener("DOMContentLoaded", mountApp);
+    }
+    if (isYouTubeHost()) {
+      installNavigationHooks();
+      window.addEventListener("yt-navigate-finish", scheduleNavigationRefresh);
+    }
+    document.addEventListener("fullscreenchange", () => {
       const app = document.getElementById("linkual-root");
       if (app) attachRootToActiveHost(app);
-    }
-  });
-  if (document.body) {
-    observer.observe(document.documentElement, { childList: true, subtree: false });
-    observer.observe(document.body, { childList: true, subtree: false });
-  } else {
-    document.addEventListener("DOMContentLoaded", () => {
+    });
+    const observer = new MutationObserver(() => {
+      if (document.body && !document.getElementById("linkual-root")) {
+        console.log("[Linkual] 检测到根节点被意外移除，正在尝试恢复...");
+        mountApp();
+      } else {
+        const app = document.getElementById("linkual-root");
+        if (app) attachRootToActiveHost(app);
+      }
+    });
+    if (document.body) {
       observer.observe(document.documentElement, { childList: true, subtree: false });
       observer.observe(document.body, { childList: true, subtree: false });
-      installNavigationHooks();
-    });
+    } else {
+      document.addEventListener("DOMContentLoaded", () => {
+        observer.observe(document.documentElement, { childList: true, subtree: false });
+        observer.observe(document.body, { childList: true, subtree: false });
+        installNavigationHooks();
+      });
+    }
+  } else {
+    installQuickSelectionAdd();
   }
 
 })();
