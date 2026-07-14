@@ -1,3 +1,11 @@
+::highlight(linkual-article-source-active) {
+  background: rgba(104, 69, 154, 0.1);
+  text-decoration: underline;
+  text-decoration-color: rgba(104, 69, 154, 0.55);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
 #linkual-root {
   --linkual-theme: #6a1b9a;
   --linkual-done: #e8f5e9;

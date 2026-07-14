@@ -9,6 +9,9 @@ import {
   getSentenceIndexAtPoint,
 } from '../services/articleSentences';
 
+const SOURCE_HIGHLIGHT_NAME = 'linkual-article-source-active';
+let activeSourceHighlightOwner: object | null = null;
+
 function TranslationBlock({
   paragraph,
   state,
@@ -25,6 +28,7 @@ function TranslationBlock({
   ), [paragraph.text, state?.sentences, state?.text]);
   const [activePairIndex, setActivePairIndex] = useState(-1);
   const sentenceRefs = useRef(new Map<number, HTMLButtonElement>());
+  const sourceHighlightOwnerRef = useRef<object>({});
 
   const focusSource = (pairIndex: number) => {
     const pair = pairs[pairIndex];
@@ -61,6 +65,36 @@ function TranslationBlock({
       paragraph.element.removeEventListener('click', handleSourceClick);
     };
   }, [hasTranslation, pairs, paragraph.element, paragraph.text]);
+
+  useEffect(() => {
+    const browserWindow = window as Window & {
+      CSS?: { highlights?: { set: (name: string, highlight: unknown) => void; delete: (name: string) => void } };
+      Highlight?: new (range: Range) => unknown;
+    };
+    const highlights = browserWindow.CSS?.highlights;
+    const HighlightConstructor = browserWindow.Highlight;
+    const pair = pairs[activePairIndex];
+    const owner = sourceHighlightOwnerRef.current;
+    const clearHighlight = () => {
+      if (activeSourceHighlightOwner !== owner) return;
+      highlights?.delete(SOURCE_HIGHLIGHT_NAME);
+      activeSourceHighlightOwner = null;
+    };
+
+    if (!highlights || !HighlightConstructor || !pair) {
+      clearHighlight();
+      return undefined;
+    }
+
+    const range = findSentenceRange(paragraph.element, pair.source);
+    if (range) {
+      clearHighlight();
+      highlights.set(SOURCE_HIGHLIGHT_NAME, new HighlightConstructor(range));
+      activeSourceHighlightOwner = owner;
+    }
+
+    return clearHighlight;
+  }, [activePairIndex, pairs, paragraph.element]);
 
   return (
     <div className={`linkual-article-translation ${state?.status || 'idle'}`}>
