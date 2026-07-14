@@ -14,6 +14,10 @@ let navigationRefreshTimer: number | null = null;
 
 const LINKUAL_NAVIGATION_EVENT = 'linkual_navigation';
 
+function isYouTubeHost() {
+  return /(^|\.)youtube(?:-nocookie)?\.com$/i.test(window.location.hostname);
+}
+
 function getPageWindow() {
   try {
     return typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
@@ -93,6 +97,8 @@ function scheduleNavigationRefresh() {
 }
 
 function installNavigationHooks() {
+  if (!isYouTubeHost()) return;
+
   const pageWindow = getPageWindow() as Window & typeof globalThis & { __linkualNavigationHooked?: boolean };
   if (pageWindow.__linkualNavigationHooked) return;
 
@@ -128,9 +134,10 @@ if (document.body) {
   document.addEventListener('DOMContentLoaded', mountApp); 
 }
 
-installNavigationHooks();
-
-window.addEventListener('yt-navigate-finish', scheduleNavigationRefresh);
+if (isYouTubeHost()) {
+  installNavigationHooks();
+  window.addEventListener('yt-navigate-finish', scheduleNavigationRefresh);
+}
 document.addEventListener('fullscreenchange', () => {
   const app = document.getElementById('linkual-root');
   if (app) attachRootToActiveHost(app);

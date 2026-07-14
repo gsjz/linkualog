@@ -7,6 +7,7 @@ import MobileFullscreenButton from '../components/MobileFullscreenButton';
 import UniversalVocabWidget from '../components/UniversalVocabWidget';
 import ArticleTranslator from '../components/ArticleTranslator';
 import { ArticleTranslationProvider } from '../components/ArticleTranslationContext';
+import { isArxivHtmlPage } from '../services/articleTranslator';
 import { Subtitle } from '../types';
 import { IVideoAdapter } from '../adapters/BaseAdapter';
 import { ConfigService } from '../services/configService';
@@ -32,6 +33,10 @@ const LINKUAL_NAVIGATION_EVENT = 'linkual_navigation';
 const MIN_SIDEBAR_WIDTH = 250;
 const MIN_SIDEBAR_HEIGHT = 150;
 const MIN_REMAINING_VIEWPORT = 80;
+
+function isYouTubeHost() {
+  return /(^|\.)youtube(?:-nocookie)?\.com$/i.test(window.location.hostname);
+}
 
 function getBrowserFullscreenElement() {
   const doc = document as BrowserFullscreenDocument;
@@ -100,6 +105,8 @@ function clampSidebarHeight(height: number) {
 
 const App: React.FC<AppProps> = ({ adapter }) => {
   const [subs, setSubs] = useState<Subtitle[]>([]);
+  const isVideoSite = isYouTubeHost();
+  const isArticleTranslationEnabled = isArxivHtmlPage();
   
   const [inVideo, setInVideo] = useState(adapter.isVideoPage());
 
@@ -160,6 +167,8 @@ const App: React.FC<AppProps> = ({ adapter }) => {
   }, [adapter, inVideo, layout, sidebarHeight, sidebarWidth]);
 
   useEffect(() => {
+    if (!isVideoSite) return undefined;
+
     const checkVideo = () => {
       setInVideo((prev) => {
         const isVid = adapter.isVideoPage();
@@ -176,7 +185,7 @@ const App: React.FC<AppProps> = ({ adapter }) => {
       window.removeEventListener('yt-navigate-finish', checkVideo);
       window.removeEventListener(LINKUAL_NAVIGATION_EVENT, checkVideo);
     };
-  }, [adapter]);
+  }, [adapter, isVideoSite]);
 
   useEffect(() => {
     adapter.onSubtitleDetected((newSubs) => {
@@ -207,6 +216,8 @@ const App: React.FC<AppProps> = ({ adapter }) => {
   }, [activeIndex, renderLimit, subs.length]);
 
   useEffect(() => {
+    if (!isVideoSite) return undefined;
+
     const clearCustomFullscreenIfNeeded = () => {
       if (inVideo || !document.documentElement.classList.contains('linkual-custom-fullscreen')) return;
 
@@ -227,13 +238,17 @@ const App: React.FC<AppProps> = ({ adapter }) => {
     clearCustomFullscreenIfNeeded();
     window.addEventListener('linkual_custom_fullscreen_changed', clearCustomFullscreenIfNeeded);
     return () => window.removeEventListener('linkual_custom_fullscreen_changed', clearCustomFullscreenIfNeeded);
-  }, [adapter, inVideo]);
+  }, [adapter, inVideo, isVideoSite]);
 
   useEffect(() => {
+    if (!isVideoSite) return;
+
     resizeAdapterHost();
-  }, [resizeAdapterHost]);
+  }, [isVideoSite, resizeAdapterHost]);
 
   useEffect(() => {
+    if (!isVideoSite) return undefined;
+
     const refreshCustomLayout = () => resizeAdapterHost(true);
 
     window.addEventListener('linkual_custom_layout_refresh', refreshCustomLayout);
@@ -242,9 +257,11 @@ const App: React.FC<AppProps> = ({ adapter }) => {
       window.removeEventListener('linkual_custom_layout_refresh', refreshCustomLayout);
       window.removeEventListener(LINKUAL_NAVIGATION_EVENT, refreshCustomLayout);
     };
-  }, [resizeAdapterHost]);
+  }, [isVideoSite, resizeAdapterHost]);
 
   useEffect(() => {
+    if (!isVideoSite) return undefined;
+
     const refreshViewportLayout = () => resizeAdapterHost();
 
     window.addEventListener('orientationchange', refreshViewportLayout);
@@ -256,7 +273,7 @@ const App: React.FC<AppProps> = ({ adapter }) => {
       window.removeEventListener('resize', refreshViewportLayout);
       window.visualViewport?.removeEventListener('resize', refreshViewportLayout);
     };
-  }, [resizeAdapterHost]);
+  }, [isVideoSite, resizeAdapterHost]);
 
   const startResize = (e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -329,10 +346,12 @@ const App: React.FC<AppProps> = ({ adapter }) => {
 
   const visibleSubs = subs.slice(0, renderLimit);
   const hasMoreSubs = visibleSubs.length < subs.length;
-  const showMobileFullscreenButton = mobileFullscreenMode === 'always' || (mobileFullscreenMode === 'video' && inVideo);
+  const showMobileFullscreenButton = isVideoSite && (
+    mobileFullscreenMode === 'always' || (mobileFullscreenMode === 'video' && inVideo)
+  );
 
   return (
-    <ArticleTranslationProvider enabled={!inVideo}>
+    <ArticleTranslationProvider enabled={isArticleTranslationEnabled && !inVideo}>
       <>
       <div className={`linkual-wrap layout-${layout}`} style={wrapStyle}>
         <div className="resizer" onMouseDown={startResize} title={layout === 'right' ? '左右拖拽调整宽度' : '上下拖拽调整高度'} />

@@ -33,9 +33,6 @@ const MAX_WORD_SELECTION_LENGTH = 180;
 const MAX_CONTEXT_SELECTION_LENGTH = 4000;
 const CONTEXT_SENTENCE_RADIUS = 2;
 const SENTENCE_PATTERN = /[^.!?。！？]+[.!?。！？]+["'”’）)]*|[^.!?。！？]+$/g;
-const VIEWPORT_PATCH_MARKER = '__linkualUniversalViewportPatchInstalled';
-const VIEWPORT_OFFSET_KEY = '__linkualUniversalWidgetHeight';
-const PAGE_RESERVE_STYLE_ID = 'linkual-universal-page-reserve';
 const LINKUAL_NAVIGATION_EVENT = 'linkual_navigation';
 const FLOATING_BUTTON_MARGIN = 10;
 const BUBBLE_MARGIN = 12;
@@ -45,28 +42,23 @@ const getDefaultExpandedHeight = () => (
   window.matchMedia('(max-width: 720px)').matches ? MOBILE_WIDGET_HEIGHT : DESKTOP_WIDGET_HEIGHT
 );
 
-const isOwnViewportGetterPatched = (target: object | null | undefined, marker: string) => Boolean(
-  target && (target as Record<string, unknown>)[marker]
-);
-
 const getVisualViewportHeight = () => {
   const viewportHeight = window.visualViewport?.height || window.innerHeight || document.documentElement.clientHeight;
-  const reservedOffset = (
-    isOwnViewportGetterPatched(window.visualViewport, '__linkualVisualViewportHeightPatched')
-    || isOwnViewportGetterPatched(window, '__linkualInnerHeightPatched')
-  ) ? getViewportOffset() : 0;
-  const rawHeight = Number(viewportHeight) + reservedOffset;
+  const rawHeight = Number(viewportHeight);
   return Number.isFinite(rawHeight) && rawHeight > 0 ? rawHeight : getDefaultExpandedHeight();
+};
+
+const syncVisualViewportHeightProperty = () => {
+  const root = document.getElementById('linkual-root');
+  if (!root) return;
+
+  root.style.setProperty('--linkual-visual-viewport-height', `${getVisualViewportHeight()}px`);
 };
 
 const getMaxWidgetHeight = () => Math.max(
   COLLAPSED_WIDGET_HEIGHT,
   Math.floor(getVisualViewportHeight() - WIDGET_VIEWPORT_MARGIN)
 );
-
-const syncVisualViewportHeightProperty = () => {
-  document.documentElement.style.setProperty('--linkual-visual-viewport-height', `${Math.ceil(getVisualViewportHeight())}px`);
-};
 
 const ActionIcon: React.FC<{ name: WidgetIcon }> = ({ name }) => {
   const paths: Record<WidgetIcon, React.ReactNode> = {
@@ -287,135 +279,6 @@ const captureSelection = (mode: SelectionMode): SelectionCapture | null => {
   };
 };
 
-const getPageWindow = () => {
-  try {
-    return typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
-  } catch {
-    return window;
-  }
-};
-
-const findPropertyDescriptor = (target: object | null, property: string): PropertyDescriptor | undefined => {
-  let cursor = target;
-  while (cursor) {
-    const descriptor = Object.getOwnPropertyDescriptor(cursor, property);
-    if (descriptor) return descriptor;
-    cursor = Object.getPrototypeOf(cursor);
-  }
-  return undefined;
-};
-
-const getViewportOffset = () => {
-  const pageWindow = getPageWindow() as Window & typeof globalThis & Record<string, unknown>;
-  const raw = Number(pageWindow[VIEWPORT_OFFSET_KEY] || 0);
-  return Number.isFinite(raw) ? raw : 0;
-};
-
-const patchNumericHeightGetter = (target: object | null, property: string, marker: string) => {
-  if (!target || (target as Record<string, unknown>)[marker]) return;
-
-  const descriptor = findPropertyDescriptor(target, property);
-  if (!descriptor?.get) return;
-
-  try {
-    Object.defineProperty(target, property, {
-      configurable: true,
-      get() {
-        const value = Number(descriptor.get?.call(this) || 0);
-        return Math.max(0, value - getViewportOffset());
-      },
-    });
-    (target as Record<string, unknown>)[marker] = true;
-  } catch {}
-};
-
-const patchDocumentViewportElements = () => {
-  patchNumericHeightGetter(document.documentElement, 'clientHeight', '__linkualClientHeightPatched');
-  patchNumericHeightGetter(document.body, 'clientHeight', '__linkualClientHeightPatched');
-};
-
-const installViewportHeightPatch = () => {
-  const pageWindow = getPageWindow() as Window & typeof globalThis & Record<string, unknown>;
-
-  if (!pageWindow[VIEWPORT_PATCH_MARKER]) {
-    patchNumericHeightGetter(pageWindow, 'innerHeight', '__linkualInnerHeightPatched');
-    patchNumericHeightGetter(pageWindow.visualViewport, 'height', '__linkualVisualViewportHeightPatched');
-    pageWindow[VIEWPORT_PATCH_MARKER] = true;
-  }
-
-  patchDocumentViewportElements();
-};
-
-const ensurePageReserveStyle = () => {
-  let styleEl = document.getElementById(PAGE_RESERVE_STYLE_ID) as HTMLStyleElement | null;
-  if (!styleEl) {
-    styleEl = document.createElement('style');
-    styleEl.id = PAGE_RESERVE_STYLE_ID;
-    document.head.appendChild(styleEl);
-  }
-
-  styleEl.textContent = `
-    html.linkual-universal-widget-open {
-      --linkual-page-bottom-reserve: calc(var(--linkual-universal-widget-height, ${COLLAPSED_WIDGET_HEIGHT}px) + env(safe-area-inset-bottom, 0px));
-      --linkual-page-height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-page-bottom-reserve));
-      scroll-padding-bottom: var(--linkual-page-bottom-reserve) !important;
-    }
-    html.linkual-universal-widget-open,
-    html.linkual-universal-widget-open body {
-      min-height: var(--linkual-page-height) !important;
-    }
-    html.linkual-universal-widget-open body {
-      padding-bottom: var(--linkual-page-bottom-reserve) !important;
-      box-sizing: border-box !important;
-    }
-    html.linkual-universal-widget-open [data-linkual-root="true"] {
-      padding-bottom: 0 !important;
-    }
-  `;
-};
-
-const dispatchViewportResize = () => {
-  const pageWindow = getPageWindow() as Window & typeof globalThis;
-  const PageEvent = pageWindow.Event || Event;
-
-  const dispatch = () => {
-    window.dispatchEvent(new Event('resize'));
-    if (pageWindow !== window) {
-      pageWindow.dispatchEvent(new PageEvent('resize'));
-    }
-    pageWindow.visualViewport?.dispatchEvent(new PageEvent('resize'));
-  };
-
-  dispatch();
-  window.requestAnimationFrame(dispatch);
-  window.setTimeout(dispatch, 120);
-};
-
-const applyPageReserve = (height: number) => {
-  const nextHeight = Math.max(0, Math.ceil(height));
-  const pageWindow = getPageWindow() as Window & typeof globalThis & Record<string, unknown>;
-
-  installViewportHeightPatch();
-  ensurePageReserveStyle();
-  patchDocumentViewportElements();
-
-  pageWindow[VIEWPORT_OFFSET_KEY] = nextHeight;
-  syncVisualViewportHeightProperty();
-  document.documentElement.style.setProperty('--linkual-universal-widget-height', `${nextHeight}px`);
-  document.documentElement.classList.add('linkual-universal-widget-open');
-  dispatchViewportResize();
-};
-
-const releasePageReserve = () => {
-  const pageWindow = getPageWindow() as Window & typeof globalThis & Record<string, unknown>;
-
-  document.documentElement.classList.remove('linkual-universal-widget-open');
-  document.documentElement.style.removeProperty('--linkual-universal-widget-height');
-  document.documentElement.style.removeProperty('--linkual-visual-viewport-height');
-  pageWindow[VIEWPORT_OFFSET_KEY] = 0;
-  dispatchViewportResize();
-};
-
 const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSettings }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [selection, setSelection] = useState<SelectionCapture | null>(null);
@@ -443,7 +306,6 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
   const bubbleMovedRef = useRef(false);
   const expandedDragRef = useRef<{ pointerId: number; startX: number; startY: number; left: number; top: number } | null>(null);
   const selectionTimerRef = useRef<number | null>(null);
-  const activeWidgetHeight = 0;
   const articleTranslation = useArticleTranslation();
 
   const hasPayload = Boolean(word.trim());
@@ -512,12 +374,6 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
     return () => window.removeEventListener(QUEUE_COUNT_EVENT, updateQueueCount);
   }, []);
 
-  useEffect(() => releasePageReserve, []);
-
-  useEffect(() => {
-    applyPageReserve(activeWidgetHeight);
-  }, [activeWidgetHeight]);
-
   useEffect(() => {
     const handleNavigationRefresh = () => {
       setSelection(null);
@@ -525,7 +381,7 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
 
       window.requestAnimationFrame(() => {
         if (isExpanded) measureWidgetHeight();
-        applyPageReserve(activeWidgetHeight);
+        syncVisualViewportHeightProperty();
       });
     };
 
@@ -535,7 +391,7 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
       window.removeEventListener(LINKUAL_NAVIGATION_EVENT, handleNavigationRefresh);
       window.removeEventListener('pageshow', handleNavigationRefresh);
     };
-  }, [activeWidgetHeight, isExpanded, measureWidgetHeight]);
+  }, [isExpanded, measureWidgetHeight]);
 
   const refreshSelection = useCallback(() => {
     if (!isExpanded) return;
@@ -806,7 +662,7 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
         : Math.min(window.innerHeight - estimatedHeight - 8, bubbleRect.bottom + 8);
       setExpandedPosition({ left, top: Math.max(8, top) });
     }
-    applyPageReserve(0);
+    syncVisualViewportHeightProperty();
     setIsExpanded(true);
   };
 

@@ -17,7 +17,11 @@ function getCachedAdapter(key: AdapterKey, createAdapter: () => IVideoAdapter) {
 }
 
 function isYouTubeUrl(url: string) {
-  return url.includes('youtube.com');
+  try {
+    return /(^|\.)youtube(?:-nocookie)?\.com$/i.test(new URL(url).hostname);
+  } catch {
+    return false;
+  }
 }
 
 export function getAdapter(): IVideoAdapter {
