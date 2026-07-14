@@ -936,7 +936,7 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
         <div className="linkual-universal-translation-row">
           <div className="linkual-universal-translation-summary">
             <strong>网页翻译</strong>
-            <span>{articleTranslation.doneCount}/{articleTranslation.paragraphs.length} 段</span>
+            <span>{articleTranslation.doneCount}/{articleTranslation.paragraphs.length} 段 · 并发 {articleTranslation.translationConcurrency}</span>
           </div>
           <div className="linkual-universal-translation-actions">
             {articleTranslation.isTranslatingAll ? (
