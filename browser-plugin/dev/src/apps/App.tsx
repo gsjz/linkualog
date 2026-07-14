@@ -108,7 +108,6 @@ const App: React.FC<AppProps> = ({ adapter }) => {
   const isArticleTranslationEnabled = isArxivHtmlPage();
   
   const [inVideo, setInVideo] = useState(adapter.isVideoPage());
-  const hasPersistentControls = (isVideoSite && inVideo) || isArticleTranslationEnabled;
 
   const getAdpCfg = (key: CfgKey) => {
     const val = ConfigService.get(`${key}_${adapter.platformName}` as any);
@@ -378,12 +377,11 @@ const App: React.FC<AppProps> = ({ adapter }) => {
       </div>
       <UniversalVocabWidget
         onOpenSettings={() => setIsSettingsOpen(true)}
-        persistentControls={hasPersistentControls}
       />
       <ArticleTranslator />
       {showMobileFullscreenButton && <MobileFullscreenButton adapter={adapter} />}
-      {hasPersistentControls && <VocabQueue />}
-      {hasPersistentControls && isSettingsOpen && <Settings adapter={adapter} onClose={() => setIsSettingsOpen(false)} />}
+      <VocabQueue />
+      {isSettingsOpen && <Settings adapter={adapter} onClose={() => setIsSettingsOpen(false)} />}
       </>
     </ArticleTranslationProvider>
   );

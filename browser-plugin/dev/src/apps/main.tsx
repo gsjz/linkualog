@@ -3,7 +3,6 @@ import { createRoot, Root } from 'react-dom/client';
 import App from './App';
 import { getAdapter } from '../adapters';
 import { isArxivHtmlPage } from '../services/articleTranslator';
-import { installQuickSelectionAdd } from './quickSelection';
 import { injectLinkualAppStyles } from './styles';
 
 declare const unsafeWindow: typeof window | undefined;
@@ -19,10 +18,6 @@ const LINKUAL_NAVIGATION_EVENT = 'linkual_navigation';
 
 function isYouTubeHost() {
   return /(^|\.)youtube(?:-nocookie)?\.com$/i.test(window.location.hostname);
-}
-
-function shouldLoadFullApp() {
-  return isYouTubeHost() || isArxivHtmlPage();
 }
 
 function getPageWindow() {
@@ -137,22 +132,23 @@ function installNavigationHooks() {
   window.addEventListener('pageshow', scheduleNavigationRefresh);
 }
 
-if (shouldLoadFullApp()) {
-  if (document.body) {
-    mountApp();
-  } else {
-    document.addEventListener('DOMContentLoaded', mountApp);
-  }
+if (document.body) {
+  mountApp();
+} else {
+  document.addEventListener('DOMContentLoaded', mountApp);
+}
 
-  if (isYouTubeHost()) {
-    installNavigationHooks();
-    window.addEventListener('yt-navigate-finish', scheduleNavigationRefresh);
-  }
-  document.addEventListener('fullscreenchange', () => {
-    const app = document.getElementById('linkual-root');
-    if (app) attachRootToActiveHost(app);
-  });
+if (isYouTubeHost()) {
+  installNavigationHooks();
+  window.addEventListener('yt-navigate-finish', scheduleNavigationRefresh);
+}
 
+document.addEventListener('fullscreenchange', () => {
+  const app = document.getElementById('linkual-root');
+  if (app) attachRootToActiveHost(app);
+});
+
+if (isYouTubeHost() || isArxivHtmlPage()) {
   const observer = new MutationObserver(() => {
     if (document.body && !document.getElementById('linkual-root')) {
       console.log('[Linkual] 检测到根节点被意外移除，正在尝试恢复...');
@@ -172,6 +168,4 @@ if (shouldLoadFullApp()) {
       installNavigationHooks();
     });
   }
-} else {
-  installQuickSelectionAdd();
 }
