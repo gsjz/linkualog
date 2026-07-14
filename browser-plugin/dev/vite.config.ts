@@ -9,7 +9,7 @@ export default defineConfig({
       entry: 'src/apps/main.tsx',
       userscript: {
         name: 'Linkual Log',
-        version: '0.0.37',
+        version: '0.0.38',
         updateURL: 'https://raw.githubusercontent.com/gsjz/linkualog/main/browser-plugin/user/linkualog.user.js',
         downloadURL: 'https://raw.githubusercontent.com/gsjz/linkualog/main/browser-plugin/user/linkualog.user.js',
         author: 'Sergio Gao',
@@ -17,6 +17,12 @@ export default defineConfig({
         namespace: 'npm/vite-plugin-monkey',
         match: [
           '*://*/*',
+        ],
+        exclude: [
+          '*://gemini.google.com/*',
+          '*://*.gemini.google.com/*',
+          '*://bard.google.com/*',
+          '*://*.bard.google.com/*',
         ],
         grant: [
           'GM_xmlhttpRequest', 

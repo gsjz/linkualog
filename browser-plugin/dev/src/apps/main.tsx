@@ -7,10 +7,6 @@ import { injectLinkualAppStyles, injectLinkualPageStyles } from './styles';
 
 declare const unsafeWindow: typeof window | undefined;
 
-if (window.self !== window.top) {
-  throw new Error('[Linkual] 阻止在 iframe 中重复执行');
-}
-
 let rootInstance: Root | null = null;
 let reactMountNode: HTMLElement | null = null;
 let navigationRefreshTimer: number | null = null;
@@ -20,6 +16,11 @@ const LINKUAL_ROOT_ID = 'linkual-root';
 
 function isYouTubeHost() {
   return /(^|\.)youtube(?:-nocookie)?\.com$/i.test(window.location.hostname);
+}
+
+function isGeminiHost() {
+  return /(^|\.)gemini\.google\.com$/i.test(window.location.hostname) ||
+    /(^|\.)bard\.google\.com$/i.test(window.location.hostname);
 }
 
 function getPageWindow() {
@@ -159,40 +160,48 @@ function installNavigationHooks() {
   window.addEventListener('pageshow', scheduleNavigationRefresh);
 }
 
-if (document.body) {
-  mountApp();
-} else {
-  document.addEventListener('DOMContentLoaded', mountApp);
-}
+if (!isGeminiHost()) {
+  if (window.self !== window.top) {
+    throw new Error('[Linkual] 阻止在 iframe 中重复执行');
+  }
 
-if (isYouTubeHost()) {
-  installNavigationHooks();
-  window.addEventListener('yt-navigate-finish', scheduleNavigationRefresh);
-}
-
-document.addEventListener('fullscreenchange', () => {
-  const app = document.getElementById(LINKUAL_ROOT_ID);
-  if (app) attachRootToActiveHost(app);
-});
-
-if (isYouTubeHost() || isArxivHtmlPage()) {
-  const observer = new MutationObserver(() => {
-    if (document.body && !document.getElementById(LINKUAL_ROOT_ID)) {
-      console.log('[Linkual] 检测到根节点被意外移除，正在尝试恢复...');
-      mountApp();
-    } else {
-      const app = document.getElementById(LINKUAL_ROOT_ID);
-      if (app) attachRootToActiveHost(app);
-    }
-  });
   if (document.body) {
-    observer.observe(document.documentElement, { childList: true, subtree: false });
-    observer.observe(document.body, { childList: true, subtree: false });
+    mountApp();
   } else {
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', mountApp);
+  }
+
+  if (isYouTubeHost()) {
+    installNavigationHooks();
+    window.addEventListener('yt-navigate-finish', scheduleNavigationRefresh);
+  }
+
+  document.addEventListener('fullscreenchange', () => {
+    const app = document.getElementById(LINKUAL_ROOT_ID);
+    if (app) attachRootToActiveHost(app);
+  });
+
+  if (isYouTubeHost() || isArxivHtmlPage()) {
+    const observer = new MutationObserver(() => {
+      if (document.body && !document.getElementById(LINKUAL_ROOT_ID)) {
+        console.log('[Linkual] 检测到根节点被意外移除，正在尝试恢复...');
+        mountApp();
+      } else {
+        const app = document.getElementById(LINKUAL_ROOT_ID);
+        if (app) attachRootToActiveHost(app);
+      }
+    });
+    if (document.body) {
       observer.observe(document.documentElement, { childList: true, subtree: false });
       observer.observe(document.body, { childList: true, subtree: false });
-      installNavigationHooks();
-    });
+    } else {
+      document.addEventListener('DOMContentLoaded', () => {
+        observer.observe(document.documentElement, { childList: true, subtree: false });
+        observer.observe(document.body, { childList: true, subtree: false });
+        installNavigationHooks();
+      });
+    }
   }
+} else {
+  console.info('[Linkual] Gemini 页面已禁用');
 }
