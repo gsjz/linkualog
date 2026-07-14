@@ -685,17 +685,50 @@ html.linkual-mobile-fullscreen-fallback {
   top: 8px;
   right: auto;
   bottom: auto;
-  width: min(520px, calc(100vw - 16px));
-  max-width: min(520px, calc(100vw - 16px));
+  width: min(600px, calc(100vw - 16px));
+  max-width: min(600px, calc(100vw - 16px));
   min-height: 0;
-  max-height: min(520px, calc(100vh - 16px));
+  max-height: min(620px, calc(100vh - 16px));
   border: 1px solid rgba(0, 0, 0, 0.14);
   border-radius: 12px;
   box-shadow: 0 12px 34px rgba(0, 0, 0, 0.24);
+  overflow-x: hidden;
+}
+
+#linkual-root .linkual-universal-floating-window .linkual-universal-top {
+  flex: 1 0 100%;
+  min-width: 0;
 }
 
 #linkual-root .linkual-universal-floating-window .linkual-universal-form {
-  flex: 0 1 auto;
+  flex: 1 0 100%;
+  grid-template-columns: minmax(0, 1fr) 34px 36px auto;
+  gap: 6px;
+  min-width: 0;
+}
+
+#linkual-root .linkual-universal-floating-window .linkual-universal-field.field-context {
+  grid-column: 1 / -1;
+  grid-row: 2;
+}
+
+#linkual-root .linkual-universal-floating-window .linkual-universal-clear {
+  grid-column: 2;
+  grid-row: 1;
+  width: 34px;
+}
+
+#linkual-root .linkual-universal-floating-window .linkual-universal-send {
+  grid-column: 3;
+  grid-row: 1;
+  width: 36px;
+  padding: 0;
+}
+
+#linkual-root .linkual-universal-floating-window .linkual-universal-inline-actions {
+  grid-column: 4;
+  grid-row: 1;
+  justify-content: flex-end;
 }
 
 #linkual-root .linkual-universal-widget ~ .linkual-mobile-fullscreen {

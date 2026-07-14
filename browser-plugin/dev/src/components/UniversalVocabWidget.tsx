@@ -742,8 +742,8 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
 
   const clampExpandedPosition = useCallback((left: number, top: number) => {
     const rect = widgetRef.current?.getBoundingClientRect();
-    const width = rect?.width || Math.min(520, window.innerWidth - 16);
-    const height = rect?.height || Math.min(520, window.innerHeight - 16);
+    const width = rect?.width || Math.min(window.matchMedia('(max-width: 720px)').matches ? 420 : 600, window.innerWidth - 16);
+    const height = rect?.height || Math.min(620, window.innerHeight - 16);
     return {
       left: Math.max(8, Math.min(left, window.innerWidth - width - 8)),
       top: Math.max(8, Math.min(top, window.innerHeight - height - 8)),
@@ -798,8 +798,8 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
   const handleBubbleExpand = () => {
     const bubbleRect = bubbleRef.current?.getBoundingClientRect();
     if (bubbleRect) {
-      const estimatedWidth = Math.min(520, window.innerWidth - 16);
-      const estimatedHeight = Math.min(420, window.innerHeight - 16);
+      const estimatedWidth = Math.min(window.matchMedia('(max-width: 720px)').matches ? 420 : 600, window.innerWidth - 16);
+      const estimatedHeight = Math.min(620, window.innerHeight - 16);
       const left = Math.max(8, Math.min(bubbleRect.left, window.innerWidth - estimatedWidth - 8));
       const top = bubbleRect.top > window.innerHeight / 2
         ? Math.max(8, bubbleRect.top - estimatedHeight - 8)
@@ -816,8 +816,8 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
     const clampExpandedPosition = () => setExpandedPosition((current) => {
       if (!current) return current;
       const rect = widgetRef.current?.getBoundingClientRect();
-      const width = rect?.width || Math.min(520, window.innerWidth - 16);
-      const height = rect?.height || Math.min(420, window.innerHeight - 16);
+      const width = rect?.width || Math.min(window.matchMedia('(max-width: 720px)').matches ? 420 : 600, window.innerWidth - 16);
+      const height = rect?.height || Math.min(620, window.innerHeight - 16);
       return {
         left: Math.max(8, Math.min(current.left, window.innerWidth - width - 8)),
         top: Math.max(8, Math.min(current.top, window.innerHeight - height - 8)),
@@ -848,17 +848,19 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
         title="Linkual"
       >
         <span className="linkual-universal-bubble-grip" aria-hidden="true">⋮⋮</span>
-        <button
-          type="button"
-          className="linkual-universal-bubble-translate"
-          onPointerDown={handleBubbleButtonPointerDown}
-          onClick={() => void articleTranslation.translateAll()}
-          disabled={!articleTranslation.isPageSupported || articleTranslation.isTranslatingAll}
-          aria-label="翻译页面"
-          title={articleTranslation.isPageSupported ? '翻译页面' : '当前页面未识别到正文'}
-        >
-          {articleTranslation.isTranslatingAll ? '翻译中…' : '翻译页面'}
-        </button>
+        {articleTranslation.isPageSupported && (
+          <button
+            type="button"
+            className="linkual-universal-bubble-translate"
+            onPointerDown={handleBubbleButtonPointerDown}
+            onClick={() => void articleTranslation.translateAll()}
+            disabled={articleTranslation.isTranslatingAll}
+            aria-label="翻译页面"
+            title="翻译页面"
+          >
+            {articleTranslation.isTranslatingAll ? '翻译中…' : '翻译页面'}
+          </button>
+        )}
         <button
           type="button"
           className="linkual-universal-bubble-expand"
