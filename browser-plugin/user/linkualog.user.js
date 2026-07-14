@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Linkual Log
 // @namespace    npm/vite-plugin-monkey
-// @version      0.0.35
+// @version      0.0.36
 // @author       Sergio Gao
 // @icon         https://vitejs.dev/logo.svg
 // @downloadURL  https://raw.githubusercontent.com/gsjz/linkualog/main/browser-plugin/user/linkualog.user.js
@@ -12960,7 +12960,7 @@
     const target = node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
     return !!target && container.contains(target);
   };
-  const getVisibleRangeRect$2 = (range) => {
+  const getVisibleRangeRect$1 = (range) => {
     const rects = Array.from(range.getClientRects()).filter((rect2) => rect2.width > 0 && rect2.height > 0);
     if (rects.length > 0) return rects[0];
     const rect = range.getBoundingClientRect();
@@ -13041,7 +13041,7 @@
         return;
       }
       const range = selection.getRangeAt(0);
-      const rect = getVisibleRangeRect$2(range);
+      const rect = getVisibleRangeRect$1(range);
       if (rect) {
         const position = getSelectionBoxPosition(rect, text);
         const placement = shouldDockSelectionBox() ? "dock" : "floating";
@@ -14428,7 +14428,7 @@ JSON 格式：
     ".ltx_authors",
     ".ltx_note"
   ].join(",");
-  const normalizeText$2 = (value) => value.replace(/\s+/g, " ").trim();
+  const normalizeText$1 = (value) => value.replace(/\s+/g, " ").trim();
   const ARXIV_HOSTNAMES = /* @__PURE__ */ new Set(["arxiv.org", "www.arxiv.org"]);
   function isArxivHtmlPage() {
     return ARXIV_HOSTNAMES.has(window.location.hostname) && window.location.pathname.startsWith("/html/");
@@ -14464,7 +14464,7 @@ JSON 格式：
     if (!isArxivHtmlPage()) return [];
     const root2 = getArticleRoot();
     if (!root2) return [];
-    const candidates = Array.from(root2.querySelectorAll(getCandidateSelector())).filter((element) => !isExcluded(element)).map((element) => ({ element, text: normalizeText$2(element.innerText || element.textContent || "") })).filter(({ element, text }) => text.length >= MIN_PARAGRAPH_LENGTH && !element.querySelector("img, video, iframe"));
+    const candidates = Array.from(root2.querySelectorAll(getCandidateSelector())).filter((element) => !isExcluded(element)).map((element) => ({ element, text: normalizeText$1(element.innerText || element.textContent || "") })).filter(({ element, text }) => text.length >= MIN_PARAGRAPH_LENGTH && !element.querySelector("img, video, iframe"));
     const seen = /* @__PURE__ */ new Set();
     return candidates.slice(0, MAX_PARAGRAPHS).filter(({ element }) => {
       if (seen.has(element)) return false;
@@ -14482,12 +14482,12 @@ JSON 格式：
       if (!keep.has(host)) host.remove();
     });
   }
-  const SENTENCE_PATTERN$2 = /[^.!?。！？]+[.!?。！？]+["'”’）)]*|[^.!?。！？]+$/g;
+  const SENTENCE_PATTERN$1 = /[^.!?。！？]+[.!?。！？]+["'”’）)]*|[^.!?。！？]+$/g;
   function normalizeSentence(value) {
     return value.replace(/\s+/g, " ").trim();
   }
   function splitSentences(value) {
-    return Array.from(value.matchAll(SENTENCE_PATTERN$2)).map((match) => normalizeSentence(match[0] || "")).filter(Boolean);
+    return Array.from(value.matchAll(SENTENCE_PATTERN$1)).map((match) => normalizeSentence(match[0] || "")).filter(Boolean);
   }
   function alignSentencePairs(source, translation) {
     const sourceSentences = splitSentences(source);
@@ -14863,12 +14863,12 @@ ${paragraph.text}`,
   const MOBILE_WIDGET_HEIGHT = 132;
   const COLLAPSED_WIDGET_HEIGHT = 28;
   const WIDGET_VIEWPORT_MARGIN = 8;
-  const MAX_WORD_SELECTION_LENGTH$1 = 180;
+  const MAX_WORD_SELECTION_LENGTH = 180;
   const MAX_CONTEXT_SELECTION_LENGTH = 4e3;
-  const CONTEXT_SENTENCE_RADIUS$1 = 2;
-  const SENTENCE_PATTERN$1 = /[^.!?。！？]+[.!?。！？]+["'”’）)]*|[^.!?。！？]+$/g;
+  const CONTEXT_SENTENCE_RADIUS = 2;
+  const SENTENCE_PATTERN = /[^.!?。！？]+[.!?。！？]+["'”’）)]*|[^.!?。！？]+$/g;
   const LINKUAL_NAVIGATION_EVENT$2 = "linkual_navigation";
-  const FLOATING_BUTTON_MARGIN$1 = 10;
+  const FLOATING_BUTTON_MARGIN = 10;
   const BUBBLE_MARGIN = 12;
   const BUBBLE_STORAGE_KEYS = ["universal_bubble_left", "universal_bubble_top"];
   const getDefaultExpandedHeight = () => window.matchMedia("(max-width: 720px)").matches ? MOBILE_WIDGET_HEIGHT : DESKTOP_WIDGET_HEIGHT;
@@ -14910,33 +14910,33 @@ ${paragraph.text}`,
     };
     return /* @__PURE__ */ jsxRuntimeExports.jsx("svg", { className: "linkual-universal-button-icon", viewBox: "0 0 24 24", "aria-hidden": "true", children: paths[name] });
   };
-  const normalizeText$1 = (value) => value.replace(/\s+/g, " ").trim();
-  const getSourceTitle$1 = () => {
-    const title = normalizeText$1(document.title.replace(/^\(\d+\)\s+/, ""));
+  const normalizeText = (value) => value.replace(/\s+/g, " ").trim();
+  const getSourceTitle = () => {
+    const title = normalizeText(document.title.replace(/^\(\d+\)\s+/, ""));
     return title || window.location.hostname || window.location.href;
   };
   const getPageUrl = () => window.location.href;
-  const getElementFromNode$1 = (node) => {
+  const getElementFromNode = (node) => {
     if (!node) return null;
     if (node instanceof Element) return node;
     return node.parentElement;
   };
   const isInsideLinkualRoot = (node) => {
-    const element = getElementFromNode$1(node);
+    const element = getElementFromNode(node);
     return Boolean(element == null ? void 0 : element.closest("#linkual-root"));
   };
-  const isInsideEditableElement$1 = (node) => {
-    const element = getElementFromNode$1(node);
+  const isInsideEditableElement = (node) => {
+    const element = getElementFromNode(node);
     if (!element) return false;
     return Boolean(element.closest("input, textarea, select, [contenteditable]"));
   };
-  const getSelectionScope$1 = (range) => {
-    let element = getElementFromNode$1(range.commonAncestorContainer);
+  const getSelectionScope = (range) => {
+    let element = getElementFromNode(range.commonAncestorContainer);
     let fallback = null;
     while (element && element !== document.body && element instanceof HTMLElement) {
       if (element.id === "linkual-root") return null;
       const tagName = element.tagName.toLowerCase();
-      const textLength = normalizeText$1(element.textContent || "").length;
+      const textLength = normalizeText(element.textContent || "").length;
       if (["article", "main", "section"].includes(tagName) || element.getAttribute("role") === "main") {
         return element;
       }
@@ -14949,7 +14949,7 @@ ${paragraph.text}`,
     }
     return fallback || document.body;
   };
-  const getRangeText$1 = (scope, range, side) => {
+  const getRangeText = (scope, range, side) => {
     const scopedRange = document.createRange();
     scopedRange.selectNodeContents(scope);
     try {
@@ -14965,39 +14965,39 @@ ${paragraph.text}`,
       scopedRange.detach();
     }
   };
-  const extractSentenceContext$1 = (beforeText, selectedText, afterText) => {
-    const normalizedBefore = normalizeText$1(beforeText);
-    const normalizedSelected = normalizeText$1(selectedText);
-    const normalizedAfter = normalizeText$1(afterText);
-    const fullText = normalizeText$1([normalizedBefore, normalizedSelected, normalizedAfter].filter(Boolean).join(" "));
+  const extractSentenceContext = (beforeText, selectedText, afterText) => {
+    const normalizedBefore = normalizeText(beforeText);
+    const normalizedSelected = normalizeText(selectedText);
+    const normalizedAfter = normalizeText(afterText);
+    const fullText = normalizeText([normalizedBefore, normalizedSelected, normalizedAfter].filter(Boolean).join(" "));
     if (!fullText) return normalizedSelected;
     const targetStart = normalizedBefore.length + (normalizedBefore ? 1 : 0);
     const targetEnd = targetStart + normalizedSelected.length;
-    const sentences = Array.from(fullText.matchAll(SENTENCE_PATTERN$1)).map((match) => ({
-      text: normalizeText$1(match[0] || ""),
+    const sentences = Array.from(fullText.matchAll(SENTENCE_PATTERN)).map((match) => ({
+      text: normalizeText(match[0] || ""),
       start: match.index ?? 0,
       end: (match.index ?? 0) + (match[0] || "").length
     })).filter((sentence) => sentence.text);
     if (sentences.length === 0) {
       const sliceStart = Math.max(0, targetStart - 360);
       const sliceEnd = Math.min(fullText.length, targetEnd + 360);
-      return normalizeText$1(fullText.slice(sliceStart, sliceEnd));
+      return normalizeText(fullText.slice(sliceStart, sliceEnd));
     }
     const targetSentenceIndex = sentences.findIndex((sentence) => sentence.start <= targetEnd && sentence.end >= targetStart);
     if (targetSentenceIndex < 0) {
-      return normalizeText$1(fullText.slice(Math.max(0, targetStart - 360), Math.min(fullText.length, targetEnd + 360)));
+      return normalizeText(fullText.slice(Math.max(0, targetStart - 360), Math.min(fullText.length, targetEnd + 360)));
     }
-    const startIndex = Math.max(0, targetSentenceIndex - CONTEXT_SENTENCE_RADIUS$1);
-    const endIndex = Math.min(sentences.length, targetSentenceIndex + CONTEXT_SENTENCE_RADIUS$1 + 1);
-    return normalizeText$1(sentences.slice(startIndex, endIndex).map((sentence) => sentence.text).join(" "));
+    const startIndex = Math.max(0, targetSentenceIndex - CONTEXT_SENTENCE_RADIUS);
+    const endIndex = Math.min(sentences.length, targetSentenceIndex + CONTEXT_SENTENCE_RADIUS + 1);
+    return normalizeText(sentences.slice(startIndex, endIndex).map((sentence) => sentence.text).join(" "));
   };
-  const getVisibleRangeRect$1 = (range) => {
+  const getVisibleRangeRect = (range) => {
     const rects = Array.from(range.getClientRects()).filter((rect2) => rect2.width > 0 && rect2.height > 0);
     if (rects.length > 0) return rects[0];
     const rect = range.getBoundingClientRect();
     return rect.width > 0 && rect.height > 0 ? rect : null;
   };
-  const getFloatingButtonPosition$1 = (rect) => {
+  const getFloatingButtonPosition = (rect) => {
     var _a, _b, _c, _d;
     const viewportWidth = ((_a = window.visualViewport) == null ? void 0 : _a.width) ?? window.innerWidth;
     const viewportHeight = ((_b = window.visualViewport) == null ? void 0 : _b.height) ?? window.innerHeight;
@@ -15008,48 +15008,48 @@ ${paragraph.text}`,
       Math.max(viewportLeft + 44, rect.left + rect.width / 2)
     );
     let top = rect.top - 38;
-    if (top < viewportTop + FLOATING_BUTTON_MARGIN$1) {
+    if (top < viewportTop + FLOATING_BUTTON_MARGIN) {
       top = rect.bottom + 8;
     }
     return {
       left,
       top: Math.min(
         viewportTop + viewportHeight - 38,
-        Math.max(viewportTop + FLOATING_BUTTON_MARGIN$1, top)
+        Math.max(viewportTop + FLOATING_BUTTON_MARGIN, top)
       )
     };
   };
-  const captureSelection$1 = (mode) => {
+  const captureSelection = (mode) => {
     const selection = window.getSelection();
-    const selectedText = normalizeText$1((selection == null ? void 0 : selection.toString()) || "");
+    const selectedText = normalizeText((selection == null ? void 0 : selection.toString()) || "");
     if (!selection || selection.rangeCount === 0 || selection.isCollapsed || !selectedText) {
       return null;
     }
-    const maxSelectionLength = mode === "word" ? MAX_WORD_SELECTION_LENGTH$1 : MAX_CONTEXT_SELECTION_LENGTH;
+    const maxSelectionLength = mode === "word" ? MAX_WORD_SELECTION_LENGTH : MAX_CONTEXT_SELECTION_LENGTH;
     if (selectedText.length > maxSelectionLength) {
       return null;
     }
-    if (isInsideLinkualRoot(selection.anchorNode) || isInsideLinkualRoot(selection.focusNode) || isInsideEditableElement$1(selection.anchorNode) || isInsideEditableElement$1(selection.focusNode)) {
+    if (isInsideLinkualRoot(selection.anchorNode) || isInsideLinkualRoot(selection.focusNode) || isInsideEditableElement(selection.anchorNode) || isInsideEditableElement(selection.focusNode)) {
       return null;
     }
     const range = selection.getRangeAt(0);
-    const scope = getSelectionScope$1(range);
+    const scope = getSelectionScope(range);
     if (!scope) return null;
-    const rect = getVisibleRangeRect$1(range);
+    const rect = getVisibleRangeRect(range);
     if (!rect) return null;
-    const beforeText = getRangeText$1(scope, range, "before");
-    const afterText = getRangeText$1(scope, range, "after");
-    const position = getFloatingButtonPosition$1(rect);
+    const beforeText = getRangeText(scope, range, "before");
+    const afterText = getRangeText(scope, range, "after");
+    const position = getFloatingButtonPosition(rect);
     return {
       text: selectedText,
-      context: mode === "word" ? extractSentenceContext$1(beforeText, selectedText, afterText) : selectedText,
-      source: getSourceTitle$1(),
+      context: mode === "word" ? extractSentenceContext(beforeText, selectedText, afterText) : selectedText,
+      source: getSourceTitle(),
       url: getPageUrl(),
       top: position.top,
       left: position.left
     };
   };
-  const UniversalVocabWidget = ({ onOpenSettings, persistentControls }) => {
+  const UniversalVocabWidget = ({ onOpenSettings }) => {
     const [isExpanded, setIsExpanded] = reactExports.useState(false);
     const [selection, setSelection] = reactExports.useState(null);
     const [word, setWord] = reactExports.useState("");
@@ -15076,7 +15076,6 @@ ${paragraph.text}`,
     const expandedDragRef = reactExports.useRef(null);
     const selectionTimerRef = reactExports.useRef(null);
     const articleTranslation = useArticleTranslation();
-    const shouldTrackSelection = isExpanded || !persistentControls;
     const hasPayload = Boolean(word.trim());
     const canSend = hasPayload;
     const statusText = reactExports.useMemo(() => {
@@ -15086,15 +15085,13 @@ ${paragraph.text}`,
       return "";
     }, [message, status]);
     const measureWidgetHeight = reactExports.useCallback(() => {
-      if (!persistentControls) return;
       const baseHeight = getDefaultExpandedHeight();
       const measuredHeight = widgetRef.current ? Math.ceil(widgetRef.current.scrollHeight) : 0;
       const nextHeight = Math.min(getMaxWidgetHeight(), Math.max(baseHeight, measuredHeight));
       setReservedHeight((currentHeight) => Math.abs(currentHeight - nextHeight) > 1 ? nextHeight : currentHeight);
-    }, [persistentControls]);
+    }, []);
     reactExports.useEffect(() => {
       var _a;
-      if (!persistentControls) return void 0;
       const updateReservedHeight = () => {
         syncVisualViewportHeightProperty();
         setReservedHeight(Math.min(getDefaultExpandedHeight(), getMaxWidgetHeight()));
@@ -15109,7 +15106,7 @@ ${paragraph.text}`,
         desktopQuery.removeEventListener("change", updateReservedHeight);
         (_a2 = window.visualViewport) == null ? void 0 : _a2.removeEventListener("resize", updateReservedHeight);
       };
-    }, [measureWidgetHeight, persistentControls]);
+    }, [measureWidgetHeight]);
     reactExports.useEffect(() => {
       if (!isExpanded) return void 0;
       const frameId = window.requestAnimationFrame(measureWidgetHeight);
@@ -15128,18 +15125,17 @@ ${paragraph.text}`,
         const nextCount = Number((detail == null ? void 0 : detail.pendingCount) || 0);
         setQueueCount(Number.isFinite(nextCount) ? nextCount : 0);
       };
-      if (!persistentControls) return void 0;
       window.addEventListener(QUEUE_COUNT_EVENT, updateQueueCount);
       window.dispatchEvent(new Event(QUEUE_REQUEST_COUNT_EVENT));
       return () => window.removeEventListener(QUEUE_COUNT_EVENT, updateQueueCount);
-    }, [persistentControls]);
+    }, []);
     reactExports.useEffect(() => {
       const handleNavigationRefresh = () => {
         setSelection(null);
         setSourceUrl(getPageUrl());
         window.requestAnimationFrame(() => {
           if (isExpanded) measureWidgetHeight();
-          if (persistentControls) syncVisualViewportHeightProperty();
+          syncVisualViewportHeightProperty();
         });
       };
       window.addEventListener(LINKUAL_NAVIGATION_EVENT$2, handleNavigationRefresh);
@@ -15148,13 +15144,13 @@ ${paragraph.text}`,
         window.removeEventListener(LINKUAL_NAVIGATION_EVENT$2, handleNavigationRefresh);
         window.removeEventListener("pageshow", handleNavigationRefresh);
       };
-    }, [isExpanded, measureWidgetHeight, persistentControls]);
+    }, [isExpanded, measureWidgetHeight]);
     const refreshSelection = reactExports.useCallback(() => {
-      if (!shouldTrackSelection) return;
-      setSelection(captureSelection$1(selectionMode));
-    }, [selectionMode, shouldTrackSelection]);
+      if (!isExpanded) return;
+      setSelection(captureSelection(selectionMode));
+    }, [isExpanded, selectionMode]);
     const scheduleSelectionRefresh = reactExports.useCallback((delay = 80) => {
-      if (!shouldTrackSelection) return;
+      if (!isExpanded) return;
       if (selectionTimerRef.current !== null) {
         window.clearTimeout(selectionTimerRef.current);
       }
@@ -15162,9 +15158,9 @@ ${paragraph.text}`,
         selectionTimerRef.current = null;
         refreshSelection();
       }, delay);
-    }, [refreshSelection, shouldTrackSelection]);
+    }, [isExpanded, refreshSelection]);
     reactExports.useEffect(() => {
-      if (!shouldTrackSelection) return void 0;
+      if (!isExpanded) return void 0;
       const handleSelectionChange = () => scheduleSelectionRefresh(90);
       const handlePointerUp = () => scheduleSelectionRefresh(20);
       const handleKeyUp = () => scheduleSelectionRefresh(20);
@@ -15180,7 +15176,7 @@ ${paragraph.text}`,
           selectionTimerRef.current = null;
         }
       };
-    }, [scheduleSelectionRefresh, shouldTrackSelection]);
+    }, [isExpanded, scheduleSelectionRefresh]);
     const handleAddSelection = () => {
       var _a;
       if (!selection) return;
@@ -15221,7 +15217,7 @@ ${paragraph.text}`,
         enqueueVocabTask({
           word: finalWord,
           context: finalContext,
-          source: source || getSourceTitle$1(),
+          source: source || getSourceTitle(),
           source_url: sourceUrl || getPageUrl()
         });
       } catch (err) {
@@ -15235,29 +15231,10 @@ ${paragraph.text}`,
       setSelection(null);
       (_a = window.getSelection()) == null ? void 0 : _a.removeAllRanges();
     };
-    const handleQuickAddSelection = () => {
-      var _a;
-      if (!selection) return;
-      try {
-        enqueueVocabTask({
-          word: selection.text,
-          context: selection.context,
-          source: selection.source,
-          source_url: selection.url
-        });
-        setStatus("success");
-        setMessage("已加入队列");
-      } catch (err) {
-        setStatus("error");
-        setMessage(err instanceof Error ? err.message : "加入失败");
-      }
-      setSelection(null);
-      (_a = window.getSelection()) == null ? void 0 : _a.removeAllRanges();
-    };
     const handleModeChange = (mode) => {
       setSelectionMode(mode);
       setMessage("");
-      window.setTimeout(() => setSelection(captureSelection$1(mode)), 0);
+      window.setTimeout(() => setSelection(captureSelection(mode)), 0);
     };
     const handleContextWheel = (event) => {
       const input = event.currentTarget;
@@ -15395,6 +15372,7 @@ ${paragraph.text}`,
       var _a;
       const rect = (_a = widgetRef.current) == null ? void 0 : _a.getBoundingClientRect();
       if (rect) persistBubblePosition({ left: rect.left, top: rect.top });
+      setSelection(null);
       setIsExpanded(false);
     };
     const handleBubbleExpand = () => {
@@ -15411,7 +15389,6 @@ ${paragraph.text}`,
       setIsExpanded(true);
     };
     reactExports.useEffect(() => {
-      if (!persistentControls) return void 0;
       if (!isExpanded) return void 0;
       const clampExpandedPosition2 = () => setExpandedPosition((current) => {
         var _a;
@@ -15430,26 +15407,7 @@ ${paragraph.text}`,
         window.cancelAnimationFrame(frameId);
         window.removeEventListener("resize", clampExpandedPosition2);
       };
-    }, [isExpanded, persistentControls, reservedHeight]);
-    if (!persistentControls) {
-      return selection ? /* @__PURE__ */ jsxRuntimeExports.jsx(
-        "button",
-        {
-          type: "button",
-          className: "linkual-universal-floating-add linkual-universal-quick-add",
-          onMouseDown: (event) => event.preventDefault(),
-          onPointerDown: (event) => event.preventDefault(),
-          onClick: handleQuickAddSelection,
-          style: {
-            top: selection.top,
-            left: selection.left,
-            "--linkual-theme": themeColor
-          },
-          title: status === "error" ? message : "加入 Linkual 生词队列",
-          children: "加入生词"
-        }
-      ) : null;
-    }
+    }, [isExpanded, reservedHeight]);
     if (!isExpanded) {
       return /* @__PURE__ */ jsxRuntimeExports.jsxs(
         "div",
@@ -15525,7 +15483,7 @@ ${paragraph.text}`,
                 left: selection.left,
                 "--linkual-theme": themeColor
               },
-              children: "加入"
+              children: "填入"
             }
           ),
           /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-universal-top", children: [
@@ -15540,7 +15498,7 @@ ${paragraph.text}`,
                   onMouseDown: (event) => event.preventDefault(),
                   onPointerDown: (event) => event.preventDefault(),
                   onClick: handleAddSelection,
-                  children: "加入"
+                  children: "填入"
                 }
               )
             ] }) : /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "linkual-universal-muted", children: "未选中文本" }) }),
@@ -15813,7 +15771,6 @@ ${paragraph.text}`,
     const isVideoSite = isYouTubeHost$1();
     const isArticleTranslationEnabled = isArxivHtmlPage();
     const [inVideo, setInVideo] = reactExports.useState(adapter.isVideoPage());
-    const hasPersistentControls = isVideoSite && inVideo || isArticleTranslationEnabled;
     const getAdpCfg = (key) => {
       const val = ConfigService.get(`${key}_${adapter.platformName}`);
       return val !== null && val !== void 0 && val !== "" ? val : ConfigService.get(key);
@@ -16032,14 +15989,13 @@ ${paragraph.text}`,
       /* @__PURE__ */ jsxRuntimeExports.jsx(
         UniversalVocabWidget,
         {
-          onOpenSettings: () => setIsSettingsOpen(true),
-          persistentControls: hasPersistentControls
+          onOpenSettings: () => setIsSettingsOpen(true)
         }
       ),
       /* @__PURE__ */ jsxRuntimeExports.jsx(ArticleTranslator, {}),
       showMobileFullscreenButton && /* @__PURE__ */ jsxRuntimeExports.jsx(MobileFullscreenButton, { adapter }),
-      hasPersistentControls && /* @__PURE__ */ jsxRuntimeExports.jsx(VocabQueue, {}),
-      hasPersistentControls && isSettingsOpen && /* @__PURE__ */ jsxRuntimeExports.jsx(Settings, { adapter, onClose: () => setIsSettingsOpen(false) })
+      /* @__PURE__ */ jsxRuntimeExports.jsx(VocabQueue, {}),
+      isSettingsOpen && /* @__PURE__ */ jsxRuntimeExports.jsx(Settings, { adapter, onClose: () => setIsSettingsOpen(false) })
     ] }) });
   };
   const PLAYER_RESPONSE_KEYS = [
@@ -17296,270 +17252,6 @@ ${paragraph.text}`,
       if (youtubeAdapter.match(url)) return youtubeAdapter;
     }
     return getCachedAdapter("empty", () => new EmptyAdapter());
-  }
-  const MAX_WORD_SELECTION_LENGTH = 180;
-  const CONTEXT_SENTENCE_RADIUS = 2;
-  const SENTENCE_PATTERN = /[^.!?。！？]+[.!?。！？]+["'”’）)]*|[^.!?。！？]+$/g;
-  const FLOATING_BUTTON_MARGIN = 10;
-  const BUTTON_WIDTH_ESTIMATE = 88;
-  const BUTTON_HEIGHT_ESTIMATE = 34;
-  const normalizeText = (value) => value.replace(/\s+/g, " ").trim();
-  const getSourceTitle = () => {
-    const title = normalizeText(document.title.replace(/^\(\d+\)\s+/, ""));
-    return title || window.location.hostname || window.location.href;
-  };
-  const getElementFromNode = (node) => {
-    if (!node) return null;
-    if (node instanceof Element) return node;
-    return node.parentElement;
-  };
-  const isInsideLinkualElement = (node) => {
-    const element = getElementFromNode(node);
-    return Boolean(element == null ? void 0 : element.closest('[data-linkual-quick-selection="true"], #linkual-root'));
-  };
-  const isInsideEditableElement = (node) => {
-    const element = getElementFromNode(node);
-    if (!element) return false;
-    return Boolean(element.closest("input, textarea, select, [contenteditable]"));
-  };
-  const getSelectionScope = (range) => {
-    let element = getElementFromNode(range.commonAncestorContainer);
-    let fallback = null;
-    while (element && element !== document.body && element instanceof HTMLElement) {
-      if (isInsideLinkualElement(element)) return null;
-      const tagName = element.tagName.toLowerCase();
-      const textLength = normalizeText(element.textContent || "").length;
-      if (["article", "main", "section"].includes(tagName) || element.getAttribute("role") === "main") {
-        return element;
-      }
-      if (["p", "li", "blockquote", "td", "th"].includes(tagName)) {
-        fallback = element;
-      } else if (tagName === "div" && textLength > 220 && textLength < 8e3) {
-        return element;
-      }
-      element = element.parentElement;
-    }
-    return fallback || document.body;
-  };
-  const getRangeText = (scope, range, side) => {
-    const scopedRange = document.createRange();
-    scopedRange.selectNodeContents(scope);
-    try {
-      if (side === "before") {
-        scopedRange.setEnd(range.startContainer, range.startOffset);
-      } else {
-        scopedRange.setStart(range.endContainer, range.endOffset);
-      }
-      return scopedRange.toString();
-    } catch {
-      return "";
-    } finally {
-      scopedRange.detach();
-    }
-  };
-  const extractSentenceContext = (beforeText, selectedText, afterText) => {
-    const normalizedBefore = normalizeText(beforeText);
-    const normalizedSelected = normalizeText(selectedText);
-    const normalizedAfter = normalizeText(afterText);
-    const fullText = normalizeText([normalizedBefore, normalizedSelected, normalizedAfter].filter(Boolean).join(" "));
-    if (!fullText) return normalizedSelected;
-    const targetStart = normalizedBefore.length + (normalizedBefore ? 1 : 0);
-    const targetEnd = targetStart + normalizedSelected.length;
-    const sentences = Array.from(fullText.matchAll(SENTENCE_PATTERN)).map((match) => ({
-      text: normalizeText(match[0] || ""),
-      start: match.index ?? 0,
-      end: (match.index ?? 0) + (match[0] || "").length
-    })).filter((sentence) => sentence.text);
-    if (sentences.length === 0) {
-      const sliceStart = Math.max(0, targetStart - 360);
-      const sliceEnd = Math.min(fullText.length, targetEnd + 360);
-      return normalizeText(fullText.slice(sliceStart, sliceEnd));
-    }
-    const targetSentenceIndex = sentences.findIndex((sentence) => sentence.start <= targetEnd && sentence.end >= targetStart);
-    if (targetSentenceIndex < 0) {
-      return normalizeText(fullText.slice(Math.max(0, targetStart - 360), Math.min(fullText.length, targetEnd + 360)));
-    }
-    const startIndex = Math.max(0, targetSentenceIndex - CONTEXT_SENTENCE_RADIUS);
-    const endIndex = Math.min(sentences.length, targetSentenceIndex + CONTEXT_SENTENCE_RADIUS + 1);
-    return normalizeText(sentences.slice(startIndex, endIndex).map((sentence) => sentence.text).join(" "));
-  };
-  const getVisibleRangeRect = (range) => {
-    const rects = Array.from(range.getClientRects()).filter((rect2) => rect2.width > 0 && rect2.height > 0);
-    if (rects.length > 0) return rects[0];
-    const rect = range.getBoundingClientRect();
-    return rect.width > 0 && rect.height > 0 ? rect : null;
-  };
-  const getFloatingButtonPosition = (rect) => {
-    var _a, _b, _c, _d;
-    const viewportWidth = ((_a = window.visualViewport) == null ? void 0 : _a.width) ?? window.innerWidth;
-    const viewportHeight = ((_b = window.visualViewport) == null ? void 0 : _b.height) ?? window.innerHeight;
-    const viewportLeft = ((_c = window.visualViewport) == null ? void 0 : _c.offsetLeft) ?? 0;
-    const viewportTop = ((_d = window.visualViewport) == null ? void 0 : _d.offsetTop) ?? 0;
-    const left = Math.min(
-      viewportLeft + viewportWidth - BUTTON_WIDTH_ESTIMATE / 2 - FLOATING_BUTTON_MARGIN,
-      Math.max(viewportLeft + BUTTON_WIDTH_ESTIMATE / 2 + FLOATING_BUTTON_MARGIN, rect.left + rect.width / 2)
-    );
-    let top = rect.top - BUTTON_HEIGHT_ESTIMATE - 8;
-    if (top < viewportTop + FLOATING_BUTTON_MARGIN) {
-      top = rect.bottom + 8;
-    }
-    return {
-      left,
-      top: Math.min(
-        viewportTop + viewportHeight - BUTTON_HEIGHT_ESTIMATE - FLOATING_BUTTON_MARGIN,
-        Math.max(viewportTop + FLOATING_BUTTON_MARGIN, top)
-      )
-    };
-  };
-  const captureSelection = () => {
-    const selection = window.getSelection();
-    const selectedText = normalizeText((selection == null ? void 0 : selection.toString()) || "");
-    if (!selection || selection.rangeCount === 0 || selection.isCollapsed || !selectedText) {
-      return null;
-    }
-    if (selectedText.length > MAX_WORD_SELECTION_LENGTH) {
-      return null;
-    }
-    if (isInsideLinkualElement(selection.anchorNode) || isInsideLinkualElement(selection.focusNode) || isInsideEditableElement(selection.anchorNode) || isInsideEditableElement(selection.focusNode)) {
-      return null;
-    }
-    const range = selection.getRangeAt(0);
-    const scope = getSelectionScope(range);
-    if (!scope) return null;
-    const rect = getVisibleRangeRect(range);
-    if (!rect) return null;
-    const beforeText = getRangeText(scope, range, "before");
-    const afterText = getRangeText(scope, range, "after");
-    const position = getFloatingButtonPosition(rect);
-    return {
-      text: selectedText,
-      context: extractSentenceContext(beforeText, selectedText, afterText),
-      source: getSourceTitle(),
-      url: window.location.href,
-      top: position.top,
-      left: position.left
-    };
-  };
-  const applyButtonStyle = (button, selection) => {
-    const themeColor = ConfigService.get("theme_color") || "#6a1b9a";
-    button.style.cssText = [
-      "all: initial",
-      "position: fixed",
-      `top: ${selection.top}px`,
-      `left: ${selection.left}px`,
-      "transform: translateX(-50%)",
-      "z-index: 2147483647",
-      "min-height: 30px",
-      "max-width: min(180px, calc(100vw - 24px))",
-      "box-sizing: border-box",
-      "padding: 0 12px",
-      "border: 0",
-      "border-radius: 6px",
-      `background: ${themeColor}`,
-      "color: #fff",
-      "box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2)",
-      "cursor: pointer",
-      'font: 800 12px/30px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-      "white-space: nowrap",
-      "text-align: center",
-      "user-select: none",
-      "-webkit-user-select: none",
-      "pointer-events: auto"
-    ].join(";");
-  };
-  function installQuickSelectionAdd() {
-    let button = null;
-    let currentSelection = null;
-    let refreshTimer = null;
-    let removeTimer = null;
-    const removeButton = () => {
-      if (removeTimer !== null) {
-        window.clearTimeout(removeTimer);
-        removeTimer = null;
-      }
-      button == null ? void 0 : button.remove();
-      button = null;
-      currentSelection = null;
-    };
-    const showButton = (selection) => {
-      var _a;
-      currentSelection = selection;
-      if (!button) {
-        button = document.createElement("button");
-        button.type = "button";
-        button.dataset.linkualQuickSelection = "true";
-        button.textContent = "加入生词";
-        button.title = "加入 Linkual 生词队列";
-        button.addEventListener("pointerdown", (event) => event.preventDefault());
-        button.addEventListener("mousedown", (event) => event.preventDefault());
-        button.addEventListener("click", () => {
-          var _a2;
-          if (!currentSelection) return;
-          try {
-            enqueueVocabTask({
-              word: currentSelection.text,
-              context: currentSelection.context,
-              source: currentSelection.source,
-              source_url: currentSelection.url
-            });
-            button.textContent = "已加入";
-            (_a2 = window.getSelection()) == null ? void 0 : _a2.removeAllRanges();
-            removeTimer = window.setTimeout(removeButton, 700);
-          } catch (err) {
-            button.textContent = "加入失败";
-            button.title = err instanceof Error ? err.message : "加入失败";
-            removeTimer = window.setTimeout(removeButton, 1200);
-          }
-        });
-      }
-      if (!button.isConnected) {
-        (_a = document.body) == null ? void 0 : _a.append(button);
-      }
-      button.textContent = "加入生词";
-      button.title = "加入 Linkual 生词队列";
-      applyButtonStyle(button, selection);
-    };
-    const refreshSelection = () => {
-      refreshTimer = null;
-      const selection = captureSelection();
-      if (selection) {
-        showButton(selection);
-      } else if (!(button == null ? void 0 : button.matches(":hover"))) {
-        removeButton();
-      }
-    };
-    const scheduleSelectionRefresh = (delay = 70) => {
-      if (refreshTimer !== null) {
-        window.clearTimeout(refreshTimer);
-      }
-      refreshTimer = window.setTimeout(refreshSelection, delay);
-    };
-    const handlePointerDown = (event) => {
-      if (event.target instanceof Element && event.target.closest('[data-linkual-quick-selection="true"]')) return;
-      removeButton();
-    };
-    const handleSelectionChange = () => scheduleSelectionRefresh(90);
-    const handlePointerUp = () => scheduleSelectionRefresh(20);
-    const handleKeyUp = () => scheduleSelectionRefresh(20);
-    document.addEventListener("selectionchange", handleSelectionChange);
-    window.addEventListener("pointerup", handlePointerUp, true);
-    window.addEventListener("keyup", handleKeyUp, true);
-    window.addEventListener("pointerdown", handlePointerDown, true);
-    window.addEventListener("scroll", removeButton, true);
-    window.addEventListener("pagehide", removeButton);
-    return () => {
-      if (refreshTimer !== null) {
-        window.clearTimeout(refreshTimer);
-        refreshTimer = null;
-      }
-      document.removeEventListener("selectionchange", handleSelectionChange);
-      window.removeEventListener("pointerup", handlePointerUp, true);
-      window.removeEventListener("keyup", handleKeyUp, true);
-      window.removeEventListener("pointerdown", handlePointerDown, true);
-      window.removeEventListener("scroll", removeButton, true);
-      window.removeEventListener("pagehide", removeButton);
-      removeButton();
-    };
   }
   const appCss = `::highlight(linkual-article-source-active) {
   background: rgba(104, 69, 154, 0.1);
@@ -19056,9 +18748,6 @@ ${appCss}`;
   function isYouTubeHost() {
     return /(^|\.)youtube(?:-nocookie)?\.com$/i.test(window.location.hostname);
   }
-  function shouldLoadFullApp() {
-    return isYouTubeHost() || isArxivHtmlPage();
-  }
   function getPageWindow() {
     try {
       return typeof unsafeWindow !== "undefined" ? unsafeWindow : window;
@@ -19155,20 +18844,20 @@ ${appCss}`;
     pageWindow.addEventListener("hashchange", scheduleNavigationRefresh, true);
     window.addEventListener("pageshow", scheduleNavigationRefresh);
   }
-  if (shouldLoadFullApp()) {
-    if (document.body) {
-      mountApp();
-    } else {
-      document.addEventListener("DOMContentLoaded", mountApp);
-    }
-    if (isYouTubeHost()) {
-      installNavigationHooks();
-      window.addEventListener("yt-navigate-finish", scheduleNavigationRefresh);
-    }
-    document.addEventListener("fullscreenchange", () => {
-      const app = document.getElementById("linkual-root");
-      if (app) attachRootToActiveHost(app);
-    });
+  if (document.body) {
+    mountApp();
+  } else {
+    document.addEventListener("DOMContentLoaded", mountApp);
+  }
+  if (isYouTubeHost()) {
+    installNavigationHooks();
+    window.addEventListener("yt-navigate-finish", scheduleNavigationRefresh);
+  }
+  document.addEventListener("fullscreenchange", () => {
+    const app = document.getElementById("linkual-root");
+    if (app) attachRootToActiveHost(app);
+  });
+  if (isYouTubeHost() || isArxivHtmlPage()) {
     const observer = new MutationObserver(() => {
       if (document.body && !document.getElementById("linkual-root")) {
         console.log("[Linkual] 检测到根节点被意外移除，正在尝试恢复...");
@@ -19188,8 +18877,6 @@ ${appCss}`;
         installNavigationHooks();
       });
     }
-  } else {
-    installQuickSelectionAdd();
   }
 
 })();
