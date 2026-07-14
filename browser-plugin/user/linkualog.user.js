@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Linkual Log
 // @namespace    npm/vite-plugin-monkey
-// @version      0.0.30
+// @version      0.0.33
 // @author       Sergio Gao
 // @icon         https://vitejs.dev/logo.svg
 // @downloadURL  https://raw.githubusercontent.com/gsjz/linkualog/main/browser-plugin/user/linkualog.user.js
@@ -14577,14 +14577,26 @@ JSON 格式：
     return sentences.length - 1;
   }
   const LINKUAL_NAVIGATION_EVENT$3 = "linkual_navigation";
+  const INITIAL_TRANSLATION_CONCURRENCY = 4;
+  const MIN_TRANSLATION_CONCURRENCY = 1;
+  const MAX_TRANSLATION_CONCURRENCY = 8;
+  const HEALTHY_RESPONSES_TO_SCALE = 3;
+  const RATE_LIMIT_ERROR_PATTERN = /(?:429|rate\s*limit|too\s*many\s*requests|限流|请求过多)/i;
   const ArticleTranslationContext = reactExports.createContext(null);
   const ArticleTranslationProvider = ({ enabled, children }) => {
     const [paragraphs, setParagraphs] = reactExports.useState([]);
     const [pageUrl, setPageUrl] = reactExports.useState(window.location.href);
     const [translations, setTranslations] = reactExports.useState({});
     const [isTranslatingAll, setIsTranslatingAll] = reactExports.useState(false);
+    const [translationConcurrency, setTranslationConcurrency] = reactExports.useState(INITIAL_TRANSLATION_CONCURRENCY);
     const abortsRef = reactExports.useRef(/* @__PURE__ */ new Map());
     const allRunIdRef = reactExports.useRef(0);
+    const concurrencyRef = reactExports.useRef(INITIAL_TRANSLATION_CONCURRENCY);
+    const healthyResponsesRef = reactExports.useRef(0);
+    const translationsRef = reactExports.useRef(translations);
+    reactExports.useEffect(() => {
+      translationsRef.current = translations;
+    }, [translations]);
     const getTargetLanguage = () => ConfigService.get("web_target_language").trim() || "简体中文";
     const cacheScopeRef = reactExports.useRef(`${window.location.href}
 ${ConfigService.get("web_target_language").trim() || "简体中文"}`);
@@ -14666,7 +14678,7 @@ ${getTargetLanguage()}`;
         removeArticleTranslationHosts();
       };
     }, [enabled, syncParagraphs]);
-    const translateParagraph = reactExports.useCallback((paragraph) => {
+    const translateParagraphRequest = reactExports.useCallback((paragraph) => {
       var _a;
       const apiKey = ConfigService.get("api_key").trim();
       const apiUrl = ConfigService.get("api_url").trim();
@@ -14679,7 +14691,7 @@ ${getTargetLanguage()}`;
           ...previous,
           [paragraph.id]: { status: "error", text: "", error: "请先在设置中填入 API Key" }
         }));
-        return Promise.resolve(false);
+        return Promise.resolve({ success: false, aborted: false, error: "请先在设置中填入 API Key", elapsedMs: 0 });
       }
       (_a = abortsRef.current.get(paragraph.id)) == null ? void 0 : _a();
       setTranslations((previous) => ({
@@ -14689,6 +14701,7 @@ ${getTargetLanguage()}`;
       return new Promise((resolve) => {
         let content = "";
         let settled = false;
+        const startedAt = Date.now();
         const finish = (success, error) => {
           if (settled) return;
           settled = true;
@@ -14718,7 +14731,12 @@ ${getTargetLanguage()}`;
               [paragraph.id]: { status: "error", text: content, error: error || "翻译失败，请重试" }
             }));
           }
-          resolve(success);
+          resolve({
+            success,
+            error,
+            aborted: error === "ABORTED",
+            elapsedMs: Date.now() - startedAt
+          });
         };
         const request = fetchLlmStream({
           apiUrl,
@@ -14743,20 +14761,72 @@ ${paragraph.text}`,
         abortsRef.current.set(paragraph.id, request.abort);
       });
     }, []);
+    const translateParagraph = reactExports.useCallback(async (paragraph) => (await translateParagraphRequest(paragraph)).success, [translateParagraphRequest]);
+    const adaptTranslationConcurrency = reactExports.useCallback((result, timeoutSec) => {
+      if (result.aborted) return;
+      const slowResponseLimit = Math.max(5e3, timeoutSec * 1e3 * 0.65);
+      const shouldReduce = !result.success || result.elapsedMs >= slowResponseLimit;
+      if (shouldReduce) {
+        healthyResponsesRef.current = 0;
+        const isRateLimited = RATE_LIMIT_ERROR_PATTERN.test(result.error || "");
+        const nextConcurrency2 = isRateLimited ? Math.max(MIN_TRANSLATION_CONCURRENCY, Math.floor(concurrencyRef.current / 2)) : Math.max(MIN_TRANSLATION_CONCURRENCY, concurrencyRef.current - 1);
+        concurrencyRef.current = nextConcurrency2;
+        setTranslationConcurrency(nextConcurrency2);
+        return;
+      }
+      healthyResponsesRef.current += 1;
+      if (healthyResponsesRef.current < HEALTHY_RESPONSES_TO_SCALE) return;
+      healthyResponsesRef.current = 0;
+      const nextConcurrency = Math.min(
+        MAX_TRANSLATION_CONCURRENCY,
+        concurrencyRef.current + 1
+      );
+      concurrencyRef.current = nextConcurrency;
+      setTranslationConcurrency(nextConcurrency);
+    }, []);
     const translateAll = reactExports.useCallback(async () => {
       if (isTranslatingAll || paragraphs.length === 0) return;
       const runId = allRunIdRef.current + 1;
       allRunIdRef.current = runId;
       setIsTranslatingAll(true);
-      for (const paragraph of paragraphs) {
-        if (allRunIdRef.current !== runId) break;
-        const state = translations[paragraph.id];
-        if ((state == null ? void 0 : state.status) === "done") continue;
-        const success = await translateParagraph(paragraph);
-        if (!success) break;
-      }
-      if (allRunIdRef.current === runId) setIsTranslatingAll(false);
-    }, [isTranslatingAll, paragraphs, translateParagraph, translations]);
+      healthyResponsesRef.current = 0;
+      const timeout = parseInt(ConfigService.get("api_timeout"), 10) || 30;
+      const queue = paragraphs.filter((paragraph) => {
+        var _a;
+        return ((_a = translationsRef.current[paragraph.id]) == null ? void 0 : _a.status) !== "done";
+      });
+      await new Promise((resolve) => {
+        let cursor = 0;
+        let activeCount = 0;
+        let settled = false;
+        const finish = () => {
+          if (settled || activeCount > 0 || cursor < queue.length && allRunIdRef.current === runId) return;
+          settled = true;
+          if (allRunIdRef.current === runId) setIsTranslatingAll(false);
+          resolve();
+        };
+        const pump = () => {
+          if (allRunIdRef.current !== runId) {
+            finish();
+            return;
+          }
+          while (activeCount < concurrencyRef.current && cursor < queue.length) {
+            const paragraph = queue[cursor];
+            cursor += 1;
+            activeCount += 1;
+            void translateParagraphRequest(paragraph).then((result) => {
+              adaptTranslationConcurrency(result, timeout);
+            }).finally(() => {
+              activeCount -= 1;
+              pump();
+              finish();
+            });
+          }
+          finish();
+        };
+        pump();
+      });
+    }, [adaptTranslationConcurrency, isTranslatingAll, paragraphs, translateParagraphRequest]);
     const stopTranslation = reactExports.useCallback(() => {
       allRunIdRef.current += 1;
       abortsRef.current.forEach((abort) => abort());
@@ -14777,11 +14847,12 @@ ${paragraph.text}`,
       isPageSupported: paragraphs.length > 0,
       doneCount,
       isTranslatingAll,
+      translationConcurrency,
       translateParagraph,
       translateAll,
       stopTranslation,
       rescan: syncParagraphs
-    }), [doneCount, isTranslatingAll, paragraphs, stopTranslation, syncParagraphs, translateAll, translateParagraph, translations]);
+    }), [doneCount, isTranslatingAll, paragraphs, stopTranslation, syncParagraphs, translateAll, translateParagraph, translationConcurrency, translations]);
     return /* @__PURE__ */ jsxRuntimeExports.jsx(ArticleTranslationContext.Provider, { value, children });
   };
   function useArticleTranslation() {
@@ -14799,31 +14870,26 @@ ${paragraph.text}`,
   const MAX_CONTEXT_SELECTION_LENGTH = 4e3;
   const CONTEXT_SENTENCE_RADIUS = 2;
   const SENTENCE_PATTERN = /[^.!?。！？]+[.!?。！？]+["'”’）)]*|[^.!?。！？]+$/g;
-  const VIEWPORT_PATCH_MARKER = "__linkualUniversalViewportPatchInstalled";
-  const VIEWPORT_OFFSET_KEY = "__linkualUniversalWidgetHeight";
-  const PAGE_RESERVE_STYLE_ID = "linkual-universal-page-reserve";
   const LINKUAL_NAVIGATION_EVENT$2 = "linkual_navigation";
   const FLOATING_BUTTON_MARGIN = 10;
   const BUBBLE_MARGIN = 12;
   const BUBBLE_STORAGE_KEYS = ["universal_bubble_left", "universal_bubble_top"];
   const getDefaultExpandedHeight = () => window.matchMedia("(max-width: 720px)").matches ? MOBILE_WIDGET_HEIGHT : DESKTOP_WIDGET_HEIGHT;
-  const isOwnViewportGetterPatched = (target, marker) => Boolean(
-    target && target[marker]
-  );
   const getVisualViewportHeight = () => {
     var _a;
     const viewportHeight = ((_a = window.visualViewport) == null ? void 0 : _a.height) || window.innerHeight || document.documentElement.clientHeight;
-    const reservedOffset = isOwnViewportGetterPatched(window.visualViewport, "__linkualVisualViewportHeightPatched") || isOwnViewportGetterPatched(window, "__linkualInnerHeightPatched") ? getViewportOffset() : 0;
-    const rawHeight = Number(viewportHeight) + reservedOffset;
+    const rawHeight = Number(viewportHeight);
     return Number.isFinite(rawHeight) && rawHeight > 0 ? rawHeight : getDefaultExpandedHeight();
+  };
+  const syncVisualViewportHeightProperty = () => {
+    const root2 = document.getElementById("linkual-root");
+    if (!root2) return;
+    root2.style.setProperty("--linkual-visual-viewport-height", `${getVisualViewportHeight()}px`);
   };
   const getMaxWidgetHeight = () => Math.max(
     COLLAPSED_WIDGET_HEIGHT,
     Math.floor(getVisualViewportHeight() - WIDGET_VIEWPORT_MARGIN)
   );
-  const syncVisualViewportHeightProperty = () => {
-    document.documentElement.style.setProperty("--linkual-visual-viewport-height", `${Math.ceil(getVisualViewportHeight())}px`);
-  };
   const ActionIcon = ({ name }) => {
     const paths = {
       add: /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
@@ -14986,118 +15052,6 @@ ${paragraph.text}`,
       left: position.left
     };
   };
-  const getPageWindow$1 = () => {
-    try {
-      return typeof unsafeWindow !== "undefined" ? unsafeWindow : window;
-    } catch {
-      return window;
-    }
-  };
-  const findPropertyDescriptor = (target, property) => {
-    let cursor = target;
-    while (cursor) {
-      const descriptor = Object.getOwnPropertyDescriptor(cursor, property);
-      if (descriptor) return descriptor;
-      cursor = Object.getPrototypeOf(cursor);
-    }
-    return void 0;
-  };
-  const getViewportOffset = () => {
-    const pageWindow = getPageWindow$1();
-    const raw = Number(pageWindow[VIEWPORT_OFFSET_KEY] || 0);
-    return Number.isFinite(raw) ? raw : 0;
-  };
-  const patchNumericHeightGetter = (target, property, marker) => {
-    if (!target || target[marker]) return;
-    const descriptor = findPropertyDescriptor(target, property);
-    if (!(descriptor == null ? void 0 : descriptor.get)) return;
-    try {
-      Object.defineProperty(target, property, {
-        configurable: true,
-        get() {
-          var _a;
-          const value = Number(((_a = descriptor.get) == null ? void 0 : _a.call(this)) || 0);
-          return Math.max(0, value - getViewportOffset());
-        }
-      });
-      target[marker] = true;
-    } catch {
-    }
-  };
-  const patchDocumentViewportElements = () => {
-    patchNumericHeightGetter(document.documentElement, "clientHeight", "__linkualClientHeightPatched");
-    patchNumericHeightGetter(document.body, "clientHeight", "__linkualClientHeightPatched");
-  };
-  const installViewportHeightPatch = () => {
-    const pageWindow = getPageWindow$1();
-    if (!pageWindow[VIEWPORT_PATCH_MARKER]) {
-      patchNumericHeightGetter(pageWindow, "innerHeight", "__linkualInnerHeightPatched");
-      patchNumericHeightGetter(pageWindow.visualViewport, "height", "__linkualVisualViewportHeightPatched");
-      pageWindow[VIEWPORT_PATCH_MARKER] = true;
-    }
-    patchDocumentViewportElements();
-  };
-  const ensurePageReserveStyle = () => {
-    let styleEl = document.getElementById(PAGE_RESERVE_STYLE_ID);
-    if (!styleEl) {
-      styleEl = document.createElement("style");
-      styleEl.id = PAGE_RESERVE_STYLE_ID;
-      document.head.appendChild(styleEl);
-    }
-    styleEl.textContent = `
-    html.linkual-universal-widget-open {
-      --linkual-page-bottom-reserve: calc(var(--linkual-universal-widget-height, ${COLLAPSED_WIDGET_HEIGHT}px) + env(safe-area-inset-bottom, 0px));
-      --linkual-page-height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-page-bottom-reserve));
-      scroll-padding-bottom: var(--linkual-page-bottom-reserve) !important;
-    }
-    html.linkual-universal-widget-open,
-    html.linkual-universal-widget-open body {
-      min-height: var(--linkual-page-height) !important;
-    }
-    html.linkual-universal-widget-open body {
-      padding-bottom: var(--linkual-page-bottom-reserve) !important;
-      box-sizing: border-box !important;
-    }
-    html.linkual-universal-widget-open [data-linkual-root="true"] {
-      padding-bottom: 0 !important;
-    }
-  `;
-  };
-  const dispatchViewportResize = () => {
-    const pageWindow = getPageWindow$1();
-    const PageEvent = pageWindow.Event || Event;
-    const dispatch = () => {
-      var _a;
-      window.dispatchEvent(new Event("resize"));
-      if (pageWindow !== window) {
-        pageWindow.dispatchEvent(new PageEvent("resize"));
-      }
-      (_a = pageWindow.visualViewport) == null ? void 0 : _a.dispatchEvent(new PageEvent("resize"));
-    };
-    dispatch();
-    window.requestAnimationFrame(dispatch);
-    window.setTimeout(dispatch, 120);
-  };
-  const applyPageReserve = (height) => {
-    const nextHeight = Math.max(0, Math.ceil(height));
-    const pageWindow = getPageWindow$1();
-    installViewportHeightPatch();
-    ensurePageReserveStyle();
-    patchDocumentViewportElements();
-    pageWindow[VIEWPORT_OFFSET_KEY] = nextHeight;
-    syncVisualViewportHeightProperty();
-    document.documentElement.style.setProperty("--linkual-universal-widget-height", `${nextHeight}px`);
-    document.documentElement.classList.add("linkual-universal-widget-open");
-    dispatchViewportResize();
-  };
-  const releasePageReserve = () => {
-    const pageWindow = getPageWindow$1();
-    document.documentElement.classList.remove("linkual-universal-widget-open");
-    document.documentElement.style.removeProperty("--linkual-universal-widget-height");
-    document.documentElement.style.removeProperty("--linkual-visual-viewport-height");
-    pageWindow[VIEWPORT_OFFSET_KEY] = 0;
-    dispatchViewportResize();
-  };
   const UniversalVocabWidget = ({ onOpenSettings }) => {
     const [isExpanded, setIsExpanded] = reactExports.useState(false);
     const [selection, setSelection] = reactExports.useState(null);
@@ -15124,7 +15078,6 @@ ${paragraph.text}`,
     const bubbleMovedRef = reactExports.useRef(false);
     const expandedDragRef = reactExports.useRef(null);
     const selectionTimerRef = reactExports.useRef(null);
-    const activeWidgetHeight = 0;
     const articleTranslation = useArticleTranslation();
     const hasPayload = Boolean(word.trim());
     const canSend = hasPayload;
@@ -15179,17 +15132,13 @@ ${paragraph.text}`,
       window.dispatchEvent(new Event(QUEUE_REQUEST_COUNT_EVENT));
       return () => window.removeEventListener(QUEUE_COUNT_EVENT, updateQueueCount);
     }, []);
-    reactExports.useEffect(() => releasePageReserve, []);
-    reactExports.useEffect(() => {
-      applyPageReserve(activeWidgetHeight);
-    }, [activeWidgetHeight]);
     reactExports.useEffect(() => {
       const handleNavigationRefresh = () => {
         setSelection(null);
         setSourceUrl(getPageUrl());
         window.requestAnimationFrame(() => {
           if (isExpanded) measureWidgetHeight();
-          applyPageReserve(activeWidgetHeight);
+          syncVisualViewportHeightProperty();
         });
       };
       window.addEventListener(LINKUAL_NAVIGATION_EVENT$2, handleNavigationRefresh);
@@ -15198,7 +15147,7 @@ ${paragraph.text}`,
         window.removeEventListener(LINKUAL_NAVIGATION_EVENT$2, handleNavigationRefresh);
         window.removeEventListener("pageshow", handleNavigationRefresh);
       };
-    }, [activeWidgetHeight, isExpanded, measureWidgetHeight]);
+    }, [isExpanded, measureWidgetHeight]);
     const refreshSelection = reactExports.useCallback(() => {
       if (!isExpanded) return;
       setSelection(captureSelection(selectionMode));
@@ -15438,7 +15387,7 @@ ${paragraph.text}`,
         const top = bubbleRect.top > window.innerHeight / 2 ? Math.max(8, bubbleRect.top - estimatedHeight - 8) : Math.min(window.innerHeight - estimatedHeight - 8, bubbleRect.bottom + 8);
         setExpandedPosition({ left, top: Math.max(8, top) });
       }
-      applyPageReserve(0);
+      syncVisualViewportHeightProperty();
       setIsExpanded(true);
     };
     reactExports.useEffect(() => {
@@ -15564,7 +15513,8 @@ ${paragraph.text}`,
                 articleTranslation.doneCount,
                 "/",
                 articleTranslation.paragraphs.length,
-                " 段"
+                " 段 · 并发 ",
+                articleTranslation.translationConcurrency
               ] })
             ] }),
             /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-universal-translation-actions", children: [
@@ -15765,6 +15715,9 @@ ${paragraph.text}`,
   const MIN_SIDEBAR_WIDTH = 250;
   const MIN_SIDEBAR_HEIGHT = 150;
   const MIN_REMAINING_VIEWPORT = 80;
+  function isYouTubeHost$1() {
+    return /(^|\.)youtube(?:-nocookie)?\.com$/i.test(window.location.hostname);
+  }
   function getBrowserFullscreenElement() {
     const doc = document;
     return document.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement || doc.msFullscreenElement || null;
@@ -15817,6 +15770,8 @@ ${paragraph.text}`,
   }
   const App = ({ adapter }) => {
     const [subs, setSubs] = reactExports.useState([]);
+    const isVideoSite = isYouTubeHost$1();
+    const isArticleTranslationEnabled = isArxivHtmlPage();
     const [inVideo, setInVideo] = reactExports.useState(adapter.isVideoPage());
     const getAdpCfg = (key) => {
       const val = ConfigService.get(`${key}_${adapter.platformName}`);
@@ -15857,6 +15812,7 @@ ${paragraph.text}`,
       adapter.resizeHost(nextLayout.width, nextLayout.height, nextLayout.layout);
     }, [adapter, inVideo, layout, sidebarHeight, sidebarWidth]);
     reactExports.useEffect(() => {
+      if (!isVideoSite) return void 0;
       const checkVideo = () => {
         setInVideo((prev) => {
           const isVid = adapter.isVideoPage();
@@ -15871,7 +15827,7 @@ ${paragraph.text}`,
         window.removeEventListener("yt-navigate-finish", checkVideo);
         window.removeEventListener(LINKUAL_NAVIGATION_EVENT$1, checkVideo);
       };
-    }, [adapter]);
+    }, [adapter, isVideoSite]);
     reactExports.useEffect(() => {
       adapter.onSubtitleDetected((newSubs) => {
         setSubs(newSubs);
@@ -15896,6 +15852,7 @@ ${paragraph.text}`,
       }
     }, [activeIndex, renderLimit, subs.length]);
     reactExports.useEffect(() => {
+      if (!isVideoSite) return void 0;
       const clearCustomFullscreenIfNeeded = () => {
         var _a;
         if (inVideo || !document.documentElement.classList.contains("linkual-custom-fullscreen")) return;
@@ -15914,11 +15871,13 @@ ${paragraph.text}`,
       clearCustomFullscreenIfNeeded();
       window.addEventListener("linkual_custom_fullscreen_changed", clearCustomFullscreenIfNeeded);
       return () => window.removeEventListener("linkual_custom_fullscreen_changed", clearCustomFullscreenIfNeeded);
-    }, [adapter, inVideo]);
+    }, [adapter, inVideo, isVideoSite]);
     reactExports.useEffect(() => {
+      if (!isVideoSite) return;
       resizeAdapterHost();
-    }, [resizeAdapterHost]);
+    }, [isVideoSite, resizeAdapterHost]);
     reactExports.useEffect(() => {
+      if (!isVideoSite) return void 0;
       const refreshCustomLayout = () => resizeAdapterHost(true);
       window.addEventListener("linkual_custom_layout_refresh", refreshCustomLayout);
       window.addEventListener(LINKUAL_NAVIGATION_EVENT$1, refreshCustomLayout);
@@ -15926,9 +15885,10 @@ ${paragraph.text}`,
         window.removeEventListener("linkual_custom_layout_refresh", refreshCustomLayout);
         window.removeEventListener(LINKUAL_NAVIGATION_EVENT$1, refreshCustomLayout);
       };
-    }, [resizeAdapterHost]);
+    }, [isVideoSite, resizeAdapterHost]);
     reactExports.useEffect(() => {
       var _a;
+      if (!isVideoSite) return void 0;
       const refreshViewportLayout = () => resizeAdapterHost();
       window.addEventListener("orientationchange", refreshViewportLayout);
       window.addEventListener("resize", refreshViewportLayout);
@@ -15939,7 +15899,7 @@ ${paragraph.text}`,
         window.removeEventListener("resize", refreshViewportLayout);
         (_a2 = window.visualViewport) == null ? void 0 : _a2.removeEventListener("resize", refreshViewportLayout);
       };
-    }, [resizeAdapterHost]);
+    }, [isVideoSite, resizeAdapterHost]);
     const startResize = (e) => {
       e.preventDefault();
       if (layout === "bottom") {
@@ -16005,8 +15965,8 @@ ${paragraph.text}`,
     };
     const visibleSubs = subs.slice(0, renderLimit);
     const hasMoreSubs = visibleSubs.length < subs.length;
-    const showMobileFullscreenButton = mobileFullscreenMode === "always" || mobileFullscreenMode === "video" && inVideo;
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(ArticleTranslationProvider, { enabled: !inVideo, children: /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+    const showMobileFullscreenButton = isVideoSite && (mobileFullscreenMode === "always" || mobileFullscreenMode === "video" && inVideo);
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(ArticleTranslationProvider, { enabled: isArticleTranslationEnabled && !inVideo, children: /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: `linkual-wrap layout-${layout}`, style: wrapStyle, children: [
         /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "resizer", onMouseDown: startResize, title: layout === "right" ? "左右拖拽调整宽度" : "上下拖拽调整高度" }),
         /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "header", children: [
@@ -17274,7 +17234,11 @@ ${paragraph.text}`,
     return adapter;
   }
   function isYouTubeUrl(url) {
-    return url.includes("youtube.com");
+    try {
+      return /(^|\.)youtube(?:-nocookie)?\.com$/i.test(new URL(url).hostname);
+    } catch {
+      return false;
+    }
   }
   function getAdapter() {
     const url = window.location.href;
@@ -17292,6 +17256,9 @@ ${paragraph.text}`,
   let rootInstance = null;
   let navigationRefreshTimer = null;
   const LINKUAL_NAVIGATION_EVENT = "linkual_navigation";
+  function isYouTubeHost() {
+    return /(^|\.)youtube(?:-nocookie)?\.com$/i.test(window.location.hostname);
+  }
   function getPageWindow() {
     try {
       return typeof unsafeWindow !== "undefined" ? unsafeWindow : window;
@@ -17359,6 +17326,7 @@ ${paragraph.text}`,
     }, 80);
   }
   function installNavigationHooks() {
+    if (!isYouTubeHost()) return;
     const pageWindow = getPageWindow();
     if (pageWindow.__linkualNavigationHooked) return;
     pageWindow.__linkualNavigationHooked = true;
@@ -17390,8 +17358,10 @@ ${paragraph.text}`,
   } else {
     document.addEventListener("DOMContentLoaded", mountApp);
   }
-  installNavigationHooks();
-  window.addEventListener("yt-navigate-finish", scheduleNavigationRefresh);
+  if (isYouTubeHost()) {
+    installNavigationHooks();
+    window.addEventListener("yt-navigate-finish", scheduleNavigationRefresh);
+  }
   document.addEventListener("fullscreenchange", () => {
     const app = document.getElementById("linkual-root");
     if (app) attachRootToActiveHost(app);
