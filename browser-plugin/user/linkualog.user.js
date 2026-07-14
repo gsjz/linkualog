@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Linkual Log
 // @namespace    npm/vite-plugin-monkey
-// @version      0.0.36
+// @version      0.0.37
 // @author       Sergio Gao
 // @icon         https://vitejs.dev/logo.svg
 // @downloadURL  https://raw.githubusercontent.com/gsjz/linkualog/main/browser-plugin/user/linkualog.user.js
@@ -18731,20 +18731,38 @@ html.linkual-mobile-fullscreen-fallback {
 `;
   const settingsCss = '#linkual-root .modal {\n  position: fixed;\n  top: 0;\n  left: 0;\n  width: 100%;\n  height: 100%;\n  background: rgba(0, 0, 0, 0.5);\n  display: flex;\n  justify-content: center;\n  align-items: center;\n  z-index: 2147483647;\n  backdrop-filter: blur(2px);\n  pointer-events: auto;\n}\n\n#linkual-root .modal-box {\n  background: #fff;\n  border-radius: 12px;\n  width: 380px;\n  max-height: 85vh;\n  display: flex;\n  flex-direction: column;\n  overflow: hidden;\n  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);\n  animation: linkualSlideIn 0.2s ease-out;\n}\n\n@keyframes linkualSlideIn {\n  from { transform: translateY(20px); opacity: 0; }\n  to { transform: translateY(0); opacity: 1; }\n}\n\n#linkual-root .modal-header {\n  padding: 16px 20px;\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n  border-bottom: 1px solid #eee;\n}\n\n#linkual-root .modal-header h3 {\n  margin: 0;\n  font-size: 16px;\n  color: #333;\n}\n\n#linkual-root .close-btn {\n  font-size: 24px;\n  line-height: 1;\n  color: #999;\n  cursor: pointer;\n  transition: color 0.2s;\n}\n\n#linkual-root .close-btn:hover {\n  color: #333;\n}\n\n/* Tab 样式 */\n#linkual-root .tabs {\n  display: flex;\n  background: #fafafa;\n  border-bottom: 1px solid #eee;\n}\n\n#linkual-root .tab {\n  flex: 1;\n  text-align: center;\n  padding: 12px 0;\n  font-size: 14px;\n  color: #666;\n  cursor: pointer;\n  border-bottom: 2px solid transparent;\n  transition: all 0.2s;\n  user-select: none;\n}\n\n#linkual-root .tab:hover {\n  color: #333;\n  background: rgba(0,0,0,0.02);\n}\n\n#linkual-root .tab.active {\n  color: var(--linkual-theme, #6a1b9a);\n  font-weight: bold;\n  border-bottom: 2px solid var(--linkual-theme, #6a1b9a);\n  background: #fff;\n}\n\n#linkual-root .tab-content {\n  padding: 20px;\n  overflow-y: auto;\n  flex: 1;\n}\n\n#linkual-root .fade-in {\n  animation: linkualFadeIn 0.3s ease;\n}\n\n@keyframes linkualFadeIn {\n  from { opacity: 0; }\n  to { opacity: 1; }\n}\n\n#linkual-root .setting-row {\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n  margin-bottom: 16px;\n}\n#linkual-root .setting-row label { font-size: 13px; font-weight: bold; flex: 1; color: #444; }\n#linkual-root .setting-row input[type="color"] {\n  width: 50px;\n  height: 32px;\n  padding: 0;\n  cursor: pointer;\n  border: 1px solid #ddd;\n  border-radius: 4px;\n}\n\n#linkual-root .setting-col { margin-bottom: 16px; }\n#linkual-root .setting-col label {\n  font-size: 13px;\n  font-weight: bold;\n  display: block;\n  margin-bottom: 6px;\n  color: #444;\n}\n#linkual-root .setting-col input,\n#linkual-root .setting-col textarea,\n#linkual-root .setting-col select {\n  width: 100%;\n  padding: 10px;\n  border: 1px solid #ddd;\n  border-radius: 6px;\n  box-sizing: border-box;\n  font-family: inherit;\n  font-size: 13px;\n  transition: border-color 0.2s;\n}\n#linkual-root .setting-col input:focus,\n#linkual-root .setting-col textarea:focus,\n#linkual-root .setting-col select:focus {\n  outline: none;\n  border-color: var(--linkual-theme, #6a1b9a);\n}\n#linkual-root .setting-col textarea {\n  resize: vertical;\n  min-height: 80px;\n  line-height: 1.5;\n}\n\n#linkual-root .url-prefix-row {\n  display: flex;\n  align-items: stretch;\n}\n\n#linkual-root .url-prefix-row input {\n  border-radius: 0;\n  min-width: 0;\n}\n\n#linkual-root .url-protocol-select {\n  width: auto !important;\n  flex: 0 0 78px;\n  border-right: 0 !important;\n  border-radius: 6px 0 0 6px !important;\n  background: #f7f7f7;\n  color: #555;\n}\n\n#linkual-root .url-path-select {\n  width: auto !important;\n  flex: 0 0 138px;\n  border-left: 0 !important;\n  border-radius: 0 6px 6px 0 !important;\n  background: #f7f7f7;\n  color: #555;\n  font-size: 12px !important;\n  padding-left: 8px !important;\n  padding-right: 8px !important;\n}\n\n#linkual-root .url-fixed-prefix,\n#linkual-root .url-fixed-suffix {\n  display: inline-flex;\n  align-items: center;\n  padding: 0 10px;\n  border: 1px solid #ddd;\n  background: #f7f7f7;\n  color: #666;\n  font-size: 12px;\n  white-space: nowrap;\n}\n\n#linkual-root .url-fixed-prefix {\n  border-right: 0;\n  border-radius: 6px 0 0 6px;\n}\n\n#linkual-root .url-fixed-suffix {\n  border-left: 0;\n  border-radius: 0 6px 6px 0;\n}\n\n#linkual-root .url-prefix-row:focus-within .url-fixed-prefix {\n  border-color: var(--linkual-theme, #6a1b9a);\n  border-right: 0;\n}\n\n#linkual-root .url-prefix-row:focus-within .url-protocol-select {\n  border-color: var(--linkual-theme, #6a1b9a);\n  border-right: 0;\n}\n\n#linkual-root .url-prefix-row:focus-within .url-path-select {\n  border-color: var(--linkual-theme, #6a1b9a);\n  border-left: 0;\n}\n\n#linkual-root .url-prefix-row:focus-within .url-fixed-suffix {\n  border-color: var(--linkual-theme, #6a1b9a);\n  border-left: 0;\n}\n\n#linkual-root .setting-help {\n  margin-top: 6px;\n  color: #888;\n  font-size: 12px;\n  line-height: 1.4;\n}\n\n#linkual-root .linkual-cache-manager-heading {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 8px;\n  margin-bottom: 6px;\n}\n\n#linkual-root .linkual-cache-manager-heading label {\n  margin-bottom: 0;\n}\n\n#linkual-root .linkual-cache-clear-btn,\n#linkual-root .linkual-cache-item button {\n  flex: 0 0 auto;\n  padding: 5px 8px;\n  border: 1px solid #ddd;\n  border-radius: 5px;\n  background: #fff;\n  color: #666;\n  cursor: pointer;\n  font: 12px/1.2 inherit;\n}\n\n#linkual-root .linkual-cache-clear-btn:hover,\n#linkual-root .linkual-cache-item button:hover {\n  border-color: #c62828;\n  color: #c62828;\n}\n\n#linkual-root .linkual-cache-list {\n  display: flex;\n  flex-direction: column;\n  gap: 6px;\n  max-height: 180px;\n  overflow-y: auto;\n}\n\n#linkual-root .linkual-cache-item {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 8px;\n  padding: 8px;\n  border: 1px solid #eee;\n  border-radius: 6px;\n  background: #fafafa;\n}\n\n#linkual-root .linkual-cache-item-main {\n  display: flex;\n  min-width: 0;\n  flex-direction: column;\n  gap: 3px;\n}\n\n#linkual-root .linkual-cache-item-main strong,\n#linkual-root .linkual-cache-item-main span {\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n\n#linkual-root .linkual-cache-item-main strong {\n  color: #444;\n  font-size: 12px;\n  font-weight: 600;\n}\n\n#linkual-root .linkual-cache-item-main span {\n  color: #888;\n  font-size: 11px;\n}\n\n#linkual-root .modal-footer {\n  padding: 16px 20px;\n  display: flex;\n  gap: 12px;\n  border-top: 1px solid #eee;\n  background: #fafafa;\n}\n\n#linkual-root .btn {\n  flex: 1;\n  padding: 10px;\n  border: none;\n  border-radius: 6px;\n  cursor: pointer;\n  font-weight: bold;\n  font-size: 14px;\n  transition: opacity 0.2s;\n}\n#linkual-root .btn:hover { opacity: 0.9; }\n#linkual-root .reset-btn { background: #e0e0e0; color: #555; }\n#linkual-root .save-btn { box-shadow: 0 2px 6px rgba(0,0,0,0.1); }\n';
   const STYLE_ID = "linkual-app-style";
-  function injectLinkualAppStyles() {
-    if (document.getElementById(STYLE_ID)) return;
+  function getExistingStyle(target) {
+    return target.getElementById(STYLE_ID);
+  }
+  function appendStyle(target, style2) {
+    if (target instanceof Document) {
+      target.head.append(style2);
+    } else {
+      target.append(style2);
+    }
+  }
+  function injectStyles(target) {
+    if (getExistingStyle(target)) return;
     const style2 = document.createElement("style");
     style2.id = STYLE_ID;
     style2.textContent = `${settingsCss}
 ${appCss}`;
-    document.head.append(style2);
+    appendStyle(target, style2);
+  }
+  function injectLinkualAppStyles(target) {
+    injectStyles(target);
+  }
+  function injectLinkualPageStyles() {
+    injectStyles(document);
   }
   if (window.self !== window.top) {
     throw new Error("[Linkual] 阻止在 iframe 中重复执行");
   }
   let rootInstance = null;
+  let reactMountNode = null;
   let navigationRefreshTimer = null;
   const LINKUAL_NAVIGATION_EVENT = "linkual_navigation";
+  const LINKUAL_ROOT_ID = "linkual-root";
   function isYouTubeHost() {
     return /(^|\.)youtube(?:-nocookie)?\.com$/i.test(window.location.hostname);
   }
@@ -18757,6 +18775,8 @@ ${appCss}`;
   }
   function isolateRoot(app) {
     app.dataset.linkualRoot = "true";
+    app.style.setProperty("all", "initial");
+    app.style.display = "block";
     app.style.position = "fixed";
     app.style.left = "0";
     app.style.top = "0";
@@ -18768,6 +18788,9 @@ ${appCss}`;
     app.style.overflow = "visible";
     app.style.zIndex = "2147483647";
     app.style.pointerEvents = "none";
+    app.style.background = "transparent";
+    app.style.colorScheme = "normal";
+    app.style.contain = "style";
   }
   function getRootHost() {
     const fullscreenElement = document.fullscreenElement;
@@ -18782,22 +18805,38 @@ ${appCss}`;
       host.append(app);
     }
   }
+  function getShadowMount(app) {
+    const shadow = app.shadowRoot || app.attachShadow({ mode: "open" });
+    injectLinkualAppStyles(shadow);
+    let mount = shadow.getElementById(LINKUAL_ROOT_ID);
+    if (!mount) {
+      mount = document.createElement("div");
+      mount.id = LINKUAL_ROOT_ID;
+      shadow.append(mount);
+    }
+    return mount;
+  }
   function mountApp() {
     if (!document.body) return;
-    let app = document.getElementById("linkual-root");
+    let app = document.getElementById(LINKUAL_ROOT_ID);
     if (!app) {
       app = document.createElement("div");
-      app.id = "linkual-root";
+      app.id = LINKUAL_ROOT_ID;
     }
     attachRootToActiveHost(app);
     isolateRoot(app);
-    injectLinkualAppStyles();
+    if (isArxivHtmlPage()) {
+      injectLinkualPageStyles();
+    }
+    const nextMountNode = getShadowMount(app);
     const adapter = getAdapter();
     const appElement = reactExports.createElement(App, { adapter });
-    if (rootInstance) {
+    if (rootInstance && reactMountNode === nextMountNode) {
       rootInstance.render(appElement);
     } else {
-      rootInstance = clientExports.createRoot(app);
+      rootInstance == null ? void 0 : rootInstance.unmount();
+      reactMountNode = nextMountNode;
+      rootInstance = clientExports.createRoot(nextMountNode);
       rootInstance.render(appElement);
     }
   }
@@ -18854,16 +18893,16 @@ ${appCss}`;
     window.addEventListener("yt-navigate-finish", scheduleNavigationRefresh);
   }
   document.addEventListener("fullscreenchange", () => {
-    const app = document.getElementById("linkual-root");
+    const app = document.getElementById(LINKUAL_ROOT_ID);
     if (app) attachRootToActiveHost(app);
   });
   if (isYouTubeHost() || isArxivHtmlPage()) {
     const observer = new MutationObserver(() => {
-      if (document.body && !document.getElementById("linkual-root")) {
+      if (document.body && !document.getElementById(LINKUAL_ROOT_ID)) {
         console.log("[Linkual] 检测到根节点被意外移除，正在尝试恢复...");
         mountApp();
       } else {
-        const app = document.getElementById("linkual-root");
+        const app = document.getElementById(LINKUAL_ROOT_ID);
         if (app) attachRootToActiveHost(app);
       }
     });

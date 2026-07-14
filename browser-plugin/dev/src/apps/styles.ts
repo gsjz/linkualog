@@ -3,11 +3,33 @@ import settingsCss from '../components/Settings.css?raw';
 
 const STYLE_ID = 'linkual-app-style';
 
-export function injectLinkualAppStyles() {
-  if (document.getElementById(STYLE_ID)) return;
+type StyleTarget = Document | ShadowRoot;
+
+function getExistingStyle(target: StyleTarget) {
+  return target.getElementById(STYLE_ID);
+}
+
+function appendStyle(target: StyleTarget, style: HTMLStyleElement) {
+  if (target instanceof Document) {
+    target.head.append(style);
+  } else {
+    target.append(style);
+  }
+}
+
+function injectStyles(target: StyleTarget) {
+  if (getExistingStyle(target)) return;
 
   const style = document.createElement('style');
   style.id = STYLE_ID;
   style.textContent = `${settingsCss}\n${appCss}`;
-  document.head.append(style);
+  appendStyle(target, style);
+}
+
+export function injectLinkualAppStyles(target: ShadowRoot) {
+  injectStyles(target);
+}
+
+export function injectLinkualPageStyles() {
+  injectStyles(document);
 }

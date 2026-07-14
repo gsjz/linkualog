@@ -3,7 +3,7 @@ import { createRoot, Root } from 'react-dom/client';
 import App from './App';
 import { getAdapter } from '../adapters';
 import { isArxivHtmlPage } from '../services/articleTranslator';
-import { injectLinkualAppStyles } from './styles';
+import { injectLinkualAppStyles, injectLinkualPageStyles } from './styles';
 
 declare const unsafeWindow: typeof window | undefined;
 
@@ -12,9 +12,11 @@ if (window.self !== window.top) {
 }
 
 let rootInstance: Root | null = null;
+let reactMountNode: HTMLElement | null = null;
 let navigationRefreshTimer: number | null = null;
 
 const LINKUAL_NAVIGATION_EVENT = 'linkual_navigation';
+const LINKUAL_ROOT_ID = 'linkual-root';
 
 function isYouTubeHost() {
   return /(^|\.)youtube(?:-nocookie)?\.com$/i.test(window.location.hostname);
@@ -30,6 +32,8 @@ function getPageWindow() {
 
 function isolateRoot(app: HTMLElement) {
   app.dataset.linkualRoot = 'true';
+  app.style.setProperty('all', 'initial');
+  app.style.display = 'block';
   app.style.position = 'fixed';
   app.style.left = '0';
   app.style.top = '0';
@@ -41,6 +45,9 @@ function isolateRoot(app: HTMLElement) {
   app.style.overflow = 'visible';
   app.style.zIndex = '2147483647';
   app.style.pointerEvents = 'none';
+  app.style.background = 'transparent';
+  app.style.colorScheme = 'normal';
+  app.style.contain = 'style';
 }
 
 function getRootHost() {
@@ -59,25 +66,45 @@ function attachRootToActiveHost(app: HTMLElement) {
   }
 }
 
+function getShadowMount(app: HTMLElement) {
+  const shadow = app.shadowRoot || app.attachShadow({ mode: 'open' });
+  injectLinkualAppStyles(shadow);
+
+  let mount = shadow.getElementById(LINKUAL_ROOT_ID) as HTMLElement | null;
+  if (!mount) {
+    mount = document.createElement('div');
+    mount.id = LINKUAL_ROOT_ID;
+    shadow.append(mount);
+  }
+
+  return mount;
+}
+
 function mountApp() {
   if (!document.body) return;
 
-  let app = document.getElementById('linkual-root');
+  let app = document.getElementById(LINKUAL_ROOT_ID);
   if (!app) {
     app = document.createElement('div');
-    app.id = 'linkual-root';
+    app.id = LINKUAL_ROOT_ID;
   }
   attachRootToActiveHost(app);
   isolateRoot(app);
 
-  injectLinkualAppStyles();
+  if (isArxivHtmlPage()) {
+    injectLinkualPageStyles();
+  }
+
+  const nextMountNode = getShadowMount(app);
   const adapter = getAdapter();
   const appElement = createElement(App, { adapter });
-  
-  if (rootInstance) {
+
+  if (rootInstance && reactMountNode === nextMountNode) {
     rootInstance.render(appElement);
   } else {
-    rootInstance = createRoot(app);
+    rootInstance?.unmount();
+    reactMountNode = nextMountNode;
+    rootInstance = createRoot(nextMountNode);
     rootInstance.render(appElement);
   }
 }
@@ -144,17 +171,17 @@ if (isYouTubeHost()) {
 }
 
 document.addEventListener('fullscreenchange', () => {
-  const app = document.getElementById('linkual-root');
+  const app = document.getElementById(LINKUAL_ROOT_ID);
   if (app) attachRootToActiveHost(app);
 });
 
 if (isYouTubeHost() || isArxivHtmlPage()) {
   const observer = new MutationObserver(() => {
-    if (document.body && !document.getElementById('linkual-root')) {
+    if (document.body && !document.getElementById(LINKUAL_ROOT_ID)) {
       console.log('[Linkual] 检测到根节点被意外移除，正在尝试恢复...');
       mountApp();
     } else {
-      const app = document.getElementById('linkual-root');
+      const app = document.getElementById(LINKUAL_ROOT_ID);
       if (app) attachRootToActiveHost(app);
     }
   });
