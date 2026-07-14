@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Linkual Log
 // @namespace    npm/vite-plugin-monkey
-// @version      0.0.27
+// @version      0.0.28
 // @author       Sergio Gao
 // @icon         https://vitejs.dev/logo.svg
 // @downloadURL  https://raw.githubusercontent.com/gsjz/linkualog/main/browser-plugin/user/linkualog.user.js
@@ -16,7 +16,7 @@
 // @grant        unsafeWindow
 // ==/UserScript==
 
-(i=>{if(typeof GM_addStyle=="function"){GM_addStyle(i);return}const t=document.createElement("style");t.textContent=i,document.head.append(t)})(" #linkual-root .modal{position:fixed;top:0;left:0;width:100%;height:100%;background:#00000080;display:flex;justify-content:center;align-items:center;z-index:2147483647;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);pointer-events:auto}#linkual-root .modal-box{background:#fff;border-radius:12px;width:380px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 10px 30px #0003;animation:linkualSlideIn .2s ease-out}@keyframes linkualSlideIn{0%{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}#linkual-root .modal-header{padding:16px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #eee}#linkual-root .modal-header h3{margin:0;font-size:16px;color:#333}#linkual-root .close-btn{font-size:24px;line-height:1;color:#999;cursor:pointer;transition:color .2s}#linkual-root .close-btn:hover{color:#333}#linkual-root .tabs{display:flex;background:#fafafa;border-bottom:1px solid #eee}#linkual-root .tab{flex:1;text-align:center;padding:12px 0;font-size:14px;color:#666;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;-webkit-user-select:none;user-select:none}#linkual-root .tab:hover{color:#333;background:#00000005}#linkual-root .tab.active{color:var(--linkual-theme, #6a1b9a);font-weight:700;border-bottom:2px solid var(--linkual-theme, #6a1b9a);background:#fff}#linkual-root .tab-content{padding:20px;overflow-y:auto;flex:1}#linkual-root .fade-in{animation:linkualFadeIn .3s ease}@keyframes linkualFadeIn{0%{opacity:0}to{opacity:1}}#linkual-root .setting-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}#linkual-root .setting-row label{font-size:13px;font-weight:700;flex:1;color:#444}#linkual-root .setting-row input[type=color]{width:50px;height:32px;padding:0;cursor:pointer;border:1px solid #ddd;border-radius:4px}#linkual-root .setting-col{margin-bottom:16px}#linkual-root .setting-col label{font-size:13px;font-weight:700;display:block;margin-bottom:6px;color:#444}#linkual-root .setting-col input,#linkual-root .setting-col textarea,#linkual-root .setting-col select{width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box;font-family:inherit;font-size:13px;transition:border-color .2s}#linkual-root .setting-col input:focus,#linkual-root .setting-col textarea:focus,#linkual-root .setting-col select:focus{outline:none;border-color:var(--linkual-theme, #6a1b9a)}#linkual-root .setting-col textarea{resize:vertical;min-height:80px;line-height:1.5}#linkual-root .url-prefix-row{display:flex;align-items:stretch}#linkual-root .url-prefix-row input{border-radius:0;min-width:0}#linkual-root .url-protocol-select{width:auto!important;flex:0 0 78px;border-right:0!important;border-radius:6px 0 0 6px!important;background:#f7f7f7;color:#555}#linkual-root .url-path-select{width:auto!important;flex:0 0 138px;border-left:0!important;border-radius:0 6px 6px 0!important;background:#f7f7f7;color:#555;font-size:12px!important;padding-left:8px!important;padding-right:8px!important}#linkual-root .url-fixed-prefix,#linkual-root .url-fixed-suffix{display:inline-flex;align-items:center;padding:0 10px;border:1px solid #ddd;background:#f7f7f7;color:#666;font-size:12px;white-space:nowrap}#linkual-root .url-fixed-prefix{border-right:0;border-radius:6px 0 0 6px}#linkual-root .url-fixed-suffix{border-left:0;border-radius:0 6px 6px 0}#linkual-root .url-prefix-row:focus-within .url-fixed-prefix{border-color:var(--linkual-theme, #6a1b9a);border-right:0}#linkual-root .url-prefix-row:focus-within .url-protocol-select{border-color:var(--linkual-theme, #6a1b9a);border-right:0}#linkual-root .url-prefix-row:focus-within .url-path-select{border-color:var(--linkual-theme, #6a1b9a);border-left:0}#linkual-root .url-prefix-row:focus-within .url-fixed-suffix{border-color:var(--linkual-theme, #6a1b9a);border-left:0}#linkual-root .setting-help{margin-top:6px;color:#888;font-size:12px;line-height:1.4}#linkual-root .modal-footer{padding:16px 20px;display:flex;gap:12px;border-top:1px solid #eee;background:#fafafa}#linkual-root .btn{flex:1;padding:10px;border:none;border-radius:6px;cursor:pointer;font-weight:700;font-size:14px;transition:opacity .2s}#linkual-root .btn:hover{opacity:.9}#linkual-root .reset-btn{background:#e0e0e0;color:#555}#linkual-root .save-btn{box-shadow:0 2px 6px #0000001a}#linkual-root{--linkual-theme: #6a1b9a;--linkual-done: #e8f5e9;--linkual-error: #ffebee}#linkual-root .linkual-wrap{position:fixed;z-index:2147483647;background:#fff;display:flex;flex-direction:column;font-family:sans-serif;color:#333;pointer-events:auto}#linkual-root .linkual-wrap.layout-right{top:0;right:0;max-width:min(100vw,var(--linkual-sidebar-width, 500px));height:calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px));max-height:calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px));box-shadow:-5px 0 15px #0000001a}#linkual-root .linkual-wrap.layout-bottom{bottom:calc(var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom,0px));left:0;width:100vw!important;max-width:100vw;max-height:calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px));box-shadow:0 -5px 15px #0000001a}#linkual-root .resizer{position:absolute;background:transparent;z-index:999;transition:background .2s}#linkual-root .linkual-wrap.layout-right .resizer{left:0;top:0;bottom:0;width:5px;cursor:ew-resize}#linkual-root .linkual-wrap.layout-bottom .resizer{top:0;left:0;right:0;height:5px;cursor:ns-resize}#linkual-root .resizer:hover,#linkual-root .resizer:active{background:var(--linkual-theme)}#linkual-root .header{background:var(--linkual-theme);color:#fff;padding:12px 16px;font-weight:700;display:flex;justify-content:space-between;align-items:center;gap:10px;min-height:44px;box-sizing:border-box}#linkual-root .header span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#linkual-root .settings-icon{cursor:pointer;-webkit-user-select:none;user-select:none}#linkual-root .linkual-mobile-fullscreen{position:fixed;right:20px;bottom:calc(20px + var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom,0px));z-index:2147483647;min-width:78px;min-height:40px;padding:10px 15px;background:#000;color:#fff;border:0;border-radius:5px;box-shadow:0 2px 8px #00000040;cursor:grab;font-size:14px;font-weight:700;line-height:1.2;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;-webkit-user-select:none;user-select:none;touch-action:none;-webkit-tap-highlight-color:transparent;pointer-events:auto}#linkual-root .linkual-mobile-fullscreen.is-dragging{cursor:grabbing}html.linkual-mobile-fullscreen-fallback,html.linkual-mobile-fullscreen-fallback body{width:var(--linkual-mobile-viewport-width, 100vw)!important;height:var(--linkual-mobile-viewport-height, 100vh)!important;max-width:var(--linkual-mobile-viewport-width, 100vw)!important;max-height:var(--linkual-mobile-viewport-height, 100vh)!important;margin:0!important;overflow:hidden!important;overscroll-behavior:none!important;touch-action:none!important;background:#000!important}html.linkual-mobile-fullscreen-fallback{position:fixed!important;top:0!important;right:0!important;bottom:0!important;left:0!important}#linkual-root .linkual-player-controls{position:fixed;left:clamp(6px,2vw,12px);bottom:calc(var(--linkual-sidebar-height, 0px) + var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom,0px) + 14px);z-index:2147483647;width:calc(100vw - var(--linkual-sidebar-width, 0px) - clamp(12px,4vw,24px));max-width:calc(100vw - var(--linkual-sidebar-width, 0px) - clamp(12px,4vw,24px));max-height:calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px) - 12px);box-sizing:border-box;display:flex;flex-direction:column;gap:9px;padding:10px 12px;border-radius:8px;background:#000000b8;color:#fff;box-shadow:0 6px 20px #0000003d;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;pointer-events:auto;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);overflow:auto;overscroll-behavior:contain}#linkual-root .linkual-player-progress-row{display:grid;grid-template-columns:52px minmax(0,1fr) 52px;align-items:center;gap:10px}#linkual-root .linkual-player-time{color:#ffffffe0;font-size:12px;font-variant-numeric:tabular-nums;line-height:1;text-align:center;white-space:nowrap}#linkual-root .linkual-player-progress{width:100%;height:18px;margin:0;padding:0;-moz-appearance:none;appearance:none;-webkit-appearance:none;background:transparent;cursor:pointer}#linkual-root .linkual-player-progress::-webkit-slider-runnable-track{height:5px;border-radius:999px;background:linear-gradient(to right,var(--linkual-theme, #6a1b9a) 0%,var(--linkual-theme, #6a1b9a) var(--linkual-progress, 0%),rgba(255,255,255,.32) var(--linkual-progress, 0%),rgba(255,255,255,.32) 100%)}#linkual-root .linkual-player-progress::-moz-range-track{height:5px;border-radius:999px;background:#ffffff52}#linkual-root .linkual-player-progress::-moz-range-progress{height:5px;border-radius:999px;background:var(--linkual-theme, #6a1b9a)}#linkual-root .linkual-player-progress::-webkit-slider-thumb{-moz-appearance:none;appearance:none;-webkit-appearance:none;width:15px;height:15px;margin-top:-5px;border-radius:50%;border:2px solid #fff;background:var(--linkual-theme, #6a1b9a);box-shadow:0 2px 8px #00000052}#linkual-root .linkual-player-progress::-moz-range-thumb{width:15px;height:15px;border-radius:50%;border:2px solid #fff;background:var(--linkual-theme, #6a1b9a);box-shadow:0 2px 8px #00000052}#linkual-root .linkual-player-button-row{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}#linkual-root .linkual-player-btn{height:31px;min-width:44px;padding:0 12px;border:1px solid rgba(255,255,255,.16);border-radius:6px;background:#ffffff1f;color:#fff;cursor:pointer;font:700 12px/1 system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif}#linkual-root .linkual-player-btn.primary{min-width:58px;background:var(--linkual-theme, #6a1b9a);border-color:transparent}#linkual-root .linkual-player-btn:hover{background:#fff3}#linkual-root .linkual-player-btn.primary:hover{filter:brightness(1.08)}#linkual-root .list{flex:1;min-height:0;overflow-y:auto;padding:10px 12px;scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch}#linkual-root .list::-webkit-scrollbar{display:none}#linkual-root .empty-tip{padding:50px 20px;text-align:center;color:#999;font-style:italic}.linkual-article-translation-host{display:block!important;margin:.7em 0 1.3em!important;padding:0!important;border:0!important;background:transparent!important;color:inherit!important;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif!important;text-align:left!important}.linkual-article-translation{box-sizing:border-box!important;padding:.85em 1em!important;border-left:3px solid #7e57c2!important;border-radius:0 6px 6px 0!important;background:#7e57c214!important;color:#3f3a49!important;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif!important;font-size:.92em!important;line-height:1.65!important;text-align:left!important}.linkual-article-translation.loading{border-left-color:#42a5f5!important}.linkual-article-translation.error{border-left-color:#e57373!important;background:#e573731a!important}.linkual-article-translation-toolbar{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:.75em!important;margin-bottom:.35em!important;font-size:.78em!important;line-height:1.3!important}.linkual-article-translation-label{color:#7652a6!important;font-weight:700!important;letter-spacing:.01em!important}.linkual-article-translation-toolbar button,.linkual-article-panel button{box-sizing:border-box!important;min-height:28px!important;padding:4px 9px!important;border:1px solid rgba(83,65,111,.25)!important;border-radius:5px!important;background:#fff!important;color:#55406f!important;cursor:pointer!important;font:600 12px/1.2 system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif!important}.linkual-article-translation-toolbar button:hover,.linkual-article-panel button:hover{background:#f1ecf8!important}.linkual-article-translation-toolbar button:disabled,.linkual-article-panel button:disabled{cursor:wait!important;opacity:.65!important}.linkual-article-translation-text,.linkual-article-translation-placeholder{white-space:pre-wrap!important;overflow-wrap:anywhere!important}.linkual-article-translation-placeholder{color:#7b7286!important;font-size:.9em!important;font-style:italic!important}.linkual-article-panel{position:fixed!important;top:16px!important;right:16px!important;z-index:2147483647!important;width:min(360px,calc(100vw - 32px))!important;box-sizing:border-box!important;overflow:hidden!important;border:1px solid rgba(71,48,102,.2)!important;border-radius:10px!important;background:#fffffff7!important;color:#322b3a!important;box-shadow:0 8px 28px #30204833!important;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif!important;pointer-events:auto!important;text-align:left!important}.linkual-article-panel-header{display:flex!important;align-items:center!important;gap:8px!important;min-height:42px!important;padding:0 8px 0 12px!important;background:#68459a!important;color:#fff!important}.linkual-article-panel-title,.linkual-article-panel-close{border:0!important;border-radius:4px!important;background:transparent!important;color:inherit!important;cursor:pointer!important;font:700 13px/1.2 system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif!important}.linkual-article-panel-title{display:flex!important;flex:1!important;align-items:center!important;justify-content:space-between!important;min-width:0!important;min-height:34px!important;padding:0!important;text-align:left!important}.linkual-article-panel-count{margin-left:8px!important;color:#ffffffc7!important;font-size:11px!important;font-variant-numeric:tabular-nums!important;font-weight:500!important}.linkual-article-panel-close{width:28px!important;min-height:28px!important;padding:0!important;font-size:18px!important;line-height:1!important}.linkual-article-panel-close:hover,.linkual-article-panel-title:hover{background:#ffffff24!important}.linkual-article-panel-body{padding:10px 12px 12px!important}.linkual-article-panel-info{margin-bottom:9px!important;color:#6b6274!important;font-size:12px!important;line-height:1.45!important}.linkual-article-panel-actions{display:flex!important;flex-wrap:wrap!important;gap:6px!important}.linkual-article-panel-actions button.primary{border-color:#68459a!important;background:#68459a!important;color:#fff!important}.linkual-article-panel-actions button.primary:hover{background:#54337f!important}@media (max-width: 600px){.linkual-article-panel{top:8px!important;right:8px!important;width:min(320px,calc(100vw - 16px))!important}.linkual-article-translation{padding:.75em .8em!important}.linkual-article-translation-toolbar{align-items:flex-start!important;flex-direction:column!important;gap:5px!important}}#linkual-root .load-more-tip{padding:16px 12px 22px;text-align:center;color:#999;font-size:12px}#linkual-root .item{padding:12px;margin-bottom:10px;border-radius:8px;border:1px solid #f0f0f0;transition:.2s}#linkual-root .item.active{border-left:5px solid var(--linkual-theme);background:#6a1b9a0d}#linkual-root .ctrl-bar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;align-items:center;padding:4px;border-radius:4px;background:transparent;transition:background .2s}#linkual-root .ctrl-bar.done{background-color:var(--linkual-done, #e8f5e9)}#linkual-root .ctrl-bar.error{background-color:var(--linkual-error, #ffebee);border:1px solid rgba(255,0,0,.1)}#linkual-root .tag-btn{font-size:11px;padding:3px 8px;border-radius:12px;display:inline-flex;align-items:center;cursor:pointer;transition:.2s;-webkit-user-select:none;user-select:none}#linkual-root .tag-play{background:#eee;color:#666}#linkual-root .tag-play:hover{background:var(--linkual-theme);color:#fff}#linkual-root .tag-pin{background:#e3f2fd;color:#1976d2}#linkual-root .tag-pin:hover{background:#1976d2;color:#fff}#linkual-root .btn-parse{flex:0 0 auto;margin-left:auto;display:inline-flex;align-items:center;justify-content:center;font-size:11px;color:#aaa;background:transparent;border:1px solid transparent;border-radius:4px;cursor:pointer;-webkit-user-select:none;user-select:none;padding:4px 7px;line-height:1.2;transition:.2s}#linkual-root .btn-parse:hover{color:#333;background:#0000000d;border-color:#00000014}#linkual-root .btn-chevron{font-size:12px;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:4px;cursor:pointer;transition:.2s;-webkit-user-select:none;user-select:none;color:#666}#linkual-root .btn-chevron:hover{background:#0000001a}#linkual-root .text-content{font-size:14px;line-height:1.5;padding:2px 0;color:#333;cursor:text;-webkit-user-select:text;user-select:text;overflow-wrap:anywhere;-webkit-touch-callout:default}#linkual-root .linkual-selection-add{position:fixed;z-index:999999;min-height:38px;max-width:min(320px,calc(100vw - 24px));padding:8px 12px;background:var(--linkual-theme, #6a1b9a);color:#fff;border:none;border-radius:6px;box-shadow:0 4px 12px #0003;cursor:pointer;font-size:13px;font-weight:700;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;-webkit-tap-highlight-color:transparent;touch-action:manipulation;pointer-events:auto}#linkual-root .linkual-selection-add-floating{transform:translate(-50%)}#linkual-root .linkual-selection-add-dock{left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));width:calc(100vw - 24px);max-width:none;min-height:46px;justify-content:center;font-size:14px}#linkual-root .linkual-selection-add-text{overflow:hidden;text-overflow:ellipsis}#linkual-root .ai-box{border-top:1px dashed #ccc;margin-top:8px;padding-top:8px;font-size:13px;white-space:pre-wrap;line-height:1.6;cursor:text}#linkual-root .lan-sync-module{border-top:1px solid #eee;padding:12px 16px;background:#fafafa;display:flex;flex-direction:column;gap:10px;margin-top:auto}#linkual-root .sync-input{width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;font-size:12px;box-sizing:border-box;outline:none;transition:border-color .2s}#linkual-root .sync-input:focus{border-color:var(--linkual-theme)}#linkual-root .sync-btn{width:100%;padding:10px;border:none;border-radius:6px;font-size:13px;font-weight:700;color:#fff;background-color:var(--linkual-theme);cursor:pointer;transition:all .2s}#linkual-root .sync-btn:hover{opacity:.9}#linkual-root .sync-btn:disabled{opacity:.6;cursor:not-allowed}#linkual-root .sync-btn.success{background-color:#4caf50}#linkual-root .sync-btn.error{background-color:#f44336}#linkual-root .linkual-universal-widget{position:fixed;left:0;right:0;bottom:0;z-index:2147483647;width:100vw;max-width:100vw;min-height:calc(var(--linkual-universal-widget-height, 58px) + env(safe-area-inset-bottom,0px));max-height:calc(var(--linkual-visual-viewport-height, 100vh) - 8px);padding:8px 12px calc(8px + env(safe-area-inset-bottom,0px));box-sizing:border-box;display:flex;flex-wrap:wrap;align-items:center;gap:10px;background:#fff;color:#222;border-top:1px solid rgba(0,0,0,.12);box-shadow:0 -8px 24px #00000024;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;pointer-events:auto;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}#linkual-root .linkual-universal-widget~.linkual-mobile-fullscreen{bottom:calc(20px + var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom,0px))}#linkual-root .linkual-universal-top{flex:0 1 390px;display:flex;align-items:center;justify-content:space-between;gap:10px;width:auto;max-width:100%;min-width:min(260px,100%);min-height:34px}#linkual-root .linkual-universal-selection{min-width:0;flex:1;display:flex;align-items:center;gap:8px;color:#444;font-size:13px}#linkual-root .linkual-universal-selection-label{flex:0 0 auto;color:#666;font-weight:700}#linkual-root .linkual-universal-selection-text{min-width:0;max-width:min(180px,14vw);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#111;font-weight:700}#linkual-root .linkual-universal-muted{color:#888}#linkual-root .linkual-universal-actions{flex:0 0 auto;display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0}#linkual-root .linkual-universal-status{max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;color:#666}#linkual-root .linkual-universal-status.status-success{color:#17803d}#linkual-root .linkual-universal-status.status-error{color:#c62828}#linkual-root .linkual-universal-add-btn,#linkual-root .linkual-universal-icon-btn,#linkual-root .linkual-universal-clear,#linkual-root .linkual-universal-send{border:0;border-radius:6px;min-height:30px;padding:0 12px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit}#linkual-root .linkual-universal-icon-btn,#linkual-root .linkual-universal-send{display:inline-flex;align-items:center;justify-content:center;gap:6px}#linkual-root .linkual-universal-add-btn,#linkual-root .linkual-universal-send{background:var(--linkual-theme, #000);color:#fff}#linkual-root .linkual-universal-icon-btn{background:#f1f1f1;color:#333}#linkual-root .linkual-universal-queue-btn{position:relative;background:var(--linkual-theme, #000);color:#fff}#linkual-root .linkual-universal-button-icon{display:none;flex:0 0 auto;width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}#linkual-root .linkual-universal-button-text{min-width:0}#linkual-root .linkual-universal-queue-count{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:#f44336;color:#fff;font-size:10px;line-height:1}#linkual-root .linkual-universal-clear{width:34px;padding:0;background:#f3f3f3;color:#555}#linkual-root .linkual-universal-form{flex:1;display:grid;grid-template-columns:minmax(120px,190px) minmax(160px,1fr) 34px auto auto;align-items:stretch;gap:8px;min-width:min(520px,100%);max-width:100%}#linkual-root .linkual-universal-inline-actions{align-self:center;display:flex;align-items:center;gap:6px;min-height:34px;min-width:0}#linkual-root .linkual-universal-field{min-width:0;display:flex;flex-direction:row;align-items:center;gap:6px}#linkual-root .linkual-universal-mode-tab{flex:0 0 auto;min-width:48px;height:34px;padding:0 8px;border:1px solid #d7d7d7;border-radius:6px;background:#f6f6f6;color:#555;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit}#linkual-root .linkual-universal-mode-tab.active{border-color:var(--linkual-theme, #000);background:var(--linkual-theme, #000);color:#fff}#linkual-root .linkual-universal-field input{min-width:0;width:100%;height:34px;box-sizing:border-box;border:1px solid #d7d7d7;border-radius:6px;padding:7px 9px;color:#222;background:#fff;outline:none;font:13px/1.35 system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;letter-spacing:0}#linkual-root .linkual-universal-field input:focus{border-color:var(--linkual-theme, #000);box-shadow:0 0 0 2px #00000014}#linkual-root .linkual-universal-field.field-context input{overflow-x:auto;overflow-y:hidden;white-space:nowrap;scrollbar-width:none;-ms-overflow-style:none}#linkual-root .linkual-universal-field.field-context input::-webkit-scrollbar{display:none}#linkual-root .linkual-universal-clear,#linkual-root .linkual-universal-send{align-self:center;height:34px}#linkual-root .linkual-universal-send:disabled,#linkual-root .linkual-universal-clear:disabled{opacity:.45;cursor:not-allowed}#linkual-root .linkual-universal-expand-bar{position:fixed;left:0;right:0;bottom:0;z-index:2147483647;width:100vw;height:calc(28px + env(safe-area-inset-bottom,0px));padding:0 12px env(safe-area-inset-bottom,0px);border:0;border-radius:0;background:var(--linkual-theme, #000);color:#fff;box-shadow:0 -4px 14px #0003;cursor:pointer;font-size:12px;font-weight:800;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;-webkit-user-select:none;user-select:none;pointer-events:auto;opacity:.08;transition:opacity .2s,filter .2s;display:flex;align-items:center;justify-content:center}#linkual-root .linkual-universal-expand-bar:hover{opacity:.95;filter:brightness(1.08)}#linkual-root .linkual-universal-expand-chevron{width:12px;height:12px;border-left:3px solid currentColor;border-top:3px solid currentColor;transform:translateY(3px) rotate(45deg);box-sizing:border-box}#linkual-root .linkual-universal-floating-add{position:fixed;z-index:2147483647;transform:translate(-50%);min-height:30px;padding:0 12px;border:0;border-radius:6px;background:var(--linkual-theme, #000);color:#fff;box-shadow:0 4px 12px #0003;cursor:pointer;font-size:12px;font-weight:800;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;pointer-events:auto}#linkual-root .linkual-vocab-queue-panel-wrap{position:fixed;right:12px;bottom:calc(var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom,0px) + 12px);z-index:2147483647;display:flex;flex-direction:column;align-items:flex-end;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;pointer-events:auto}#linkual-root .linkual-vocab-queue-panel{width:min(400px,calc(100vw - 24px));height:min(580px,calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px) - 24px));min-height:min(280px,calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px) - 24px));max-height:calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px) - 24px);background:#fff;border-radius:8px;box-shadow:0 10px 30px #0003;border:1px solid #e4e4e7;display:flex;flex-direction:column;overflow:hidden;box-sizing:border-box}@media (max-width: 1024px){#linkual-root .linkual-universal-widget{align-items:stretch;gap:7px;padding-left:8px;padding-right:8px}#linkual-root .linkual-universal-top{flex:1 0 100%;min-width:min(240px,100%)}#linkual-root .linkual-universal-form{flex:1 0 100%;grid-template-columns:minmax(0,1fr) 32px 36px minmax(96px,auto);gap:4px;min-width:min(360px,100%)}#linkual-root .linkual-universal-field.field-context{grid-column:1 / -1;grid-row:2}#linkual-root .linkual-universal-clear{grid-column:2;grid-row:1;width:32px;min-width:32px}#linkual-root .linkual-universal-send{grid-column:3;grid-row:1;width:36px;min-width:36px;padding:0}#linkual-root .linkual-universal-inline-actions{grid-column:4;grid-row:1;justify-content:flex-end;gap:3px}#linkual-root .linkual-universal-inline-actions .linkual-universal-icon-btn{width:30px;min-width:30px;min-height:30px;padding:0}#linkual-root .linkual-universal-button-icon{display:block}#linkual-root .linkual-universal-button-text{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}#linkual-root .linkual-universal-queue-count{position:absolute;top:-4px;right:-4px;min-width:14px;height:14px;padding:0 3px;font-size:9px}}@media (max-width: 720px){#linkual-root .linkual-universal-widget{width:100vw;max-width:100vw;padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px));flex-direction:column;align-items:stretch;gap:7px}#linkual-root .linkual-universal-top{width:100%;min-width:0;gap:8px}#linkual-root .linkual-universal-selection{flex-wrap:wrap;gap:6px}#linkual-root .linkual-universal-selection-text{max-width:calc(100vw - 190px)}#linkual-root .linkual-universal-actions{gap:5px}#linkual-root .linkual-universal-status{display:none}#linkual-root .linkual-universal-form{grid-template-columns:minmax(0,1fr) 32px 36px minmax(87px,auto);gap:4px;min-width:0}#linkual-root .linkual-universal-field{flex-direction:row}#linkual-root .linkual-universal-field.field-context{grid-column:1 / -1;grid-row:2}#linkual-root .linkual-universal-clear{grid-column:2;grid-row:1;width:32px;min-width:32px}#linkual-root .linkual-universal-send{grid-column:3;grid-row:1;width:36px;min-width:36px;padding:0}#linkual-root .linkual-universal-floating-add{display:none}#linkual-root .linkual-vocab-queue-panel-wrap{left:8px;right:8px;bottom:calc(var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom,0px) + 8px)}#linkual-root .linkual-vocab-queue-panel-wrap>div{width:100%!important;max-width:none!important;height:min(520px,calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px) - 16px))!important;max-height:calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px) - 16px)!important;min-height:min(220px,calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px) - 16px))!important}#linkual-root .linkual-player-controls{left:8px;width:calc(100vw - var(--linkual-sidebar-width, 0px) - 16px);max-width:calc(100vw - var(--linkual-sidebar-width, 0px) - 16px);padding:8px;gap:7px}#linkual-root .linkual-player-progress-row{grid-template-columns:42px minmax(0,1fr) 42px;gap:6px}#linkual-root .linkual-player-time{font-size:11px}#linkual-root .linkual-player-button-row{gap:5px}#linkual-root .linkual-player-btn{min-width:34px;padding:0 8px}#linkual-root .linkual-player-btn.primary{min-width:48px}}@media (max-width: 360px){#linkual-root .linkual-universal-widget{padding-left:6px;padding-right:6px}#linkual-root .linkual-universal-form{grid-template-columns:minmax(0,1fr) 28px 32px minmax(81px,auto);gap:3px}#linkual-root .linkual-universal-mode-tab{min-width:42px;padding:0 5px}#linkual-root .linkual-universal-field{gap:4px}#linkual-root .linkual-universal-clear{width:28px;min-width:28px}#linkual-root .linkual-universal-send{width:32px;min-width:32px}#linkual-root .linkual-universal-inline-actions{gap:2px}#linkual-root .linkual-universal-inline-actions .linkual-universal-icon-btn{width:27px;min-width:27px}#linkual-root .linkual-player-controls{padding:7px 6px}#linkual-root .linkual-player-progress-row{grid-template-columns:38px minmax(0,1fr) 38px}#linkual-root .linkual-player-btn{min-width:30px;padding:0 6px}}@media (max-width: 320px){#linkual-root .linkual-universal-form{grid-template-columns:minmax(0,1fr) 28px 32px}#linkual-root .linkual-universal-inline-actions{grid-column:1 / -1;grid-row:3;justify-content:flex-end}#linkual-root .linkual-universal-inline-actions .linkual-universal-icon-btn{width:30px;min-width:30px}#linkual-root .linkual-universal-selection-text{max-width:calc(100vw - 150px)}}@media (max-height: 520px){#linkual-root .linkual-universal-widget{padding-top:6px;padding-bottom:calc(6px + env(safe-area-inset-bottom,0px));gap:5px}#linkual-root .linkual-universal-top{min-height:30px}#linkual-root .linkual-universal-field input,#linkual-root .linkual-universal-mode-tab,#linkual-root .linkual-universal-clear,#linkual-root .linkual-universal-send,#linkual-root .linkual-universal-inline-actions{height:30px;min-height:30px}#linkual-root .linkual-vocab-queue-panel-wrap{bottom:calc(var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom,0px) + 6px)}}@media (max-height: 420px){#linkual-root .linkual-universal-widget{align-content:flex-start}#linkual-root .linkual-universal-selection,#linkual-root .linkual-universal-field input,#linkual-root .linkual-universal-add-btn,#linkual-root .linkual-universal-icon-btn,#linkual-root .linkual-universal-clear,#linkual-root .linkual-universal-send{font-size:12px}#linkual-root .linkual-vocab-queue-panel{border-radius:6px}} ");
+(i=>{if(typeof GM_addStyle=="function"){GM_addStyle(i);return}const l=document.createElement("style");l.textContent=i,document.head.append(l)})(" #linkual-root .modal{position:fixed;top:0;left:0;width:100%;height:100%;background:#00000080;display:flex;justify-content:center;align-items:center;z-index:2147483647;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);pointer-events:auto}#linkual-root .modal-box{background:#fff;border-radius:12px;width:380px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 10px 30px #0003;animation:linkualSlideIn .2s ease-out}@keyframes linkualSlideIn{0%{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}#linkual-root .modal-header{padding:16px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #eee}#linkual-root .modal-header h3{margin:0;font-size:16px;color:#333}#linkual-root .close-btn{font-size:24px;line-height:1;color:#999;cursor:pointer;transition:color .2s}#linkual-root .close-btn:hover{color:#333}#linkual-root .tabs{display:flex;background:#fafafa;border-bottom:1px solid #eee}#linkual-root .tab{flex:1;text-align:center;padding:12px 0;font-size:14px;color:#666;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;-webkit-user-select:none;user-select:none}#linkual-root .tab:hover{color:#333;background:#00000005}#linkual-root .tab.active{color:var(--linkual-theme, #6a1b9a);font-weight:700;border-bottom:2px solid var(--linkual-theme, #6a1b9a);background:#fff}#linkual-root .tab-content{padding:20px;overflow-y:auto;flex:1}#linkual-root .fade-in{animation:linkualFadeIn .3s ease}@keyframes linkualFadeIn{0%{opacity:0}to{opacity:1}}#linkual-root .setting-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}#linkual-root .setting-row label{font-size:13px;font-weight:700;flex:1;color:#444}#linkual-root .setting-row input[type=color]{width:50px;height:32px;padding:0;cursor:pointer;border:1px solid #ddd;border-radius:4px}#linkual-root .setting-col{margin-bottom:16px}#linkual-root .setting-col label{font-size:13px;font-weight:700;display:block;margin-bottom:6px;color:#444}#linkual-root .setting-col input,#linkual-root .setting-col textarea,#linkual-root .setting-col select{width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box;font-family:inherit;font-size:13px;transition:border-color .2s}#linkual-root .setting-col input:focus,#linkual-root .setting-col textarea:focus,#linkual-root .setting-col select:focus{outline:none;border-color:var(--linkual-theme, #6a1b9a)}#linkual-root .setting-col textarea{resize:vertical;min-height:80px;line-height:1.5}#linkual-root .url-prefix-row{display:flex;align-items:stretch}#linkual-root .url-prefix-row input{border-radius:0;min-width:0}#linkual-root .url-protocol-select{width:auto!important;flex:0 0 78px;border-right:0!important;border-radius:6px 0 0 6px!important;background:#f7f7f7;color:#555}#linkual-root .url-path-select{width:auto!important;flex:0 0 138px;border-left:0!important;border-radius:0 6px 6px 0!important;background:#f7f7f7;color:#555;font-size:12px!important;padding-left:8px!important;padding-right:8px!important}#linkual-root .url-fixed-prefix,#linkual-root .url-fixed-suffix{display:inline-flex;align-items:center;padding:0 10px;border:1px solid #ddd;background:#f7f7f7;color:#666;font-size:12px;white-space:nowrap}#linkual-root .url-fixed-prefix{border-right:0;border-radius:6px 0 0 6px}#linkual-root .url-fixed-suffix{border-left:0;border-radius:0 6px 6px 0}#linkual-root .url-prefix-row:focus-within .url-fixed-prefix{border-color:var(--linkual-theme, #6a1b9a);border-right:0}#linkual-root .url-prefix-row:focus-within .url-protocol-select{border-color:var(--linkual-theme, #6a1b9a);border-right:0}#linkual-root .url-prefix-row:focus-within .url-path-select{border-color:var(--linkual-theme, #6a1b9a);border-left:0}#linkual-root .url-prefix-row:focus-within .url-fixed-suffix{border-color:var(--linkual-theme, #6a1b9a);border-left:0}#linkual-root .setting-help{margin-top:6px;color:#888;font-size:12px;line-height:1.4}#linkual-root .modal-footer{padding:16px 20px;display:flex;gap:12px;border-top:1px solid #eee;background:#fafafa}#linkual-root .btn{flex:1;padding:10px;border:none;border-radius:6px;cursor:pointer;font-weight:700;font-size:14px;transition:opacity .2s}#linkual-root .btn:hover{opacity:.9}#linkual-root .reset-btn{background:#e0e0e0;color:#555}#linkual-root .save-btn{box-shadow:0 2px 6px #0000001a}#linkual-root{--linkual-theme: #6a1b9a;--linkual-done: #e8f5e9;--linkual-error: #ffebee}#linkual-root .linkual-wrap{position:fixed;z-index:2147483647;background:#fff;display:flex;flex-direction:column;font-family:sans-serif;color:#333;pointer-events:auto}#linkual-root .linkual-wrap.layout-right{top:0;right:0;max-width:min(100vw,var(--linkual-sidebar-width, 500px));height:calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px));max-height:calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px));box-shadow:-5px 0 15px #0000001a}#linkual-root .linkual-wrap.layout-bottom{bottom:calc(var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom,0px));left:0;width:100vw!important;max-width:100vw;max-height:calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px));box-shadow:0 -5px 15px #0000001a}#linkual-root .resizer{position:absolute;background:transparent;z-index:999;transition:background .2s}#linkual-root .linkual-wrap.layout-right .resizer{left:0;top:0;bottom:0;width:5px;cursor:ew-resize}#linkual-root .linkual-wrap.layout-bottom .resizer{top:0;left:0;right:0;height:5px;cursor:ns-resize}#linkual-root .resizer:hover,#linkual-root .resizer:active{background:var(--linkual-theme)}#linkual-root .header{background:var(--linkual-theme);color:#fff;padding:12px 16px;font-weight:700;display:flex;justify-content:space-between;align-items:center;gap:10px;min-height:44px;box-sizing:border-box}#linkual-root .header span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#linkual-root .settings-icon{cursor:pointer;-webkit-user-select:none;user-select:none}#linkual-root .linkual-mobile-fullscreen{position:fixed;right:20px;bottom:calc(20px + var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom,0px));z-index:2147483647;min-width:78px;min-height:40px;padding:10px 15px;background:#000;color:#fff;border:0;border-radius:5px;box-shadow:0 2px 8px #00000040;cursor:grab;font-size:14px;font-weight:700;line-height:1.2;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;-webkit-user-select:none;user-select:none;touch-action:none;-webkit-tap-highlight-color:transparent;pointer-events:auto}#linkual-root .linkual-mobile-fullscreen.is-dragging{cursor:grabbing}html.linkual-mobile-fullscreen-fallback,html.linkual-mobile-fullscreen-fallback body{width:var(--linkual-mobile-viewport-width, 100vw)!important;height:var(--linkual-mobile-viewport-height, 100vh)!important;max-width:var(--linkual-mobile-viewport-width, 100vw)!important;max-height:var(--linkual-mobile-viewport-height, 100vh)!important;margin:0!important;overflow:hidden!important;overscroll-behavior:none!important;touch-action:none!important;background:#000!important}html.linkual-mobile-fullscreen-fallback{position:fixed!important;top:0!important;right:0!important;bottom:0!important;left:0!important}#linkual-root .linkual-player-controls{position:fixed;left:clamp(6px,2vw,12px);bottom:calc(var(--linkual-sidebar-height, 0px) + var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom,0px) + 14px);z-index:2147483647;width:calc(100vw - var(--linkual-sidebar-width, 0px) - clamp(12px,4vw,24px));max-width:calc(100vw - var(--linkual-sidebar-width, 0px) - clamp(12px,4vw,24px));max-height:calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px) - 12px);box-sizing:border-box;display:flex;flex-direction:column;gap:9px;padding:10px 12px;border-radius:8px;background:#000000b8;color:#fff;box-shadow:0 6px 20px #0000003d;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;pointer-events:auto;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);overflow:auto;overscroll-behavior:contain}#linkual-root .linkual-player-progress-row{display:grid;grid-template-columns:52px minmax(0,1fr) 52px;align-items:center;gap:10px}#linkual-root .linkual-player-time{color:#ffffffe0;font-size:12px;font-variant-numeric:tabular-nums;line-height:1;text-align:center;white-space:nowrap}#linkual-root .linkual-player-progress{width:100%;height:18px;margin:0;padding:0;-moz-appearance:none;appearance:none;-webkit-appearance:none;background:transparent;cursor:pointer}#linkual-root .linkual-player-progress::-webkit-slider-runnable-track{height:5px;border-radius:999px;background:linear-gradient(to right,var(--linkual-theme, #6a1b9a) 0%,var(--linkual-theme, #6a1b9a) var(--linkual-progress, 0%),rgba(255,255,255,.32) var(--linkual-progress, 0%),rgba(255,255,255,.32) 100%)}#linkual-root .linkual-player-progress::-moz-range-track{height:5px;border-radius:999px;background:#ffffff52}#linkual-root .linkual-player-progress::-moz-range-progress{height:5px;border-radius:999px;background:var(--linkual-theme, #6a1b9a)}#linkual-root .linkual-player-progress::-webkit-slider-thumb{-moz-appearance:none;appearance:none;-webkit-appearance:none;width:15px;height:15px;margin-top:-5px;border-radius:50%;border:2px solid #fff;background:var(--linkual-theme, #6a1b9a);box-shadow:0 2px 8px #00000052}#linkual-root .linkual-player-progress::-moz-range-thumb{width:15px;height:15px;border-radius:50%;border:2px solid #fff;background:var(--linkual-theme, #6a1b9a);box-shadow:0 2px 8px #00000052}#linkual-root .linkual-player-button-row{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}#linkual-root .linkual-player-btn{height:31px;min-width:44px;padding:0 12px;border:1px solid rgba(255,255,255,.16);border-radius:6px;background:#ffffff1f;color:#fff;cursor:pointer;font:700 12px/1 system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif}#linkual-root .linkual-player-btn.primary{min-width:58px;background:var(--linkual-theme, #6a1b9a);border-color:transparent}#linkual-root .linkual-player-btn:hover{background:#fff3}#linkual-root .linkual-player-btn.primary:hover{filter:brightness(1.08)}#linkual-root .list{flex:1;min-height:0;overflow-y:auto;padding:10px 12px;scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch}#linkual-root .list::-webkit-scrollbar{display:none}#linkual-root .empty-tip{padding:50px 20px;text-align:center;color:#999;font-style:italic}.linkual-article-translation-host{display:block!important;margin:.7em 0 1.3em!important;padding:0!important;border:0!important;background:transparent!important;color:inherit!important;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif!important;text-align:left!important}.linkual-article-translation{box-sizing:border-box!important;padding:.85em 1em!important;border-left:3px solid #7e57c2!important;border-radius:0 6px 6px 0!important;background:#7e57c214!important;color:#3f3a49!important;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif!important;font-size:.92em!important;line-height:1.65!important;text-align:left!important}.linkual-article-translation.loading{border-left-color:#42a5f5!important}.linkual-article-translation.error{border-left-color:#e57373!important;background:#e573731a!important}.linkual-article-translation-toolbar{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:.75em!important;margin-bottom:.35em!important;font-size:.78em!important;line-height:1.3!important}.linkual-article-translation-label{color:#7652a6!important;font-weight:700!important;letter-spacing:.01em!important}.linkual-article-translation-toolbar button,.linkual-universal-translation-row button{box-sizing:border-box!important;min-height:28px!important;padding:4px 9px!important;border:1px solid rgba(83,65,111,.25)!important;border-radius:5px!important;background:#fff!important;color:#55406f!important;cursor:pointer!important;font:600 12px/1.2 system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif!important}.linkual-article-translation-toolbar button:hover,.linkual-universal-translation-row button:hover{background:#f1ecf8!important}.linkual-article-translation-toolbar button:disabled,.linkual-universal-translation-row button:disabled{cursor:wait!important;opacity:.65!important}.linkual-article-translation-text,.linkual-article-translation-placeholder{white-space:pre-wrap!important;overflow-wrap:anywhere!important}.linkual-article-translation-placeholder{color:#7b7286!important;font-size:.9em!important;font-style:italic!important}@media (max-width: 600px){.linkual-article-translation{padding:.75em .8em!important}.linkual-article-translation-toolbar{align-items:flex-start!important;flex-direction:column!important;gap:5px!important}}#linkual-root .load-more-tip{padding:16px 12px 22px;text-align:center;color:#999;font-size:12px}#linkual-root .item{padding:12px;margin-bottom:10px;border-radius:8px;border:1px solid #f0f0f0;transition:.2s}#linkual-root .item.active{border-left:5px solid var(--linkual-theme);background:#6a1b9a0d}#linkual-root .ctrl-bar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;align-items:center;padding:4px;border-radius:4px;background:transparent;transition:background .2s}#linkual-root .ctrl-bar.done{background-color:var(--linkual-done, #e8f5e9)}#linkual-root .ctrl-bar.error{background-color:var(--linkual-error, #ffebee);border:1px solid rgba(255,0,0,.1)}#linkual-root .tag-btn{font-size:11px;padding:3px 8px;border-radius:12px;display:inline-flex;align-items:center;cursor:pointer;transition:.2s;-webkit-user-select:none;user-select:none}#linkual-root .tag-play{background:#eee;color:#666}#linkual-root .tag-play:hover{background:var(--linkual-theme);color:#fff}#linkual-root .tag-pin{background:#e3f2fd;color:#1976d2}#linkual-root .tag-pin:hover{background:#1976d2;color:#fff}#linkual-root .btn-parse{flex:0 0 auto;margin-left:auto;display:inline-flex;align-items:center;justify-content:center;font-size:11px;color:#aaa;background:transparent;border:1px solid transparent;border-radius:4px;cursor:pointer;-webkit-user-select:none;user-select:none;padding:4px 7px;line-height:1.2;transition:.2s}#linkual-root .btn-parse:hover{color:#333;background:#0000000d;border-color:#00000014}#linkual-root .btn-chevron{font-size:12px;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:4px;cursor:pointer;transition:.2s;-webkit-user-select:none;user-select:none;color:#666}#linkual-root .btn-chevron:hover{background:#0000001a}#linkual-root .text-content{font-size:14px;line-height:1.5;padding:2px 0;color:#333;cursor:text;-webkit-user-select:text;user-select:text;overflow-wrap:anywhere;-webkit-touch-callout:default}#linkual-root .linkual-selection-add{position:fixed;z-index:999999;min-height:38px;max-width:min(320px,calc(100vw - 24px));padding:8px 12px;background:var(--linkual-theme, #6a1b9a);color:#fff;border:none;border-radius:6px;box-shadow:0 4px 12px #0003;cursor:pointer;font-size:13px;font-weight:700;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;-webkit-tap-highlight-color:transparent;touch-action:manipulation;pointer-events:auto}#linkual-root .linkual-selection-add-floating{transform:translate(-50%)}#linkual-root .linkual-selection-add-dock{left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));width:calc(100vw - 24px);max-width:none;min-height:46px;justify-content:center;font-size:14px}#linkual-root .linkual-selection-add-text{overflow:hidden;text-overflow:ellipsis}#linkual-root .ai-box{border-top:1px dashed #ccc;margin-top:8px;padding-top:8px;font-size:13px;white-space:pre-wrap;line-height:1.6;cursor:text}#linkual-root .lan-sync-module{border-top:1px solid #eee;padding:12px 16px;background:#fafafa;display:flex;flex-direction:column;gap:10px;margin-top:auto}#linkual-root .sync-input{width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;font-size:12px;box-sizing:border-box;outline:none;transition:border-color .2s}#linkual-root .sync-input:focus{border-color:var(--linkual-theme)}#linkual-root .sync-btn{width:100%;padding:10px;border:none;border-radius:6px;font-size:13px;font-weight:700;color:#fff;background-color:var(--linkual-theme);cursor:pointer;transition:all .2s}#linkual-root .sync-btn:hover{opacity:.9}#linkual-root .sync-btn:disabled{opacity:.6;cursor:not-allowed}#linkual-root .sync-btn.success{background-color:#4caf50}#linkual-root .sync-btn.error{background-color:#f44336}#linkual-root .linkual-universal-widget{position:fixed;left:0;right:0;bottom:0;z-index:2147483647;width:100vw;max-width:100vw;min-height:calc(var(--linkual-universal-widget-height, 58px) + env(safe-area-inset-bottom,0px));max-height:calc(var(--linkual-visual-viewport-height, 100vh) - 8px);padding:8px 12px calc(8px + env(safe-area-inset-bottom,0px));box-sizing:border-box;display:flex;flex-wrap:wrap;align-items:center;gap:10px;background:#fff;color:#222;border-top:1px solid rgba(0,0,0,.12);box-shadow:0 -8px 24px #00000024;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;pointer-events:auto;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}#linkual-root .linkual-universal-widget~.linkual-mobile-fullscreen{bottom:calc(20px + var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom,0px))}#linkual-root .linkual-universal-top{flex:0 1 390px;display:flex;align-items:center;justify-content:space-between;gap:10px;width:auto;max-width:100%;min-width:min(260px,100%);min-height:34px}#linkual-root .linkual-universal-selection{min-width:0;flex:1;display:flex;align-items:center;gap:8px;color:#444;font-size:13px}#linkual-root .linkual-universal-selection-label{flex:0 0 auto;color:#666;font-weight:700}#linkual-root .linkual-universal-selection-text{min-width:0;max-width:min(180px,14vw);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#111;font-weight:700}#linkual-root .linkual-universal-muted{color:#888}#linkual-root .linkual-universal-actions{flex:0 0 auto;display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0}#linkual-root .linkual-universal-status{max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;color:#666}#linkual-root .linkual-universal-status.status-success{color:#17803d}#linkual-root .linkual-universal-status.status-error{color:#c62828}#linkual-root .linkual-universal-add-btn,#linkual-root .linkual-universal-icon-btn,#linkual-root .linkual-universal-clear,#linkual-root .linkual-universal-send{border:0;border-radius:6px;min-height:30px;padding:0 12px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit}#linkual-root .linkual-universal-icon-btn,#linkual-root .linkual-universal-send{display:inline-flex;align-items:center;justify-content:center;gap:6px}#linkual-root .linkual-universal-add-btn,#linkual-root .linkual-universal-send{background:var(--linkual-theme, #000);color:#fff}#linkual-root .linkual-universal-icon-btn{background:#f1f1f1;color:#333}#linkual-root .linkual-universal-queue-btn{position:relative;background:var(--linkual-theme, #000);color:#fff}#linkual-root .linkual-universal-button-icon{display:none;flex:0 0 auto;width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}#linkual-root .linkual-universal-button-text{min-width:0}#linkual-root .linkual-universal-queue-count{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:#f44336;color:#fff;font-size:10px;line-height:1}#linkual-root .linkual-universal-clear{width:34px;padding:0;background:#f3f3f3;color:#555}#linkual-root .linkual-universal-form{flex:1;display:grid;grid-template-columns:minmax(120px,190px) minmax(160px,1fr) 34px auto auto;align-items:stretch;gap:8px;min-width:min(520px,100%);max-width:100%}#linkual-root .linkual-universal-inline-actions{align-self:center;display:flex;align-items:center;gap:6px;min-height:34px;min-width:0}#linkual-root .linkual-universal-field{min-width:0;display:flex;flex-direction:row;align-items:center;gap:6px}#linkual-root .linkual-universal-mode-tab{flex:0 0 auto;min-width:48px;height:34px;padding:0 8px;border:1px solid #d7d7d7;border-radius:6px;background:#f6f6f6;color:#555;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit}#linkual-root .linkual-universal-mode-tab.active{border-color:var(--linkual-theme, #000);background:var(--linkual-theme, #000);color:#fff}#linkual-root .linkual-universal-field input{min-width:0;width:100%;height:34px;box-sizing:border-box;border:1px solid #d7d7d7;border-radius:6px;padding:7px 9px;color:#222;background:#fff;outline:none;font:13px/1.35 system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;letter-spacing:0}#linkual-root .linkual-universal-field input:focus{border-color:var(--linkual-theme, #000);box-shadow:0 0 0 2px #00000014}#linkual-root .linkual-universal-field.field-context input{overflow-x:auto;overflow-y:hidden;white-space:nowrap;scrollbar-width:none;-ms-overflow-style:none}#linkual-root .linkual-universal-field.field-context input::-webkit-scrollbar{display:none}#linkual-root .linkual-universal-clear,#linkual-root .linkual-universal-send{align-self:center;height:34px}#linkual-root .linkual-universal-send:disabled,#linkual-root .linkual-universal-clear:disabled{opacity:.45;cursor:not-allowed}#linkual-root .linkual-universal-expand-bar{position:fixed;right:14px;bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:2147483647;display:flex;align-items:center;gap:6px;width:auto;min-height:42px;padding:5px 6px 5px 9px;border:1px solid rgba(255,255,255,.3);border-radius:999px;background:var(--linkual-theme, #000);color:#fff;box-shadow:0 6px 20px #00000040;cursor:grab;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;-webkit-user-select:none;user-select:none;pointer-events:auto;touch-action:none}#linkual-root .linkual-universal-expand-bar:active{cursor:grabbing}#linkual-root .linkual-universal-expand-bar:hover,#linkual-root .linkual-universal-expand-bar:focus-within{filter:brightness(1.08)}#linkual-root .linkual-universal-bubble-grip{color:#ffffffa6;font-size:12px;letter-spacing:-3px;line-height:1;transform:rotate(90deg)}#linkual-root .linkual-universal-bubble-translate,#linkual-root .linkual-universal-bubble-expand{min-height:30px;border:0;border-radius:999px;background:#ffffff26;color:#fff;cursor:pointer;font:700 12px/1 system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif}#linkual-root .linkual-universal-bubble-translate{padding:0 11px}#linkual-root .linkual-universal-bubble-translate:disabled{cursor:not-allowed;opacity:.5}#linkual-root .linkual-universal-bubble-expand{display:inline-flex;align-items:center;justify-content:center;width:30px;padding:0}#linkual-root .linkual-universal-bubble-expand .linkual-universal-expand-chevron{transform:translateY(0) rotate(45deg)}#linkual-root .linkual-universal-expand-chevron{width:12px;height:12px;border-left:3px solid currentColor;border-top:3px solid currentColor;transform:translateY(3px) rotate(45deg);box-sizing:border-box}#linkual-root .linkual-universal-floating-add{position:fixed;z-index:2147483647;transform:translate(-50%);min-height:30px;padding:0 12px;border:0;border-radius:6px;background:var(--linkual-theme, #000);color:#fff;box-shadow:0 4px 12px #0003;cursor:pointer;font-size:12px;font-weight:800;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;pointer-events:auto}#linkual-root .linkual-vocab-queue-panel-wrap{position:fixed;right:12px;bottom:calc(var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom,0px) + 12px);z-index:2147483647;display:flex;flex-direction:column;align-items:flex-end;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;pointer-events:auto}#linkual-root .linkual-vocab-queue-panel{width:min(400px,calc(100vw - 24px));height:min(580px,calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px) - 24px));min-height:min(280px,calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px) - 24px));max-height:calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px) - 24px);background:#fff;border-radius:8px;box-shadow:0 10px 30px #0003;border:1px solid #e4e4e7;display:flex;flex-direction:column;overflow:hidden;box-sizing:border-box}@media (max-width: 1024px){#linkual-root .linkual-universal-widget{align-items:stretch;gap:7px;padding-left:8px;padding-right:8px}#linkual-root .linkual-universal-top{flex:1 0 100%;min-width:min(240px,100%)}#linkual-root .linkual-universal-form{flex:1 0 100%;grid-template-columns:minmax(0,1fr) 32px 36px minmax(96px,auto);gap:4px;min-width:min(360px,100%)}#linkual-root .linkual-universal-field.field-context{grid-column:1 / -1;grid-row:2}#linkual-root .linkual-universal-clear{grid-column:2;grid-row:1;width:32px;min-width:32px}#linkual-root .linkual-universal-send{grid-column:3;grid-row:1;width:36px;min-width:36px;padding:0}#linkual-root .linkual-universal-inline-actions{grid-column:4;grid-row:1;justify-content:flex-end;gap:3px}#linkual-root .linkual-universal-inline-actions .linkual-universal-icon-btn{width:30px;min-width:30px;min-height:30px;padding:0}#linkual-root .linkual-universal-button-icon{display:block}#linkual-root .linkual-universal-button-text{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}#linkual-root .linkual-universal-queue-count{position:absolute;top:-4px;right:-4px;min-width:14px;height:14px;padding:0 3px;font-size:9px}}#linkual-root .linkual-universal-translation-row{flex:1 0 100%;display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:0;padding:6px 8px;border:1px solid rgba(104,69,154,.16);border-radius:7px;background:#68459a0f;color:#423650;font-size:12px}#linkual-root .linkual-universal-translation-summary{display:flex;align-items:center;gap:8px;min-width:0}#linkual-root .linkual-universal-translation-summary span{color:#766b80;font-variant-numeric:tabular-nums}#linkual-root .linkual-universal-translation-actions{display:flex;flex:0 0 auto;gap:6px}#linkual-root .linkual-universal-translation-actions button{min-height:28px;padding:4px 9px}#linkual-root .linkual-universal-translation-actions button.primary{border-color:#68459a;background:#68459a;color:#fff}@media (max-width: 720px){#linkual-root .linkual-universal-widget{width:100vw;max-width:100vw;padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px));flex-direction:column;align-items:stretch;gap:7px}#linkual-root .linkual-universal-top{width:100%;min-width:0;gap:8px}#linkual-root .linkual-universal-selection{flex-wrap:wrap;gap:6px}#linkual-root .linkual-universal-selection-text{max-width:calc(100vw - 190px)}#linkual-root .linkual-universal-actions{gap:5px}#linkual-root .linkual-universal-status{display:none}#linkual-root .linkual-universal-form{grid-template-columns:minmax(0,1fr) 32px 36px minmax(87px,auto);gap:4px;min-width:0}#linkual-root .linkual-universal-field{flex-direction:row}#linkual-root .linkual-universal-field.field-context{grid-column:1 / -1;grid-row:2}#linkual-root .linkual-universal-clear{grid-column:2;grid-row:1;width:32px;min-width:32px}#linkual-root .linkual-universal-send{grid-column:3;grid-row:1;width:36px;min-width:36px;padding:0}#linkual-root .linkual-universal-floating-add{display:none}#linkual-root .linkual-vocab-queue-panel-wrap{left:8px;right:8px;bottom:calc(var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom,0px) + 8px)}#linkual-root .linkual-vocab-queue-panel-wrap>div{width:100%!important;max-width:none!important;height:min(520px,calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px) - 16px))!important;max-height:calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px) - 16px)!important;min-height:min(220px,calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px) - 16px))!important}#linkual-root .linkual-player-controls{left:8px;width:calc(100vw - var(--linkual-sidebar-width, 0px) - 16px);max-width:calc(100vw - var(--linkual-sidebar-width, 0px) - 16px);padding:8px;gap:7px}#linkual-root .linkual-player-progress-row{grid-template-columns:42px minmax(0,1fr) 42px;gap:6px}#linkual-root .linkual-player-time{font-size:11px}#linkual-root .linkual-player-button-row{gap:5px}#linkual-root .linkual-player-btn{min-width:34px;padding:0 8px}#linkual-root .linkual-player-btn.primary{min-width:48px}}@media (max-width: 360px){#linkual-root .linkual-universal-widget{padding-left:6px;padding-right:6px}#linkual-root .linkual-universal-form{grid-template-columns:minmax(0,1fr) 28px 32px minmax(81px,auto);gap:3px}#linkual-root .linkual-universal-mode-tab{min-width:42px;padding:0 5px}#linkual-root .linkual-universal-field{gap:4px}#linkual-root .linkual-universal-clear{width:28px;min-width:28px}#linkual-root .linkual-universal-send{width:32px;min-width:32px}#linkual-root .linkual-universal-inline-actions{gap:2px}#linkual-root .linkual-universal-inline-actions .linkual-universal-icon-btn{width:27px;min-width:27px}#linkual-root .linkual-player-controls{padding:7px 6px}#linkual-root .linkual-player-progress-row{grid-template-columns:38px minmax(0,1fr) 38px}#linkual-root .linkual-player-btn{min-width:30px;padding:0 6px}}@media (max-width: 320px){#linkual-root .linkual-universal-form{grid-template-columns:minmax(0,1fr) 28px 32px}#linkual-root .linkual-universal-inline-actions{grid-column:1 / -1;grid-row:3;justify-content:flex-end}#linkual-root .linkual-universal-inline-actions .linkual-universal-icon-btn{width:30px;min-width:30px}#linkual-root .linkual-universal-selection-text{max-width:calc(100vw - 150px)}}@media (max-height: 520px){#linkual-root .linkual-universal-widget{padding-top:6px;padding-bottom:calc(6px + env(safe-area-inset-bottom,0px));gap:5px}#linkual-root .linkual-universal-top{min-height:30px}#linkual-root .linkual-universal-field input,#linkual-root .linkual-universal-mode-tab,#linkual-root .linkual-universal-clear,#linkual-root .linkual-universal-send,#linkual-root .linkual-universal-inline-actions{height:30px;min-height:30px}#linkual-root .linkual-vocab-queue-panel-wrap{bottom:calc(var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom,0px) + 6px)}}@media (max-height: 420px){#linkual-root .linkual-universal-widget{align-content:flex-start}#linkual-root .linkual-universal-selection,#linkual-root .linkual-universal-field input,#linkual-root .linkual-universal-add-btn,#linkual-root .linkual-universal-icon-btn,#linkual-root .linkual-universal-clear,#linkual-root .linkual-universal-send{font-size:12px}#linkual-root .linkual-vocab-queue-panel{border-radius:6px}} ");
 
 (function () {
   'use strict';
@@ -12702,7 +12702,9 @@
     layout_position: "right",
     mobile_fullscreen_mode: "video",
     lan_sync_url: "http://localhost:8080/api/vocabulary/add",
-    lan_action: "daily"
+    lan_action: "daily",
+    universal_bubble_left: "",
+    universal_bubble_top: ""
   };
   const ConfigService = {
     get(key) {
@@ -14258,6 +14260,257 @@ JSON 格式：
       ] })
     ] });
   };
+  const MAX_PARAGRAPHS = 600;
+  const MIN_PARAGRAPH_LENGTH = 18;
+  const HOST_CLASS = "linkual-article-translation-host";
+  const EXCLUDED_SELECTOR = [
+    "nav",
+    "header",
+    "footer",
+    "aside",
+    "figure",
+    "table",
+    "pre",
+    "code",
+    "script",
+    "style",
+    "noscript",
+    ".ltx_bibliography",
+    ".ltx_biblist",
+    ".ltx_figure",
+    ".ltx_table",
+    ".ltx_caption",
+    ".ltx_equation",
+    ".ltx_title",
+    ".ltx_authors",
+    ".ltx_note"
+  ].join(",");
+  const normalizeText$1 = (value) => value.replace(/\s+/g, " ").trim();
+  function hashText(value) {
+    let hash = 0;
+    for (let index2 = 0; index2 < value.length; index2 += 1) {
+      hash = (hash << 5) - hash + value.charCodeAt(index2) | 0;
+    }
+    return Math.abs(hash).toString(36);
+  }
+  function isExcluded(element) {
+    return Boolean(element.closest(EXCLUDED_SELECTOR)) || Boolean(element.closest("[data-linkual-article-host]"));
+  }
+  function getCandidateSelector() {
+    const isArxivHtml = window.location.hostname === "arxiv.org" && window.location.pathname.startsWith("/html/");
+    if (isArxivHtml || document.querySelector(".ltx_document")) {
+      return ".ltx_document p.ltx_p, .ltx_document p";
+    }
+    return 'article p, main p, [role="main"] p, body > p';
+  }
+  function getArticleRoot() {
+    return document.querySelector(".ltx_document") || document.querySelector("article") || document.querySelector("main") || document.querySelector('[role="main"]') || document.body;
+  }
+  function getOrCreateHost(element) {
+    const next = element.nextElementSibling;
+    if (next instanceof HTMLDivElement && next.dataset.linkualArticleHost === "true") {
+      return next;
+    }
+    const host = document.createElement("div");
+    host.className = HOST_CLASS;
+    host.dataset.linkualArticleHost = "true";
+    element.insertAdjacentElement("afterend", host);
+    return host;
+  }
+  function collectArticleParagraphs() {
+    const root2 = getArticleRoot();
+    if (!root2) return [];
+    const candidates = Array.from(root2.querySelectorAll(getCandidateSelector())).filter((element) => !isExcluded(element)).map((element) => ({ element, text: normalizeText$1(element.innerText || element.textContent || "") })).filter(({ element, text }) => text.length >= MIN_PARAGRAPH_LENGTH && !element.querySelector("img, video, iframe"));
+    const seen = /* @__PURE__ */ new Set();
+    return candidates.slice(0, MAX_PARAGRAPHS).filter(({ element }) => {
+      if (seen.has(element)) return false;
+      seen.add(element);
+      return true;
+    }).map(({ element, text }, index2) => ({
+      id: `article-${index2}-${hashText(text)}`,
+      element,
+      text,
+      host: getOrCreateHost(element)
+    }));
+  }
+  function removeArticleTranslationHosts(keep = /* @__PURE__ */ new Set()) {
+    document.querySelectorAll(`[data-linkual-article-host="true"]`).forEach((host) => {
+      if (!keep.has(host)) host.remove();
+    });
+  }
+  const LINKUAL_NAVIGATION_EVENT$3 = "linkual_navigation";
+  const ArticleTranslationContext = reactExports.createContext(null);
+  const ArticleTranslationProvider = ({ enabled, children }) => {
+    const [paragraphs, setParagraphs] = reactExports.useState([]);
+    const [pageUrl, setPageUrl] = reactExports.useState(window.location.href);
+    const [translations, setTranslations] = reactExports.useState({});
+    const [isTranslatingAll, setIsTranslatingAll] = reactExports.useState(false);
+    const abortsRef = reactExports.useRef(/* @__PURE__ */ new Map());
+    const allRunIdRef = reactExports.useRef(0);
+    const syncParagraphs = reactExports.useCallback(() => {
+      if (!enabled) return;
+      const nextParagraphs = collectArticleParagraphs();
+      const nextUrl = window.location.href;
+      const nextHosts = new Set(nextParagraphs.map((paragraph) => paragraph.host));
+      removeArticleTranslationHosts(nextHosts);
+      setParagraphs((previous) => {
+        const unchanged = previous.length === nextParagraphs.length && previous.every((paragraph, index2) => {
+          var _a, _b;
+          return paragraph.element === ((_a = nextParagraphs[index2]) == null ? void 0 : _a.element) && paragraph.text === ((_b = nextParagraphs[index2]) == null ? void 0 : _b.text);
+        });
+        return unchanged ? previous : nextParagraphs;
+      });
+      setPageUrl((previous) => {
+        if (previous === nextUrl) return previous;
+        allRunIdRef.current += 1;
+        abortsRef.current.forEach((abort) => abort());
+        abortsRef.current.clear();
+        setTranslations({});
+        setIsTranslatingAll(false);
+        return nextUrl;
+      });
+    }, [enabled]);
+    reactExports.useEffect(() => {
+      if (!enabled) {
+        allRunIdRef.current += 1;
+        abortsRef.current.forEach((abort) => abort());
+        abortsRef.current.clear();
+        setParagraphs([]);
+        setTranslations({});
+        setIsTranslatingAll(false);
+        removeArticleTranslationHosts();
+        return void 0;
+      }
+      syncParagraphs();
+      const interval = window.setInterval(syncParagraphs, 1200);
+      window.addEventListener(LINKUAL_NAVIGATION_EVENT$3, syncParagraphs);
+      window.addEventListener("popstate", syncParagraphs);
+      window.addEventListener("hashchange", syncParagraphs);
+      return () => {
+        window.clearInterval(interval);
+        window.removeEventListener(LINKUAL_NAVIGATION_EVENT$3, syncParagraphs);
+        window.removeEventListener("popstate", syncParagraphs);
+        window.removeEventListener("hashchange", syncParagraphs);
+        abortsRef.current.forEach((abort) => abort());
+        abortsRef.current.clear();
+        removeArticleTranslationHosts();
+      };
+    }, [enabled, syncParagraphs]);
+    const translateParagraph = reactExports.useCallback((paragraph) => {
+      var _a;
+      const apiKey = ConfigService.get("api_key").trim();
+      const apiUrl = ConfigService.get("api_url").trim();
+      const apiModel = ConfigService.get("api_model").trim();
+      const timeout = parseInt(ConfigService.get("api_timeout"), 10) || 30;
+      const targetLanguage = ConfigService.get("web_target_language").trim() || "简体中文";
+      const promptTemplate = ConfigService.get("web_translation_prompt").trim();
+      if (!apiKey) {
+        setTranslations((previous) => ({
+          ...previous,
+          [paragraph.id]: { status: "error", text: "", error: "请先在设置中填入 API Key" }
+        }));
+        return Promise.resolve(false);
+      }
+      (_a = abortsRef.current.get(paragraph.id)) == null ? void 0 : _a();
+      setTranslations((previous) => ({
+        ...previous,
+        [paragraph.id]: { status: "loading", text: "" }
+      }));
+      return new Promise((resolve) => {
+        let content = "";
+        let settled = false;
+        const finish = (success, error) => {
+          if (settled) return;
+          settled = true;
+          abortsRef.current.delete(paragraph.id);
+          if (success) {
+            setTranslations((previous) => ({
+              ...previous,
+              [paragraph.id]: { status: "done", text: content.trim() }
+            }));
+          } else if (error === "ABORTED") {
+            setTranslations((previous) => ({
+              ...previous,
+              [paragraph.id]: { status: "idle", text: "" }
+            }));
+          } else {
+            setTranslations((previous) => ({
+              ...previous,
+              [paragraph.id]: { status: "error", text: content, error: error || "翻译失败，请重试" }
+            }));
+          }
+          resolve(success);
+        };
+        const request = fetchLlmStream({
+          apiUrl,
+          apiKey,
+          apiModel,
+          timeoutSec: timeout,
+          systemPrompt: promptTemplate || `你是专业学术翻译。请将输入内容准确翻译成${targetLanguage}。保留数学符号、变量名、引用标记和段落语气；只输出译文，不要解释，不要添加标题。`,
+          userPrompt: `请将下面这一个网页论文段落翻译成${targetLanguage}：
+
+${paragraph.text}`,
+          onData: (chunk) => {
+            content += chunk;
+            setTranslations((previous) => ({
+              ...previous,
+              [paragraph.id]: { status: "loading", text: content }
+            }));
+          },
+          onError: (error) => finish(false, error),
+          onDone: () => finish(true)
+        });
+        abortsRef.current.set(paragraph.id, request.abort);
+      });
+    }, []);
+    const translateAll = reactExports.useCallback(async () => {
+      if (isTranslatingAll || paragraphs.length === 0) return;
+      const runId = allRunIdRef.current + 1;
+      allRunIdRef.current = runId;
+      setIsTranslatingAll(true);
+      for (const paragraph of paragraphs) {
+        if (allRunIdRef.current !== runId) break;
+        const state = translations[paragraph.id];
+        if ((state == null ? void 0 : state.status) === "done") continue;
+        const success = await translateParagraph(paragraph);
+        if (!success) break;
+      }
+      if (allRunIdRef.current === runId) setIsTranslatingAll(false);
+    }, [isTranslatingAll, paragraphs, translateParagraph, translations]);
+    const stopTranslation = reactExports.useCallback(() => {
+      allRunIdRef.current += 1;
+      abortsRef.current.forEach((abort) => abort());
+      abortsRef.current.clear();
+      setIsTranslatingAll(false);
+    }, []);
+    reactExports.useEffect(() => () => {
+      allRunIdRef.current += 1;
+      abortsRef.current.forEach((abort) => abort());
+    }, [pageUrl]);
+    const doneCount = reactExports.useMemo(() => paragraphs.reduce((count, paragraph) => {
+      var _a;
+      return ((_a = translations[paragraph.id]) == null ? void 0 : _a.status) === "done" ? count + 1 : count;
+    }, 0), [paragraphs, translations]);
+    const value = reactExports.useMemo(() => ({
+      paragraphs,
+      translations,
+      isPageSupported: paragraphs.length > 0,
+      doneCount,
+      isTranslatingAll,
+      translateParagraph,
+      translateAll,
+      stopTranslation,
+      rescan: syncParagraphs
+    }), [doneCount, isTranslatingAll, paragraphs, stopTranslation, syncParagraphs, translateAll, translateParagraph, translations]);
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(ArticleTranslationContext.Provider, { value, children });
+  };
+  function useArticleTranslation() {
+    const context = reactExports.useContext(ArticleTranslationContext);
+    if (!context) {
+      throw new Error("useArticleTranslation must be used inside ArticleTranslationProvider");
+    }
+    return context;
+  }
   const DESKTOP_WIDGET_HEIGHT = 58;
   const MOBILE_WIDGET_HEIGHT = 132;
   const COLLAPSED_WIDGET_HEIGHT = 28;
@@ -14269,8 +14522,10 @@ JSON 格式：
   const VIEWPORT_PATCH_MARKER = "__linkualUniversalViewportPatchInstalled";
   const VIEWPORT_OFFSET_KEY = "__linkualUniversalWidgetHeight";
   const PAGE_RESERVE_STYLE_ID = "linkual-universal-page-reserve";
-  const LINKUAL_NAVIGATION_EVENT$3 = "linkual_navigation";
+  const LINKUAL_NAVIGATION_EVENT$2 = "linkual_navigation";
   const FLOATING_BUTTON_MARGIN = 10;
+  const BUBBLE_MARGIN = 12;
+  const BUBBLE_STORAGE_KEYS = ["universal_bubble_left", "universal_bubble_top"];
   const getDefaultExpandedHeight = () => window.matchMedia("(max-width: 720px)").matches ? MOBILE_WIDGET_HEIGHT : DESKTOP_WIDGET_HEIGHT;
   const isOwnViewportGetterPatched = (target, marker) => Boolean(
     target && target[marker]
@@ -14312,9 +14567,9 @@ JSON 格式：
     };
     return /* @__PURE__ */ jsxRuntimeExports.jsx("svg", { className: "linkual-universal-button-icon", viewBox: "0 0 24 24", "aria-hidden": "true", children: paths[name] });
   };
-  const normalizeText$1 = (value) => value.replace(/\s+/g, " ").trim();
+  const normalizeText = (value) => value.replace(/\s+/g, " ").trim();
   const getSourceTitle = () => {
-    const title = normalizeText$1(document.title.replace(/^\(\d+\)\s+/, ""));
+    const title = normalizeText(document.title.replace(/^\(\d+\)\s+/, ""));
     return title || window.location.hostname || window.location.href;
   };
   const getPageUrl = () => window.location.href;
@@ -14338,7 +14593,7 @@ JSON 格式：
     while (element && element !== document.body && element instanceof HTMLElement) {
       if (element.id === "linkual-root") return null;
       const tagName = element.tagName.toLowerCase();
-      const textLength = normalizeText$1(element.textContent || "").length;
+      const textLength = normalizeText(element.textContent || "").length;
       if (["article", "main", "section"].includes(tagName) || element.getAttribute("role") === "main") {
         return element;
       }
@@ -14368,30 +14623,30 @@ JSON 格式：
     }
   };
   const extractSentenceContext = (beforeText, selectedText, afterText) => {
-    const normalizedBefore = normalizeText$1(beforeText);
-    const normalizedSelected = normalizeText$1(selectedText);
-    const normalizedAfter = normalizeText$1(afterText);
-    const fullText = normalizeText$1([normalizedBefore, normalizedSelected, normalizedAfter].filter(Boolean).join(" "));
+    const normalizedBefore = normalizeText(beforeText);
+    const normalizedSelected = normalizeText(selectedText);
+    const normalizedAfter = normalizeText(afterText);
+    const fullText = normalizeText([normalizedBefore, normalizedSelected, normalizedAfter].filter(Boolean).join(" "));
     if (!fullText) return normalizedSelected;
     const targetStart = normalizedBefore.length + (normalizedBefore ? 1 : 0);
     const targetEnd = targetStart + normalizedSelected.length;
     const sentences = Array.from(fullText.matchAll(SENTENCE_PATTERN)).map((match) => ({
-      text: normalizeText$1(match[0] || ""),
+      text: normalizeText(match[0] || ""),
       start: match.index ?? 0,
       end: (match.index ?? 0) + (match[0] || "").length
     })).filter((sentence) => sentence.text);
     if (sentences.length === 0) {
       const sliceStart = Math.max(0, targetStart - 360);
       const sliceEnd = Math.min(fullText.length, targetEnd + 360);
-      return normalizeText$1(fullText.slice(sliceStart, sliceEnd));
+      return normalizeText(fullText.slice(sliceStart, sliceEnd));
     }
     const targetSentenceIndex = sentences.findIndex((sentence) => sentence.start <= targetEnd && sentence.end >= targetStart);
     if (targetSentenceIndex < 0) {
-      return normalizeText$1(fullText.slice(Math.max(0, targetStart - 360), Math.min(fullText.length, targetEnd + 360)));
+      return normalizeText(fullText.slice(Math.max(0, targetStart - 360), Math.min(fullText.length, targetEnd + 360)));
     }
     const startIndex = Math.max(0, targetSentenceIndex - CONTEXT_SENTENCE_RADIUS);
     const endIndex = Math.min(sentences.length, targetSentenceIndex + CONTEXT_SENTENCE_RADIUS + 1);
-    return normalizeText$1(sentences.slice(startIndex, endIndex).map((sentence) => sentence.text).join(" "));
+    return normalizeText(sentences.slice(startIndex, endIndex).map((sentence) => sentence.text).join(" "));
   };
   const getVisibleRangeRect = (range) => {
     const rects = Array.from(range.getClientRects()).filter((rect2) => rect2.width > 0 && rect2.height > 0);
@@ -14423,7 +14678,7 @@ JSON 格式：
   };
   const captureSelection = (mode) => {
     const selection = window.getSelection();
-    const selectedText = normalizeText$1((selection == null ? void 0 : selection.toString()) || "");
+    const selectedText = normalizeText((selection == null ? void 0 : selection.toString()) || "");
     if (!selection || selection.rangeCount === 0 || selection.isCollapsed || !selectedText) {
       return null;
     }
@@ -14576,9 +14831,19 @@ JSON 格式：
     const [message, setMessage] = reactExports.useState("");
     const [reservedHeight, setReservedHeight] = reactExports.useState(getDefaultExpandedHeight);
     const [queueCount, setQueueCount] = reactExports.useState(0);
+    const [bubblePosition, setBubblePosition] = reactExports.useState(() => {
+      const left = Number.parseFloat(ConfigService.get(BUBBLE_STORAGE_KEYS[0]));
+      const top = Number.parseFloat(ConfigService.get(BUBBLE_STORAGE_KEYS[1]));
+      return Number.isFinite(left) && Number.isFinite(top) ? { left, top } : null;
+    });
     const widgetRef = reactExports.useRef(null);
+    const bubbleRef = reactExports.useRef(null);
+    const bubblePositionRef = reactExports.useRef(bubblePosition);
+    const bubbleDragRef = reactExports.useRef(null);
+    const bubbleMovedRef = reactExports.useRef(false);
     const selectionTimerRef = reactExports.useRef(null);
-    const activeWidgetHeight = isExpanded ? reservedHeight : COLLAPSED_WIDGET_HEIGHT;
+    const activeWidgetHeight = isExpanded ? reservedHeight : 0;
+    const articleTranslation = useArticleTranslation();
     const hasPayload = Boolean(word.trim());
     const canSend = hasPayload;
     const statusText = reactExports.useMemo(() => {
@@ -14645,10 +14910,10 @@ JSON 格式：
           applyPageReserve(activeWidgetHeight);
         });
       };
-      window.addEventListener(LINKUAL_NAVIGATION_EVENT$3, handleNavigationRefresh);
+      window.addEventListener(LINKUAL_NAVIGATION_EVENT$2, handleNavigationRefresh);
       window.addEventListener("pageshow", handleNavigationRefresh);
       return () => {
-        window.removeEventListener(LINKUAL_NAVIGATION_EVENT$3, handleNavigationRefresh);
+        window.removeEventListener(LINKUAL_NAVIGATION_EVENT$2, handleNavigationRefresh);
         window.removeEventListener("pageshow", handleNavigationRefresh);
       };
     }, [activeWidgetHeight, isExpanded, measureWidgetHeight]);
@@ -14759,18 +15024,119 @@ JSON 格式：
       window.dispatchEvent(new Event(QUEUE_TOGGLE_EVENT));
       window.dispatchEvent(new Event(QUEUE_REQUEST_COUNT_EVENT));
     };
+    const clampBubblePosition = reactExports.useCallback((left, top) => {
+      var _a;
+      const rect = (_a = bubbleRef.current) == null ? void 0 : _a.getBoundingClientRect();
+      const width = (rect == null ? void 0 : rect.width) || 180;
+      const height = (rect == null ? void 0 : rect.height) || 44;
+      const maxLeft = Math.max(BUBBLE_MARGIN, window.innerWidth - width - BUBBLE_MARGIN);
+      const maxTop = Math.max(BUBBLE_MARGIN, window.innerHeight - height - BUBBLE_MARGIN);
+      return {
+        left: Math.max(BUBBLE_MARGIN, Math.min(left, maxLeft)),
+        top: Math.max(BUBBLE_MARGIN, Math.min(top, maxTop))
+      };
+    }, []);
+    const handleBubblePointerDown = (event) => {
+      var _a, _b, _c;
+      if (event.pointerType === "mouse" && event.button !== 0) return;
+      const rect = (_a = bubbleRef.current) == null ? void 0 : _a.getBoundingClientRect();
+      if (!rect) return;
+      bubbleMovedRef.current = false;
+      bubbleDragRef.current = {
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        left: rect.left,
+        top: rect.top
+      };
+      (_c = (_b = event.currentTarget).setPointerCapture) == null ? void 0 : _c.call(_b, event.pointerId);
+    };
+    const handleBubblePointerMove = (event) => {
+      const drag = bubbleDragRef.current;
+      if (!drag || drag.pointerId !== event.pointerId) return;
+      const deltaX = event.clientX - drag.startX;
+      const deltaY = event.clientY - drag.startY;
+      if (Math.abs(deltaX) > 3 || Math.abs(deltaY) > 3) bubbleMovedRef.current = true;
+      const nextPosition = clampBubblePosition(drag.left + deltaX, drag.top + deltaY);
+      bubblePositionRef.current = nextPosition;
+      setBubblePosition(nextPosition);
+    };
+    const handleBubblePointerUp = (event) => {
+      const drag = bubbleDragRef.current;
+      if (!drag || drag.pointerId !== event.pointerId) return;
+      const nextPosition = bubblePositionRef.current || clampBubblePosition(drag.left, drag.top);
+      bubbleDragRef.current = null;
+      if (bubbleMovedRef.current) {
+        ConfigService.set("universal_bubble_left", String(Math.round(nextPosition.left)));
+        ConfigService.set("universal_bubble_top", String(Math.round(nextPosition.top)));
+      }
+    };
+    reactExports.useEffect(() => {
+      if (!bubblePosition) return void 0;
+      const clampCurrentPosition = () => setBubblePosition((current) => {
+        if (!current) return current;
+        const nextPosition = clampBubblePosition(current.left, current.top);
+        bubblePositionRef.current = nextPosition;
+        return nextPosition;
+      });
+      clampCurrentPosition();
+      window.addEventListener("resize", clampCurrentPosition);
+      return () => window.removeEventListener("resize", clampCurrentPosition);
+    }, [bubblePosition, clampBubblePosition]);
+    const handleBubbleButtonPointerDown = (event) => {
+      event.stopPropagation();
+    };
+    const handleBubbleClick = (event) => {
+      if (bubbleMovedRef.current) {
+        event.preventDefault();
+        event.stopPropagation();
+        bubbleMovedRef.current = false;
+      }
+    };
     if (!isExpanded) {
-      return /* @__PURE__ */ jsxRuntimeExports.jsx(
-        "button",
+      return /* @__PURE__ */ jsxRuntimeExports.jsxs(
+        "div",
         {
-          type: "button",
+          ref: bubbleRef,
           className: "linkual-universal-expand-bar",
-          onClick: () => setIsExpanded(true),
+          onPointerDown: handleBubblePointerDown,
+          onPointerMove: handleBubblePointerMove,
+          onPointerUp: handleBubblePointerUp,
+          onPointerCancel: handleBubblePointerUp,
+          onClick: handleBubbleClick,
           style: {
-            "--linkual-theme": themeColor
+            "--linkual-theme": themeColor,
+            ...bubblePosition ? { left: bubblePosition.left, top: bubblePosition.top, right: "auto", bottom: "auto" } : {}
           },
           title: "Linkual",
-          children: /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "linkual-universal-expand-chevron", "aria-hidden": "true" })
+          children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "linkual-universal-bubble-grip", "aria-hidden": "true", children: "⋮⋮" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "button",
+              {
+                type: "button",
+                className: "linkual-universal-bubble-translate",
+                onPointerDown: handleBubbleButtonPointerDown,
+                onClick: () => void articleTranslation.translateAll(),
+                disabled: !articleTranslation.isPageSupported || articleTranslation.isTranslatingAll,
+                "aria-label": "翻译页面",
+                title: articleTranslation.isPageSupported ? "翻译页面" : "当前页面未识别到正文",
+                children: articleTranslation.isTranslatingAll ? "翻译中…" : "翻译页面"
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "button",
+              {
+                type: "button",
+                className: "linkual-universal-bubble-expand",
+                onPointerDown: handleBubbleButtonPointerDown,
+                onClick: () => setIsExpanded(true),
+                title: "展开 Linkual 工具栏",
+                "aria-label": "展开 Linkual 工具栏",
+                children: /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "linkual-universal-expand-chevron", "aria-hidden": "true" })
+              }
+            )
+          ]
         }
       );
     }
@@ -14817,6 +15183,21 @@ JSON 格式：
               )
             ] }) : /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "linkual-universal-muted", children: "未选中文本" }) }),
             /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "linkual-universal-actions", children: statusText && /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: `linkual-universal-status status-${status}`, children: statusText }) })
+          ] }),
+          articleTranslation.isPageSupported && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-universal-translation-row", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-universal-translation-summary", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { children: "网页翻译" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
+                articleTranslation.doneCount,
+                "/",
+                articleTranslation.paragraphs.length,
+                " 段"
+              ] })
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-universal-translation-actions", children: [
+              articleTranslation.isTranslatingAll ? /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", className: "primary", onClick: articleTranslation.stopTranslation, children: "停止翻译" }) : /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", className: "primary", onClick: () => void articleTranslation.translateAll(), children: "翻译页面" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", onClick: articleTranslation.rescan, children: "重新扫描" })
+            ] })
           ] }),
           /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-universal-form", children: [
             /* @__PURE__ */ jsxRuntimeExports.jsxs("label", { className: "linkual-universal-field field-word", children: [
@@ -14893,85 +15274,6 @@ JSON 格式：
       }
     );
   };
-  const MAX_PARAGRAPHS = 600;
-  const MIN_PARAGRAPH_LENGTH = 18;
-  const HOST_CLASS = "linkual-article-translation-host";
-  const EXCLUDED_SELECTOR = [
-    "nav",
-    "header",
-    "footer",
-    "aside",
-    "figure",
-    "table",
-    "pre",
-    "code",
-    "script",
-    "style",
-    "noscript",
-    ".ltx_bibliography",
-    ".ltx_biblist",
-    ".ltx_figure",
-    ".ltx_table",
-    ".ltx_caption",
-    ".ltx_equation",
-    ".ltx_title",
-    ".ltx_authors",
-    ".ltx_note"
-  ].join(",");
-  const normalizeText = (value) => value.replace(/\s+/g, " ").trim();
-  function hashText(value) {
-    let hash = 0;
-    for (let index2 = 0; index2 < value.length; index2 += 1) {
-      hash = (hash << 5) - hash + value.charCodeAt(index2) | 0;
-    }
-    return Math.abs(hash).toString(36);
-  }
-  function isExcluded(element) {
-    return Boolean(element.closest(EXCLUDED_SELECTOR)) || Boolean(element.closest("[data-linkual-article-host]"));
-  }
-  function getCandidateSelector() {
-    const isArxivHtml = window.location.hostname === "arxiv.org" && window.location.pathname.startsWith("/html/");
-    if (isArxivHtml || document.querySelector(".ltx_document")) {
-      return ".ltx_document p.ltx_p, .ltx_document p";
-    }
-    return 'article p, main p, [role="main"] p, body > p';
-  }
-  function getArticleRoot() {
-    return document.querySelector(".ltx_document") || document.querySelector("article") || document.querySelector("main") || document.querySelector('[role="main"]') || document.body;
-  }
-  function getOrCreateHost(element) {
-    const next = element.nextElementSibling;
-    if (next instanceof HTMLDivElement && next.dataset.linkualArticleHost === "true") {
-      return next;
-    }
-    const host = document.createElement("div");
-    host.className = HOST_CLASS;
-    host.dataset.linkualArticleHost = "true";
-    element.insertAdjacentElement("afterend", host);
-    return host;
-  }
-  function collectArticleParagraphs() {
-    const root2 = getArticleRoot();
-    if (!root2) return [];
-    const candidates = Array.from(root2.querySelectorAll(getCandidateSelector())).filter((element) => !isExcluded(element)).map((element) => ({ element, text: normalizeText(element.innerText || element.textContent || "") })).filter(({ element, text }) => text.length >= MIN_PARAGRAPH_LENGTH && !element.querySelector("img, video, iframe"));
-    const seen = /* @__PURE__ */ new Set();
-    return candidates.slice(0, MAX_PARAGRAPHS).filter(({ element }) => {
-      if (seen.has(element)) return false;
-      seen.add(element);
-      return true;
-    }).map(({ element, text }, index2) => ({
-      id: `article-${index2}-${hashText(text)}`,
-      element,
-      text,
-      host: getOrCreateHost(element)
-    }));
-  }
-  function removeArticleTranslationHosts(keep = /* @__PURE__ */ new Set()) {
-    document.querySelectorAll(`[data-linkual-article-host="true"]`).forEach((host) => {
-      if (!keep.has(host)) host.remove();
-    });
-  }
-  const LINKUAL_NAVIGATION_EVENT$2 = "linkual_navigation";
   function TranslationBlock({
     paragraph,
     state,
@@ -14987,187 +15289,22 @@ JSON 格式：
       hasTranslation ? /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "linkual-article-translation-text", children: state == null ? void 0 : state.text }) : /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "linkual-article-translation-placeholder", children: (state == null ? void 0 : state.error) || (isLoading ? "正在请求模型…" : "点击“翻译本段”显示译文") })
     ] });
   }
-  const ArticleTranslator = ({ onOpenSettings }) => {
-    const [paragraphs, setParagraphs] = reactExports.useState([]);
-    const [pageUrl, setPageUrl] = reactExports.useState(window.location.href);
-    const [translations, setTranslations] = reactExports.useState({});
-    const [isTranslatingAll, setIsTranslatingAll] = reactExports.useState(false);
-    const [isPanelOpen, setIsPanelOpen] = reactExports.useState(true);
-    const abortsRef = reactExports.useRef(/* @__PURE__ */ new Map());
-    const allRunIdRef = reactExports.useRef(0);
-    const syncParagraphs = reactExports.useCallback(() => {
-      const nextParagraphs = collectArticleParagraphs();
-      const nextUrl = window.location.href;
-      const nextHosts = new Set(nextParagraphs.map((paragraph) => paragraph.host));
-      removeArticleTranslationHosts(nextHosts);
-      setParagraphs((previous) => {
-        const unchanged = previous.length === nextParagraphs.length && previous.every((paragraph, index2) => {
-          var _a, _b;
-          return paragraph.element === ((_a = nextParagraphs[index2]) == null ? void 0 : _a.element) && paragraph.text === ((_b = nextParagraphs[index2]) == null ? void 0 : _b.text);
-        });
-        return unchanged ? previous : nextParagraphs;
-      });
-      setPageUrl((previous) => {
-        if (previous === nextUrl) return previous;
-        allRunIdRef.current += 1;
-        abortsRef.current.forEach((abort) => abort());
-        abortsRef.current.clear();
-        setTranslations({});
-        setIsTranslatingAll(false);
-        return nextUrl;
-      });
-    }, []);
-    reactExports.useEffect(() => {
-      syncParagraphs();
-      const interval = window.setInterval(syncParagraphs, 1200);
-      window.addEventListener(LINKUAL_NAVIGATION_EVENT$2, syncParagraphs);
-      window.addEventListener("popstate", syncParagraphs);
-      window.addEventListener("hashchange", syncParagraphs);
-      return () => {
-        window.clearInterval(interval);
-        window.removeEventListener(LINKUAL_NAVIGATION_EVENT$2, syncParagraphs);
-        window.removeEventListener("popstate", syncParagraphs);
-        window.removeEventListener("hashchange", syncParagraphs);
-        abortsRef.current.forEach((abort) => abort());
-        abortsRef.current.clear();
-        removeArticleTranslationHosts();
-      };
-    }, [syncParagraphs]);
-    const translateParagraph = reactExports.useCallback((paragraph) => {
-      const apiKey = ConfigService.get("api_key").trim();
-      const apiUrl = ConfigService.get("api_url").trim();
-      const apiModel = ConfigService.get("api_model").trim();
-      const timeout = parseInt(ConfigService.get("api_timeout"), 10) || 30;
-      const targetLanguage = ConfigService.get("web_target_language").trim() || "简体中文";
-      const promptTemplate = ConfigService.get("web_translation_prompt").trim();
-      if (!apiKey) {
-        setTranslations((previous) => ({
-          ...previous,
-          [paragraph.id]: { status: "error", text: "", error: "请先在设置中填入 API Key" }
-        }));
-        return Promise.resolve(false);
-      }
-      const previousAbort = abortsRef.current.get(paragraph.id);
-      previousAbort == null ? void 0 : previousAbort();
-      setTranslations((previous) => ({
-        ...previous,
-        [paragraph.id]: { status: "loading", text: "" }
-      }));
-      return new Promise((resolve) => {
-        let content = "";
-        let settled = false;
-        const finish = (success, error) => {
-          if (settled) return;
-          settled = true;
-          abortsRef.current.delete(paragraph.id);
-          if (success) {
-            setTranslations((previous) => ({
-              ...previous,
-              [paragraph.id]: { status: "done", text: content.trim() }
-            }));
-          } else if (error === "ABORTED") {
-            setTranslations((previous) => ({
-              ...previous,
-              [paragraph.id]: { status: "idle", text: "" }
-            }));
-          } else {
-            setTranslations((previous) => ({
-              ...previous,
-              [paragraph.id]: { status: "error", text: content, error: error || "翻译失败，请重试" }
-            }));
-          }
-          resolve(success);
-        };
-        const request = fetchLlmStream({
-          apiUrl,
-          apiKey,
-          apiModel,
-          timeoutSec: timeout,
-          systemPrompt: promptTemplate || `你是专业学术翻译。请将输入内容准确翻译成${targetLanguage}。保留数学符号、变量名、引用标记和段落语气；只输出译文，不要解释，不要添加标题。`,
-          userPrompt: `请将下面这一个网页论文段落翻译成${targetLanguage}：
-
-${paragraph.text}`,
-          onData: (chunk) => {
-            content += chunk;
-            setTranslations((previous) => ({
-              ...previous,
-              [paragraph.id]: { status: "loading", text: content }
-            }));
-          },
-          onError: (error) => finish(false, error),
-          onDone: () => finish(true)
-        });
-        abortsRef.current.set(paragraph.id, request.abort);
-      });
-    }, []);
-    reactExports.useCallback(async () => {
-      if (isTranslatingAll || paragraphs.length === 0) return;
-      const runId = allRunIdRef.current + 1;
-      allRunIdRef.current = runId;
-      setIsTranslatingAll(true);
-      for (const paragraph of paragraphs) {
-        if (allRunIdRef.current !== runId) break;
-        const state = translations[paragraph.id];
-        if ((state == null ? void 0 : state.status) === "done") continue;
-        await translateParagraph(paragraph);
-      }
-      if (allRunIdRef.current === runId) setIsTranslatingAll(false);
-    }, [isTranslatingAll, paragraphs, translateParagraph, translations]);
-    const stopTranslation = reactExports.useCallback(() => {
-      allRunIdRef.current += 1;
-      abortsRef.current.forEach((abort) => abort());
-      abortsRef.current.clear();
-      setIsTranslatingAll(false);
-    }, []);
-    reactExports.useEffect(() => () => {
-      allRunIdRef.current += 1;
-      abortsRef.current.forEach((abort) => abort());
-    }, [pageUrl]);
-    const doneCount = reactExports.useMemo(() => paragraphs.reduce((count, paragraph) => {
-      var _a;
-      return ((_a = translations[paragraph.id]) == null ? void 0 : _a.status) === "done" ? count + 1 : count;
-    }, 0), [paragraphs, translations]);
+  const ArticleTranslator = () => {
+    const { paragraphs, translations, translateParagraph } = useArticleTranslation();
     if (paragraphs.length === 0) return null;
-    return /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
-      paragraphs.map((paragraph) => reactDomExports.createPortal(
-        /* @__PURE__ */ jsxRuntimeExports.jsx(
-          TranslationBlock,
-          {
-            paragraph,
-            state: translations[paragraph.id],
-            onTranslate: translateParagraph
-          },
-          paragraph.id
-        ),
-        paragraph.host,
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(jsxRuntimeExports.Fragment, { children: paragraphs.map((paragraph) => reactDomExports.createPortal(
+      /* @__PURE__ */ jsxRuntimeExports.jsx(
+        TranslationBlock,
+        {
+          paragraph,
+          state: translations[paragraph.id],
+          onTranslate: translateParagraph
+        },
         paragraph.id
-      )),
-      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: `linkual-article-panel ${isPanelOpen ? "open" : "closed"}`, children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-article-panel-header", children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("button", { type: "button", className: "linkual-article-panel-title", onClick: () => setIsPanelOpen((open) => !open), children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "Linkual 网页翻译" }),
-            /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "linkual-article-panel-count", children: [
-              doneCount,
-              "/",
-              paragraphs.length
-            ] })
-          ] }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", className: "linkual-article-panel-close", onClick: () => setIsPanelOpen(false), "aria-label": "折叠网页翻译", children: "−" })
-        ] }),
-        isPanelOpen && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-article-panel-body", children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-article-panel-info", children: [
-            "已识别 ",
-            paragraphs.length,
-            " 个正文段落，每段单独翻译。"
-          ] }),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-article-panel-actions", children: [
-            isTranslatingAll ? /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", className: "primary", onClick: stopTranslation, children: "停止翻译" }) : /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", className: "primary", onClick: () => void 0, children: "翻译全文" }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", onClick: syncParagraphs, children: "重新扫描" }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", onClick: onOpenSettings, children: "设置" })
-          ] })
-        ] })
-      ] })
-    ] });
+      ),
+      paragraph.host,
+      paragraph.id
+    )) });
   };
   const INITIAL_RENDER_LIMIT = 80;
   const RENDER_BATCH_SIZE = 80;
@@ -15417,7 +15554,7 @@ ${paragraph.text}`,
     const visibleSubs = subs.slice(0, renderLimit);
     const hasMoreSubs = visibleSubs.length < subs.length;
     const showMobileFullscreenButton = mobileFullscreenMode === "always" || mobileFullscreenMode === "video" && inVideo;
-    return /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(ArticleTranslationProvider, { enabled: !inVideo, children: /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: `linkual-wrap layout-${layout}`, style: wrapStyle, children: [
         /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "resizer", onMouseDown: startResize, title: layout === "right" ? "左右拖拽调整宽度" : "上下拖拽调整高度" }),
         /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "header", children: [
@@ -15440,11 +15577,11 @@ ${paragraph.text}`,
         ] }) })
       ] }),
       /* @__PURE__ */ jsxRuntimeExports.jsx(UniversalVocabWidget, { onOpenSettings: () => setIsSettingsOpen(true) }),
-      !inVideo && /* @__PURE__ */ jsxRuntimeExports.jsx(ArticleTranslator, { onOpenSettings: () => setIsSettingsOpen(true) }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx(ArticleTranslator, {}),
       showMobileFullscreenButton && /* @__PURE__ */ jsxRuntimeExports.jsx(MobileFullscreenButton, { adapter }),
       /* @__PURE__ */ jsxRuntimeExports.jsx(VocabQueue, {}),
       isSettingsOpen && /* @__PURE__ */ jsxRuntimeExports.jsx(Settings, { adapter, onClose: () => setIsSettingsOpen(false) })
-    ] });
+    ] }) });
   };
   const PLAYER_RESPONSE_KEYS = [
     "playerResponse",
