@@ -6,6 +6,7 @@ import {
   QUEUE_TOGGLE_EVENT,
   enqueueVocabTask,
 } from '../services/vocabQueueStore';
+import { useArticleTranslation } from './ArticleTranslationContext';
 
 interface UniversalVocabWidgetProps {
   onOpenSettings: () => void;
@@ -37,6 +38,8 @@ const VIEWPORT_OFFSET_KEY = '__linkualUniversalWidgetHeight';
 const PAGE_RESERVE_STYLE_ID = 'linkual-universal-page-reserve';
 const LINKUAL_NAVIGATION_EVENT = 'linkual_navigation';
 const FLOATING_BUTTON_MARGIN = 10;
+const BUBBLE_MARGIN = 12;
+const BUBBLE_STORAGE_KEYS = ['universal_bubble_left', 'universal_bubble_top'] as const;
 
 const getDefaultExpandedHeight = () => (
   window.matchMedia('(max-width: 720px)').matches ? MOBILE_WIDGET_HEIGHT : DESKTOP_WIDGET_HEIGHT
@@ -426,10 +429,20 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
   const [message, setMessage] = useState('');
   const [reservedHeight, setReservedHeight] = useState(getDefaultExpandedHeight);
   const [queueCount, setQueueCount] = useState(0);
+  const [bubblePosition, setBubblePosition] = useState<{ left: number; top: number } | null>(() => {
+    const left = Number.parseFloat(ConfigService.get(BUBBLE_STORAGE_KEYS[0]) as string);
+    const top = Number.parseFloat(ConfigService.get(BUBBLE_STORAGE_KEYS[1]) as string);
+    return Number.isFinite(left) && Number.isFinite(top) ? { left, top } : null;
+  });
 
   const widgetRef = useRef<HTMLDivElement | null>(null);
+  const bubbleRef = useRef<HTMLDivElement | null>(null);
+  const bubblePositionRef = useRef(bubblePosition);
+  const bubbleDragRef = useRef<{ pointerId: number; startX: number; startY: number; left: number; top: number } | null>(null);
+  const bubbleMovedRef = useRef(false);
   const selectionTimerRef = useRef<number | null>(null);
-  const activeWidgetHeight = isExpanded ? reservedHeight : COLLAPSED_WIDGET_HEIGHT;
+  const activeWidgetHeight = isExpanded ? reservedHeight : 0;
+  const articleTranslation = useArticleTranslation();
 
   const hasPayload = Boolean(word.trim());
   const canSend = hasPayload;
@@ -647,19 +660,123 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
     window.dispatchEvent(new Event(QUEUE_REQUEST_COUNT_EVENT));
   };
 
+  const clampBubblePosition = useCallback((left: number, top: number) => {
+    const rect = bubbleRef.current?.getBoundingClientRect();
+    const width = rect?.width || 180;
+    const height = rect?.height || 44;
+    const maxLeft = Math.max(BUBBLE_MARGIN, window.innerWidth - width - BUBBLE_MARGIN);
+    const maxTop = Math.max(BUBBLE_MARGIN, window.innerHeight - height - BUBBLE_MARGIN);
+    return {
+      left: Math.max(BUBBLE_MARGIN, Math.min(left, maxLeft)),
+      top: Math.max(BUBBLE_MARGIN, Math.min(top, maxTop)),
+    };
+  }, []);
+
+  const handleBubblePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+    const rect = bubbleRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    bubbleMovedRef.current = false;
+    bubbleDragRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      left: rect.left,
+      top: rect.top,
+    };
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  };
+
+  const handleBubblePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    const drag = bubbleDragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+
+    const deltaX = event.clientX - drag.startX;
+    const deltaY = event.clientY - drag.startY;
+    if (Math.abs(deltaX) > 3 || Math.abs(deltaY) > 3) bubbleMovedRef.current = true;
+    const nextPosition = clampBubblePosition(drag.left + deltaX, drag.top + deltaY);
+    bubblePositionRef.current = nextPosition;
+    setBubblePosition(nextPosition);
+  };
+
+  const handleBubblePointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
+    const drag = bubbleDragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+
+    const nextPosition = bubblePositionRef.current || clampBubblePosition(drag.left, drag.top);
+    bubbleDragRef.current = null;
+    if (bubbleMovedRef.current) {
+      ConfigService.set('universal_bubble_left', String(Math.round(nextPosition.left)));
+      ConfigService.set('universal_bubble_top', String(Math.round(nextPosition.top)));
+    }
+  };
+
+  useEffect(() => {
+    if (!bubblePosition) return undefined;
+
+    const clampCurrentPosition = () => setBubblePosition((current) => {
+      if (!current) return current;
+      const nextPosition = clampBubblePosition(current.left, current.top);
+      bubblePositionRef.current = nextPosition;
+      return nextPosition;
+    });
+    clampCurrentPosition();
+    window.addEventListener('resize', clampCurrentPosition);
+    return () => window.removeEventListener('resize', clampCurrentPosition);
+  }, [bubblePosition, clampBubblePosition]);
+
+  const handleBubbleButtonPointerDown = (event: React.PointerEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+  };
+
+  const handleBubbleClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (bubbleMovedRef.current) {
+      event.preventDefault();
+      event.stopPropagation();
+      bubbleMovedRef.current = false;
+    }
+  };
+
   if (!isExpanded) {
     return (
-      <button
-        type="button"
+      <div
+        ref={bubbleRef}
         className="linkual-universal-expand-bar"
-        onClick={() => setIsExpanded(true)}
+        onPointerDown={handleBubblePointerDown}
+        onPointerMove={handleBubblePointerMove}
+        onPointerUp={handleBubblePointerUp}
+        onPointerCancel={handleBubblePointerUp}
+        onClick={handleBubbleClick}
         style={{
           '--linkual-theme': themeColor,
+          ...(bubblePosition ? { left: bubblePosition.left, top: bubblePosition.top, right: 'auto', bottom: 'auto' } : {}),
         } as React.CSSProperties}
         title="Linkual"
       >
-        <span className="linkual-universal-expand-chevron" aria-hidden="true" />
-      </button>
+        <span className="linkual-universal-bubble-grip" aria-hidden="true">⋮⋮</span>
+        <button
+          type="button"
+          className="linkual-universal-bubble-translate"
+          onPointerDown={handleBubbleButtonPointerDown}
+          onClick={() => void articleTranslation.translateAll()}
+          disabled={!articleTranslation.isPageSupported || articleTranslation.isTranslatingAll}
+          aria-label="翻译页面"
+          title={articleTranslation.isPageSupported ? '翻译页面' : '当前页面未识别到正文'}
+        >
+          {articleTranslation.isTranslatingAll ? '翻译中…' : '翻译页面'}
+        </button>
+        <button
+          type="button"
+          className="linkual-universal-bubble-expand"
+          onPointerDown={handleBubbleButtonPointerDown}
+          onClick={() => setIsExpanded(true)}
+          title="展开 Linkual 工具栏"
+          aria-label="展开 Linkual 工具栏"
+        >
+          <span className="linkual-universal-expand-chevron" aria-hidden="true" />
+        </button>
+      </div>
     );
   }
 
@@ -714,6 +831,23 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
           {statusText && <span className={`linkual-universal-status status-${status}`}>{statusText}</span>}
         </div>
       </div>
+
+      {articleTranslation.isPageSupported && (
+        <div className="linkual-universal-translation-row">
+          <div className="linkual-universal-translation-summary">
+            <strong>网页翻译</strong>
+            <span>{articleTranslation.doneCount}/{articleTranslation.paragraphs.length} 段</span>
+          </div>
+          <div className="linkual-universal-translation-actions">
+            {articleTranslation.isTranslatingAll ? (
+              <button type="button" className="primary" onClick={articleTranslation.stopTranslation}>停止翻译</button>
+            ) : (
+              <button type="button" className="primary" onClick={() => void articleTranslation.translateAll()}>翻译页面</button>
+            )}
+            <button type="button" onClick={articleTranslation.rescan}>重新扫描</button>
+          </div>
+        </div>
+      )}
 
       <div className="linkual-universal-form">
         <label className="linkual-universal-field field-word">

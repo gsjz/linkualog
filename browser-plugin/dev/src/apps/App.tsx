@@ -6,6 +6,7 @@ import VocabQueue from '../components/VocabQueue';
 import MobileFullscreenButton from '../components/MobileFullscreenButton';
 import UniversalVocabWidget from '../components/UniversalVocabWidget';
 import ArticleTranslator from '../components/ArticleTranslator';
+import { ArticleTranslationProvider } from '../components/ArticleTranslationContext';
 import { Subtitle } from '../types';
 import { IVideoAdapter } from '../adapters/BaseAdapter';
 import { ConfigService } from '../services/configService';
@@ -331,7 +332,8 @@ const App: React.FC<AppProps> = ({ adapter }) => {
   const showMobileFullscreenButton = mobileFullscreenMode === 'always' || (mobileFullscreenMode === 'video' && inVideo);
 
   return (
-    <>
+    <ArticleTranslationProvider enabled={!inVideo}>
+      <>
       <div className={`linkual-wrap layout-${layout}`} style={wrapStyle}>
         <div className="resizer" onMouseDown={startResize} title={layout === 'right' ? '左右拖拽调整宽度' : '上下拖拽调整高度'} />
         <div className="header">
@@ -356,11 +358,12 @@ const App: React.FC<AppProps> = ({ adapter }) => {
         </div>
       </div>
       <UniversalVocabWidget onOpenSettings={() => setIsSettingsOpen(true)} />
-      {!inVideo && <ArticleTranslator onOpenSettings={() => setIsSettingsOpen(true)} />}
+      <ArticleTranslator />
       {showMobileFullscreenButton && <MobileFullscreenButton adapter={adapter} />}
       <VocabQueue />
       {isSettingsOpen && <Settings adapter={adapter} onClose={() => setIsSettingsOpen(false)} />}
-    </>
+      </>
+    </ArticleTranslationProvider>
   );
 };
 

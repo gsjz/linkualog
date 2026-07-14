@@ -334,7 +334,7 @@ html.linkual-mobile-fullscreen-fallback {
 }
 
 .linkual-article-translation-toolbar button,
-.linkual-article-panel button {
+.linkual-universal-translation-row button {
   box-sizing: border-box !important;
   min-height: 28px !important;
   padding: 4px 9px !important;
@@ -347,12 +347,12 @@ html.linkual-mobile-fullscreen-fallback {
 }
 
 .linkual-article-translation-toolbar button:hover,
-.linkual-article-panel button:hover {
+.linkual-universal-translation-row button:hover {
   background: #f1ecf8 !important;
 }
 
 .linkual-article-translation-toolbar button:disabled,
-.linkual-article-panel button:disabled {
+.linkual-universal-translation-row button:disabled {
   cursor: wait !important;
   opacity: 0.65 !important;
 }
@@ -369,110 +369,7 @@ html.linkual-mobile-fullscreen-fallback {
   font-style: italic !important;
 }
 
-.linkual-article-panel {
-  position: fixed !important;
-  top: 16px !important;
-  right: 16px !important;
-  z-index: 2147483647 !important;
-  width: min(360px, calc(100vw - 32px)) !important;
-  box-sizing: border-box !important;
-  overflow: hidden !important;
-  border: 1px solid rgba(71, 48, 102, 0.2) !important;
-  border-radius: 10px !important;
-  background: rgba(255, 255, 255, 0.97) !important;
-  color: #322b3a !important;
-  box-shadow: 0 8px 28px rgba(48, 32, 72, 0.2) !important;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
-  pointer-events: auto !important;
-  text-align: left !important;
-}
-
-.linkual-article-panel-header {
-  display: flex !important;
-  align-items: center !important;
-  gap: 8px !important;
-  min-height: 42px !important;
-  padding: 0 8px 0 12px !important;
-  background: #68459a !important;
-  color: #fff !important;
-}
-
-.linkual-article-panel-title,
-.linkual-article-panel-close {
-  border: 0 !important;
-  border-radius: 4px !important;
-  background: transparent !important;
-  color: inherit !important;
-  cursor: pointer !important;
-  font: 700 13px/1.2 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
-}
-
-.linkual-article-panel-title {
-  display: flex !important;
-  flex: 1 !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  min-width: 0 !important;
-  min-height: 34px !important;
-  padding: 0 !important;
-  text-align: left !important;
-}
-
-.linkual-article-panel-count {
-  margin-left: 8px !important;
-  color: rgba(255, 255, 255, 0.78) !important;
-  font-size: 11px !important;
-  font-variant-numeric: tabular-nums !important;
-  font-weight: 500 !important;
-}
-
-.linkual-article-panel-close {
-  width: 28px !important;
-  min-height: 28px !important;
-  padding: 0 !important;
-  font-size: 18px !important;
-  line-height: 1 !important;
-}
-
-.linkual-article-panel-close:hover,
-.linkual-article-panel-title:hover {
-  background: rgba(255, 255, 255, 0.14) !important;
-}
-
-.linkual-article-panel-body {
-  padding: 10px 12px 12px !important;
-}
-
-.linkual-article-panel-info {
-  margin-bottom: 9px !important;
-  color: #6b6274 !important;
-  font-size: 12px !important;
-  line-height: 1.45 !important;
-}
-
-.linkual-article-panel-actions {
-  display: flex !important;
-  flex-wrap: wrap !important;
-  gap: 6px !important;
-}
-
-.linkual-article-panel-actions button.primary {
-  border-color: #68459a !important;
-  background: #68459a !important;
-  color: #fff !important;
-}
-
-.linkual-article-panel-actions button.primary:hover {
-  background: #54337f !important;
-}
-
 @media (max-width: 600px) {
-  .linkual-article-panel {
-    top: 8px !important;
-    right: 8px !important;
-    width: min(320px, calc(100vw - 16px)) !important;
-  }
-
   .linkual-article-translation {
     padding: 0.75em 0.8em !important;
   }
@@ -990,34 +887,74 @@ html.linkual-mobile-fullscreen-fallback {
 
 #linkual-root .linkual-universal-expand-bar {
   position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  right: 14px;
+  bottom: calc(14px + env(safe-area-inset-bottom, 0px));
   z-index: 2147483647;
-  width: 100vw;
-  height: calc(28px + env(safe-area-inset-bottom, 0px));
-  padding: 0 12px env(safe-area-inset-bottom, 0px);
-  border: 0;
-  border-radius: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: auto;
+  min-height: 42px;
+  padding: 5px 6px 5px 9px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 999px;
   background: var(--linkual-theme, #000);
   color: #fff;
-  box-shadow: 0 -4px 14px rgba(0, 0, 0, 0.2);
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 800;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  cursor: grab;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   user-select: none;
   pointer-events: auto;
-  opacity: 0.08;
-  transition: opacity 0.2s, filter 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  touch-action: none;
 }
 
-#linkual-root .linkual-universal-expand-bar:hover {
-  opacity: 0.95;
+#linkual-root .linkual-universal-expand-bar:active {
+  cursor: grabbing;
+}
+
+#linkual-root .linkual-universal-expand-bar:hover,
+#linkual-root .linkual-universal-expand-bar:focus-within {
   filter: brightness(1.08);
+}
+
+#linkual-root .linkual-universal-bubble-grip {
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 12px;
+  letter-spacing: -3px;
+  line-height: 1;
+  transform: rotate(90deg);
+}
+
+#linkual-root .linkual-universal-bubble-translate,
+#linkual-root .linkual-universal-bubble-expand {
+  min-height: 30px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  cursor: pointer;
+  font: 700 12px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+#linkual-root .linkual-universal-bubble-translate {
+  padding: 0 11px;
+}
+
+#linkual-root .linkual-universal-bubble-translate:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+#linkual-root .linkual-universal-bubble-expand {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  padding: 0;
+}
+
+#linkual-root .linkual-universal-bubble-expand .linkual-universal-expand-chevron {
+  transform: translateY(0) rotate(45deg);
 }
 
 #linkual-root .linkual-universal-expand-chevron {
@@ -1075,7 +1012,7 @@ html.linkual-mobile-fullscreen-fallback {
 }
 
 @media (max-width: 1024px) {
-  #linkual-root .linkual-universal-widget {
+#linkual-root .linkual-universal-widget {
     align-items: stretch;
     gap: 7px;
     padding-left: 8px;
@@ -1153,6 +1090,50 @@ html.linkual-mobile-fullscreen-fallback {
     padding: 0 3px;
     font-size: 9px;
   }
+}
+
+#linkual-root .linkual-universal-translation-row {
+  flex: 1 0 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid rgba(104, 69, 154, 0.16);
+  border-radius: 7px;
+  background: rgba(104, 69, 154, 0.06);
+  color: #423650;
+  font-size: 12px;
+}
+
+#linkual-root .linkual-universal-translation-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+#linkual-root .linkual-universal-translation-summary span {
+  color: #766b80;
+  font-variant-numeric: tabular-nums;
+}
+
+#linkual-root .linkual-universal-translation-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 6px;
+}
+
+#linkual-root .linkual-universal-translation-actions button {
+  min-height: 28px;
+  padding: 4px 9px;
+}
+
+#linkual-root .linkual-universal-translation-actions button.primary {
+  border-color: #68459a;
+  background: #68459a;
+  color: #fff;
 }
 
 @media (max-width: 720px) {
