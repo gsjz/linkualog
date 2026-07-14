@@ -837,6 +837,12 @@ html.linkual-mobile-fullscreen-fallback {
   color: #333;
 }
 
+#linkual-root .linkual-universal-window-toggle {
+  width: 30px;
+  min-width: 30px;
+  padding: 0;
+}
+
 #linkual-root .linkual-universal-queue-btn {
   position: relative;
   background: var(--linkual-theme, #000);
@@ -1013,8 +1019,7 @@ html.linkual-mobile-fullscreen-fallback {
   transform: rotate(90deg);
 }
 
-#linkual-root .linkual-universal-bubble-translate,
-#linkual-root .linkual-universal-bubble-expand {
+#linkual-root .linkual-universal-bubble-translate {
   min-height: 30px;
   border: 0;
   border-radius: 999px;
@@ -1033,25 +1038,22 @@ html.linkual-mobile-fullscreen-fallback {
   opacity: 0.5;
 }
 
-#linkual-root .linkual-universal-bubble-expand {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+#linkual-root .linkual-universal-expand-bar .linkual-universal-window-toggle {
   width: 30px;
+  min-width: 30px;
+  min-height: 30px;
   padding: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
 }
 
-#linkual-root .linkual-universal-bubble-expand .linkual-universal-expand-chevron {
-  transform: translateY(0) rotate(45deg);
+#linkual-root .linkual-universal-window-toggle .linkual-universal-button-icon {
+  display: block;
 }
 
-#linkual-root .linkual-universal-expand-chevron {
-  width: 12px;
-  height: 12px;
-  border-left: 3px solid currentColor;
-  border-top: 3px solid currentColor;
-  transform: translateY(3px) rotate(45deg);
-  box-sizing: border-box;
+#linkual-root .linkual-universal-window-toggle .linkual-universal-button-text {
+  display: none;
 }
 
 #linkual-root .linkual-universal-floating-add {

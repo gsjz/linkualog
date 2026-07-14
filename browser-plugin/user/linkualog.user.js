@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Linkual Log
 // @namespace    npm/vite-plugin-monkey
-// @version      0.0.38
+// @version      0.0.39
 // @author       Sergio Gao
 // @icon         https://vitejs.dev/logo.svg
 // @downloadURL  https://raw.githubusercontent.com/gsjz/linkualog/main/browser-plugin/user/linkualog.user.js
@@ -14874,6 +14874,8 @@ ${paragraph.text}`,
   const LINKUAL_NAVIGATION_EVENT$2 = "linkual_navigation";
   const FLOATING_BUTTON_MARGIN = 10;
   const BUBBLE_MARGIN = 12;
+  const DEFAULT_BUBBLE_WIDTH = 180;
+  const DEFAULT_BUBBLE_HEIGHT = 44;
   const BUBBLE_STORAGE_KEYS = ["universal_bubble_left", "universal_bubble_top"];
   const getDefaultExpandedHeight = () => window.matchMedia("(max-width: 720px)").matches ? MOBILE_WIDGET_HEIGHT : DESKTOP_WIDGET_HEIGHT;
   const getVisualViewportHeight = () => {
@@ -14891,6 +14893,14 @@ ${paragraph.text}`,
     COLLAPSED_WIDGET_HEIGHT,
     Math.floor(getVisualViewportHeight() - WIDGET_VIEWPORT_MARGIN)
   );
+  const saveBubblePosition = (position) => {
+    try {
+      ConfigService.set("universal_bubble_left", String(Math.round(position.left)));
+      ConfigService.set("universal_bubble_top", String(Math.round(position.top)));
+    } catch (err) {
+      console.warn("[Linkual] 气泡位置保存失败", err);
+    }
+  };
   const ActionIcon = ({ name }) => {
     const paths = {
       add: /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
@@ -14910,6 +14920,7 @@ ${paragraph.text}`,
         /* @__PURE__ */ jsxRuntimeExports.jsx("circle", { cx: "12", cy: "12", r: "3" }),
         /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M19.4 15a1.7 1.7 0 0 0 .34 1.88l.04.04a2 2 0 1 1-2.83 2.83l-.04-.04a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.07a1.7 1.7 0 0 0-1.03-1.56 1.7 1.7 0 0 0-1.88.34l-.04.04a2 2 0 1 1-2.83-2.83l.04-.04A1.7 1.7 0 0 0 4.6 15 1.7 1.7 0 0 0 3 14H3a2 2 0 1 1 0-4h.07A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.88l-.04-.04a2 2 0 1 1 2.83-2.83l.04.04A1.7 1.7 0 0 0 9 4.6 1.7 1.7 0 0 0 10 3V3a2 2 0 1 1 4 0v.07A1.7 1.7 0 0 0 15 4.6a1.7 1.7 0 0 0 1.88-.34l.04-.04a2 2 0 1 1 2.83 2.83l-.04.04A1.7 1.7 0 0 0 19.4 9c.17.62.7 1 1.6 1H21a2 2 0 1 1 0 4h-.07a1.7 1.7 0 0 0-1.53 1Z" })
       ] }),
+      expand: /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "m6 15 6-6 6 6" }),
       collapse: /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "m6 9 6 6 6-6" })
     };
     return /* @__PURE__ */ jsxRuntimeExports.jsx("svg", { className: "linkual-universal-button-icon", viewBox: "0 0 24 24", "aria-hidden": "true", children: paths[name] });
@@ -15071,9 +15082,10 @@ ${paragraph.text}`,
       const top = Number.parseFloat(ConfigService.get(BUBBLE_STORAGE_KEYS[1]));
       return Number.isFinite(left) && Number.isFinite(top) ? { left, top } : null;
     });
-    const [expandedPosition, setExpandedPosition] = reactExports.useState(null);
+    const [expandedAnchor, setExpandedAnchor] = reactExports.useState(null);
     const widgetRef = reactExports.useRef(null);
     const bubbleRef = reactExports.useRef(null);
+    const bubbleSizeRef = reactExports.useRef({ width: DEFAULT_BUBBLE_WIDTH, height: DEFAULT_BUBBLE_HEIGHT });
     const bubblePositionRef = reactExports.useRef(bubblePosition);
     const bubbleDragRef = reactExports.useRef(null);
     const bubbleMovedRef = reactExports.useRef(false);
@@ -15259,8 +15271,8 @@ ${paragraph.text}`,
     const clampBubblePosition = reactExports.useCallback((left, top) => {
       var _a;
       const rect = (_a = bubbleRef.current) == null ? void 0 : _a.getBoundingClientRect();
-      const width = (rect == null ? void 0 : rect.width) || 180;
-      const height = (rect == null ? void 0 : rect.height) || 44;
+      const width = (rect == null ? void 0 : rect.width) || bubbleSizeRef.current.width;
+      const height = (rect == null ? void 0 : rect.height) || bubbleSizeRef.current.height;
       const maxLeft = Math.max(BUBBLE_MARGIN, window.innerWidth - width - BUBBLE_MARGIN);
       const maxTop = Math.max(BUBBLE_MARGIN, window.innerHeight - height - BUBBLE_MARGIN);
       return {
@@ -15299,8 +15311,7 @@ ${paragraph.text}`,
       const nextPosition = bubblePositionRef.current || clampBubblePosition(drag.left, drag.top);
       bubbleDragRef.current = null;
       if (bubbleMovedRef.current) {
-        ConfigService.set("universal_bubble_left", String(Math.round(nextPosition.left)));
-        ConfigService.set("universal_bubble_top", String(Math.round(nextPosition.top)));
+        saveBubblePosition(nextPosition);
       }
     };
     reactExports.useEffect(() => {
@@ -15325,93 +15336,122 @@ ${paragraph.text}`,
         bubbleMovedRef.current = false;
       }
     };
-    const clampExpandedPosition = reactExports.useCallback((left, top) => {
+    const getBubbleSize = reactExports.useCallback(() => {
       var _a;
-      const rect = (_a = widgetRef.current) == null ? void 0 : _a.getBoundingClientRect();
-      const width = (rect == null ? void 0 : rect.width) || Math.min(window.matchMedia("(max-width: 720px)").matches ? 420 : 600, window.innerWidth - 16);
-      const height = (rect == null ? void 0 : rect.height) || Math.min(620, window.innerHeight - 16);
+      const rect = (_a = bubbleRef.current) == null ? void 0 : _a.getBoundingClientRect();
+      if (rect) {
+        bubbleSizeRef.current = { width: rect.width, height: rect.height };
+        return bubbleSizeRef.current;
+      }
+      return bubbleSizeRef.current;
+    }, []);
+    const getBubbleAnchor = reactExports.useCallback(() => {
+      var _a;
+      const rect = (_a = bubbleRef.current) == null ? void 0 : _a.getBoundingClientRect();
+      if (rect) {
+        bubbleSizeRef.current = { width: rect.width, height: rect.height };
+        return {
+          left: rect.left + rect.width / 2,
+          top: rect.top + rect.height / 2
+        };
+      }
+      const current = bubblePositionRef.current;
+      if (current) {
+        const size = getBubbleSize();
+        return {
+          left: current.left + size.width / 2,
+          top: current.top + size.height / 2
+        };
+      }
       return {
-        left: Math.max(8, Math.min(left, window.innerWidth - width - 8)),
-        top: Math.max(8, Math.min(top, window.innerHeight - height - 8))
+        left: window.innerWidth - 14 - DEFAULT_BUBBLE_WIDTH / 2,
+        top: window.innerHeight - 14 - DEFAULT_BUBBLE_HEIGHT / 2
+      };
+    }, [getBubbleSize]);
+    const clampExpandedAnchor = reactExports.useCallback((anchor) => {
+      return {
+        left: anchor.left,
+        top: anchor.top
       };
     }, []);
+    const getExpandedWindowStyle = reactExports.useCallback((anchor) => {
+      if (!anchor) return {};
+      return {
+        top: anchor.top,
+        right: window.innerWidth - anchor.left,
+        left: "auto",
+        bottom: "auto"
+      };
+    }, []);
+    const persistBubblePosition = reactExports.useCallback((position) => {
+      const nextPosition = clampBubblePosition(position.left, position.top);
+      setBubblePosition(nextPosition);
+      bubblePositionRef.current = nextPosition;
+      saveBubblePosition(nextPosition);
+    }, [clampBubblePosition]);
+    const persistBubblePositionFromAnchor = reactExports.useCallback((anchor) => {
+      const size = getBubbleSize();
+      persistBubblePosition({
+        left: anchor.left - size.width / 2,
+        top: anchor.top - size.height / 2
+      });
+    }, [getBubbleSize, persistBubblePosition]);
     const handleExpandedPointerDown = (event) => {
-      var _a, _b, _c;
+      var _a, _b;
       const target = event.target;
       if (target instanceof Element && target.closest('button, input, textarea, select, [contenteditable="true"]')) return;
-      const rect = (_a = widgetRef.current) == null ? void 0 : _a.getBoundingClientRect();
-      if (!rect) return;
+      const anchor = expandedAnchor || getBubbleAnchor();
       expandedDragRef.current = {
         pointerId: event.pointerId,
         startX: event.clientX,
         startY: event.clientY,
-        left: rect.left,
-        top: rect.top
+        left: anchor.left,
+        top: anchor.top
       };
-      (_c = (_b = event.currentTarget).setPointerCapture) == null ? void 0 : _c.call(_b, event.pointerId);
+      (_b = (_a = event.currentTarget).setPointerCapture) == null ? void 0 : _b.call(_a, event.pointerId);
     };
     const handleExpandedPointerMove = (event) => {
       const drag = expandedDragRef.current;
       if (!drag || drag.pointerId !== event.pointerId) return;
-      setExpandedPosition(clampExpandedPosition(
-        drag.left + event.clientX - drag.startX,
-        drag.top + event.clientY - drag.startY
-      ));
-    };
-    const persistBubblePosition = (position) => {
-      setBubblePosition(position);
-      bubblePositionRef.current = position;
-      ConfigService.set("universal_bubble_left", String(Math.round(position.left)));
-      ConfigService.set("universal_bubble_top", String(Math.round(position.top)));
+      setExpandedAnchor(clampExpandedAnchor({
+        left: drag.left + event.clientX - drag.startX,
+        top: drag.top + event.clientY - drag.startY
+      }));
     };
     const handleExpandedPointerUp = (event) => {
-      var _a;
       const drag = expandedDragRef.current;
       if (!drag || drag.pointerId !== event.pointerId) return;
       expandedDragRef.current = null;
-      const rect = (_a = widgetRef.current) == null ? void 0 : _a.getBoundingClientRect();
-      if (rect) persistBubblePosition({ left: rect.left, top: rect.top });
+      const anchor = clampExpandedAnchor({
+        left: drag.left + event.clientX - drag.startX,
+        top: drag.top + event.clientY - drag.startY
+      });
+      setExpandedAnchor(anchor);
+      persistBubblePositionFromAnchor(anchor);
     };
     const handleCollapseWindow = () => {
-      var _a;
-      const rect = (_a = widgetRef.current) == null ? void 0 : _a.getBoundingClientRect();
-      if (rect) persistBubblePosition({ left: rect.left, top: rect.top });
       setSelection(null);
       setIsExpanded(false);
+      if (expandedAnchor) persistBubblePositionFromAnchor(expandedAnchor);
     };
     const handleBubbleExpand = () => {
-      var _a;
-      const bubbleRect = (_a = bubbleRef.current) == null ? void 0 : _a.getBoundingClientRect();
-      if (bubbleRect) {
-        const estimatedWidth = Math.min(window.matchMedia("(max-width: 720px)").matches ? 420 : 600, window.innerWidth - 16);
-        const estimatedHeight = Math.min(620, window.innerHeight - 16);
-        const left = Math.max(8, Math.min(bubbleRect.left, window.innerWidth - estimatedWidth - 8));
-        const top = bubbleRect.top > window.innerHeight / 2 ? Math.max(8, bubbleRect.top - estimatedHeight - 8) : Math.min(window.innerHeight - estimatedHeight - 8, bubbleRect.bottom + 8);
-        setExpandedPosition({ left, top: Math.max(8, top) });
-      }
+      setExpandedAnchor(clampExpandedAnchor(getBubbleAnchor()));
       syncVisualViewportHeightProperty();
       setIsExpanded(true);
     };
     reactExports.useEffect(() => {
       if (!isExpanded) return void 0;
-      const clampExpandedPosition2 = () => setExpandedPosition((current) => {
-        var _a;
+      const clampExpandedAnchorToViewport = () => setExpandedAnchor((current) => {
         if (!current) return current;
-        const rect = (_a = widgetRef.current) == null ? void 0 : _a.getBoundingClientRect();
-        const width = (rect == null ? void 0 : rect.width) || Math.min(window.matchMedia("(max-width: 720px)").matches ? 420 : 600, window.innerWidth - 16);
-        const height = (rect == null ? void 0 : rect.height) || Math.min(620, window.innerHeight - 16);
-        return {
-          left: Math.max(8, Math.min(current.left, window.innerWidth - width - 8)),
-          top: Math.max(8, Math.min(current.top, window.innerHeight - height - 8))
-        };
+        return clampExpandedAnchor(current);
       });
-      const frameId = window.requestAnimationFrame(clampExpandedPosition2);
-      window.addEventListener("resize", clampExpandedPosition2);
+      const frameId = window.requestAnimationFrame(clampExpandedAnchorToViewport);
+      window.addEventListener("resize", clampExpandedAnchorToViewport);
       return () => {
         window.cancelAnimationFrame(frameId);
-        window.removeEventListener("resize", clampExpandedPosition2);
+        window.removeEventListener("resize", clampExpandedAnchorToViewport);
       };
-    }, [isExpanded, reservedHeight]);
+    }, [clampExpandedAnchor, isExpanded, reservedHeight]);
     if (!isExpanded) {
       return /* @__PURE__ */ jsxRuntimeExports.jsxs(
         "div",
@@ -15443,16 +15483,19 @@ ${paragraph.text}`,
                 children: articleTranslation.isTranslatingAll ? "翻译中…" : "翻译页面"
               }
             ),
-            /* @__PURE__ */ jsxRuntimeExports.jsx(
+            /* @__PURE__ */ jsxRuntimeExports.jsxs(
               "button",
               {
                 type: "button",
-                className: "linkual-universal-bubble-expand",
+                className: "linkual-universal-icon-btn linkual-universal-window-toggle",
                 onPointerDown: handleBubbleButtonPointerDown,
                 onClick: handleBubbleExpand,
                 title: "展开 Linkual 工具栏",
                 "aria-label": "展开 Linkual 工具栏",
-                children: /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "linkual-universal-expand-chevron", "aria-hidden": "true" })
+                children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(ActionIcon, { name: "expand" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "linkual-universal-button-text", children: "展开" })
+                ]
               }
             )
           ]
@@ -15471,7 +15514,7 @@ ${paragraph.text}`,
         style: {
           "--linkual-theme": themeColor,
           "--linkual-universal-widget-height": `${reservedHeight}px`,
-          ...expandedPosition ? { left: expandedPosition.left, top: expandedPosition.top, right: "auto", bottom: "auto" } : {}
+          ...getExpandedWindowStyle(expandedAnchor)
         },
         children: [
           selection && /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -15506,7 +15549,24 @@ ${paragraph.text}`,
                 }
               )
             ] }) : /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "linkual-universal-muted", children: "未选中文本" }) }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "linkual-universal-actions", children: statusText && /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: `linkual-universal-status status-${status}`, children: statusText }) })
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-universal-actions", children: [
+              statusText && /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: `linkual-universal-status status-${status}`, children: statusText }),
+              /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                "button",
+                {
+                  type: "button",
+                  className: "linkual-universal-icon-btn linkual-universal-window-toggle",
+                  onPointerDown: (event) => event.stopPropagation(),
+                  onClick: handleCollapseWindow,
+                  title: "收起 Linkual 工具栏",
+                  "aria-label": "收起 Linkual 工具栏",
+                  children: [
+                    /* @__PURE__ */ jsxRuntimeExports.jsx(ActionIcon, { name: "collapse" }),
+                    /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "linkual-universal-button-text", children: "收起" })
+                  ]
+                }
+              )
+            ] })
           ] }),
           articleTranslation.isPageSupported && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-universal-translation-row", children: [
             /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-universal-translation-summary", children: [
@@ -15588,10 +15648,6 @@ ${paragraph.text}`,
               /* @__PURE__ */ jsxRuntimeExports.jsxs("button", { type: "button", className: "linkual-universal-icon-btn", onClick: onOpenSettings, title: "设置", "aria-label": "设置", children: [
                 /* @__PURE__ */ jsxRuntimeExports.jsx(ActionIcon, { name: "settings" }),
                 /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "linkual-universal-button-text", children: "设置" })
-              ] }),
-              /* @__PURE__ */ jsxRuntimeExports.jsxs("button", { type: "button", className: "linkual-universal-icon-btn", onClick: handleCollapseWindow, title: "折叠", "aria-label": "收起", children: [
-                /* @__PURE__ */ jsxRuntimeExports.jsx(ActionIcon, { name: "collapse" }),
-                /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "linkual-universal-button-text", children: "收起" })
               ] })
             ] })
           ] })
@@ -18096,6 +18152,12 @@ html.linkual-mobile-fullscreen-fallback {
   color: #333;
 }
 
+#linkual-root .linkual-universal-window-toggle {
+  width: 30px;
+  min-width: 30px;
+  padding: 0;
+}
+
 #linkual-root .linkual-universal-queue-btn {
   position: relative;
   background: var(--linkual-theme, #000);
@@ -18272,8 +18334,7 @@ html.linkual-mobile-fullscreen-fallback {
   transform: rotate(90deg);
 }
 
-#linkual-root .linkual-universal-bubble-translate,
-#linkual-root .linkual-universal-bubble-expand {
+#linkual-root .linkual-universal-bubble-translate {
   min-height: 30px;
   border: 0;
   border-radius: 999px;
@@ -18292,25 +18353,22 @@ html.linkual-mobile-fullscreen-fallback {
   opacity: 0.5;
 }
 
-#linkual-root .linkual-universal-bubble-expand {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+#linkual-root .linkual-universal-expand-bar .linkual-universal-window-toggle {
   width: 30px;
+  min-width: 30px;
+  min-height: 30px;
   padding: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
 }
 
-#linkual-root .linkual-universal-bubble-expand .linkual-universal-expand-chevron {
-  transform: translateY(0) rotate(45deg);
+#linkual-root .linkual-universal-window-toggle .linkual-universal-button-icon {
+  display: block;
 }
 
-#linkual-root .linkual-universal-expand-chevron {
-  width: 12px;
-  height: 12px;
-  border-left: 3px solid currentColor;
-  border-top: 3px solid currentColor;
-  transform: translateY(3px) rotate(45deg);
-  box-sizing: border-box;
+#linkual-root .linkual-universal-window-toggle .linkual-universal-button-text {
+  display: none;
 }
 
 #linkual-root .linkual-universal-floating-add {
