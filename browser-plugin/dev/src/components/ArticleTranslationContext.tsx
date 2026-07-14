@@ -2,6 +2,13 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import { ArticleParagraph, collectArticleParagraphs, removeArticleTranslationHosts } from '../services/articleTranslator';
 import { fetchLlmStream } from '../services/llmApi';
 import { ConfigService } from '../services/configService';
+import { alignSentencePairs } from '../services/articleSentences';
+import {
+  CACHE_UPDATED_EVENT,
+  CachedTranslationEntry,
+  getArticleTranslationCache,
+  saveArticleTranslation,
+} from '../services/articleTranslationCache';
 
 type TranslationStatus = 'idle' | 'loading' | 'done' | 'error';
 
@@ -9,6 +16,7 @@ export interface TranslationState {
   text: string;
   status: TranslationStatus;
   error?: string;
+  sentences?: CachedTranslationEntry['sentences'];
 }
 
 export interface ArticleTranslationContextValue {
@@ -35,11 +43,28 @@ export const ArticleTranslationProvider: React.FC<React.PropsWithChildren<{ enab
   const abortsRef = useRef(new Map<string, () => void>());
   const allRunIdRef = useRef(0);
 
+  const getTargetLanguage = () => ConfigService.get('web_target_language').trim() || '简体中文';
+  const cacheScopeRef = useRef(`${window.location.href}\n${ConfigService.get('web_target_language').trim() || '简体中文'}`);
+
+  const hydrateCache = useCallback((nextParagraphs: ArticleParagraph[], nextUrl: string) => {
+    const cache = getArticleTranslationCache(nextUrl, getTargetLanguage());
+    if (!cache) return {};
+
+    return nextParagraphs.reduce<Record<string, TranslationState>>((result, paragraph) => {
+      const entry = cache.entries[paragraph.id];
+      if (entry && entry.sourceText === paragraph.text && entry.text) {
+        result[paragraph.id] = { status: 'done', text: entry.text, sentences: entry.sentences };
+      }
+      return result;
+    }, {});
+  }, []);
+
   const syncParagraphs = useCallback(() => {
     if (!enabled) return;
 
     const nextParagraphs = collectArticleParagraphs();
     const nextUrl = window.location.href;
+    const nextCacheScope = `${nextUrl}\n${getTargetLanguage()}`;
     const nextHosts = new Set(nextParagraphs.map((paragraph) => paragraph.host));
     removeArticleTranslationHosts(nextHosts);
 
@@ -50,16 +75,25 @@ export const ArticleTranslationProvider: React.FC<React.PropsWithChildren<{ enab
       return unchanged ? previous : nextParagraphs;
     });
 
+    setTranslations((previous) => {
+      const cached = hydrateCache(nextParagraphs, nextUrl);
+      if (cacheScopeRef.current !== nextCacheScope) {
+        cacheScopeRef.current = nextCacheScope;
+        return cached;
+      }
+      return Object.keys(cached).length > 0 ? { ...previous, ...cached } : previous;
+    });
+
     setPageUrl((previous) => {
       if (previous === nextUrl) return previous;
       allRunIdRef.current += 1;
       abortsRef.current.forEach((abort) => abort());
       abortsRef.current.clear();
-      setTranslations({});
+      setTranslations(hydrateCache(nextParagraphs, nextUrl));
       setIsTranslatingAll(false);
       return nextUrl;
     });
-  }, [enabled]);
+  }, [enabled, hydrateCache]);
 
   useEffect(() => {
     if (!enabled) {
@@ -78,12 +112,20 @@ export const ArticleTranslationProvider: React.FC<React.PropsWithChildren<{ enab
     window.addEventListener(LINKUAL_NAVIGATION_EVENT, syncParagraphs);
     window.addEventListener('popstate', syncParagraphs);
     window.addEventListener('hashchange', syncParagraphs);
+    window.addEventListener('linkual_settings_updated', syncParagraphs);
+    const refreshCurrentCache = () => {
+      const currentParagraphs = collectArticleParagraphs();
+      setTranslations(hydrateCache(currentParagraphs, window.location.href));
+    };
+    window.addEventListener(CACHE_UPDATED_EVENT, refreshCurrentCache);
 
     return () => {
       window.clearInterval(interval);
       window.removeEventListener(LINKUAL_NAVIGATION_EVENT, syncParagraphs);
       window.removeEventListener('popstate', syncParagraphs);
       window.removeEventListener('hashchange', syncParagraphs);
+      window.removeEventListener('linkual_settings_updated', syncParagraphs);
+      window.removeEventListener(CACHE_UPDATED_EVENT, refreshCurrentCache);
       abortsRef.current.forEach((abort) => abort());
       abortsRef.current.clear();
       removeArticleTranslationHosts();
@@ -95,7 +137,7 @@ export const ArticleTranslationProvider: React.FC<React.PropsWithChildren<{ enab
     const apiUrl = ConfigService.get('api_url').trim();
     const apiModel = ConfigService.get('api_model').trim();
     const timeout = parseInt(ConfigService.get('api_timeout') as string, 10) || 30;
-    const targetLanguage = ConfigService.get('web_target_language').trim() || '简体中文';
+    const targetLanguage = getTargetLanguage();
     const promptTemplate = ConfigService.get('web_translation_prompt').trim();
 
     if (!apiKey) {
@@ -122,8 +164,17 @@ export const ArticleTranslationProvider: React.FC<React.PropsWithChildren<{ enab
         if (success) {
           setTranslations((previous) => ({
             ...previous,
-            [paragraph.id]: { status: 'done', text: content.trim() },
+            [paragraph.id]: {
+              status: 'done',
+              text: content.trim(),
+              sentences: alignSentencePairs(paragraph.text, content.trim()),
+            },
           }));
+          saveArticleTranslation(window.location.href, targetLanguage, paragraph.id, {
+            sourceText: paragraph.text,
+            text: content.trim(),
+            sentences: alignSentencePairs(paragraph.text, content.trim()),
+          });
         } else if (error === 'ABORTED') {
           setTranslations((previous) => ({
             ...previous,
@@ -142,6 +193,7 @@ export const ArticleTranslationProvider: React.FC<React.PropsWithChildren<{ enab
         apiUrl,
         apiKey,
         apiModel,
+        stream: false,
         timeoutSec: timeout,
         systemPrompt: promptTemplate || `你是专业学术翻译。请将输入内容准确翻译成${targetLanguage}。保留数学符号、变量名、引用标记和段落语气；只输出译文，不要解释，不要添加标题。`,
         userPrompt: `请将下面这一个网页论文段落翻译成${targetLanguage}：\n\n${paragraph.text}`,

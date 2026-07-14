@@ -2,6 +2,12 @@ import React, { useState } from 'react';
 import { ConfigService } from '../services/configService';
 import { IVideoAdapter } from '../adapters/BaseAdapter';
 import { DEFAULTS } from '../constants/defaults';
+import {
+  CACHE_UPDATED_EVENT,
+  clearArticleTranslationCaches,
+  deleteArticleTranslationCache,
+  listArticleTranslationCaches,
+} from '../services/articleTranslationCache';
 import './Settings.css';
 
 // 接收 adapter 以识别当前所处的网站环境
@@ -79,6 +85,7 @@ const getLanPrefix = (url: string) => getUrlPrefixForPath(url, LAN_SYNC_API_PATH
 
 const Settings: React.FC<SettingsProps> = ({ adapter, onClose }) => {
   const [activeTab, setActiveTab] = useState<'api' | 'params' | 'ui'>('api');
+  const [translationCaches, setTranslationCaches] = useState(listArticleTranslationCaches);
 
   const getAdpCfg = (key: CfgKey) => {
     const val = ConfigService.get(`${key}_${adapter.platformName}` as any);
@@ -183,6 +190,12 @@ const Settings: React.FC<SettingsProps> = ({ adapter, onClose }) => {
     if (e.target === e.currentTarget) onClose();
   };
 
+  React.useEffect(() => {
+    const refreshCaches = () => setTranslationCaches(listArticleTranslationCaches());
+    window.addEventListener(CACHE_UPDATED_EVENT, refreshCaches);
+    return () => window.removeEventListener(CACHE_UPDATED_EVENT, refreshCaches);
+  }, []);
+
   const apiPrefix = getApiPrefix(cfg.url);
   const apiProtocol = getUrlProtocol(cfg.url, 'https');
   const apiEndpointPath = getApiEndpointPath(cfg.url);
@@ -278,6 +291,37 @@ const Settings: React.FC<SettingsProps> = ({ adapter, onClose }) => {
                 <label>网页翻译提示词</label>
                 <textarea name="webTranslationPrompt" value={cfg.webTranslationPrompt} onChange={handleChange} placeholder="留空则使用默认学术翻译提示词" />
                 <div className="setting-help">网页翻译会按段请求模型；提示词应要求模型只输出译文。</div>
+              </div>
+              <div className="setting-col linkual-translation-cache-manager">
+                <div className="linkual-cache-manager-heading">
+                  <label>网页翻译缓存</label>
+                  {translationCaches.length > 0 && (
+                    <button
+                      type="button"
+                      className="linkual-cache-clear-btn"
+                      onClick={() => {
+                        if (window.confirm('清空所有网页翻译缓存？')) clearArticleTranslationCaches();
+                      }}
+                    >
+                      清空全部
+                    </button>
+                  )}
+                </div>
+                {translationCaches.length === 0 ? (
+                  <div className="setting-help">暂无缓存。翻译成功的段落会自动保存，刷新页面后继续使用。</div>
+                ) : (
+                  <div className="linkual-cache-list">
+                    {translationCaches.map((cache) => (
+                      <div className="linkual-cache-item" key={cache.key}>
+                        <div className="linkual-cache-item-main">
+                          <strong>{cache.url}</strong>
+                          <span>{cache.targetLanguage} · {cache.entryCount} 段 · {new Date(cache.updatedAt).toLocaleString()}</span>
+                        </div>
+                        <button type="button" onClick={() => deleteArticleTranslationCache(cache.key)}>删除</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}

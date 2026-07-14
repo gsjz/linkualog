@@ -434,14 +434,16 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
     const top = Number.parseFloat(ConfigService.get(BUBBLE_STORAGE_KEYS[1]) as string);
     return Number.isFinite(left) && Number.isFinite(top) ? { left, top } : null;
   });
+  const [expandedPosition, setExpandedPosition] = useState<{ left: number; top: number } | null>(null);
 
   const widgetRef = useRef<HTMLDivElement | null>(null);
   const bubbleRef = useRef<HTMLDivElement | null>(null);
   const bubblePositionRef = useRef(bubblePosition);
   const bubbleDragRef = useRef<{ pointerId: number; startX: number; startY: number; left: number; top: number } | null>(null);
   const bubbleMovedRef = useRef(false);
+  const expandedDragRef = useRef<{ pointerId: number; startX: number; startY: number; left: number; top: number } | null>(null);
   const selectionTimerRef = useRef<number | null>(null);
-  const activeWidgetHeight = isExpanded ? reservedHeight : 0;
+  const activeWidgetHeight = 0;
   const articleTranslation = useArticleTranslation();
 
   const hasPayload = Boolean(word.trim());
@@ -738,6 +740,97 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
     }
   };
 
+  const clampExpandedPosition = useCallback((left: number, top: number) => {
+    const rect = widgetRef.current?.getBoundingClientRect();
+    const width = rect?.width || Math.min(520, window.innerWidth - 16);
+    const height = rect?.height || Math.min(520, window.innerHeight - 16);
+    return {
+      left: Math.max(8, Math.min(left, window.innerWidth - width - 8)),
+      top: Math.max(8, Math.min(top, window.innerHeight - height - 8)),
+    };
+  }, []);
+
+  const handleExpandedPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    const target = event.target;
+    if (target instanceof Element && target.closest('button, input, textarea, select, [contenteditable="true"]')) return;
+    const rect = widgetRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    expandedDragRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      left: rect.left,
+      top: rect.top,
+    };
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  };
+
+  const handleExpandedPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    const drag = expandedDragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    setExpandedPosition(clampExpandedPosition(
+      drag.left + event.clientX - drag.startX,
+      drag.top + event.clientY - drag.startY,
+    ));
+  };
+
+  const persistBubblePosition = (position: { left: number; top: number }) => {
+    setBubblePosition(position);
+    bubblePositionRef.current = position;
+    ConfigService.set('universal_bubble_left', String(Math.round(position.left)));
+    ConfigService.set('universal_bubble_top', String(Math.round(position.top)));
+  };
+
+  const handleExpandedPointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
+    const drag = expandedDragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    expandedDragRef.current = null;
+    const rect = widgetRef.current?.getBoundingClientRect();
+    if (rect) persistBubblePosition({ left: rect.left, top: rect.top });
+  };
+
+  const handleCollapseWindow = () => {
+    const rect = widgetRef.current?.getBoundingClientRect();
+    if (rect) persistBubblePosition({ left: rect.left, top: rect.top });
+    setIsExpanded(false);
+  };
+
+  const handleBubbleExpand = () => {
+    const bubbleRect = bubbleRef.current?.getBoundingClientRect();
+    if (bubbleRect) {
+      const estimatedWidth = Math.min(520, window.innerWidth - 16);
+      const estimatedHeight = Math.min(420, window.innerHeight - 16);
+      const left = Math.max(8, Math.min(bubbleRect.left, window.innerWidth - estimatedWidth - 8));
+      const top = bubbleRect.top > window.innerHeight / 2
+        ? Math.max(8, bubbleRect.top - estimatedHeight - 8)
+        : Math.min(window.innerHeight - estimatedHeight - 8, bubbleRect.bottom + 8);
+      setExpandedPosition({ left, top: Math.max(8, top) });
+    }
+    applyPageReserve(0);
+    setIsExpanded(true);
+  };
+
+  useEffect(() => {
+    if (!isExpanded) return undefined;
+
+    const clampExpandedPosition = () => setExpandedPosition((current) => {
+      if (!current) return current;
+      const rect = widgetRef.current?.getBoundingClientRect();
+      const width = rect?.width || Math.min(520, window.innerWidth - 16);
+      const height = rect?.height || Math.min(420, window.innerHeight - 16);
+      return {
+        left: Math.max(8, Math.min(current.left, window.innerWidth - width - 8)),
+        top: Math.max(8, Math.min(current.top, window.innerHeight - height - 8)),
+      };
+    });
+    const frameId = window.requestAnimationFrame(clampExpandedPosition);
+    window.addEventListener('resize', clampExpandedPosition);
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      window.removeEventListener('resize', clampExpandedPosition);
+    };
+  }, [isExpanded, reservedHeight]);
+
   if (!isExpanded) {
     return (
       <div
@@ -770,7 +863,7 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
           type="button"
           className="linkual-universal-bubble-expand"
           onPointerDown={handleBubbleButtonPointerDown}
-          onClick={() => setIsExpanded(true)}
+          onClick={handleBubbleExpand}
           title="展开 Linkual 工具栏"
           aria-label="展开 Linkual 工具栏"
         >
@@ -783,10 +876,15 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
   return (
     <div
       ref={widgetRef}
-      className="linkual-universal-widget"
+      className="linkual-universal-widget linkual-universal-floating-window"
+      onPointerDown={handleExpandedPointerDown}
+      onPointerMove={handleExpandedPointerMove}
+      onPointerUp={handleExpandedPointerUp}
+      onPointerCancel={handleExpandedPointerUp}
       style={{
         '--linkual-theme': themeColor,
         '--linkual-universal-widget-height': `${reservedHeight}px`,
+        ...(expandedPosition ? { left: expandedPosition.left, top: expandedPosition.top, right: 'auto', bottom: 'auto' } : {}),
       } as React.CSSProperties}
     >
       {selection && (
@@ -910,7 +1008,7 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
             <ActionIcon name="settings" />
             <span className="linkual-universal-button-text">设置</span>
           </button>
-          <button type="button" className="linkual-universal-icon-btn" onClick={() => setIsExpanded(false)} title="折叠" aria-label="收起">
+          <button type="button" className="linkual-universal-icon-btn" onClick={handleCollapseWindow} title="折叠" aria-label="收起">
             <ActionIcon name="collapse" />
             <span className="linkual-universal-button-text">收起</span>
           </button>

@@ -230,6 +230,80 @@
   line-height: 1.4;
 }
 
+#linkual-root .linkual-cache-manager-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+#linkual-root .linkual-cache-manager-heading label {
+  margin-bottom: 0;
+}
+
+#linkual-root .linkual-cache-clear-btn,
+#linkual-root .linkual-cache-item button {
+  flex: 0 0 auto;
+  padding: 5px 8px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  background: #fff;
+  color: #666;
+  cursor: pointer;
+  font: 12px/1.2 inherit;
+}
+
+#linkual-root .linkual-cache-clear-btn:hover,
+#linkual-root .linkual-cache-item button:hover {
+  border-color: #c62828;
+  color: #c62828;
+}
+
+#linkual-root .linkual-cache-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+#linkual-root .linkual-cache-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid #eee;
+  border-radius: 6px;
+  background: #fafafa;
+}
+
+#linkual-root .linkual-cache-item-main {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+#linkual-root .linkual-cache-item-main strong,
+#linkual-root .linkual-cache-item-main span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#linkual-root .linkual-cache-item-main strong {
+  color: #444;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+#linkual-root .linkual-cache-item-main span {
+  color: #888;
+  font-size: 11px;
+}
+
 #linkual-root .modal-footer {
   padding: 16px 20px;
   display: flex;

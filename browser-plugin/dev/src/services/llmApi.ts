@@ -7,6 +7,7 @@ export interface FetchLlmOptions {
   systemPrompt?: string;
   userPrompt?: string;
   messages?: { role: string; content: string | any[] }[]; 
+  stream?: boolean;
   timeoutSec?: number;
   onData: (chunk: string) => void;
   onError: (err: string) => void;
@@ -26,6 +27,7 @@ export function fetchLlmStream(options: FetchLlmOptions): { abort: () => void } 
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
   const abortController = new AbortController();
   const requestUrl = normalizeLlmApiUrl(options.apiUrl);
+  const shouldStream = options.stream !== false;
 
   const abort = (reason = 'ABORTED') => {
     if (isAborted) return;
@@ -56,7 +58,7 @@ export function fetchLlmStream(options: FetchLlmOptions): { abort: () => void } 
     const payload = {
       model: options.apiModel,
       messages: finalMessages,
-      stream: true
+      stream: shouldStream
     };
 
     if (typeof GM_xmlhttpRequest !== 'undefined') {
@@ -66,11 +68,11 @@ export function fetchLlmStream(options: FetchLlmOptions): { abort: () => void } 
         url: requestUrl,
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'text/event-stream',
+          'Accept': shouldStream ? 'text/event-stream' : 'application/json',
           'Authorization': `Bearer ${options.apiKey}`
         },
         data: JSON.stringify(payload),
-        responseType: 'stream',
+        responseType: shouldStream ? 'stream' : 'json',
         onreadystatechange: async (res: any) => {
           if (isAborted) return;
           if (res.readyState === 2 || res.readyState === 3) {
@@ -117,7 +119,23 @@ export function fetchLlmStream(options: FetchLlmOptions): { abort: () => void } 
         },
         onload: (res: any) => {
           if (isAborted) return;
-          if (!streamAttached && res.status >= 400) abort(`❌ 请求失败 [HTTP ${res.status}]: ${res.responseText}`);
+          if (res.status >= 400) {
+            abort(`❌ 请求失败 [HTTP ${res.status}]: ${res.responseText || ''}`);
+            return;
+          }
+          if (!shouldStream && !streamAttached) {
+            try {
+              const payload = typeof res.response === 'string'
+                ? JSON.parse(res.response)
+                : (res.response || JSON.parse(res.responseText || '{}'));
+              const content = payload.choices?.[0]?.message?.content || '';
+              if (content) options.onData(content);
+              if (timeoutId) clearTimeout(timeoutId);
+              options.onDone();
+            } catch (error) {
+              abort(`❌ API 响应解析失败: ${error instanceof Error ? error.message : '未知错误'}`);
+            }
+          }
         },
         onerror: () => { if (!isAborted) abort('❌ 网络请求被拦截或断开'); },
         onabort: () => {  }
@@ -133,6 +151,14 @@ export function fetchLlmStream(options: FetchLlmOptions): { abort: () => void } 
         });
         if (isAborted) return;
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        if (!shouldStream) {
+          const response = await res.json();
+          const content = response.choices?.[0]?.message?.content || '';
+          if (content) options.onData(content);
+          if (timeoutId) clearTimeout(timeoutId);
+          options.onDone();
+          return;
+        }
         if (!res.body) throw new Error("无响应流");
         const reader = res.body.getReader();
         const decoder = new TextDecoder('utf-8');

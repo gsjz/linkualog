@@ -363,6 +363,35 @@ html.linkual-mobile-fullscreen-fallback {
   overflow-wrap: anywhere !important;
 }
 
+.linkual-article-source-locatable {
+  cursor: crosshair !important;
+}
+
+.linkual-article-translation-sentence {
+  display: inline !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 3px !important;
+  background: transparent !important;
+  color: inherit !important;
+  cursor: pointer !important;
+  font: inherit !important;
+  line-height: inherit !important;
+  text-align: left !important;
+  white-space: pre-wrap !important;
+}
+
+.linkual-article-translation-sentence::after {
+  content: ' ' !important;
+}
+
+.linkual-article-translation-sentence:hover,
+.linkual-article-translation-sentence.active {
+  background: rgba(104, 69, 154, 0.18) !important;
+  box-shadow: 0 0 0 2px rgba(104, 69, 154, 0.08) !important;
+}
+
 .linkual-article-translation-placeholder {
   color: #7b7286 !important;
   font-size: 0.9em !important;
@@ -641,6 +670,24 @@ html.linkual-mobile-fullscreen-fallback {
   overflow-y: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
+}
+
+#linkual-root .linkual-universal-floating-window {
+  left: 8px;
+  top: 8px;
+  right: auto;
+  bottom: auto;
+  width: min(520px, calc(100vw - 16px));
+  max-width: min(520px, calc(100vw - 16px));
+  min-height: 0;
+  max-height: min(520px, calc(100vh - 16px));
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  border-radius: 12px;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.24);
+}
+
+#linkual-root .linkual-universal-floating-window .linkual-universal-form {
+  flex: 0 1 auto;
 }
 
 #linkual-root .linkual-universal-widget ~ .linkual-mobile-fullscreen {
@@ -1136,6 +1183,15 @@ html.linkual-mobile-fullscreen-fallback {
   color: #fff;
 }
 
+#linkual-root .linkual-universal-translation-row button {
+  border: 1px solid rgba(83, 65, 111, 0.25);
+  border-radius: 5px;
+  background: #fff;
+  color: #55406f;
+  cursor: pointer;
+  font: 600 12px/1.2 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
 @media (max-width: 720px) {
   #linkual-root .linkual-universal-widget {
     width: 100vw;
@@ -1144,6 +1200,17 @@ html.linkual-mobile-fullscreen-fallback {
     flex-direction: column;
     align-items: stretch;
     gap: 7px;
+  }
+
+  #linkual-root .linkual-universal-floating-window {
+    width: min(420px, calc(100vw - 16px));
+    max-width: min(420px, calc(100vw - 16px));
+    max-height: min(620px, calc(100vh - 16px));
+  }
+
+  #linkual-root .linkual-universal-floating-window .linkual-universal-translation-row {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   #linkual-root .linkual-universal-top {
