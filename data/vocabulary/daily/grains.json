@@ -1,0 +1,35 @@
+{
+  "word": "grains",
+  "createdAt": "2026-07-08",
+  "reviews": [],
+  "definitions": [],
+  "examples": [
+    {
+      "text": "cultures all over the world were fermenting their own drinks. Ancient Mesopotamians and Egyptians made beer throughout the year from stored cereal grains. This beer was available to all social classes, and workers even received it in their daily rations.",
+      "explanation": "",
+      "focusWords": [
+        "grains"
+      ],
+      "source": {
+        "text": "A brief history of alcohol - Rod Phillips",
+        "url": "https://www.youtube.com/watch?v=y5XEwTDlriE"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=y5XEwTDlriE",
+        "timestamp": 79
+      }
+    }
+  ],
+  "relations": [
+    {
+      "type": "collocation",
+      "target": {
+        "category": "daily",
+        "file": "cereal.json",
+        "word": "cereal"
+      },
+      "reason": "当前词条例句中直接出现固定搭配 cereal grains，表示“谷物/谷粒”，grains 是 cereal 在该语境中最自然的搭配词。",
+      "source": "llm"
+    }
+  ]
+}

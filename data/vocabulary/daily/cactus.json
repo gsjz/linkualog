@@ -1,0 +1,30 @@
+{
+  "word": "cactus",
+  "createdAt": "2026-07-08",
+  "reviews": [
+    {
+      "date": "2026-07-09",
+      "score": 1
+    }
+  ],
+  "definitions": [
+    "仙人掌；仙人掌类植物"
+  ],
+  "examples": [
+    {
+      "text": "In South America, people made chicha from grains, sometimes adding hallucinogenic herbs. In what’s now Mexico, pulque, made from cactus sap, was the drink of choice, while East Africans made banana and palm beer.",
+      "explanation": "这里 cactus 出现在 “cactus sap” 中，意思是“仙人掌汁液”。句子说，在现在的墨西哥地区，人们用仙人掌汁液制作的 pulque 是当时常见的饮品。",
+      "focusWords": [
+        "cactus"
+      ],
+      "source": {
+        "text": "A brief history of alcohol - Rod Phillips",
+        "url": "https://www.youtube.com/watch?v=y5XEwTDlriE"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=y5XEwTDlriE",
+        "timestamp": 119
+      }
+    }
+  ]
+}

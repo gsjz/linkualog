@@ -30,5 +30,17 @@
         "timestamp": 48
       }
     }
+  ],
+  "relations": [
+    {
+      "type": "synonym",
+      "target": {
+        "category": "daily",
+        "file": "cereal.json",
+        "word": "cereal"
+      },
+      "reason": "cereal 可指小麦、玉米、燕麦等谷物，grain 也可指谷粒/谷物；两者在“谷物、粮食作物”语义上高度重合，适合互相跳转。",
+      "source": "llm"
+    }
   ]
 }

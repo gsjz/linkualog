@@ -1,0 +1,23 @@
+{
+  "word": "stumbles",
+  "createdAt": "2026-07-08",
+  "reviews": [],
+  "definitions": [],
+  "examples": [
+    {
+      "text": "This chimpanzee stumbles across a windfall of overripe plums. Many of them have split open, drawing him to their intoxicating fruity odor.",
+      "explanation": "",
+      "focusWords": [
+        "stumbles"
+      ],
+      "source": {
+        "text": "A brief history of alcohol - Rod Phillips",
+        "url": "https://www.youtube.com/watch?v=y5XEwTDlriE"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=y5XEwTDlriE",
+        "timestamp": 6
+      }
+    }
+  ]
+}

@@ -101,5 +101,17 @@
       ],
       "missing_points": []
     }
+  ],
+  "relations": [
+    {
+      "type": "synonym",
+      "target": {
+        "category": "daily",
+        "file": "commodity.json",
+        "word": "commodity"
+      },
+      "reason": "commodity 和 merch 都可表示“商品”，但 merch 更偏“周边商品/售卖品”，commodity 更偏可交易的大宗商品或原材料；语义有重合，适合互相跳转区分用法。",
+      "source": "llm"
+    }
   ]
 }

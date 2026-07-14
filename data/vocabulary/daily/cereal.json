@@ -1,0 +1,82 @@
+{
+  "word": "cereal",
+  "createdAt": "2026-07-08",
+  "reviews": [
+    {
+      "date": "2026-07-09",
+      "score": 2
+    }
+  ],
+  "definitions": [
+    "谷物；谷类食物；谷类作物（如小麦、玉米、燕麦等）"
+  ],
+  "examples": [
+    {
+      "text": "cultures all over the world were fermenting their own drinks. Ancient Mesopotamians and Egyptians made beer throughout the year from stored cereal grains. This beer was available to all social classes, and workers even received it in their daily rations.",
+      "explanation": "这里的 cereal 用在 cereal grains 中，指“谷物、谷类作物”。句子说古代美索不达米亚人和埃及人用储存的谷物酿造啤酒。",
+      "focusWords": [
+        "cereal"
+      ],
+      "source": {
+        "text": "A brief history of alcohol - Rod Phillips",
+        "url": "https://www.youtube.com/watch?v=y5XEwTDlriE"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=y5XEwTDlriE",
+        "timestamp": 79
+      }
+    }
+  ],
+  "relations": [
+    {
+      "type": "collocation",
+      "target": {
+        "category": "daily",
+        "file": "grains.json",
+        "word": "grains"
+      },
+      "reason": "当前词条例句中直接出现固定搭配 cereal grains，表示“谷物/谷粒”，grains 是 cereal 在该语境中最自然的搭配词。",
+      "source": "llm"
+    },
+    {
+      "type": "same_category",
+      "target": {
+        "category": "cet",
+        "file": "maize.json",
+        "word": "maize"
+      },
+      "reason": "maize（玉米）是 cereal 定义中提到的谷类作物之一，二者是上位类别与具体成员的学习关系。",
+      "source": "llm"
+    },
+    {
+      "type": "same_category",
+      "target": {
+        "category": "daily",
+        "file": "millet.json",
+        "word": "millet"
+      },
+      "reason": "millet 是“黍、粟、小米”等谷类作物，属于 cereal 所涵盖的具体谷物类型。",
+      "source": "llm"
+    },
+    {
+      "type": "synonym",
+      "target": {
+        "category": "daily",
+        "file": "grain.json",
+        "word": "grain"
+      },
+      "reason": "cereal 可指小麦、玉米、燕麦等谷物，grain 也可指谷粒/谷物；两者在“谷物、粮食作物”语义上高度重合，适合互相跳转。",
+      "source": "llm"
+    },
+    {
+      "type": "related",
+      "target": {
+        "category": "cet",
+        "file": "crop.json",
+        "word": "crop"
+      },
+      "reason": "cereal 可指谷类作物，而 crop 指农作物/庄稼；cereal 是 crop 的一种，属于农业和粮食生产场景中的相关词。",
+      "source": "llm"
+    }
+  ]
+}

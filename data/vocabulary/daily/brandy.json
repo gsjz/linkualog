@@ -1,0 +1,30 @@
+{
+  "word": "brandy",
+  "createdAt": "2026-07-08",
+  "reviews": [
+    {
+      "date": "2026-07-09",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "白兰地；一种用葡萄酒或其他果酒蒸馏制成的烈酒"
+  ],
+  "examples": [
+    {
+      "text": "Europeans brought brandy and gin to Africa and traded it for enslaved people, land, and goods like palm oil and rubber.",
+      "explanation": "句中 brandy 指“白兰地”，与 gin（杜松子酒）并列，说明欧洲人把这些酒带到非洲进行贸易。",
+      "focusWords": [
+        "brandy"
+      ],
+      "source": {
+        "text": "A brief history of alcohol - Rod Phillips",
+        "url": "https://www.youtube.com/watch?v=y5XEwTDlriE"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=y5XEwTDlriE",
+        "timestamp": 243
+      }
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "word": "clay",
+  "createdAt": "2026-07-08",
+  "reviews": [
+    {
+      "date": "2026-07-09",
+      "score": 2
+    }
+  ],
+  "definitions": [
+    "黏土；陶土（常用来制作陶器、砖等）"
+  ],
+  "examples": [
+    {
+      "text": "humans began to create fermented beverages. The earliest known evidence comes from 7,000 BCE in China, where residue in clay pots has revealed that people were making an alcoholic beverage from fermented rice, millet, grapes, and honey.",
+      "explanation": "这里的 clay pots 指“陶土罐、陶罐”。clay 是黏土或陶土，用来说明这些罐子的材质。",
+      "focusWords": [
+        "clay"
+      ],
+      "source": {
+        "text": "A brief history of alcohol - Rod Phillips",
+        "url": "https://www.youtube.com/watch?v=y5XEwTDlriE"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=y5XEwTDlriE",
+        "timestamp": 59
+      }
+    }
+  ]
+}

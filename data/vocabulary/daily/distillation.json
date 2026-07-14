@@ -1,0 +1,23 @@
+{
+  "word": "distillation",
+  "createdAt": "2026-07-08",
+  "reviews": [],
+  "definitions": [],
+  "examples": [
+    {
+      "text": "So for thousands of years, alcohol content was limited. That changed with the invention of a process called distillation. 9th century Arabic writings describe boiling fermented liquids to vaporize the alcohol in them.",
+      "explanation": "",
+      "focusWords": [
+        "distillation"
+      ],
+      "source": {
+        "text": "A brief history of alcohol - Rod Phillips",
+        "url": "https://www.youtube.com/watch?v=y5XEwTDlriE"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=y5XEwTDlriE",
+        "timestamp": 201
+      }
+    }
+  ]
+}

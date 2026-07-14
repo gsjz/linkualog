@@ -1,0 +1,35 @@
+{
+  "word": "millet",
+  "createdAt": "2026-07-08",
+  "reviews": [],
+  "definitions": [],
+  "examples": [
+    {
+      "text": "where residue in clay pots has revealed that people were making an alcoholic beverage from fermented rice, millet, grapes, and honey. Within a few thousand years, cultures all over the world were fermenting their own drinks.",
+      "explanation": "",
+      "focusWords": [
+        "millet"
+      ],
+      "source": {
+        "text": "A brief history of alcohol - Rod Phillips",
+        "url": "https://www.youtube.com/watch?v=y5XEwTDlriE"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=y5XEwTDlriE",
+        "timestamp": 64
+      }
+    }
+  ],
+  "relations": [
+    {
+      "type": "same_category",
+      "target": {
+        "category": "daily",
+        "file": "cereal.json",
+        "word": "cereal"
+      },
+      "reason": "millet 是“黍、粟、小米”等谷类作物，属于 cereal 所涵盖的具体谷物类型。",
+      "source": "llm"
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "word": "commodity",
+  "createdAt": "2026-07-08",
+  "reviews": [
+    {
+      "date": "2026-07-09",
+      "score": 1
+    }
+  ],
+  "definitions": [
+    "商品；货物；尤指可买卖、交易的大宗商品或原材料"
+  ],
+  "examples": [
+    {
+      "text": "much more concentrated than any fermented beverage. At first, these stronger spirits were used for medicinal purposes. Then, spirits became an important trade commodity because, unlike beer and wine, they didn’t spoil. Rum made from sugar",
+      "explanation": "这里 trade commodity 指“贸易商品、可交易货物”。句子说明烈酒不像啤酒和葡萄酒那样容易变质，因此成了重要的贸易商品。",
+      "focusWords": [
+        "commodity"
+      ],
+      "source": {
+        "text": "A brief history of alcohol - Rod Phillips",
+        "url": "https://www.youtube.com/watch?v=y5XEwTDlriE"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=y5XEwTDlriE",
+        "timestamp": 227
+      }
+    }
+  ],
+  "relations": [
+    {
+      "type": "synonym",
+      "target": {
+        "category": "daily",
+        "file": "merch.json",
+        "word": "merch"
+      },
+      "reason": "commodity 和 merch 都可表示“商品”，但 merch 更偏“周边商品/售卖品”，commodity 更偏可交易的大宗商品或原材料；语义有重合，适合互相跳转区分用法。",
+      "source": "llm"
+    }
+  ]
+}

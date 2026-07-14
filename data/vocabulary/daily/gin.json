@@ -1,0 +1,23 @@
+{
+  "word": "gin",
+  "createdAt": "2026-07-08",
+  "reviews": [],
+  "definitions": [],
+  "examples": [
+    {
+      "text": "became a staple for sailors and was traded to North America. Europeans brought brandy and gin to Africa and traded it for enslaved people, land, and goods like palm oil and rubber.",
+      "explanation": "",
+      "focusWords": [
+        "gin"
+      ],
+      "source": {
+        "text": "A brief history of alcohol - Rod Phillips",
+        "url": "https://www.youtube.com/watch?v=y5XEwTDlriE"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=y5XEwTDlriE",
+        "timestamp": 243
+      }
+    }
+  ]
+}

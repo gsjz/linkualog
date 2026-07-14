@@ -1,0 +1,23 @@
+{
+  "word": "sap",
+  "createdAt": "2026-07-08",
+  "reviews": [],
+  "definitions": [],
+  "examples": [
+    {
+      "text": "In South America, people made chicha from grains, sometimes adding hallucinogenic herbs. In what’s now Mexico, pulque, made from cactus sap, was the drink of choice, while East Africans made banana and palm beer.",
+      "explanation": "",
+      "focusWords": [
+        "sap"
+      ],
+      "source": {
+        "text": "A brief history of alcohol - Rod Phillips",
+        "url": "https://www.youtube.com/watch?v=y5XEwTDlriE"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=y5XEwTDlriE",
+        "timestamp": 119
+      }
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "word": "beverage",
+  "createdAt": "2026-07-08",
+  "reviews": [
+    {
+      "date": "2026-07-09",
+      "score": 1
+    }
+  ],
+  "definitions": [
+    "饮料；饮品（尤指除水以外、可购买或特定类型的饮品）"
+  ],
+  "examples": [
+    {
+      "text": "As the yeasts feed on the fruit sugars, they produce a compound called ethanol—the type of alcohol in alcoholic beverages.",
+      "explanation": "这里的 beverages 指“饮料”。alcoholic beverages 就是“含酒精饮料”。",
+      "focusWords": [
+        "beverage"
+      ],
+      "source": {
+        "text": "A brief history of alcohol - Rod Phillips",
+        "url": "https://www.youtube.com/watch?v=y5XEwTDlriE"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=y5XEwTDlriE",
+        "timestamp": 43
+      }
+    },
+    {
+      "text": "Ancient fermented beverages had relatively low alcohol content.",
+      "explanation": "这里的 fermented beverages 指“发酵饮料”，例如古代通过发酵制成的酒类饮品。",
+      "focusWords": [
+        "beverage"
+      ],
+      "source": {
+        "text": "A brief history of alcohol - Rod Phillips",
+        "url": "https://www.youtube.com/watch?v=y5XEwTDlriE"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=y5XEwTDlriE",
+        "timestamp": 177
+      }
+    }
+  ]
+}

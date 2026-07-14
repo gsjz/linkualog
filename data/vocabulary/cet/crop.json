@@ -37,5 +37,17 @@
   ],
   "mergedFrom": [
     "crops"
+  ],
+  "relations": [
+    {
+      "type": "related",
+      "target": {
+        "category": "daily",
+        "file": "cereal.json",
+        "word": "cereal"
+      },
+      "reason": "cereal 可指谷类作物，而 crop 指农作物/庄稼；cereal 是 crop 的一种，属于农业和粮食生产场景中的相关词。",
+      "source": "llm"
+    }
   ]
 }

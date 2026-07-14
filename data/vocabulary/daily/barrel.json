@@ -1,0 +1,30 @@
+{
+  "word": "barrel",
+  "createdAt": "2026-07-08",
+  "reviews": [
+    {
+      "date": "2026-07-09",
+      "score": 1
+    }
+  ],
+  "definitions": [
+    "桶；大桶（常用于装水、酒、油等液体）"
+  ],
+  "examples": [
+    {
+      "text": "Sailing from Europe to east Asia and the Americas could take months, and keeping water fresh for the crews was a challenge. Adding a bucket of brandy to a water barrel kept water fresh longer because alcohol is a preservative that kills harmful microbes.",
+      "explanation": "这里的 “water barrel” 指“水桶/装水的大桶”。句子说明在长途航行中，人们会往装水的桶里加白兰地，让水保持得更久。",
+      "focusWords": [
+        "barrel"
+      ],
+      "source": {
+        "text": "A brief history of alcohol - Rod Phillips",
+        "url": "https://www.youtube.com/watch?v=y5XEwTDlriE"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=y5XEwTDlriE",
+        "timestamp": 268
+      }
+    }
+  ]
+}

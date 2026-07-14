@@ -1,0 +1,23 @@
+{
+  "word": "fermentation",
+  "createdAt": "2026-07-08",
+  "reviews": [],
+  "definitions": [],
+  "examples": [
+    {
+      "text": "As the yeasts feed on the fruit sugars they produce a compound called ethanol— the type of alcohol in alcoholic beverages. This process is called fermentation. Nobody knows exactly when humans began to create fermented beverages.",
+      "explanation": "",
+      "focusWords": [
+        "fermentation"
+      ],
+      "source": {
+        "text": "A brief history of alcohol - Rod Phillips",
+        "url": "https://www.youtube.com/watch?v=y5XEwTDlriE"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=y5XEwTDlriE",
+        "timestamp": 46
+      }
+    }
+  ]
+}

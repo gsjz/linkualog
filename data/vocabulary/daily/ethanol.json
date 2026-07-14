@@ -1,0 +1,23 @@
+{
+  "word": "ethanol",
+  "createdAt": "2026-07-08",
+  "reviews": [],
+  "definitions": [],
+  "examples": [
+    {
+      "text": "The sugars in overripe fruit attract microscopic organisms known as yeasts. As the yeasts feed on the fruit sugars they produce a compound called ethanol— the type of alcohol in alcoholic beverages. This process is called fermentation.",
+      "explanation": "",
+      "focusWords": [
+        "ethanol"
+      ],
+      "source": {
+        "text": "A brief history of alcohol - Rod Phillips",
+        "url": "https://www.youtube.com/watch?v=y5XEwTDlriE"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=y5XEwTDlriE",
+        "timestamp": 38
+      }
+    }
+  ]
+}

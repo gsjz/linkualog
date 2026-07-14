@@ -1,0 +1,30 @@
+{
+  "word": "chimpanzee",
+  "createdAt": "2026-07-08",
+  "reviews": [
+    {
+      "date": "2026-07-09",
+      "score": 1
+    }
+  ],
+  "definitions": [
+    "黑猩猩（一种非洲大型类人猿，chimpanzee）"
+  ],
+  "examples": [
+    {
+      "text": "This chimpanzee stumbles across a windfall of overripe plums. Many of them have split open, drawing him to their intoxicating fruity odor.",
+      "explanation": "句子意思是：这只黑猩猩偶然发现了一堆熟透掉落的李子，其中许多已经裂开，散发出令人着迷的果香。chimpanzee 在这里指“黑猩猩”。",
+      "focusWords": [
+        "chimpanzee"
+      ],
+      "source": {
+        "text": "A brief history of alcohol - Rod Phillips",
+        "url": "https://www.youtube.com/watch?v=y5XEwTDlriE"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=y5XEwTDlriE",
+        "timestamp": 6
+      }
+    }
+  ]
+}

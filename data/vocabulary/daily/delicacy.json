@@ -1,0 +1,25 @@
+{
+  "word": "delicacy",
+  "createdAt": "2026-07-08",
+  "reviews": [],
+  "definitions": [
+    "珍馐美味；稀有而昂贵的食物或享受品"
+  ],
+  "examples": [
+    {
+      "text": "They also made wine, but because the climate wasn’t ideal for growing grapes, it was a rare and expensive delicacy. By contrast, in Greece and Rome, where grapes grew more easily, wine was as readily available as beer was in Egypt and Mesopotamia.",
+      "explanation": "这里 delicacy 指“珍贵的美食/佳品”。句子说由于当地气候不适合种葡萄，葡萄酒在当时是一种稀有且昂贵的享受品。",
+      "focusWords": [
+        "delicacy"
+      ],
+      "source": {
+        "text": "A brief history of alcohol - Rod Phillips",
+        "url": "https://www.youtube.com/watch?v=y5XEwTDlriE"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=y5XEwTDlriE",
+        "timestamp": 92
+      }
+    }
+  ]
+}
