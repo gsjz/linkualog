@@ -12,7 +12,6 @@ import { Subtitle } from '../types';
 import { IVideoAdapter } from '../adapters/BaseAdapter';
 import { ConfigService } from '../services/configService';
 import { DEFAULTS } from '../constants/defaults';
-import './App.css';
 
 interface AppProps { adapter: IVideoAdapter; }
 
@@ -109,6 +108,7 @@ const App: React.FC<AppProps> = ({ adapter }) => {
   const isArticleTranslationEnabled = isArxivHtmlPage();
   
   const [inVideo, setInVideo] = useState(adapter.isVideoPage());
+  const hasPersistentControls = (isVideoSite && inVideo) || isArticleTranslationEnabled;
 
   const getAdpCfg = (key: CfgKey) => {
     const val = ConfigService.get(`${key}_${adapter.platformName}` as any);
@@ -376,11 +376,14 @@ const App: React.FC<AppProps> = ({ adapter }) => {
           )}
         </div>
       </div>
-      <UniversalVocabWidget onOpenSettings={() => setIsSettingsOpen(true)} />
+      <UniversalVocabWidget
+        onOpenSettings={() => setIsSettingsOpen(true)}
+        persistentControls={hasPersistentControls}
+      />
       <ArticleTranslator />
       {showMobileFullscreenButton && <MobileFullscreenButton adapter={adapter} />}
-      <VocabQueue />
-      {isSettingsOpen && <Settings adapter={adapter} onClose={() => setIsSettingsOpen(false)} />}
+      {hasPersistentControls && <VocabQueue />}
+      {hasPersistentControls && isSettingsOpen && <Settings adapter={adapter} onClose={() => setIsSettingsOpen(false)} />}
       </>
     </ArticleTranslationProvider>
   );

@@ -89,9 +89,9 @@
   white-space: nowrap;
 }
 
-#linkual-root .settings-icon { 
-  cursor: pointer; 
-  user-select: none; 
+#linkual-root .settings-icon {
+  cursor: pointer;
+  user-select: none;
 }
 
 #linkual-root .linkual-mobile-fullscreen {
@@ -270,10 +270,10 @@ html.linkual-mobile-fullscreen-fallback {
   filter: brightness(1.08);
 }
 
-#linkual-root .list { 
-  flex: 1; 
+#linkual-root .list {
+  flex: 1;
   min-height: 0;
-  overflow-y: auto; 
+  overflow-y: auto;
   padding: 10px 12px;
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -284,11 +284,11 @@ html.linkual-mobile-fullscreen-fallback {
   display: none;
 }
 
-#linkual-root .empty-tip { 
-  padding: 50px 20px; 
-  text-align: center; 
-  color: #999; 
-  font-style: italic; 
+#linkual-root .empty-tip {
+  padding: 50px 20px;
+  text-align: center;
+  color: #999;
+  font-style: italic;
 }
 
 /* These nodes are portaled into the article so the translation follows each paragraph. */
@@ -425,118 +425,118 @@ html.linkual-mobile-fullscreen-fallback {
   font-size: 12px;
 }
 
-#linkual-root .item { 
-  padding: 12px; 
-  margin-bottom: 10px; 
-  border-radius: 8px; 
-  border: 1px solid #f0f0f0; 
-  transition: 0.2s; 
+#linkual-root .item {
+  padding: 12px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  border: 1px solid #f0f0f0;
+  transition: 0.2s;
 }
 
-#linkual-root .item.active { 
-  border-left: 5px solid var(--linkual-theme); 
-  background: rgba(106, 27, 154, 0.05); 
+#linkual-root .item.active {
+  border-left: 5px solid var(--linkual-theme);
+  background: rgba(106, 27, 154, 0.05);
 }
 
-#linkual-root .ctrl-bar { 
-  display: flex; 
+#linkual-root .ctrl-bar {
+  display: flex;
   flex-wrap: wrap;
-  gap: 8px; 
-  margin-bottom: 8px; 
-  align-items: center; 
-  padding: 4px; 
-  border-radius: 4px; 
-  background: transparent; 
-  transition: background 0.2s; 
+  gap: 8px;
+  margin-bottom: 8px;
+  align-items: center;
+  padding: 4px;
+  border-radius: 4px;
+  background: transparent;
+  transition: background 0.2s;
 }
 
-#linkual-root .ctrl-bar.done { 
-  background-color: var(--linkual-done, #e8f5e9); 
+#linkual-root .ctrl-bar.done {
+  background-color: var(--linkual-done, #e8f5e9);
 }
 
-#linkual-root .ctrl-bar.error { 
-  background-color: var(--linkual-error, #ffebee); 
-  border: 1px solid rgba(255,0,0,0.1); 
+#linkual-root .ctrl-bar.error {
+  background-color: var(--linkual-error, #ffebee);
+  border: 1px solid rgba(255,0,0,0.1);
 }
 
-#linkual-root .tag-btn { 
-  font-size: 11px; 
-  padding: 3px 8px; 
-  border-radius: 12px; 
-  display: inline-flex; 
-  align-items: center; 
-  cursor: pointer; 
-  transition: 0.2s; 
-  user-select: none; 
+#linkual-root .tag-btn {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  transition: 0.2s;
+  user-select: none;
 }
 
-#linkual-root .tag-play { 
-  background: #eee; 
-  color: #666; 
+#linkual-root .tag-play {
+  background: #eee;
+  color: #666;
 }
 
-#linkual-root .tag-play:hover { 
-  background: var(--linkual-theme); 
-  color: white; 
+#linkual-root .tag-play:hover {
+  background: var(--linkual-theme);
+  color: white;
 }
 
-#linkual-root .tag-pin { 
-  background: #e3f2fd; 
-  color: #1976d2; 
+#linkual-root .tag-pin {
+  background: #e3f2fd;
+  color: #1976d2;
 }
 
-#linkual-root .tag-pin:hover { 
-  background: #1976d2; 
-  color: white; 
+#linkual-root .tag-pin:hover {
+  background: #1976d2;
+  color: white;
 }
 
-#linkual-root .btn-parse { 
+#linkual-root .btn-parse {
   flex: 0 0 auto;
   margin-left: auto;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px; 
-  color: #aaa; 
+  font-size: 11px;
+  color: #aaa;
   background: transparent;
   border: 1px solid transparent;
   border-radius: 4px;
-  cursor: pointer; 
-  user-select: none; 
+  cursor: pointer;
+  user-select: none;
   padding: 4px 7px;
   line-height: 1.2;
-  transition: 0.2s; 
+  transition: 0.2s;
 }
 
-#linkual-root .btn-parse:hover { 
-  color: #333; 
+#linkual-root .btn-parse:hover {
+  color: #333;
   background: rgba(0,0,0,0.05);
   border-color: rgba(0,0,0,0.08);
 }
 
-#linkual-root .btn-chevron { 
-  font-size: 12px; 
-  display: inline-flex; 
-  align-items: center; 
-  justify-content: center; 
-  width: 24px; 
-  height: 24px; 
-  border-radius: 4px; 
-  cursor: pointer; 
-  transition: 0.2s; 
-  user-select: none; 
-  color: #666; 
+#linkual-root .btn-chevron {
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: 0.2s;
+  user-select: none;
+  color: #666;
 }
 
-#linkual-root .btn-chevron:hover { 
-  background: rgba(0,0,0,0.1); 
+#linkual-root .btn-chevron:hover {
+  background: rgba(0,0,0,0.1);
 }
 
-#linkual-root .text-content { 
-  font-size: 14px; 
-  line-height: 1.5; 
-  padding: 2px 0; 
-  color: #333; 
+#linkual-root .text-content {
+  font-size: 14px;
+  line-height: 1.5;
+  padding: 2px 0;
+  color: #333;
   cursor: text;
   -webkit-user-select: text;
   user-select: text;
@@ -587,14 +587,14 @@ html.linkual-mobile-fullscreen-fallback {
   text-overflow: ellipsis;
 }
 
-#linkual-root .ai-box { 
-  border-top: 1px dashed #ccc; 
-  margin-top: 8px; 
-  padding-top: 8px; 
-  font-size: 13px; 
-  white-space: pre-wrap; 
-  line-height: 1.6; 
-  cursor: text; 
+#linkual-root .ai-box {
+  border-top: 1px dashed #ccc;
+  margin-top: 8px;
+  padding-top: 8px;
+  font-size: 13px;
+  white-space: pre-wrap;
+  line-height: 1.6;
+  cursor: text;
 }
 
 #linkual-root .lan-sync-module {
@@ -604,7 +604,7 @@ html.linkual-mobile-fullscreen-fallback {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  margin-top: auto; 
+  margin-top: auto;
 }
 
 #linkual-root .sync-input {

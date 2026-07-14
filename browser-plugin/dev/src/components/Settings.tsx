@@ -8,7 +8,6 @@ import {
   deleteArticleTranslationCache,
   listArticleTranslationCaches,
 } from '../services/articleTranslationCache';
-import './Settings.css';
 
 // 接收 adapter 以识别当前所处的网站环境
 interface SettingsProps { adapter: IVideoAdapter; onClose: () => void; }

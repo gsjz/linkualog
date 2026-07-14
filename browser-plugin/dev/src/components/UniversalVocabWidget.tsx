@@ -10,6 +10,7 @@ import { useArticleTranslation } from './ArticleTranslationContext';
 
 interface UniversalVocabWidgetProps {
   onOpenSettings: () => void;
+  persistentControls: boolean;
 }
 
 type SendStatus = 'idle' | 'filled' | 'success' | 'error';
@@ -279,7 +280,7 @@ const captureSelection = (mode: SelectionMode): SelectionCapture | null => {
   };
 };
 
-const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSettings }) => {
+const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSettings, persistentControls }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [selection, setSelection] = useState<SelectionCapture | null>(null);
   const [word, setWord] = useState('');
@@ -307,6 +308,7 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
   const expandedDragRef = useRef<{ pointerId: number; startX: number; startY: number; left: number; top: number } | null>(null);
   const selectionTimerRef = useRef<number | null>(null);
   const articleTranslation = useArticleTranslation();
+  const shouldTrackSelection = isExpanded || !persistentControls;
 
   const hasPayload = Boolean(word.trim());
   const canSend = hasPayload;
@@ -319,6 +321,8 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
   }, [message, status]);
 
   const measureWidgetHeight = useCallback(() => {
+    if (!persistentControls) return;
+
     const baseHeight = getDefaultExpandedHeight();
     const measuredHeight = widgetRef.current ? Math.ceil(widgetRef.current.scrollHeight) : 0;
     const nextHeight = Math.min(getMaxWidgetHeight(), Math.max(baseHeight, measuredHeight));
@@ -326,9 +330,11 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
     setReservedHeight((currentHeight) => (
       Math.abs(currentHeight - nextHeight) > 1 ? nextHeight : currentHeight
     ));
-  }, []);
+  }, [persistentControls]);
 
   useEffect(() => {
+    if (!persistentControls) return undefined;
+
     const updateReservedHeight = () => {
       syncVisualViewportHeightProperty();
       setReservedHeight(Math.min(getDefaultExpandedHeight(), getMaxWidgetHeight()));
@@ -343,7 +349,7 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
       desktopQuery.removeEventListener('change', updateReservedHeight);
       window.visualViewport?.removeEventListener('resize', updateReservedHeight);
     };
-  }, [measureWidgetHeight]);
+  }, [measureWidgetHeight, persistentControls]);
 
   useEffect(() => {
     if (!isExpanded) return undefined;
@@ -368,11 +374,13 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
       setQueueCount(Number.isFinite(nextCount) ? nextCount : 0);
     };
 
+    if (!persistentControls) return undefined;
+
     window.addEventListener(QUEUE_COUNT_EVENT, updateQueueCount);
     window.dispatchEvent(new Event(QUEUE_REQUEST_COUNT_EVENT));
 
     return () => window.removeEventListener(QUEUE_COUNT_EVENT, updateQueueCount);
-  }, []);
+  }, [persistentControls]);
 
   useEffect(() => {
     const handleNavigationRefresh = () => {
@@ -381,7 +389,7 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
 
       window.requestAnimationFrame(() => {
         if (isExpanded) measureWidgetHeight();
-        syncVisualViewportHeightProperty();
+        if (persistentControls) syncVisualViewportHeightProperty();
       });
     };
 
@@ -391,15 +399,15 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
       window.removeEventListener(LINKUAL_NAVIGATION_EVENT, handleNavigationRefresh);
       window.removeEventListener('pageshow', handleNavigationRefresh);
     };
-  }, [isExpanded, measureWidgetHeight]);
+  }, [isExpanded, measureWidgetHeight, persistentControls]);
 
   const refreshSelection = useCallback(() => {
-    if (!isExpanded) return;
+    if (!shouldTrackSelection) return;
     setSelection(captureSelection(selectionMode));
-  }, [isExpanded, selectionMode]);
+  }, [selectionMode, shouldTrackSelection]);
 
   const scheduleSelectionRefresh = useCallback((delay = 80) => {
-    if (!isExpanded) return;
+    if (!shouldTrackSelection) return;
     if (selectionTimerRef.current !== null) {
       window.clearTimeout(selectionTimerRef.current);
     }
@@ -408,10 +416,10 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
       selectionTimerRef.current = null;
       refreshSelection();
     }, delay);
-  }, [isExpanded, refreshSelection]);
+  }, [refreshSelection, shouldTrackSelection]);
 
   useEffect(() => {
-    if (!isExpanded) return undefined;
+    if (!shouldTrackSelection) return undefined;
 
     const handleSelectionChange = () => scheduleSelectionRefresh(90);
     const handlePointerUp = () => scheduleSelectionRefresh(20);
@@ -430,7 +438,7 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
         selectionTimerRef.current = null;
       }
     };
-  }, [isExpanded, scheduleSelectionRefresh]);
+  }, [scheduleSelectionRefresh, shouldTrackSelection]);
 
   const handleAddSelection = () => {
     if (!selection) return;
@@ -488,6 +496,27 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
     setStatus('success');
     setMessage('已加入队列');
     setSelectionMode('word');
+    setSelection(null);
+    window.getSelection()?.removeAllRanges();
+  };
+
+  const handleQuickAddSelection = () => {
+    if (!selection) return;
+
+    try {
+      enqueueVocabTask({
+        word: selection.text,
+        context: selection.context,
+        source: selection.source,
+        source_url: selection.url,
+      });
+      setStatus('success');
+      setMessage('已加入队列');
+    } catch (err) {
+      setStatus('error');
+      setMessage(err instanceof Error ? err.message : '加入失败');
+    }
+
     setSelection(null);
     window.getSelection()?.removeAllRanges();
   };
@@ -667,6 +696,8 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
   };
 
   useEffect(() => {
+    if (!persistentControls) return undefined;
+
     if (!isExpanded) return undefined;
 
     const clampExpandedPosition = () => setExpandedPosition((current) => {
@@ -685,7 +716,27 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
       window.cancelAnimationFrame(frameId);
       window.removeEventListener('resize', clampExpandedPosition);
     };
-  }, [isExpanded, reservedHeight]);
+  }, [isExpanded, persistentControls, reservedHeight]);
+
+  if (!persistentControls) {
+    return selection ? (
+      <button
+        type="button"
+        className="linkual-universal-floating-add linkual-universal-quick-add"
+        onMouseDown={(event) => event.preventDefault()}
+        onPointerDown={(event) => event.preventDefault()}
+        onClick={handleQuickAddSelection}
+        style={{
+          top: selection.top,
+          left: selection.left,
+          '--linkual-theme': themeColor,
+        } as React.CSSProperties}
+        title={status === 'error' ? message : '加入 Linkual 生词队列'}
+      >
+        加入生词
+      </button>
+    ) : null;
+  }
 
   if (!isExpanded) {
     return (
