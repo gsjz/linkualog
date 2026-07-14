@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Linkual Log
 // @namespace    npm/vite-plugin-monkey
-// @version      0.0.28
+// @version      0.0.29
 // @author       Sergio Gao
 // @icon         https://vitejs.dev/logo.svg
 // @downloadURL  https://raw.githubusercontent.com/gsjz/linkualog/main/browser-plugin/user/linkualog.user.js
@@ -16,7 +16,7 @@
 // @grant        unsafeWindow
 // ==/UserScript==
 
-(i=>{if(typeof GM_addStyle=="function"){GM_addStyle(i);return}const l=document.createElement("style");l.textContent=i,document.head.append(l)})(" #linkual-root .modal{position:fixed;top:0;left:0;width:100%;height:100%;background:#00000080;display:flex;justify-content:center;align-items:center;z-index:2147483647;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);pointer-events:auto}#linkual-root .modal-box{background:#fff;border-radius:12px;width:380px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 10px 30px #0003;animation:linkualSlideIn .2s ease-out}@keyframes linkualSlideIn{0%{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}#linkual-root .modal-header{padding:16px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #eee}#linkual-root .modal-header h3{margin:0;font-size:16px;color:#333}#linkual-root .close-btn{font-size:24px;line-height:1;color:#999;cursor:pointer;transition:color .2s}#linkual-root .close-btn:hover{color:#333}#linkual-root .tabs{display:flex;background:#fafafa;border-bottom:1px solid #eee}#linkual-root .tab{flex:1;text-align:center;padding:12px 0;font-size:14px;color:#666;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;-webkit-user-select:none;user-select:none}#linkual-root .tab:hover{color:#333;background:#00000005}#linkual-root .tab.active{color:var(--linkual-theme, #6a1b9a);font-weight:700;border-bottom:2px solid var(--linkual-theme, #6a1b9a);background:#fff}#linkual-root .tab-content{padding:20px;overflow-y:auto;flex:1}#linkual-root .fade-in{animation:linkualFadeIn .3s ease}@keyframes linkualFadeIn{0%{opacity:0}to{opacity:1}}#linkual-root .setting-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}#linkual-root .setting-row label{font-size:13px;font-weight:700;flex:1;color:#444}#linkual-root .setting-row input[type=color]{width:50px;height:32px;padding:0;cursor:pointer;border:1px solid #ddd;border-radius:4px}#linkual-root .setting-col{margin-bottom:16px}#linkual-root .setting-col label{font-size:13px;font-weight:700;display:block;margin-bottom:6px;color:#444}#linkual-root .setting-col input,#linkual-root .setting-col textarea,#linkual-root .setting-col select{width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box;font-family:inherit;font-size:13px;transition:border-color .2s}#linkual-root .setting-col input:focus,#linkual-root .setting-col textarea:focus,#linkual-root .setting-col select:focus{outline:none;border-color:var(--linkual-theme, #6a1b9a)}#linkual-root .setting-col textarea{resize:vertical;min-height:80px;line-height:1.5}#linkual-root .url-prefix-row{display:flex;align-items:stretch}#linkual-root .url-prefix-row input{border-radius:0;min-width:0}#linkual-root .url-protocol-select{width:auto!important;flex:0 0 78px;border-right:0!important;border-radius:6px 0 0 6px!important;background:#f7f7f7;color:#555}#linkual-root .url-path-select{width:auto!important;flex:0 0 138px;border-left:0!important;border-radius:0 6px 6px 0!important;background:#f7f7f7;color:#555;font-size:12px!important;padding-left:8px!important;padding-right:8px!important}#linkual-root .url-fixed-prefix,#linkual-root .url-fixed-suffix{display:inline-flex;align-items:center;padding:0 10px;border:1px solid #ddd;background:#f7f7f7;color:#666;font-size:12px;white-space:nowrap}#linkual-root .url-fixed-prefix{border-right:0;border-radius:6px 0 0 6px}#linkual-root .url-fixed-suffix{border-left:0;border-radius:0 6px 6px 0}#linkual-root .url-prefix-row:focus-within .url-fixed-prefix{border-color:var(--linkual-theme, #6a1b9a);border-right:0}#linkual-root .url-prefix-row:focus-within .url-protocol-select{border-color:var(--linkual-theme, #6a1b9a);border-right:0}#linkual-root .url-prefix-row:focus-within .url-path-select{border-color:var(--linkual-theme, #6a1b9a);border-left:0}#linkual-root .url-prefix-row:focus-within .url-fixed-suffix{border-color:var(--linkual-theme, #6a1b9a);border-left:0}#linkual-root .setting-help{margin-top:6px;color:#888;font-size:12px;line-height:1.4}#linkual-root .modal-footer{padding:16px 20px;display:flex;gap:12px;border-top:1px solid #eee;background:#fafafa}#linkual-root .btn{flex:1;padding:10px;border:none;border-radius:6px;cursor:pointer;font-weight:700;font-size:14px;transition:opacity .2s}#linkual-root .btn:hover{opacity:.9}#linkual-root .reset-btn{background:#e0e0e0;color:#555}#linkual-root .save-btn{box-shadow:0 2px 6px #0000001a}#linkual-root{--linkual-theme: #6a1b9a;--linkual-done: #e8f5e9;--linkual-error: #ffebee}#linkual-root .linkual-wrap{position:fixed;z-index:2147483647;background:#fff;display:flex;flex-direction:column;font-family:sans-serif;color:#333;pointer-events:auto}#linkual-root .linkual-wrap.layout-right{top:0;right:0;max-width:min(100vw,var(--linkual-sidebar-width, 500px));height:calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px));max-height:calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px));box-shadow:-5px 0 15px #0000001a}#linkual-root .linkual-wrap.layout-bottom{bottom:calc(var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom,0px));left:0;width:100vw!important;max-width:100vw;max-height:calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px));box-shadow:0 -5px 15px #0000001a}#linkual-root .resizer{position:absolute;background:transparent;z-index:999;transition:background .2s}#linkual-root .linkual-wrap.layout-right .resizer{left:0;top:0;bottom:0;width:5px;cursor:ew-resize}#linkual-root .linkual-wrap.layout-bottom .resizer{top:0;left:0;right:0;height:5px;cursor:ns-resize}#linkual-root .resizer:hover,#linkual-root .resizer:active{background:var(--linkual-theme)}#linkual-root .header{background:var(--linkual-theme);color:#fff;padding:12px 16px;font-weight:700;display:flex;justify-content:space-between;align-items:center;gap:10px;min-height:44px;box-sizing:border-box}#linkual-root .header span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#linkual-root .settings-icon{cursor:pointer;-webkit-user-select:none;user-select:none}#linkual-root .linkual-mobile-fullscreen{position:fixed;right:20px;bottom:calc(20px + var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom,0px));z-index:2147483647;min-width:78px;min-height:40px;padding:10px 15px;background:#000;color:#fff;border:0;border-radius:5px;box-shadow:0 2px 8px #00000040;cursor:grab;font-size:14px;font-weight:700;line-height:1.2;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;-webkit-user-select:none;user-select:none;touch-action:none;-webkit-tap-highlight-color:transparent;pointer-events:auto}#linkual-root .linkual-mobile-fullscreen.is-dragging{cursor:grabbing}html.linkual-mobile-fullscreen-fallback,html.linkual-mobile-fullscreen-fallback body{width:var(--linkual-mobile-viewport-width, 100vw)!important;height:var(--linkual-mobile-viewport-height, 100vh)!important;max-width:var(--linkual-mobile-viewport-width, 100vw)!important;max-height:var(--linkual-mobile-viewport-height, 100vh)!important;margin:0!important;overflow:hidden!important;overscroll-behavior:none!important;touch-action:none!important;background:#000!important}html.linkual-mobile-fullscreen-fallback{position:fixed!important;top:0!important;right:0!important;bottom:0!important;left:0!important}#linkual-root .linkual-player-controls{position:fixed;left:clamp(6px,2vw,12px);bottom:calc(var(--linkual-sidebar-height, 0px) + var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom,0px) + 14px);z-index:2147483647;width:calc(100vw - var(--linkual-sidebar-width, 0px) - clamp(12px,4vw,24px));max-width:calc(100vw - var(--linkual-sidebar-width, 0px) - clamp(12px,4vw,24px));max-height:calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px) - 12px);box-sizing:border-box;display:flex;flex-direction:column;gap:9px;padding:10px 12px;border-radius:8px;background:#000000b8;color:#fff;box-shadow:0 6px 20px #0000003d;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;pointer-events:auto;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);overflow:auto;overscroll-behavior:contain}#linkual-root .linkual-player-progress-row{display:grid;grid-template-columns:52px minmax(0,1fr) 52px;align-items:center;gap:10px}#linkual-root .linkual-player-time{color:#ffffffe0;font-size:12px;font-variant-numeric:tabular-nums;line-height:1;text-align:center;white-space:nowrap}#linkual-root .linkual-player-progress{width:100%;height:18px;margin:0;padding:0;-moz-appearance:none;appearance:none;-webkit-appearance:none;background:transparent;cursor:pointer}#linkual-root .linkual-player-progress::-webkit-slider-runnable-track{height:5px;border-radius:999px;background:linear-gradient(to right,var(--linkual-theme, #6a1b9a) 0%,var(--linkual-theme, #6a1b9a) var(--linkual-progress, 0%),rgba(255,255,255,.32) var(--linkual-progress, 0%),rgba(255,255,255,.32) 100%)}#linkual-root .linkual-player-progress::-moz-range-track{height:5px;border-radius:999px;background:#ffffff52}#linkual-root .linkual-player-progress::-moz-range-progress{height:5px;border-radius:999px;background:var(--linkual-theme, #6a1b9a)}#linkual-root .linkual-player-progress::-webkit-slider-thumb{-moz-appearance:none;appearance:none;-webkit-appearance:none;width:15px;height:15px;margin-top:-5px;border-radius:50%;border:2px solid #fff;background:var(--linkual-theme, #6a1b9a);box-shadow:0 2px 8px #00000052}#linkual-root .linkual-player-progress::-moz-range-thumb{width:15px;height:15px;border-radius:50%;border:2px solid #fff;background:var(--linkual-theme, #6a1b9a);box-shadow:0 2px 8px #00000052}#linkual-root .linkual-player-button-row{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}#linkual-root .linkual-player-btn{height:31px;min-width:44px;padding:0 12px;border:1px solid rgba(255,255,255,.16);border-radius:6px;background:#ffffff1f;color:#fff;cursor:pointer;font:700 12px/1 system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif}#linkual-root .linkual-player-btn.primary{min-width:58px;background:var(--linkual-theme, #6a1b9a);border-color:transparent}#linkual-root .linkual-player-btn:hover{background:#fff3}#linkual-root .linkual-player-btn.primary:hover{filter:brightness(1.08)}#linkual-root .list{flex:1;min-height:0;overflow-y:auto;padding:10px 12px;scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch}#linkual-root .list::-webkit-scrollbar{display:none}#linkual-root .empty-tip{padding:50px 20px;text-align:center;color:#999;font-style:italic}.linkual-article-translation-host{display:block!important;margin:.7em 0 1.3em!important;padding:0!important;border:0!important;background:transparent!important;color:inherit!important;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif!important;text-align:left!important}.linkual-article-translation{box-sizing:border-box!important;padding:.85em 1em!important;border-left:3px solid #7e57c2!important;border-radius:0 6px 6px 0!important;background:#7e57c214!important;color:#3f3a49!important;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif!important;font-size:.92em!important;line-height:1.65!important;text-align:left!important}.linkual-article-translation.loading{border-left-color:#42a5f5!important}.linkual-article-translation.error{border-left-color:#e57373!important;background:#e573731a!important}.linkual-article-translation-toolbar{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:.75em!important;margin-bottom:.35em!important;font-size:.78em!important;line-height:1.3!important}.linkual-article-translation-label{color:#7652a6!important;font-weight:700!important;letter-spacing:.01em!important}.linkual-article-translation-toolbar button,.linkual-universal-translation-row button{box-sizing:border-box!important;min-height:28px!important;padding:4px 9px!important;border:1px solid rgba(83,65,111,.25)!important;border-radius:5px!important;background:#fff!important;color:#55406f!important;cursor:pointer!important;font:600 12px/1.2 system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif!important}.linkual-article-translation-toolbar button:hover,.linkual-universal-translation-row button:hover{background:#f1ecf8!important}.linkual-article-translation-toolbar button:disabled,.linkual-universal-translation-row button:disabled{cursor:wait!important;opacity:.65!important}.linkual-article-translation-text,.linkual-article-translation-placeholder{white-space:pre-wrap!important;overflow-wrap:anywhere!important}.linkual-article-translation-placeholder{color:#7b7286!important;font-size:.9em!important;font-style:italic!important}@media (max-width: 600px){.linkual-article-translation{padding:.75em .8em!important}.linkual-article-translation-toolbar{align-items:flex-start!important;flex-direction:column!important;gap:5px!important}}#linkual-root .load-more-tip{padding:16px 12px 22px;text-align:center;color:#999;font-size:12px}#linkual-root .item{padding:12px;margin-bottom:10px;border-radius:8px;border:1px solid #f0f0f0;transition:.2s}#linkual-root .item.active{border-left:5px solid var(--linkual-theme);background:#6a1b9a0d}#linkual-root .ctrl-bar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;align-items:center;padding:4px;border-radius:4px;background:transparent;transition:background .2s}#linkual-root .ctrl-bar.done{background-color:var(--linkual-done, #e8f5e9)}#linkual-root .ctrl-bar.error{background-color:var(--linkual-error, #ffebee);border:1px solid rgba(255,0,0,.1)}#linkual-root .tag-btn{font-size:11px;padding:3px 8px;border-radius:12px;display:inline-flex;align-items:center;cursor:pointer;transition:.2s;-webkit-user-select:none;user-select:none}#linkual-root .tag-play{background:#eee;color:#666}#linkual-root .tag-play:hover{background:var(--linkual-theme);color:#fff}#linkual-root .tag-pin{background:#e3f2fd;color:#1976d2}#linkual-root .tag-pin:hover{background:#1976d2;color:#fff}#linkual-root .btn-parse{flex:0 0 auto;margin-left:auto;display:inline-flex;align-items:center;justify-content:center;font-size:11px;color:#aaa;background:transparent;border:1px solid transparent;border-radius:4px;cursor:pointer;-webkit-user-select:none;user-select:none;padding:4px 7px;line-height:1.2;transition:.2s}#linkual-root .btn-parse:hover{color:#333;background:#0000000d;border-color:#00000014}#linkual-root .btn-chevron{font-size:12px;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:4px;cursor:pointer;transition:.2s;-webkit-user-select:none;user-select:none;color:#666}#linkual-root .btn-chevron:hover{background:#0000001a}#linkual-root .text-content{font-size:14px;line-height:1.5;padding:2px 0;color:#333;cursor:text;-webkit-user-select:text;user-select:text;overflow-wrap:anywhere;-webkit-touch-callout:default}#linkual-root .linkual-selection-add{position:fixed;z-index:999999;min-height:38px;max-width:min(320px,calc(100vw - 24px));padding:8px 12px;background:var(--linkual-theme, #6a1b9a);color:#fff;border:none;border-radius:6px;box-shadow:0 4px 12px #0003;cursor:pointer;font-size:13px;font-weight:700;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;-webkit-tap-highlight-color:transparent;touch-action:manipulation;pointer-events:auto}#linkual-root .linkual-selection-add-floating{transform:translate(-50%)}#linkual-root .linkual-selection-add-dock{left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));width:calc(100vw - 24px);max-width:none;min-height:46px;justify-content:center;font-size:14px}#linkual-root .linkual-selection-add-text{overflow:hidden;text-overflow:ellipsis}#linkual-root .ai-box{border-top:1px dashed #ccc;margin-top:8px;padding-top:8px;font-size:13px;white-space:pre-wrap;line-height:1.6;cursor:text}#linkual-root .lan-sync-module{border-top:1px solid #eee;padding:12px 16px;background:#fafafa;display:flex;flex-direction:column;gap:10px;margin-top:auto}#linkual-root .sync-input{width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;font-size:12px;box-sizing:border-box;outline:none;transition:border-color .2s}#linkual-root .sync-input:focus{border-color:var(--linkual-theme)}#linkual-root .sync-btn{width:100%;padding:10px;border:none;border-radius:6px;font-size:13px;font-weight:700;color:#fff;background-color:var(--linkual-theme);cursor:pointer;transition:all .2s}#linkual-root .sync-btn:hover{opacity:.9}#linkual-root .sync-btn:disabled{opacity:.6;cursor:not-allowed}#linkual-root .sync-btn.success{background-color:#4caf50}#linkual-root .sync-btn.error{background-color:#f44336}#linkual-root .linkual-universal-widget{position:fixed;left:0;right:0;bottom:0;z-index:2147483647;width:100vw;max-width:100vw;min-height:calc(var(--linkual-universal-widget-height, 58px) + env(safe-area-inset-bottom,0px));max-height:calc(var(--linkual-visual-viewport-height, 100vh) - 8px);padding:8px 12px calc(8px + env(safe-area-inset-bottom,0px));box-sizing:border-box;display:flex;flex-wrap:wrap;align-items:center;gap:10px;background:#fff;color:#222;border-top:1px solid rgba(0,0,0,.12);box-shadow:0 -8px 24px #00000024;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;pointer-events:auto;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}#linkual-root .linkual-universal-widget~.linkual-mobile-fullscreen{bottom:calc(20px + var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom,0px))}#linkual-root .linkual-universal-top{flex:0 1 390px;display:flex;align-items:center;justify-content:space-between;gap:10px;width:auto;max-width:100%;min-width:min(260px,100%);min-height:34px}#linkual-root .linkual-universal-selection{min-width:0;flex:1;display:flex;align-items:center;gap:8px;color:#444;font-size:13px}#linkual-root .linkual-universal-selection-label{flex:0 0 auto;color:#666;font-weight:700}#linkual-root .linkual-universal-selection-text{min-width:0;max-width:min(180px,14vw);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#111;font-weight:700}#linkual-root .linkual-universal-muted{color:#888}#linkual-root .linkual-universal-actions{flex:0 0 auto;display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0}#linkual-root .linkual-universal-status{max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;color:#666}#linkual-root .linkual-universal-status.status-success{color:#17803d}#linkual-root .linkual-universal-status.status-error{color:#c62828}#linkual-root .linkual-universal-add-btn,#linkual-root .linkual-universal-icon-btn,#linkual-root .linkual-universal-clear,#linkual-root .linkual-universal-send{border:0;border-radius:6px;min-height:30px;padding:0 12px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit}#linkual-root .linkual-universal-icon-btn,#linkual-root .linkual-universal-send{display:inline-flex;align-items:center;justify-content:center;gap:6px}#linkual-root .linkual-universal-add-btn,#linkual-root .linkual-universal-send{background:var(--linkual-theme, #000);color:#fff}#linkual-root .linkual-universal-icon-btn{background:#f1f1f1;color:#333}#linkual-root .linkual-universal-queue-btn{position:relative;background:var(--linkual-theme, #000);color:#fff}#linkual-root .linkual-universal-button-icon{display:none;flex:0 0 auto;width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}#linkual-root .linkual-universal-button-text{min-width:0}#linkual-root .linkual-universal-queue-count{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:#f44336;color:#fff;font-size:10px;line-height:1}#linkual-root .linkual-universal-clear{width:34px;padding:0;background:#f3f3f3;color:#555}#linkual-root .linkual-universal-form{flex:1;display:grid;grid-template-columns:minmax(120px,190px) minmax(160px,1fr) 34px auto auto;align-items:stretch;gap:8px;min-width:min(520px,100%);max-width:100%}#linkual-root .linkual-universal-inline-actions{align-self:center;display:flex;align-items:center;gap:6px;min-height:34px;min-width:0}#linkual-root .linkual-universal-field{min-width:0;display:flex;flex-direction:row;align-items:center;gap:6px}#linkual-root .linkual-universal-mode-tab{flex:0 0 auto;min-width:48px;height:34px;padding:0 8px;border:1px solid #d7d7d7;border-radius:6px;background:#f6f6f6;color:#555;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit}#linkual-root .linkual-universal-mode-tab.active{border-color:var(--linkual-theme, #000);background:var(--linkual-theme, #000);color:#fff}#linkual-root .linkual-universal-field input{min-width:0;width:100%;height:34px;box-sizing:border-box;border:1px solid #d7d7d7;border-radius:6px;padding:7px 9px;color:#222;background:#fff;outline:none;font:13px/1.35 system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;letter-spacing:0}#linkual-root .linkual-universal-field input:focus{border-color:var(--linkual-theme, #000);box-shadow:0 0 0 2px #00000014}#linkual-root .linkual-universal-field.field-context input{overflow-x:auto;overflow-y:hidden;white-space:nowrap;scrollbar-width:none;-ms-overflow-style:none}#linkual-root .linkual-universal-field.field-context input::-webkit-scrollbar{display:none}#linkual-root .linkual-universal-clear,#linkual-root .linkual-universal-send{align-self:center;height:34px}#linkual-root .linkual-universal-send:disabled,#linkual-root .linkual-universal-clear:disabled{opacity:.45;cursor:not-allowed}#linkual-root .linkual-universal-expand-bar{position:fixed;right:14px;bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:2147483647;display:flex;align-items:center;gap:6px;width:auto;min-height:42px;padding:5px 6px 5px 9px;border:1px solid rgba(255,255,255,.3);border-radius:999px;background:var(--linkual-theme, #000);color:#fff;box-shadow:0 6px 20px #00000040;cursor:grab;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;-webkit-user-select:none;user-select:none;pointer-events:auto;touch-action:none}#linkual-root .linkual-universal-expand-bar:active{cursor:grabbing}#linkual-root .linkual-universal-expand-bar:hover,#linkual-root .linkual-universal-expand-bar:focus-within{filter:brightness(1.08)}#linkual-root .linkual-universal-bubble-grip{color:#ffffffa6;font-size:12px;letter-spacing:-3px;line-height:1;transform:rotate(90deg)}#linkual-root .linkual-universal-bubble-translate,#linkual-root .linkual-universal-bubble-expand{min-height:30px;border:0;border-radius:999px;background:#ffffff26;color:#fff;cursor:pointer;font:700 12px/1 system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif}#linkual-root .linkual-universal-bubble-translate{padding:0 11px}#linkual-root .linkual-universal-bubble-translate:disabled{cursor:not-allowed;opacity:.5}#linkual-root .linkual-universal-bubble-expand{display:inline-flex;align-items:center;justify-content:center;width:30px;padding:0}#linkual-root .linkual-universal-bubble-expand .linkual-universal-expand-chevron{transform:translateY(0) rotate(45deg)}#linkual-root .linkual-universal-expand-chevron{width:12px;height:12px;border-left:3px solid currentColor;border-top:3px solid currentColor;transform:translateY(3px) rotate(45deg);box-sizing:border-box}#linkual-root .linkual-universal-floating-add{position:fixed;z-index:2147483647;transform:translate(-50%);min-height:30px;padding:0 12px;border:0;border-radius:6px;background:var(--linkual-theme, #000);color:#fff;box-shadow:0 4px 12px #0003;cursor:pointer;font-size:12px;font-weight:800;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;pointer-events:auto}#linkual-root .linkual-vocab-queue-panel-wrap{position:fixed;right:12px;bottom:calc(var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom,0px) + 12px);z-index:2147483647;display:flex;flex-direction:column;align-items:flex-end;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;pointer-events:auto}#linkual-root .linkual-vocab-queue-panel{width:min(400px,calc(100vw - 24px));height:min(580px,calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px) - 24px));min-height:min(280px,calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px) - 24px));max-height:calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px) - 24px);background:#fff;border-radius:8px;box-shadow:0 10px 30px #0003;border:1px solid #e4e4e7;display:flex;flex-direction:column;overflow:hidden;box-sizing:border-box}@media (max-width: 1024px){#linkual-root .linkual-universal-widget{align-items:stretch;gap:7px;padding-left:8px;padding-right:8px}#linkual-root .linkual-universal-top{flex:1 0 100%;min-width:min(240px,100%)}#linkual-root .linkual-universal-form{flex:1 0 100%;grid-template-columns:minmax(0,1fr) 32px 36px minmax(96px,auto);gap:4px;min-width:min(360px,100%)}#linkual-root .linkual-universal-field.field-context{grid-column:1 / -1;grid-row:2}#linkual-root .linkual-universal-clear{grid-column:2;grid-row:1;width:32px;min-width:32px}#linkual-root .linkual-universal-send{grid-column:3;grid-row:1;width:36px;min-width:36px;padding:0}#linkual-root .linkual-universal-inline-actions{grid-column:4;grid-row:1;justify-content:flex-end;gap:3px}#linkual-root .linkual-universal-inline-actions .linkual-universal-icon-btn{width:30px;min-width:30px;min-height:30px;padding:0}#linkual-root .linkual-universal-button-icon{display:block}#linkual-root .linkual-universal-button-text{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}#linkual-root .linkual-universal-queue-count{position:absolute;top:-4px;right:-4px;min-width:14px;height:14px;padding:0 3px;font-size:9px}}#linkual-root .linkual-universal-translation-row{flex:1 0 100%;display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:0;padding:6px 8px;border:1px solid rgba(104,69,154,.16);border-radius:7px;background:#68459a0f;color:#423650;font-size:12px}#linkual-root .linkual-universal-translation-summary{display:flex;align-items:center;gap:8px;min-width:0}#linkual-root .linkual-universal-translation-summary span{color:#766b80;font-variant-numeric:tabular-nums}#linkual-root .linkual-universal-translation-actions{display:flex;flex:0 0 auto;gap:6px}#linkual-root .linkual-universal-translation-actions button{min-height:28px;padding:4px 9px}#linkual-root .linkual-universal-translation-actions button.primary{border-color:#68459a;background:#68459a;color:#fff}@media (max-width: 720px){#linkual-root .linkual-universal-widget{width:100vw;max-width:100vw;padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px));flex-direction:column;align-items:stretch;gap:7px}#linkual-root .linkual-universal-top{width:100%;min-width:0;gap:8px}#linkual-root .linkual-universal-selection{flex-wrap:wrap;gap:6px}#linkual-root .linkual-universal-selection-text{max-width:calc(100vw - 190px)}#linkual-root .linkual-universal-actions{gap:5px}#linkual-root .linkual-universal-status{display:none}#linkual-root .linkual-universal-form{grid-template-columns:minmax(0,1fr) 32px 36px minmax(87px,auto);gap:4px;min-width:0}#linkual-root .linkual-universal-field{flex-direction:row}#linkual-root .linkual-universal-field.field-context{grid-column:1 / -1;grid-row:2}#linkual-root .linkual-universal-clear{grid-column:2;grid-row:1;width:32px;min-width:32px}#linkual-root .linkual-universal-send{grid-column:3;grid-row:1;width:36px;min-width:36px;padding:0}#linkual-root .linkual-universal-floating-add{display:none}#linkual-root .linkual-vocab-queue-panel-wrap{left:8px;right:8px;bottom:calc(var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom,0px) + 8px)}#linkual-root .linkual-vocab-queue-panel-wrap>div{width:100%!important;max-width:none!important;height:min(520px,calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px) - 16px))!important;max-height:calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px) - 16px)!important;min-height:min(220px,calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px) - 16px))!important}#linkual-root .linkual-player-controls{left:8px;width:calc(100vw - var(--linkual-sidebar-width, 0px) - 16px);max-width:calc(100vw - var(--linkual-sidebar-width, 0px) - 16px);padding:8px;gap:7px}#linkual-root .linkual-player-progress-row{grid-template-columns:42px minmax(0,1fr) 42px;gap:6px}#linkual-root .linkual-player-time{font-size:11px}#linkual-root .linkual-player-button-row{gap:5px}#linkual-root .linkual-player-btn{min-width:34px;padding:0 8px}#linkual-root .linkual-player-btn.primary{min-width:48px}}@media (max-width: 360px){#linkual-root .linkual-universal-widget{padding-left:6px;padding-right:6px}#linkual-root .linkual-universal-form{grid-template-columns:minmax(0,1fr) 28px 32px minmax(81px,auto);gap:3px}#linkual-root .linkual-universal-mode-tab{min-width:42px;padding:0 5px}#linkual-root .linkual-universal-field{gap:4px}#linkual-root .linkual-universal-clear{width:28px;min-width:28px}#linkual-root .linkual-universal-send{width:32px;min-width:32px}#linkual-root .linkual-universal-inline-actions{gap:2px}#linkual-root .linkual-universal-inline-actions .linkual-universal-icon-btn{width:27px;min-width:27px}#linkual-root .linkual-player-controls{padding:7px 6px}#linkual-root .linkual-player-progress-row{grid-template-columns:38px minmax(0,1fr) 38px}#linkual-root .linkual-player-btn{min-width:30px;padding:0 6px}}@media (max-width: 320px){#linkual-root .linkual-universal-form{grid-template-columns:minmax(0,1fr) 28px 32px}#linkual-root .linkual-universal-inline-actions{grid-column:1 / -1;grid-row:3;justify-content:flex-end}#linkual-root .linkual-universal-inline-actions .linkual-universal-icon-btn{width:30px;min-width:30px}#linkual-root .linkual-universal-selection-text{max-width:calc(100vw - 150px)}}@media (max-height: 520px){#linkual-root .linkual-universal-widget{padding-top:6px;padding-bottom:calc(6px + env(safe-area-inset-bottom,0px));gap:5px}#linkual-root .linkual-universal-top{min-height:30px}#linkual-root .linkual-universal-field input,#linkual-root .linkual-universal-mode-tab,#linkual-root .linkual-universal-clear,#linkual-root .linkual-universal-send,#linkual-root .linkual-universal-inline-actions{height:30px;min-height:30px}#linkual-root .linkual-vocab-queue-panel-wrap{bottom:calc(var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom,0px) + 6px)}}@media (max-height: 420px){#linkual-root .linkual-universal-widget{align-content:flex-start}#linkual-root .linkual-universal-selection,#linkual-root .linkual-universal-field input,#linkual-root .linkual-universal-add-btn,#linkual-root .linkual-universal-icon-btn,#linkual-root .linkual-universal-clear,#linkual-root .linkual-universal-send{font-size:12px}#linkual-root .linkual-vocab-queue-panel{border-radius:6px}} ");
+(i=>{if(typeof GM_addStyle=="function"){GM_addStyle(i);return}const l=document.createElement("style");l.textContent=i,document.head.append(l)})(' #linkual-root .modal{position:fixed;top:0;left:0;width:100%;height:100%;background:#00000080;display:flex;justify-content:center;align-items:center;z-index:2147483647;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);pointer-events:auto}#linkual-root .modal-box{background:#fff;border-radius:12px;width:380px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 10px 30px #0003;animation:linkualSlideIn .2s ease-out}@keyframes linkualSlideIn{0%{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}#linkual-root .modal-header{padding:16px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #eee}#linkual-root .modal-header h3{margin:0;font-size:16px;color:#333}#linkual-root .close-btn{font-size:24px;line-height:1;color:#999;cursor:pointer;transition:color .2s}#linkual-root .close-btn:hover{color:#333}#linkual-root .tabs{display:flex;background:#fafafa;border-bottom:1px solid #eee}#linkual-root .tab{flex:1;text-align:center;padding:12px 0;font-size:14px;color:#666;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;-webkit-user-select:none;user-select:none}#linkual-root .tab:hover{color:#333;background:#00000005}#linkual-root .tab.active{color:var(--linkual-theme, #6a1b9a);font-weight:700;border-bottom:2px solid var(--linkual-theme, #6a1b9a);background:#fff}#linkual-root .tab-content{padding:20px;overflow-y:auto;flex:1}#linkual-root .fade-in{animation:linkualFadeIn .3s ease}@keyframes linkualFadeIn{0%{opacity:0}to{opacity:1}}#linkual-root .setting-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}#linkual-root .setting-row label{font-size:13px;font-weight:700;flex:1;color:#444}#linkual-root .setting-row input[type=color]{width:50px;height:32px;padding:0;cursor:pointer;border:1px solid #ddd;border-radius:4px}#linkual-root .setting-col{margin-bottom:16px}#linkual-root .setting-col label{font-size:13px;font-weight:700;display:block;margin-bottom:6px;color:#444}#linkual-root .setting-col input,#linkual-root .setting-col textarea,#linkual-root .setting-col select{width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box;font-family:inherit;font-size:13px;transition:border-color .2s}#linkual-root .setting-col input:focus,#linkual-root .setting-col textarea:focus,#linkual-root .setting-col select:focus{outline:none;border-color:var(--linkual-theme, #6a1b9a)}#linkual-root .setting-col textarea{resize:vertical;min-height:80px;line-height:1.5}#linkual-root .url-prefix-row{display:flex;align-items:stretch}#linkual-root .url-prefix-row input{border-radius:0;min-width:0}#linkual-root .url-protocol-select{width:auto!important;flex:0 0 78px;border-right:0!important;border-radius:6px 0 0 6px!important;background:#f7f7f7;color:#555}#linkual-root .url-path-select{width:auto!important;flex:0 0 138px;border-left:0!important;border-radius:0 6px 6px 0!important;background:#f7f7f7;color:#555;font-size:12px!important;padding-left:8px!important;padding-right:8px!important}#linkual-root .url-fixed-prefix,#linkual-root .url-fixed-suffix{display:inline-flex;align-items:center;padding:0 10px;border:1px solid #ddd;background:#f7f7f7;color:#666;font-size:12px;white-space:nowrap}#linkual-root .url-fixed-prefix{border-right:0;border-radius:6px 0 0 6px}#linkual-root .url-fixed-suffix{border-left:0;border-radius:0 6px 6px 0}#linkual-root .url-prefix-row:focus-within .url-fixed-prefix{border-color:var(--linkual-theme, #6a1b9a);border-right:0}#linkual-root .url-prefix-row:focus-within .url-protocol-select{border-color:var(--linkual-theme, #6a1b9a);border-right:0}#linkual-root .url-prefix-row:focus-within .url-path-select{border-color:var(--linkual-theme, #6a1b9a);border-left:0}#linkual-root .url-prefix-row:focus-within .url-fixed-suffix{border-color:var(--linkual-theme, #6a1b9a);border-left:0}#linkual-root .setting-help{margin-top:6px;color:#888;font-size:12px;line-height:1.4}#linkual-root .linkual-cache-manager-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}#linkual-root .linkual-cache-manager-heading label{margin-bottom:0}#linkual-root .linkual-cache-clear-btn,#linkual-root .linkual-cache-item button{flex:0 0 auto;padding:5px 8px;border:1px solid #ddd;border-radius:5px;background:#fff;color:#666;cursor:pointer;font:12px/1.2 inherit}#linkual-root .linkual-cache-clear-btn:hover,#linkual-root .linkual-cache-item button:hover{border-color:#c62828;color:#c62828}#linkual-root .linkual-cache-list{display:flex;flex-direction:column;gap:6px;max-height:180px;overflow-y:auto}#linkual-root .linkual-cache-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px;border:1px solid #eee;border-radius:6px;background:#fafafa}#linkual-root .linkual-cache-item-main{display:flex;min-width:0;flex-direction:column;gap:3px}#linkual-root .linkual-cache-item-main strong,#linkual-root .linkual-cache-item-main span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#linkual-root .linkual-cache-item-main strong{color:#444;font-size:12px;font-weight:600}#linkual-root .linkual-cache-item-main span{color:#888;font-size:11px}#linkual-root .modal-footer{padding:16px 20px;display:flex;gap:12px;border-top:1px solid #eee;background:#fafafa}#linkual-root .btn{flex:1;padding:10px;border:none;border-radius:6px;cursor:pointer;font-weight:700;font-size:14px;transition:opacity .2s}#linkual-root .btn:hover{opacity:.9}#linkual-root .reset-btn{background:#e0e0e0;color:#555}#linkual-root .save-btn{box-shadow:0 2px 6px #0000001a}#linkual-root{--linkual-theme: #6a1b9a;--linkual-done: #e8f5e9;--linkual-error: #ffebee}#linkual-root .linkual-wrap{position:fixed;z-index:2147483647;background:#fff;display:flex;flex-direction:column;font-family:sans-serif;color:#333;pointer-events:auto}#linkual-root .linkual-wrap.layout-right{top:0;right:0;max-width:min(100vw,var(--linkual-sidebar-width, 500px));height:calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px));max-height:calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px));box-shadow:-5px 0 15px #0000001a}#linkual-root .linkual-wrap.layout-bottom{bottom:calc(var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom,0px));left:0;width:100vw!important;max-width:100vw;max-height:calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px));box-shadow:0 -5px 15px #0000001a}#linkual-root .resizer{position:absolute;background:transparent;z-index:999;transition:background .2s}#linkual-root .linkual-wrap.layout-right .resizer{left:0;top:0;bottom:0;width:5px;cursor:ew-resize}#linkual-root .linkual-wrap.layout-bottom .resizer{top:0;left:0;right:0;height:5px;cursor:ns-resize}#linkual-root .resizer:hover,#linkual-root .resizer:active{background:var(--linkual-theme)}#linkual-root .header{background:var(--linkual-theme);color:#fff;padding:12px 16px;font-weight:700;display:flex;justify-content:space-between;align-items:center;gap:10px;min-height:44px;box-sizing:border-box}#linkual-root .header span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#linkual-root .settings-icon{cursor:pointer;-webkit-user-select:none;user-select:none}#linkual-root .linkual-mobile-fullscreen{position:fixed;right:20px;bottom:calc(20px + var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom,0px));z-index:2147483647;min-width:78px;min-height:40px;padding:10px 15px;background:#000;color:#fff;border:0;border-radius:5px;box-shadow:0 2px 8px #00000040;cursor:grab;font-size:14px;font-weight:700;line-height:1.2;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;-webkit-user-select:none;user-select:none;touch-action:none;-webkit-tap-highlight-color:transparent;pointer-events:auto}#linkual-root .linkual-mobile-fullscreen.is-dragging{cursor:grabbing}html.linkual-mobile-fullscreen-fallback,html.linkual-mobile-fullscreen-fallback body{width:var(--linkual-mobile-viewport-width, 100vw)!important;height:var(--linkual-mobile-viewport-height, 100vh)!important;max-width:var(--linkual-mobile-viewport-width, 100vw)!important;max-height:var(--linkual-mobile-viewport-height, 100vh)!important;margin:0!important;overflow:hidden!important;overscroll-behavior:none!important;touch-action:none!important;background:#000!important}html.linkual-mobile-fullscreen-fallback{position:fixed!important;top:0!important;right:0!important;bottom:0!important;left:0!important}#linkual-root .linkual-player-controls{position:fixed;left:clamp(6px,2vw,12px);bottom:calc(var(--linkual-sidebar-height, 0px) + var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom,0px) + 14px);z-index:2147483647;width:calc(100vw - var(--linkual-sidebar-width, 0px) - clamp(12px,4vw,24px));max-width:calc(100vw - var(--linkual-sidebar-width, 0px) - clamp(12px,4vw,24px));max-height:calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px) - 12px);box-sizing:border-box;display:flex;flex-direction:column;gap:9px;padding:10px 12px;border-radius:8px;background:#000000b8;color:#fff;box-shadow:0 6px 20px #0000003d;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;pointer-events:auto;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);overflow:auto;overscroll-behavior:contain}#linkual-root .linkual-player-progress-row{display:grid;grid-template-columns:52px minmax(0,1fr) 52px;align-items:center;gap:10px}#linkual-root .linkual-player-time{color:#ffffffe0;font-size:12px;font-variant-numeric:tabular-nums;line-height:1;text-align:center;white-space:nowrap}#linkual-root .linkual-player-progress{width:100%;height:18px;margin:0;padding:0;-moz-appearance:none;appearance:none;-webkit-appearance:none;background:transparent;cursor:pointer}#linkual-root .linkual-player-progress::-webkit-slider-runnable-track{height:5px;border-radius:999px;background:linear-gradient(to right,var(--linkual-theme, #6a1b9a) 0%,var(--linkual-theme, #6a1b9a) var(--linkual-progress, 0%),rgba(255,255,255,.32) var(--linkual-progress, 0%),rgba(255,255,255,.32) 100%)}#linkual-root .linkual-player-progress::-moz-range-track{height:5px;border-radius:999px;background:#ffffff52}#linkual-root .linkual-player-progress::-moz-range-progress{height:5px;border-radius:999px;background:var(--linkual-theme, #6a1b9a)}#linkual-root .linkual-player-progress::-webkit-slider-thumb{-moz-appearance:none;appearance:none;-webkit-appearance:none;width:15px;height:15px;margin-top:-5px;border-radius:50%;border:2px solid #fff;background:var(--linkual-theme, #6a1b9a);box-shadow:0 2px 8px #00000052}#linkual-root .linkual-player-progress::-moz-range-thumb{width:15px;height:15px;border-radius:50%;border:2px solid #fff;background:var(--linkual-theme, #6a1b9a);box-shadow:0 2px 8px #00000052}#linkual-root .linkual-player-button-row{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}#linkual-root .linkual-player-btn{height:31px;min-width:44px;padding:0 12px;border:1px solid rgba(255,255,255,.16);border-radius:6px;background:#ffffff1f;color:#fff;cursor:pointer;font:700 12px/1 system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif}#linkual-root .linkual-player-btn.primary{min-width:58px;background:var(--linkual-theme, #6a1b9a);border-color:transparent}#linkual-root .linkual-player-btn:hover{background:#fff3}#linkual-root .linkual-player-btn.primary:hover{filter:brightness(1.08)}#linkual-root .list{flex:1;min-height:0;overflow-y:auto;padding:10px 12px;scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch}#linkual-root .list::-webkit-scrollbar{display:none}#linkual-root .empty-tip{padding:50px 20px;text-align:center;color:#999;font-style:italic}.linkual-article-translation-host{display:block!important;margin:.7em 0 1.3em!important;padding:0!important;border:0!important;background:transparent!important;color:inherit!important;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif!important;text-align:left!important}.linkual-article-translation{box-sizing:border-box!important;padding:.85em 1em!important;border-left:3px solid #7e57c2!important;border-radius:0 6px 6px 0!important;background:#7e57c214!important;color:#3f3a49!important;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif!important;font-size:.92em!important;line-height:1.65!important;text-align:left!important}.linkual-article-translation.loading{border-left-color:#42a5f5!important}.linkual-article-translation.error{border-left-color:#e57373!important;background:#e573731a!important}.linkual-article-translation-toolbar{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:.75em!important;margin-bottom:.35em!important;font-size:.78em!important;line-height:1.3!important}.linkual-article-translation-label{color:#7652a6!important;font-weight:700!important;letter-spacing:.01em!important}.linkual-article-translation-toolbar button,.linkual-universal-translation-row button{box-sizing:border-box!important;min-height:28px!important;padding:4px 9px!important;border:1px solid rgba(83,65,111,.25)!important;border-radius:5px!important;background:#fff!important;color:#55406f!important;cursor:pointer!important;font:600 12px/1.2 system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif!important}.linkual-article-translation-toolbar button:hover,.linkual-universal-translation-row button:hover{background:#f1ecf8!important}.linkual-article-translation-toolbar button:disabled,.linkual-universal-translation-row button:disabled{cursor:wait!important;opacity:.65!important}.linkual-article-translation-text,.linkual-article-translation-placeholder{white-space:pre-wrap!important;overflow-wrap:anywhere!important}.linkual-article-source-locatable{cursor:crosshair!important}.linkual-article-translation-sentence{display:inline!important;margin:0!important;padding:0!important;border:0!important;border-radius:3px!important;background:transparent!important;color:inherit!important;cursor:pointer!important;font:inherit!important;line-height:inherit!important;text-align:left!important;white-space:pre-wrap!important}.linkual-article-translation-sentence:after{content:" "!important}.linkual-article-translation-sentence:hover,.linkual-article-translation-sentence.active{background:#68459a2e!important;box-shadow:0 0 0 2px #68459a14!important}.linkual-article-translation-placeholder{color:#7b7286!important;font-size:.9em!important;font-style:italic!important}@media (max-width: 600px){.linkual-article-translation{padding:.75em .8em!important}.linkual-article-translation-toolbar{align-items:flex-start!important;flex-direction:column!important;gap:5px!important}}#linkual-root .load-more-tip{padding:16px 12px 22px;text-align:center;color:#999;font-size:12px}#linkual-root .item{padding:12px;margin-bottom:10px;border-radius:8px;border:1px solid #f0f0f0;transition:.2s}#linkual-root .item.active{border-left:5px solid var(--linkual-theme);background:#6a1b9a0d}#linkual-root .ctrl-bar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;align-items:center;padding:4px;border-radius:4px;background:transparent;transition:background .2s}#linkual-root .ctrl-bar.done{background-color:var(--linkual-done, #e8f5e9)}#linkual-root .ctrl-bar.error{background-color:var(--linkual-error, #ffebee);border:1px solid rgba(255,0,0,.1)}#linkual-root .tag-btn{font-size:11px;padding:3px 8px;border-radius:12px;display:inline-flex;align-items:center;cursor:pointer;transition:.2s;-webkit-user-select:none;user-select:none}#linkual-root .tag-play{background:#eee;color:#666}#linkual-root .tag-play:hover{background:var(--linkual-theme);color:#fff}#linkual-root .tag-pin{background:#e3f2fd;color:#1976d2}#linkual-root .tag-pin:hover{background:#1976d2;color:#fff}#linkual-root .btn-parse{flex:0 0 auto;margin-left:auto;display:inline-flex;align-items:center;justify-content:center;font-size:11px;color:#aaa;background:transparent;border:1px solid transparent;border-radius:4px;cursor:pointer;-webkit-user-select:none;user-select:none;padding:4px 7px;line-height:1.2;transition:.2s}#linkual-root .btn-parse:hover{color:#333;background:#0000000d;border-color:#00000014}#linkual-root .btn-chevron{font-size:12px;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:4px;cursor:pointer;transition:.2s;-webkit-user-select:none;user-select:none;color:#666}#linkual-root .btn-chevron:hover{background:#0000001a}#linkual-root .text-content{font-size:14px;line-height:1.5;padding:2px 0;color:#333;cursor:text;-webkit-user-select:text;user-select:text;overflow-wrap:anywhere;-webkit-touch-callout:default}#linkual-root .linkual-selection-add{position:fixed;z-index:999999;min-height:38px;max-width:min(320px,calc(100vw - 24px));padding:8px 12px;background:var(--linkual-theme, #6a1b9a);color:#fff;border:none;border-radius:6px;box-shadow:0 4px 12px #0003;cursor:pointer;font-size:13px;font-weight:700;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;-webkit-tap-highlight-color:transparent;touch-action:manipulation;pointer-events:auto}#linkual-root .linkual-selection-add-floating{transform:translate(-50%)}#linkual-root .linkual-selection-add-dock{left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));width:calc(100vw - 24px);max-width:none;min-height:46px;justify-content:center;font-size:14px}#linkual-root .linkual-selection-add-text{overflow:hidden;text-overflow:ellipsis}#linkual-root .ai-box{border-top:1px dashed #ccc;margin-top:8px;padding-top:8px;font-size:13px;white-space:pre-wrap;line-height:1.6;cursor:text}#linkual-root .lan-sync-module{border-top:1px solid #eee;padding:12px 16px;background:#fafafa;display:flex;flex-direction:column;gap:10px;margin-top:auto}#linkual-root .sync-input{width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;font-size:12px;box-sizing:border-box;outline:none;transition:border-color .2s}#linkual-root .sync-input:focus{border-color:var(--linkual-theme)}#linkual-root .sync-btn{width:100%;padding:10px;border:none;border-radius:6px;font-size:13px;font-weight:700;color:#fff;background-color:var(--linkual-theme);cursor:pointer;transition:all .2s}#linkual-root .sync-btn:hover{opacity:.9}#linkual-root .sync-btn:disabled{opacity:.6;cursor:not-allowed}#linkual-root .sync-btn.success{background-color:#4caf50}#linkual-root .sync-btn.error{background-color:#f44336}#linkual-root .linkual-universal-widget{position:fixed;left:0;right:0;bottom:0;z-index:2147483647;width:100vw;max-width:100vw;min-height:calc(var(--linkual-universal-widget-height, 58px) + env(safe-area-inset-bottom,0px));max-height:calc(var(--linkual-visual-viewport-height, 100vh) - 8px);padding:8px 12px calc(8px + env(safe-area-inset-bottom,0px));box-sizing:border-box;display:flex;flex-wrap:wrap;align-items:center;gap:10px;background:#fff;color:#222;border-top:1px solid rgba(0,0,0,.12);box-shadow:0 -8px 24px #00000024;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;pointer-events:auto;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}#linkual-root .linkual-universal-floating-window{left:8px;top:8px;right:auto;bottom:auto;width:min(520px,calc(100vw - 16px));max-width:min(520px,calc(100vw - 16px));min-height:0;max-height:min(520px,calc(100vh - 16px));border:1px solid rgba(0,0,0,.14);border-radius:12px;box-shadow:0 12px 34px #0000003d}#linkual-root .linkual-universal-floating-window .linkual-universal-form{flex:0 1 auto}#linkual-root .linkual-universal-widget~.linkual-mobile-fullscreen{bottom:calc(20px + var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom,0px))}#linkual-root .linkual-universal-top{flex:0 1 390px;display:flex;align-items:center;justify-content:space-between;gap:10px;width:auto;max-width:100%;min-width:min(260px,100%);min-height:34px}#linkual-root .linkual-universal-selection{min-width:0;flex:1;display:flex;align-items:center;gap:8px;color:#444;font-size:13px}#linkual-root .linkual-universal-selection-label{flex:0 0 auto;color:#666;font-weight:700}#linkual-root .linkual-universal-selection-text{min-width:0;max-width:min(180px,14vw);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#111;font-weight:700}#linkual-root .linkual-universal-muted{color:#888}#linkual-root .linkual-universal-actions{flex:0 0 auto;display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0}#linkual-root .linkual-universal-status{max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;color:#666}#linkual-root .linkual-universal-status.status-success{color:#17803d}#linkual-root .linkual-universal-status.status-error{color:#c62828}#linkual-root .linkual-universal-add-btn,#linkual-root .linkual-universal-icon-btn,#linkual-root .linkual-universal-clear,#linkual-root .linkual-universal-send{border:0;border-radius:6px;min-height:30px;padding:0 12px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit}#linkual-root .linkual-universal-icon-btn,#linkual-root .linkual-universal-send{display:inline-flex;align-items:center;justify-content:center;gap:6px}#linkual-root .linkual-universal-add-btn,#linkual-root .linkual-universal-send{background:var(--linkual-theme, #000);color:#fff}#linkual-root .linkual-universal-icon-btn{background:#f1f1f1;color:#333}#linkual-root .linkual-universal-queue-btn{position:relative;background:var(--linkual-theme, #000);color:#fff}#linkual-root .linkual-universal-button-icon{display:none;flex:0 0 auto;width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}#linkual-root .linkual-universal-button-text{min-width:0}#linkual-root .linkual-universal-queue-count{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:#f44336;color:#fff;font-size:10px;line-height:1}#linkual-root .linkual-universal-clear{width:34px;padding:0;background:#f3f3f3;color:#555}#linkual-root .linkual-universal-form{flex:1;display:grid;grid-template-columns:minmax(120px,190px) minmax(160px,1fr) 34px auto auto;align-items:stretch;gap:8px;min-width:min(520px,100%);max-width:100%}#linkual-root .linkual-universal-inline-actions{align-self:center;display:flex;align-items:center;gap:6px;min-height:34px;min-width:0}#linkual-root .linkual-universal-field{min-width:0;display:flex;flex-direction:row;align-items:center;gap:6px}#linkual-root .linkual-universal-mode-tab{flex:0 0 auto;min-width:48px;height:34px;padding:0 8px;border:1px solid #d7d7d7;border-radius:6px;background:#f6f6f6;color:#555;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit}#linkual-root .linkual-universal-mode-tab.active{border-color:var(--linkual-theme, #000);background:var(--linkual-theme, #000);color:#fff}#linkual-root .linkual-universal-field input{min-width:0;width:100%;height:34px;box-sizing:border-box;border:1px solid #d7d7d7;border-radius:6px;padding:7px 9px;color:#222;background:#fff;outline:none;font:13px/1.35 system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;letter-spacing:0}#linkual-root .linkual-universal-field input:focus{border-color:var(--linkual-theme, #000);box-shadow:0 0 0 2px #00000014}#linkual-root .linkual-universal-field.field-context input{overflow-x:auto;overflow-y:hidden;white-space:nowrap;scrollbar-width:none;-ms-overflow-style:none}#linkual-root .linkual-universal-field.field-context input::-webkit-scrollbar{display:none}#linkual-root .linkual-universal-clear,#linkual-root .linkual-universal-send{align-self:center;height:34px}#linkual-root .linkual-universal-send:disabled,#linkual-root .linkual-universal-clear:disabled{opacity:.45;cursor:not-allowed}#linkual-root .linkual-universal-expand-bar{position:fixed;right:14px;bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:2147483647;display:flex;align-items:center;gap:6px;width:auto;min-height:42px;padding:5px 6px 5px 9px;border:1px solid rgba(255,255,255,.3);border-radius:999px;background:var(--linkual-theme, #000);color:#fff;box-shadow:0 6px 20px #00000040;cursor:grab;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;-webkit-user-select:none;user-select:none;pointer-events:auto;touch-action:none}#linkual-root .linkual-universal-expand-bar:active{cursor:grabbing}#linkual-root .linkual-universal-expand-bar:hover,#linkual-root .linkual-universal-expand-bar:focus-within{filter:brightness(1.08)}#linkual-root .linkual-universal-bubble-grip{color:#ffffffa6;font-size:12px;letter-spacing:-3px;line-height:1;transform:rotate(90deg)}#linkual-root .linkual-universal-bubble-translate,#linkual-root .linkual-universal-bubble-expand{min-height:30px;border:0;border-radius:999px;background:#ffffff26;color:#fff;cursor:pointer;font:700 12px/1 system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif}#linkual-root .linkual-universal-bubble-translate{padding:0 11px}#linkual-root .linkual-universal-bubble-translate:disabled{cursor:not-allowed;opacity:.5}#linkual-root .linkual-universal-bubble-expand{display:inline-flex;align-items:center;justify-content:center;width:30px;padding:0}#linkual-root .linkual-universal-bubble-expand .linkual-universal-expand-chevron{transform:translateY(0) rotate(45deg)}#linkual-root .linkual-universal-expand-chevron{width:12px;height:12px;border-left:3px solid currentColor;border-top:3px solid currentColor;transform:translateY(3px) rotate(45deg);box-sizing:border-box}#linkual-root .linkual-universal-floating-add{position:fixed;z-index:2147483647;transform:translate(-50%);min-height:30px;padding:0 12px;border:0;border-radius:6px;background:var(--linkual-theme, #000);color:#fff;box-shadow:0 4px 12px #0003;cursor:pointer;font-size:12px;font-weight:800;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;pointer-events:auto}#linkual-root .linkual-vocab-queue-panel-wrap{position:fixed;right:12px;bottom:calc(var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom,0px) + 12px);z-index:2147483647;display:flex;flex-direction:column;align-items:flex-end;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;pointer-events:auto}#linkual-root .linkual-vocab-queue-panel{width:min(400px,calc(100vw - 24px));height:min(580px,calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px) - 24px));min-height:min(280px,calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px) - 24px));max-height:calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px) - 24px);background:#fff;border-radius:8px;box-shadow:0 10px 30px #0003;border:1px solid #e4e4e7;display:flex;flex-direction:column;overflow:hidden;box-sizing:border-box}@media (max-width: 1024px){#linkual-root .linkual-universal-widget{align-items:stretch;gap:7px;padding-left:8px;padding-right:8px}#linkual-root .linkual-universal-top{flex:1 0 100%;min-width:min(240px,100%)}#linkual-root .linkual-universal-form{flex:1 0 100%;grid-template-columns:minmax(0,1fr) 32px 36px minmax(96px,auto);gap:4px;min-width:min(360px,100%)}#linkual-root .linkual-universal-field.field-context{grid-column:1 / -1;grid-row:2}#linkual-root .linkual-universal-clear{grid-column:2;grid-row:1;width:32px;min-width:32px}#linkual-root .linkual-universal-send{grid-column:3;grid-row:1;width:36px;min-width:36px;padding:0}#linkual-root .linkual-universal-inline-actions{grid-column:4;grid-row:1;justify-content:flex-end;gap:3px}#linkual-root .linkual-universal-inline-actions .linkual-universal-icon-btn{width:30px;min-width:30px;min-height:30px;padding:0}#linkual-root .linkual-universal-button-icon{display:block}#linkual-root .linkual-universal-button-text{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}#linkual-root .linkual-universal-queue-count{position:absolute;top:-4px;right:-4px;min-width:14px;height:14px;padding:0 3px;font-size:9px}}#linkual-root .linkual-universal-translation-row{flex:1 0 100%;display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:0;padding:6px 8px;border:1px solid rgba(104,69,154,.16);border-radius:7px;background:#68459a0f;color:#423650;font-size:12px}#linkual-root .linkual-universal-translation-summary{display:flex;align-items:center;gap:8px;min-width:0}#linkual-root .linkual-universal-translation-summary span{color:#766b80;font-variant-numeric:tabular-nums}#linkual-root .linkual-universal-translation-actions{display:flex;flex:0 0 auto;gap:6px}#linkual-root .linkual-universal-translation-actions button{min-height:28px;padding:4px 9px}#linkual-root .linkual-universal-translation-actions button.primary{border-color:#68459a;background:#68459a;color:#fff}#linkual-root .linkual-universal-translation-row button{border:1px solid rgba(83,65,111,.25);border-radius:5px;background:#fff;color:#55406f;cursor:pointer;font:600 12px/1.2 system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif}@media (max-width: 720px){#linkual-root .linkual-universal-widget{width:100vw;max-width:100vw;padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px));flex-direction:column;align-items:stretch;gap:7px}#linkual-root .linkual-universal-floating-window{width:min(420px,calc(100vw - 16px));max-width:min(420px,calc(100vw - 16px));max-height:min(620px,calc(100vh - 16px))}#linkual-root .linkual-universal-floating-window .linkual-universal-translation-row{align-items:flex-start;flex-direction:column}#linkual-root .linkual-universal-top{width:100%;min-width:0;gap:8px}#linkual-root .linkual-universal-selection{flex-wrap:wrap;gap:6px}#linkual-root .linkual-universal-selection-text{max-width:calc(100vw - 190px)}#linkual-root .linkual-universal-actions{gap:5px}#linkual-root .linkual-universal-status{display:none}#linkual-root .linkual-universal-form{grid-template-columns:minmax(0,1fr) 32px 36px minmax(87px,auto);gap:4px;min-width:0}#linkual-root .linkual-universal-field{flex-direction:row}#linkual-root .linkual-universal-field.field-context{grid-column:1 / -1;grid-row:2}#linkual-root .linkual-universal-clear{grid-column:2;grid-row:1;width:32px;min-width:32px}#linkual-root .linkual-universal-send{grid-column:3;grid-row:1;width:36px;min-width:36px;padding:0}#linkual-root .linkual-universal-floating-add{display:none}#linkual-root .linkual-vocab-queue-panel-wrap{left:8px;right:8px;bottom:calc(var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom,0px) + 8px)}#linkual-root .linkual-vocab-queue-panel-wrap>div{width:100%!important;max-width:none!important;height:min(520px,calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px) - 16px))!important;max-height:calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px) - 16px)!important;min-height:min(220px,calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom,0px) - 16px))!important}#linkual-root .linkual-player-controls{left:8px;width:calc(100vw - var(--linkual-sidebar-width, 0px) - 16px);max-width:calc(100vw - var(--linkual-sidebar-width, 0px) - 16px);padding:8px;gap:7px}#linkual-root .linkual-player-progress-row{grid-template-columns:42px minmax(0,1fr) 42px;gap:6px}#linkual-root .linkual-player-time{font-size:11px}#linkual-root .linkual-player-button-row{gap:5px}#linkual-root .linkual-player-btn{min-width:34px;padding:0 8px}#linkual-root .linkual-player-btn.primary{min-width:48px}}@media (max-width: 360px){#linkual-root .linkual-universal-widget{padding-left:6px;padding-right:6px}#linkual-root .linkual-universal-form{grid-template-columns:minmax(0,1fr) 28px 32px minmax(81px,auto);gap:3px}#linkual-root .linkual-universal-mode-tab{min-width:42px;padding:0 5px}#linkual-root .linkual-universal-field{gap:4px}#linkual-root .linkual-universal-clear{width:28px;min-width:28px}#linkual-root .linkual-universal-send{width:32px;min-width:32px}#linkual-root .linkual-universal-inline-actions{gap:2px}#linkual-root .linkual-universal-inline-actions .linkual-universal-icon-btn{width:27px;min-width:27px}#linkual-root .linkual-player-controls{padding:7px 6px}#linkual-root .linkual-player-progress-row{grid-template-columns:38px minmax(0,1fr) 38px}#linkual-root .linkual-player-btn{min-width:30px;padding:0 6px}}@media (max-width: 320px){#linkual-root .linkual-universal-form{grid-template-columns:minmax(0,1fr) 28px 32px}#linkual-root .linkual-universal-inline-actions{grid-column:1 / -1;grid-row:3;justify-content:flex-end}#linkual-root .linkual-universal-inline-actions .linkual-universal-icon-btn{width:30px;min-width:30px}#linkual-root .linkual-universal-selection-text{max-width:calc(100vw - 150px)}}@media (max-height: 520px){#linkual-root .linkual-universal-widget{padding-top:6px;padding-bottom:calc(6px + env(safe-area-inset-bottom,0px));gap:5px}#linkual-root .linkual-universal-top{min-height:30px}#linkual-root .linkual-universal-field input,#linkual-root .linkual-universal-mode-tab,#linkual-root .linkual-universal-clear,#linkual-root .linkual-universal-send,#linkual-root .linkual-universal-inline-actions{height:30px;min-height:30px}#linkual-root .linkual-vocab-queue-panel-wrap{bottom:calc(var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom,0px) + 6px)}}@media (max-height: 420px){#linkual-root .linkual-universal-widget{align-content:flex-start}#linkual-root .linkual-universal-selection,#linkual-root .linkual-universal-field input,#linkual-root .linkual-universal-add-btn,#linkual-root .linkual-universal-icon-btn,#linkual-root .linkual-universal-clear,#linkual-root .linkual-universal-send{font-size:12px}#linkual-root .linkual-vocab-queue-panel{border-radius:6px}} ');
 
 (function () {
   'use strict';
@@ -24,6 +24,9 @@
   var __defProp = Object.defineProperty;
   var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
   var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
+  function getDefaultExportFromCjs(x) {
+    return x && x.__esModule && Object.prototype.hasOwnProperty.call(x, "default") ? x["default"] : x;
+  }
   var jsxRuntime = { exports: {} };
   var reactJsxRuntime_production = {};
   /**
@@ -760,6 +763,7 @@
     react.exports = react_production;
   }
   var reactExports = react.exports;
+  const React$2 = /* @__PURE__ */ getDefaultExportFromCjs(reactExports);
   var reactDom = { exports: {} };
   var reactDom_production = {};
   /**
@@ -12540,6 +12544,7 @@
     let timeoutId = null;
     const abortController = new AbortController();
     const requestUrl = normalizeLlmApiUrl(options.apiUrl);
+    const shouldStream = options.stream !== false;
     const abort = (reason = "ABORTED") => {
       if (isAborted) return;
       isAborted = true;
@@ -12549,7 +12554,7 @@
       options.onError(reason);
     };
     const execute = async () => {
-      var _a, _b, _c;
+      var _a, _b, _c, _d, _e, _f;
       if (options.timeoutSec) {
         timeoutId = setTimeout(() => {
           abort(`
@@ -12565,7 +12570,7 @@
       const payload = {
         model: options.apiModel,
         messages: finalMessages,
-        stream: true
+        stream: shouldStream
       };
       if (typeof _GM_xmlhttpRequest !== "undefined") {
         let streamAttached = false;
@@ -12574,11 +12579,11 @@
           url: requestUrl,
           headers: {
             "Content-Type": "application/json",
-            "Accept": "text/event-stream",
+            "Accept": shouldStream ? "text/event-stream" : "application/json",
             "Authorization": `Bearer ${options.apiKey}`
           },
           data: JSON.stringify(payload),
-          responseType: "stream",
+          responseType: shouldStream ? "stream" : "json",
           onreadystatechange: async (res) => {
             var _a2, _b2, _c2;
             if (isAborted) return;
@@ -12625,8 +12630,23 @@
             }
           },
           onload: (res) => {
+            var _a2, _b2, _c2;
             if (isAborted) return;
-            if (!streamAttached && res.status >= 400) abort(`❌ 请求失败 [HTTP ${res.status}]: ${res.responseText}`);
+            if (res.status >= 400) {
+              abort(`❌ 请求失败 [HTTP ${res.status}]: ${res.responseText || ""}`);
+              return;
+            }
+            if (!shouldStream && !streamAttached) {
+              try {
+                const payload2 = typeof res.response === "string" ? JSON.parse(res.response) : res.response || JSON.parse(res.responseText || "{}");
+                const content = ((_c2 = (_b2 = (_a2 = payload2.choices) == null ? void 0 : _a2[0]) == null ? void 0 : _b2.message) == null ? void 0 : _c2.content) || "";
+                if (content) options.onData(content);
+                if (timeoutId) clearTimeout(timeoutId);
+                options.onDone();
+              } catch (error) {
+                abort(`❌ API 响应解析失败: ${error instanceof Error ? error.message : "未知错误"}`);
+              }
+            }
           },
           onerror: () => {
             if (!isAborted) abort("❌ 网络请求被拦截或断开");
@@ -12645,6 +12665,14 @@
           });
           if (isAborted) return;
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          if (!shouldStream) {
+            const response = await res.json();
+            const content = ((_c = (_b = (_a = response.choices) == null ? void 0 : _a[0]) == null ? void 0 : _b.message) == null ? void 0 : _c.content) || "";
+            if (content) options.onData(content);
+            if (timeoutId) clearTimeout(timeoutId);
+            options.onDone();
+            return;
+          }
           if (!res.body) throw new Error("无响应流");
           const reader = res.body.getReader();
           const decoder = new TextDecoder("utf-8");
@@ -12661,7 +12689,7 @@
               if (t.startsWith("data: ") && t !== "data: [DONE]") {
                 try {
                   const json = JSON.parse(t.substring(6));
-                  const chunk = ((_c = (_b = (_a = json.choices) == null ? void 0 : _a[0]) == null ? void 0 : _b.delta) == null ? void 0 : _c.content) || "";
+                  const chunk = ((_f = (_e = (_d = json.choices) == null ? void 0 : _d[0]) == null ? void 0 : _e.delta) == null ? void 0 : _f.content) || "";
                   if (chunk && !isAborted) {
                     if (timeoutId) clearTimeout(timeoutId);
                     options.onData(chunk);
@@ -13282,6 +13310,89 @@ ${contextBlock}`,
       isExpanded && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "ai-box", style: { color: isError ? "#c62828" : "#444" }, children: aiContent })
     ] });
   };
+  const STORAGE_KEY = "linkual_article_translation_cache";
+  const CACHE_VERSION = 1;
+  const CACHE_UPDATED_EVENT = "linkual_article_cache_updated";
+  function getCanonicalUrl(url) {
+    try {
+      const parsed = new URL(url);
+      parsed.hash = "";
+      return parsed.toString();
+    } catch {
+      return url.split("#")[0] || url;
+    }
+  }
+  function getArticleTranslationCacheKey(url, targetLanguage) {
+    return `${getCanonicalUrl(url)}
+${targetLanguage.trim() || "简体中文"}`;
+  }
+  function parseStore(value) {
+    const parsed = typeof value === "string" ? (() => {
+      try {
+        return JSON.parse(value);
+      } catch {
+        return null;
+      }
+    })() : value;
+    if (!parsed || typeof parsed !== "object") return { version: CACHE_VERSION, pages: {} };
+    const candidate = parsed;
+    if (!candidate.pages || typeof candidate.pages !== "object") return { version: CACHE_VERSION, pages: {} };
+    return { version: CACHE_VERSION, pages: candidate.pages };
+  }
+  function readStore() {
+    try {
+      if (typeof _GM_getValue !== "undefined") {
+        const gmValue = _GM_getValue(STORAGE_KEY);
+        if (gmValue !== void 0 && gmValue !== null) return parseStore(gmValue);
+      }
+    } catch {
+    }
+    return parseStore(localStorage.getItem(STORAGE_KEY));
+  }
+  function writeStore(store) {
+    const serialized = JSON.stringify(store);
+    try {
+      if (typeof _GM_setValue !== "undefined") _GM_setValue(STORAGE_KEY, store);
+    } catch {
+    }
+    localStorage.setItem(STORAGE_KEY, serialized);
+    window.dispatchEvent(new Event(CACHE_UPDATED_EVENT));
+  }
+  function getArticleTranslationCache(url, targetLanguage) {
+    return readStore().pages[getArticleTranslationCacheKey(url, targetLanguage)] || null;
+  }
+  function saveArticleTranslation(url, targetLanguage, paragraphId, entry) {
+    const store = readStore();
+    const key = getArticleTranslationCacheKey(url, targetLanguage);
+    const current = store.pages[key] || {
+      url: getCanonicalUrl(url),
+      targetLanguage: targetLanguage.trim() || "简体中文",
+      updatedAt: Date.now(),
+      entries: {}
+    };
+    current.entries[paragraphId] = entry;
+    current.updatedAt = Date.now();
+    store.pages[key] = current;
+    writeStore(store);
+  }
+  function listArticleTranslationCaches() {
+    return Object.entries(readStore().pages).map(([key, page]) => ({ key, ...page, entryCount: Object.keys(page.entries || {}).length })).sort((a, b) => b.updatedAt - a.updatedAt);
+  }
+  function clearArticleTranslationCaches() {
+    const empty = { version: CACHE_VERSION, pages: {} };
+    try {
+      if (typeof _GM_setValue !== "undefined") _GM_setValue(STORAGE_KEY, empty);
+      if (typeof _GM_deleteValue !== "undefined") _GM_deleteValue(`${STORAGE_KEY}_legacy`);
+    } catch {
+    }
+    localStorage.removeItem(STORAGE_KEY);
+    window.dispatchEvent(new Event(CACHE_UPDATED_EVENT));
+  }
+  function deleteArticleTranslationCache(key) {
+    const store = readStore();
+    delete store.pages[key];
+    writeStore(store);
+  }
   const API_BASE_PATH = "/v1";
   const API_CHAT_COMPLETIONS_PATH = "/chat/completions";
   const LAN_SYNC_API_PATH = "/api/vocabulary/add";
@@ -13331,6 +13442,7 @@ ${contextBlock}`,
   const getLanPrefix = (url) => getUrlPrefixForPath(url, LAN_SYNC_API_PATH);
   const Settings = ({ adapter, onClose }) => {
     const [activeTab, setActiveTab] = reactExports.useState("api");
+    const [translationCaches, setTranslationCaches] = reactExports.useState(listArticleTranslationCaches);
     const getAdpCfg = (key) => {
       const val = ConfigService.get(`${key}_${adapter.platformName}`);
       return val !== null && val !== void 0 && val !== "" ? val : ConfigService.get(key);
@@ -13419,6 +13531,11 @@ ${contextBlock}`,
     const handleBackdropMouseDown = (e) => {
       if (e.target === e.currentTarget) onClose();
     };
+    React$2.useEffect(() => {
+      const refreshCaches = () => setTranslationCaches(listArticleTranslationCaches());
+      window.addEventListener(CACHE_UPDATED_EVENT, refreshCaches);
+      return () => window.removeEventListener(CACHE_UPDATED_EVENT, refreshCaches);
+    }, []);
     const apiPrefix = getApiPrefix(cfg.url);
     const apiProtocol = getUrlProtocol(cfg.url, "https");
     const apiEndpointPath = getApiEndpointPath(cfg.url);
@@ -13505,6 +13622,35 @@ ${contextBlock}`,
             /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "网页翻译提示词" }),
             /* @__PURE__ */ jsxRuntimeExports.jsx("textarea", { name: "webTranslationPrompt", value: cfg.webTranslationPrompt, onChange: handleChange, placeholder: "留空则使用默认学术翻译提示词" }),
             /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "setting-help", children: "网页翻译会按段请求模型；提示词应要求模型只输出译文。" })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-col linkual-translation-cache-manager", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-cache-manager-heading", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "网页翻译缓存" }),
+              translationCaches.length > 0 && /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "button",
+                {
+                  type: "button",
+                  className: "linkual-cache-clear-btn",
+                  onClick: () => {
+                    if (window.confirm("清空所有网页翻译缓存？")) clearArticleTranslationCaches();
+                  },
+                  children: "清空全部"
+                }
+              )
+            ] }),
+            translationCaches.length === 0 ? /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "setting-help", children: "暂无缓存。翻译成功的段落会自动保存，刷新页面后继续使用。" }) : /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "linkual-cache-list", children: translationCaches.map((cache) => /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-cache-item", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-cache-item-main", children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { children: cache.url }),
+                /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
+                  cache.targetLanguage,
+                  " · ",
+                  cache.entryCount,
+                  " 段 · ",
+                  new Date(cache.updatedAt).toLocaleString()
+                ] })
+              ] }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", onClick: () => deleteArticleTranslationCache(cache.key), children: "删除" })
+            ] }, cache.key)) })
           ] })
         ] }),
         activeTab === "ui" && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "tab-pane fade-in", children: [
@@ -14338,6 +14484,97 @@ JSON 格式：
       if (!keep.has(host)) host.remove();
     });
   }
+  const SENTENCE_PATTERN$1 = /[^.!?。！？]+[.!?。！？]+["'”’）)]*|[^.!?。！？]+$/g;
+  function normalizeSentence(value) {
+    return value.replace(/\s+/g, " ").trim();
+  }
+  function splitSentences(value) {
+    return Array.from(value.matchAll(SENTENCE_PATTERN$1)).map((match) => normalizeSentence(match[0] || "")).filter(Boolean);
+  }
+  function alignSentencePairs(source, translation) {
+    const sourceSentences = splitSentences(source);
+    const translatedSentences = splitSentences(translation);
+    if (sourceSentences.length === 0 || translatedSentences.length === 0) return [];
+    return translatedSentences.map((translatedSentence, translationIndex) => {
+      const sourceIndex = sourceSentences.length === translatedSentences.length ? translationIndex : Math.min(
+        sourceSentences.length - 1,
+        Math.floor(translationIndex * sourceSentences.length / translatedSentences.length)
+      );
+      return {
+        sourceIndex,
+        translationIndex,
+        source: sourceSentences[sourceIndex] || sourceSentences[sourceSentences.length - 1] || "",
+        translation: translatedSentence
+      };
+    });
+  }
+  function createTextModel(root2) {
+    const walker = document.createTreeWalker(root2, NodeFilter.SHOW_TEXT);
+    let node = walker.nextNode();
+    let text = "";
+    const points = [];
+    while (node) {
+      const textNode = node;
+      const parent = textNode.parentElement;
+      if (parent && !parent.closest("[data-linkual-article-host], script, style, noscript")) {
+        const value = textNode.nodeValue || "";
+        for (let index2 = 0; index2 < value.length; index2 += 1) {
+          const character = value[index2] || "";
+          if (/\s/.test(character)) {
+            if (text.endsWith(" ")) continue;
+            text += " ";
+            points.push({ node: textNode, offset: index2 });
+          } else {
+            text += character;
+            points.push({ node: textNode, offset: index2 });
+          }
+        }
+      }
+      node = walker.nextNode();
+    }
+    return { text: text.trim(), points };
+  }
+  function findSentenceRange(root2, sentence) {
+    const model = createTextModel(root2);
+    const target = normalizeSentence(sentence);
+    if (!target) return null;
+    const start = model.text.indexOf(target);
+    if (start < 0) return null;
+    const end = start + target.length - 1;
+    const startPoint = model.points[start];
+    const endPoint = model.points[end];
+    if (!startPoint || !endPoint) return null;
+    const range = document.createRange();
+    range.setStart(startPoint.node, startPoint.offset);
+    range.setEnd(endPoint.node, endPoint.offset + 1);
+    return range;
+  }
+  function getSentenceIndexAtPoint(root2, event, source) {
+    var _a, _b;
+    const getCaretRange = document;
+    const range = (_a = getCaretRange.caretRangeFromPoint) == null ? void 0 : _a.call(getCaretRange, event.clientX, event.clientY);
+    const position = range || ((_b = getCaretRange.caretPositionFromPoint) == null ? void 0 : _b.call(getCaretRange, event.clientX, event.clientY));
+    if (!position) return -1;
+    const caret = "startContainer" in position ? position : (() => {
+      const next = document.createRange();
+      next.setStart(position.offsetNode, position.offset);
+      next.collapse(true);
+      return next;
+    })();
+    if (!root2.contains(caret.startContainer)) return -1;
+    const before = document.createRange();
+    before.selectNodeContents(root2);
+    before.setEnd(caret.startContainer, caret.startOffset);
+    const offset = normalizeSentence(before.toString()).length;
+    const sentences = splitSentences(source);
+    let cursor = 0;
+    for (let index2 = 0; index2 < sentences.length; index2 += 1) {
+      const sentence = sentences[index2] || "";
+      if (offset <= cursor + sentence.length) return index2;
+      cursor += sentence.length + 1;
+    }
+    return sentences.length - 1;
+  }
   const LINKUAL_NAVIGATION_EVENT$3 = "linkual_navigation";
   const ArticleTranslationContext = reactExports.createContext(null);
   const ArticleTranslationProvider = ({ enabled, children }) => {
@@ -14347,10 +14584,26 @@ JSON 格式：
     const [isTranslatingAll, setIsTranslatingAll] = reactExports.useState(false);
     const abortsRef = reactExports.useRef(/* @__PURE__ */ new Map());
     const allRunIdRef = reactExports.useRef(0);
+    const getTargetLanguage = () => ConfigService.get("web_target_language").trim() || "简体中文";
+    const cacheScopeRef = reactExports.useRef(`${window.location.href}
+${ConfigService.get("web_target_language").trim() || "简体中文"}`);
+    const hydrateCache = reactExports.useCallback((nextParagraphs, nextUrl) => {
+      const cache = getArticleTranslationCache(nextUrl, getTargetLanguage());
+      if (!cache) return {};
+      return nextParagraphs.reduce((result, paragraph) => {
+        const entry = cache.entries[paragraph.id];
+        if (entry && entry.sourceText === paragraph.text && entry.text) {
+          result[paragraph.id] = { status: "done", text: entry.text, sentences: entry.sentences };
+        }
+        return result;
+      }, {});
+    }, []);
     const syncParagraphs = reactExports.useCallback(() => {
       if (!enabled) return;
       const nextParagraphs = collectArticleParagraphs();
       const nextUrl = window.location.href;
+      const nextCacheScope = `${nextUrl}
+${getTargetLanguage()}`;
       const nextHosts = new Set(nextParagraphs.map((paragraph) => paragraph.host));
       removeArticleTranslationHosts(nextHosts);
       setParagraphs((previous) => {
@@ -14360,16 +14613,24 @@ JSON 格式：
         });
         return unchanged ? previous : nextParagraphs;
       });
+      setTranslations((previous) => {
+        const cached = hydrateCache(nextParagraphs, nextUrl);
+        if (cacheScopeRef.current !== nextCacheScope) {
+          cacheScopeRef.current = nextCacheScope;
+          return cached;
+        }
+        return Object.keys(cached).length > 0 ? { ...previous, ...cached } : previous;
+      });
       setPageUrl((previous) => {
         if (previous === nextUrl) return previous;
         allRunIdRef.current += 1;
         abortsRef.current.forEach((abort) => abort());
         abortsRef.current.clear();
-        setTranslations({});
+        setTranslations(hydrateCache(nextParagraphs, nextUrl));
         setIsTranslatingAll(false);
         return nextUrl;
       });
-    }, [enabled]);
+    }, [enabled, hydrateCache]);
     reactExports.useEffect(() => {
       if (!enabled) {
         allRunIdRef.current += 1;
@@ -14386,11 +14647,19 @@ JSON 格式：
       window.addEventListener(LINKUAL_NAVIGATION_EVENT$3, syncParagraphs);
       window.addEventListener("popstate", syncParagraphs);
       window.addEventListener("hashchange", syncParagraphs);
+      window.addEventListener("linkual_settings_updated", syncParagraphs);
+      const refreshCurrentCache = () => {
+        const currentParagraphs = collectArticleParagraphs();
+        setTranslations(hydrateCache(currentParagraphs, window.location.href));
+      };
+      window.addEventListener(CACHE_UPDATED_EVENT, refreshCurrentCache);
       return () => {
         window.clearInterval(interval);
         window.removeEventListener(LINKUAL_NAVIGATION_EVENT$3, syncParagraphs);
         window.removeEventListener("popstate", syncParagraphs);
         window.removeEventListener("hashchange", syncParagraphs);
+        window.removeEventListener("linkual_settings_updated", syncParagraphs);
+        window.removeEventListener(CACHE_UPDATED_EVENT, refreshCurrentCache);
         abortsRef.current.forEach((abort) => abort());
         abortsRef.current.clear();
         removeArticleTranslationHosts();
@@ -14402,7 +14671,7 @@ JSON 格式：
       const apiUrl = ConfigService.get("api_url").trim();
       const apiModel = ConfigService.get("api_model").trim();
       const timeout = parseInt(ConfigService.get("api_timeout"), 10) || 30;
-      const targetLanguage = ConfigService.get("web_target_language").trim() || "简体中文";
+      const targetLanguage = getTargetLanguage();
       const promptTemplate = ConfigService.get("web_translation_prompt").trim();
       if (!apiKey) {
         setTranslations((previous) => ({
@@ -14426,8 +14695,17 @@ JSON 格式：
           if (success) {
             setTranslations((previous) => ({
               ...previous,
-              [paragraph.id]: { status: "done", text: content.trim() }
+              [paragraph.id]: {
+                status: "done",
+                text: content.trim(),
+                sentences: alignSentencePairs(paragraph.text, content.trim())
+              }
             }));
+            saveArticleTranslation(window.location.href, targetLanguage, paragraph.id, {
+              sourceText: paragraph.text,
+              text: content.trim(),
+              sentences: alignSentencePairs(paragraph.text, content.trim())
+            });
           } else if (error === "ABORTED") {
             setTranslations((previous) => ({
               ...previous,
@@ -14445,6 +14723,7 @@ JSON 格式：
           apiUrl,
           apiKey,
           apiModel,
+          stream: false,
           timeoutSec: timeout,
           systemPrompt: promptTemplate || `你是专业学术翻译。请将输入内容准确翻译成${targetLanguage}。保留数学符号、变量名、引用标记和段落语气；只输出译文，不要解释，不要添加标题。`,
           userPrompt: `请将下面这一个网页论文段落翻译成${targetLanguage}：
@@ -14836,13 +15115,15 @@ ${paragraph.text}`,
       const top = Number.parseFloat(ConfigService.get(BUBBLE_STORAGE_KEYS[1]));
       return Number.isFinite(left) && Number.isFinite(top) ? { left, top } : null;
     });
+    const [expandedPosition, setExpandedPosition] = reactExports.useState(null);
     const widgetRef = reactExports.useRef(null);
     const bubbleRef = reactExports.useRef(null);
     const bubblePositionRef = reactExports.useRef(bubblePosition);
     const bubbleDragRef = reactExports.useRef(null);
     const bubbleMovedRef = reactExports.useRef(false);
+    const expandedDragRef = reactExports.useRef(null);
     const selectionTimerRef = reactExports.useRef(null);
-    const activeWidgetHeight = isExpanded ? reservedHeight : 0;
+    const activeWidgetHeight = 0;
     const articleTranslation = useArticleTranslation();
     const hasPayload = Boolean(word.trim());
     const canSend = hasPayload;
@@ -15093,6 +15374,92 @@ ${paragraph.text}`,
         bubbleMovedRef.current = false;
       }
     };
+    const clampExpandedPosition = reactExports.useCallback((left, top) => {
+      var _a;
+      const rect = (_a = widgetRef.current) == null ? void 0 : _a.getBoundingClientRect();
+      const width = (rect == null ? void 0 : rect.width) || Math.min(520, window.innerWidth - 16);
+      const height = (rect == null ? void 0 : rect.height) || Math.min(520, window.innerHeight - 16);
+      return {
+        left: Math.max(8, Math.min(left, window.innerWidth - width - 8)),
+        top: Math.max(8, Math.min(top, window.innerHeight - height - 8))
+      };
+    }, []);
+    const handleExpandedPointerDown = (event) => {
+      var _a, _b, _c;
+      const target = event.target;
+      if (target instanceof Element && target.closest('button, input, textarea, select, [contenteditable="true"]')) return;
+      const rect = (_a = widgetRef.current) == null ? void 0 : _a.getBoundingClientRect();
+      if (!rect) return;
+      expandedDragRef.current = {
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        left: rect.left,
+        top: rect.top
+      };
+      (_c = (_b = event.currentTarget).setPointerCapture) == null ? void 0 : _c.call(_b, event.pointerId);
+    };
+    const handleExpandedPointerMove = (event) => {
+      const drag = expandedDragRef.current;
+      if (!drag || drag.pointerId !== event.pointerId) return;
+      setExpandedPosition(clampExpandedPosition(
+        drag.left + event.clientX - drag.startX,
+        drag.top + event.clientY - drag.startY
+      ));
+    };
+    const persistBubblePosition = (position) => {
+      setBubblePosition(position);
+      bubblePositionRef.current = position;
+      ConfigService.set("universal_bubble_left", String(Math.round(position.left)));
+      ConfigService.set("universal_bubble_top", String(Math.round(position.top)));
+    };
+    const handleExpandedPointerUp = (event) => {
+      var _a;
+      const drag = expandedDragRef.current;
+      if (!drag || drag.pointerId !== event.pointerId) return;
+      expandedDragRef.current = null;
+      const rect = (_a = widgetRef.current) == null ? void 0 : _a.getBoundingClientRect();
+      if (rect) persistBubblePosition({ left: rect.left, top: rect.top });
+    };
+    const handleCollapseWindow = () => {
+      var _a;
+      const rect = (_a = widgetRef.current) == null ? void 0 : _a.getBoundingClientRect();
+      if (rect) persistBubblePosition({ left: rect.left, top: rect.top });
+      setIsExpanded(false);
+    };
+    const handleBubbleExpand = () => {
+      var _a;
+      const bubbleRect = (_a = bubbleRef.current) == null ? void 0 : _a.getBoundingClientRect();
+      if (bubbleRect) {
+        const estimatedWidth = Math.min(520, window.innerWidth - 16);
+        const estimatedHeight = Math.min(420, window.innerHeight - 16);
+        const left = Math.max(8, Math.min(bubbleRect.left, window.innerWidth - estimatedWidth - 8));
+        const top = bubbleRect.top > window.innerHeight / 2 ? Math.max(8, bubbleRect.top - estimatedHeight - 8) : Math.min(window.innerHeight - estimatedHeight - 8, bubbleRect.bottom + 8);
+        setExpandedPosition({ left, top: Math.max(8, top) });
+      }
+      applyPageReserve(0);
+      setIsExpanded(true);
+    };
+    reactExports.useEffect(() => {
+      if (!isExpanded) return void 0;
+      const clampExpandedPosition2 = () => setExpandedPosition((current) => {
+        var _a;
+        if (!current) return current;
+        const rect = (_a = widgetRef.current) == null ? void 0 : _a.getBoundingClientRect();
+        const width = (rect == null ? void 0 : rect.width) || Math.min(520, window.innerWidth - 16);
+        const height = (rect == null ? void 0 : rect.height) || Math.min(420, window.innerHeight - 16);
+        return {
+          left: Math.max(8, Math.min(current.left, window.innerWidth - width - 8)),
+          top: Math.max(8, Math.min(current.top, window.innerHeight - height - 8))
+        };
+      });
+      const frameId = window.requestAnimationFrame(clampExpandedPosition2);
+      window.addEventListener("resize", clampExpandedPosition2);
+      return () => {
+        window.cancelAnimationFrame(frameId);
+        window.removeEventListener("resize", clampExpandedPosition2);
+      };
+    }, [isExpanded, reservedHeight]);
     if (!isExpanded) {
       return /* @__PURE__ */ jsxRuntimeExports.jsxs(
         "div",
@@ -15130,7 +15497,7 @@ ${paragraph.text}`,
                 type: "button",
                 className: "linkual-universal-bubble-expand",
                 onPointerDown: handleBubbleButtonPointerDown,
-                onClick: () => setIsExpanded(true),
+                onClick: handleBubbleExpand,
                 title: "展开 Linkual 工具栏",
                 "aria-label": "展开 Linkual 工具栏",
                 children: /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "linkual-universal-expand-chevron", "aria-hidden": "true" })
@@ -15144,10 +15511,15 @@ ${paragraph.text}`,
       "div",
       {
         ref: widgetRef,
-        className: "linkual-universal-widget",
+        className: "linkual-universal-widget linkual-universal-floating-window",
+        onPointerDown: handleExpandedPointerDown,
+        onPointerMove: handleExpandedPointerMove,
+        onPointerUp: handleExpandedPointerUp,
+        onPointerCancel: handleExpandedPointerUp,
         style: {
           "--linkual-theme": themeColor,
-          "--linkual-universal-widget-height": `${reservedHeight}px`
+          "--linkual-universal-widget-height": `${reservedHeight}px`,
+          ...expandedPosition ? { left: expandedPosition.left, top: expandedPosition.top, right: "auto", bottom: "auto" } : {}
         },
         children: [
           selection && /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -15264,7 +15636,7 @@ ${paragraph.text}`,
                 /* @__PURE__ */ jsxRuntimeExports.jsx(ActionIcon, { name: "settings" }),
                 /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "linkual-universal-button-text", children: "设置" })
               ] }),
-              /* @__PURE__ */ jsxRuntimeExports.jsxs("button", { type: "button", className: "linkual-universal-icon-btn", onClick: () => setIsExpanded(false), title: "折叠", "aria-label": "收起", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsxs("button", { type: "button", className: "linkual-universal-icon-btn", onClick: handleCollapseWindow, title: "折叠", "aria-label": "收起", children: [
                 /* @__PURE__ */ jsxRuntimeExports.jsx(ActionIcon, { name: "collapse" }),
                 /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "linkual-universal-button-text", children: "收起" })
               ] })
@@ -15281,12 +15653,64 @@ ${paragraph.text}`,
   }) {
     const isLoading = (state == null ? void 0 : state.status) === "loading";
     const hasTranslation = Boolean(state == null ? void 0 : state.text);
+    const pairs = reactExports.useMemo(() => {
+      var _a;
+      return ((_a = state == null ? void 0 : state.sentences) == null ? void 0 : _a.length) ? state.sentences : alignSentencePairs(paragraph.text, (state == null ? void 0 : state.text) || "");
+    }, [paragraph.text, state == null ? void 0 : state.sentences, state == null ? void 0 : state.text]);
+    const [activePairIndex, setActivePairIndex] = reactExports.useState(-1);
+    const sentenceRefs = reactExports.useRef(/* @__PURE__ */ new Map());
+    const focusSource = (pairIndex) => {
+      const pair = pairs[pairIndex];
+      if (!pair) return;
+      const range = findSentenceRange(paragraph.element, pair.source);
+      if (range) {
+        const rect = range.getBoundingClientRect();
+        window.scrollTo({ top: Math.max(0, window.scrollY + rect.top - window.innerHeight * 0.35), behavior: "smooth" });
+      } else {
+        paragraph.element.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+      setActivePairIndex(pairIndex);
+    };
+    const focusTranslation = (pairIndex) => {
+      var _a;
+      (_a = sentenceRefs.current.get(pairIndex)) == null ? void 0 : _a.scrollIntoView({ behavior: "smooth", block: "center" });
+      setActivePairIndex(pairIndex);
+    };
+    reactExports.useEffect(() => {
+      if (!hasTranslation || pairs.length === 0) return void 0;
+      const handleSourceClick = (event) => {
+        const sourceIndex = getSentenceIndexAtPoint(paragraph.element, event, paragraph.text);
+        if (sourceIndex < 0) return;
+        const pairIndex = pairs.findIndex((pair) => pair.sourceIndex === sourceIndex);
+        if (pairIndex >= 0) focusTranslation(pairIndex);
+      };
+      paragraph.element.classList.add("linkual-article-source-locatable");
+      paragraph.element.addEventListener("click", handleSourceClick);
+      return () => {
+        paragraph.element.classList.remove("linkual-article-source-locatable");
+        paragraph.element.removeEventListener("click", handleSourceClick);
+      };
+    }, [hasTranslation, pairs, paragraph.element, paragraph.text]);
     return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: `linkual-article-translation ${(state == null ? void 0 : state.status) || "idle"}`, children: [
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-article-translation-toolbar", children: [
         /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "linkual-article-translation-label", children: "Linkual · 网页翻译" }),
         /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", onClick: () => onTranslate(paragraph), disabled: isLoading, children: isLoading ? "翻译中…" : hasTranslation ? "重新翻译" : "翻译本段" })
       ] }),
-      hasTranslation ? /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "linkual-article-translation-text", children: state == null ? void 0 : state.text }) : /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "linkual-article-translation-placeholder", children: (state == null ? void 0 : state.error) || (isLoading ? "正在请求模型…" : "点击“翻译本段”显示译文") })
+      hasTranslation ? /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "linkual-article-translation-text", children: pairs.length > 0 ? pairs.map((pair, pairIndex) => /* @__PURE__ */ jsxRuntimeExports.jsx(
+        "button",
+        {
+          type: "button",
+          className: `linkual-article-translation-sentence ${activePairIndex === pairIndex ? "active" : ""}`,
+          ref: (element) => {
+            if (element) sentenceRefs.current.set(pairIndex, element);
+            else sentenceRefs.current.delete(pairIndex);
+          },
+          onClick: () => focusSource(pairIndex),
+          title: "定位到原文句子",
+          children: pair.translation
+        },
+        `${pair.sourceIndex}-${pair.translationIndex}`
+      )) : state == null ? void 0 : state.text }) : /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "linkual-article-translation-placeholder", children: (state == null ? void 0 : state.error) || (isLoading ? "正在请求模型…" : "点击“翻译本段”显示译文") })
     ] });
   }
   const ArticleTranslator = () => {
