@@ -2,11 +2,13 @@
   "word": "dwell",
   "createdAt": "2026-06-15",
   "reviews": [],
-  "definitions": [],
+  "definitions": [
+    "居住；栖息；存在于某处（dwell in/on 常见）"
+  ],
   "examples": [
     {
-      "text": "sentient tree spirit, the guardian of the forest and the father of the kiri, childlike forest spirits who dwell in the Kiri forest. These are in fact the same spirits as the Cororox seen in",
-      "explanation": "",
+      "text": "childlike forest spirits who dwell in the Kiri forest.",
+      "explanation": "这里 dwell in the Kiri forest 表示“居住在/栖息在 Kiri 森林中”。dwell 比 live 更书面，常用于描述人、动物、精灵等长期住在某处。",
       "focusWords": [
         "dwell"
       ],
@@ -18,6 +20,18 @@
         "url": "https://www.youtube.com/watch?v=OgO9-cYv8yM",
         "timestamp": 172
       }
+    }
+  ],
+  "relations": [
+    {
+      "type": "related",
+      "target": {
+        "category": "daily",
+        "file": "dweller.json",
+        "word": "dweller"
+      },
+      "reason": "dweller 是由 dwell 相关词根构成的名词，表示“居住者/栖居者”；当前词条 dwell 表示“居住、栖息”，两者是动词动作与执行者/身份的关系，适合互相跳转学习。",
+      "source": "llm"
     }
   ]
 }

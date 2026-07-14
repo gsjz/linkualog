@@ -49,6 +49,16 @@
       },
       "reason": "rotten 的释义中含有“不诚实的，靠不住的”，与 deceitful“欺骗的；不诚实的”在品格评价义上语义明显重合，属于可互相跳转的近义关系，但 rotten 语义更广，所以用 synonym 连接较合适。",
       "source": "llm"
+    },
+    {
+      "type": "synonym",
+      "target": {
+        "category": "daily",
+        "file": "devious.json",
+        "word": "devious"
+      },
+      "reason": "devious 在形容人或行为时表示“狡猾的、不直率的”，与 deceitful“欺骗的；不诚实的；靠欺瞒行事的”在负面品格和欺骗行为义上高度重合，是有学习价值的近义关系。",
+      "source": "llm"
     }
   ]
 }

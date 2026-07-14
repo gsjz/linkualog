@@ -1,7 +1,16 @@
 {
   "word": "devious",
   "createdAt": "2026-06-15",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-06-23",
+      "score": 1
+    },
+    {
+      "date": "2026-06-30",
+      "score": 1
+    }
+  ],
   "definitions": [
     "狡猾的；不直率的；（道路、方法、问题等）曲折复杂的、难对付的"
   ],
@@ -20,6 +29,18 @@
         "url": "https://www.youtube.com/watch?v=OgO9-cYv8yM",
         "timestamp": 486
       }
+    }
+  ],
+  "relations": [
+    {
+      "type": "synonym",
+      "target": {
+        "category": "cet",
+        "file": "deceitful.json",
+        "word": "deceitful"
+      },
+      "reason": "devious 在形容人或行为时表示“狡猾的、不直率的”，与 deceitful“欺骗的；不诚实的；靠欺瞒行事的”在负面品格和欺骗行为义上高度重合，是有学习价值的近义关系。",
+      "source": "llm"
     }
   ]
 }

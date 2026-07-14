@@ -23,7 +23,7 @@
     },
     {
       "text": "patterns often associated with the kiri seen not only on their symbol but also on the forest dweller equipment in the wild games. Link's left hand glows and we see the symbol of the Triforce marked",
-      "explanation": "",
+      "explanation": "这里的 forest dweller 作名词短语使用，意思是“森林居民/森林居住者”；forest dweller equipment 可理解为“森林居民使用的装备”或“森林居民风格的装备”。",
       "focusWords": [
         "dweller"
       ],
@@ -56,6 +56,16 @@
         "word": "inhabitant"
       },
       "reason": "inhabitants 表示“居民、居住者”，与 dweller 的核心含义高度重合；当前例句中还直接出现 inhabitants of the forest 与 forest dwellers 的同指关系，适合建立近义跳转。",
+      "source": "llm"
+    },
+    {
+      "type": "related",
+      "target": {
+        "category": "daily",
+        "file": "dwell.json",
+        "word": "dwell"
+      },
+      "reason": "dweller 是由 dwell 相关词根构成的名词，表示“居住者/栖居者”；当前词条 dwell 表示“居住、栖息”，两者是动词动作与执行者/身份的关系，适合互相跳转学习。",
       "source": "llm"
     }
   ]
