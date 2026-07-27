@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Linkual Log
 // @namespace    npm/vite-plugin-monkey
-// @version      0.0.39
+// @version      0.0.40
 // @author       Sergio Gao
 // @icon         https://vitejs.dev/logo.svg
 // @downloadURL  https://raw.githubusercontent.com/gsjz/linkualog/main/browser-plugin/user/linkualog.user.js
@@ -14874,6 +14874,7 @@ ${paragraph.text}`,
   const LINKUAL_NAVIGATION_EVENT$2 = "linkual_navigation";
   const FLOATING_BUTTON_MARGIN = 10;
   const BUBBLE_MARGIN = 12;
+  const BUBBLE_DEFAULT_EDGE_OFFSET = 0;
   const DEFAULT_BUBBLE_WIDTH = 180;
   const DEFAULT_BUBBLE_HEIGHT = 44;
   const BUBBLE_STORAGE_KEYS = ["universal_bubble_left", "universal_bubble_top"];
@@ -15364,8 +15365,8 @@ ${paragraph.text}`,
         };
       }
       return {
-        left: window.innerWidth - 14 - DEFAULT_BUBBLE_WIDTH / 2,
-        top: window.innerHeight - 14 - DEFAULT_BUBBLE_HEIGHT / 2
+        left: window.innerWidth - BUBBLE_DEFAULT_EDGE_OFFSET - DEFAULT_BUBBLE_WIDTH / 2,
+        top: window.innerHeight - 18 - DEFAULT_BUBBLE_HEIGHT / 2
       };
     }, [getBubbleSize]);
     const clampExpandedAnchor = reactExports.useCallback((anchor) => {
@@ -15457,7 +15458,7 @@ ${paragraph.text}`,
         "div",
         {
           ref: bubbleRef,
-          className: "linkual-universal-expand-bar",
+          className: `linkual-universal-expand-bar ${bubblePosition ? "is-custom-position" : "is-edge-default"}`,
           onPointerDown: handleBubblePointerDown,
           onPointerMove: handleBubblePointerMove,
           onPointerUp: handleBubblePointerUp,
@@ -18296,25 +18297,37 @@ html.linkual-mobile-fullscreen-fallback {
 
 #linkual-root .linkual-universal-expand-bar {
   position: fixed;
-  right: 14px;
-  bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  right: 0;
+  bottom: calc(18px + env(safe-area-inset-bottom, 0px));
   z-index: 2147483647;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   width: auto;
-  min-height: 42px;
-  padding: 5px 6px 5px 9px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 999px;
-  background: var(--linkual-theme, #000);
-  color: #fff;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  min-height: 38px;
+  padding: 5px 7px 5px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-right: 0;
+  border-radius: 8px 0 0 8px;
+  background: rgba(20, 20, 22, 0.58);
+  color: rgba(255, 255, 255, 0.92);
+  box-shadow:
+    0 8px 22px rgba(0, 0, 0, 0.18),
+    inset 3px 0 0 var(--linkual-theme, #000);
   cursor: grab;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   user-select: none;
   pointer-events: auto;
   touch-action: none;
+  opacity: 0.78;
+  backdrop-filter: blur(16px) saturate(1.35);
+  -webkit-backdrop-filter: blur(16px) saturate(1.35);
+  transition: opacity 0.16s ease, background-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+#linkual-root .linkual-universal-expand-bar.is-custom-position {
+  border-right: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
 }
 
 #linkual-root .linkual-universal-expand-bar:active {
@@ -18323,25 +18336,41 @@ html.linkual-mobile-fullscreen-fallback {
 
 #linkual-root .linkual-universal-expand-bar:hover,
 #linkual-root .linkual-universal-expand-bar:focus-within {
-  filter: brightness(1.08);
+  background: rgba(20, 20, 22, 0.72);
+  box-shadow:
+    0 10px 26px rgba(0, 0, 0, 0.22),
+    inset 3px 0 0 var(--linkual-theme, #000);
+  opacity: 0.96;
 }
 
 #linkual-root .linkual-universal-bubble-grip {
-  color: rgba(255, 255, 255, 0.65);
-  font-size: 12px;
-  letter-spacing: -3px;
+  position: relative;
+  flex: 0 0 7px;
+  width: 7px;
+  height: 22px;
+  color: transparent;
+  font-size: 0;
+  letter-spacing: 0;
   line-height: 1;
-  transform: rotate(90deg);
+  opacity: 0.62;
+}
+
+#linkual-root .linkual-universal-bubble-grip::before {
+  content: '';
+  position: absolute;
+  inset: 2px 1px;
+  border-left: 1px solid rgba(255, 255, 255, 0.72);
+  border-right: 1px solid rgba(255, 255, 255, 0.48);
 }
 
 #linkual-root .linkual-universal-bubble-translate {
-  min-height: 30px;
-  border: 0;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.15);
-  color: #fff;
+  min-height: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.92);
   cursor: pointer;
-  font: 700 12px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font: 650 12px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 #linkual-root .linkual-universal-bubble-translate {
@@ -18354,13 +18383,18 @@ html.linkual-mobile-fullscreen-fallback {
 }
 
 #linkual-root .linkual-universal-expand-bar .linkual-universal-window-toggle {
-  width: 30px;
-  min-width: 30px;
-  min-height: 30px;
+  width: 28px;
+  min-width: 28px;
+  min-height: 28px;
   padding: 0;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.15);
-  color: #fff;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.92);
+}
+
+#linkual-root .linkual-universal-bubble-translate:hover,
+#linkual-root .linkual-universal-expand-bar .linkual-universal-window-toggle:hover {
+  background: rgba(255, 255, 255, 0.2);
 }
 
 #linkual-root .linkual-universal-window-toggle .linkual-universal-button-icon {

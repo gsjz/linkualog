@@ -36,6 +36,7 @@ const SENTENCE_PATTERN = /[^.!?。！？]+[.!?。！？]+["'”’）)]*|[^.!?�
 const LINKUAL_NAVIGATION_EVENT = 'linkual_navigation';
 const FLOATING_BUTTON_MARGIN = 10;
 const BUBBLE_MARGIN = 12;
+const BUBBLE_DEFAULT_EDGE_OFFSET = 0;
 const DEFAULT_BUBBLE_WIDTH = 180;
 const DEFAULT_BUBBLE_HEIGHT = 44;
 const BUBBLE_STORAGE_KEYS = ['universal_bubble_left', 'universal_bubble_top'] as const;
@@ -638,8 +639,8 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
     }
 
     return {
-      left: window.innerWidth - 14 - DEFAULT_BUBBLE_WIDTH / 2,
-      top: window.innerHeight - 14 - DEFAULT_BUBBLE_HEIGHT / 2,
+      left: window.innerWidth - BUBBLE_DEFAULT_EDGE_OFFSET - DEFAULT_BUBBLE_WIDTH / 2,
+      top: window.innerHeight - 18 - DEFAULT_BUBBLE_HEIGHT / 2,
     };
   }, [getBubbleSize]);
 
@@ -742,7 +743,7 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
     return (
       <div
         ref={bubbleRef}
-        className="linkual-universal-expand-bar"
+        className={`linkual-universal-expand-bar ${bubblePosition ? 'is-custom-position' : 'is-edge-default'}`}
         onPointerDown={handleBubblePointerDown}
         onPointerMove={handleBubblePointerMove}
         onPointerUp={handleBubblePointerUp}
