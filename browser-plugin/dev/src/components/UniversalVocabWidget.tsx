@@ -25,6 +25,26 @@ interface SelectionCapture {
   left: number;
 }
 
+type BubbleDockSide = 'left' | 'right';
+
+interface BubblePosition {
+  left: number;
+  top: number;
+  side: BubbleDockSide;
+  topRatio: number;
+}
+
+interface BubbleSize {
+  width: number;
+  height: number;
+}
+
+interface ExpandedAnchor {
+  side: BubbleDockSide;
+  edge: number;
+  top: number;
+}
+
 const DESKTOP_WIDGET_HEIGHT = 58;
 const MOBILE_WIDGET_HEIGHT = 132;
 const COLLAPSED_WIDGET_HEIGHT = 28;
@@ -36,10 +56,11 @@ const SENTENCE_PATTERN = /[^.!?。！？]+[.!?。！？]+["'”’）)]*|[^.!?�
 const LINKUAL_NAVIGATION_EVENT = 'linkual_navigation';
 const FLOATING_BUTTON_MARGIN = 10;
 const BUBBLE_MARGIN = 12;
-const BUBBLE_DEFAULT_EDGE_OFFSET = 0;
+const BUBBLE_EDGE_OFFSET = 0;
+const DEFAULT_BUBBLE_TOP_RATIO = 1;
 const DEFAULT_BUBBLE_WIDTH = 180;
 const DEFAULT_BUBBLE_HEIGHT = 44;
-const BUBBLE_STORAGE_KEYS = ['universal_bubble_left', 'universal_bubble_top'] as const;
+const LEGACY_BUBBLE_STORAGE_KEYS = ['universal_bubble_left', 'universal_bubble_top'] as const;
 
 const getDefaultExpandedHeight = () => (
   window.matchMedia('(max-width: 720px)').matches ? MOBILE_WIDGET_HEIGHT : DESKTOP_WIDGET_HEIGHT
@@ -63,8 +84,97 @@ const getMaxWidgetHeight = () => Math.max(
   Math.floor(getVisualViewportHeight() - WIDGET_VIEWPORT_MARGIN)
 );
 
-const saveBubblePosition = (position: { left: number; top: number }) => {
+const clampNumber = (value: number, min: number, max: number) => Math.max(min, Math.min(value, max));
+
+const getViewportWidth = () => Math.max(
+  DEFAULT_BUBBLE_WIDTH,
+  window.innerWidth || document.documentElement.clientWidth || DEFAULT_BUBBLE_WIDTH
+);
+
+const normalizeBubbleSide = (value: unknown): BubbleDockSide => (
+  String(value || '').trim() === 'left' ? 'left' : 'right'
+);
+
+const normalizeBubbleTopRatio = (value: unknown, fallback = DEFAULT_BUBBLE_TOP_RATIO) => {
+  const parsed = Number.parseFloat(String(value ?? ''));
+  if (!Number.isFinite(parsed)) return fallback;
+  return clampNumber(parsed, 0, 1);
+};
+
+const getBubbleViewportBounds = (size: BubbleSize) => {
+  const viewportWidth = getViewportWidth();
+  const viewportHeight = Math.max(DEFAULT_BUBBLE_HEIGHT, getVisualViewportHeight());
+  const maxLeft = Math.max(BUBBLE_EDGE_OFFSET, viewportWidth - size.width - BUBBLE_EDGE_OFFSET);
+  const minTop = BUBBLE_MARGIN;
+  const maxTop = Math.max(minTop, viewportHeight - size.height - BUBBLE_MARGIN);
+  return { viewportWidth, viewportHeight, maxLeft, minTop, maxTop };
+};
+
+const getBubbleTopRatioFromTop = (top: number, size: BubbleSize) => {
+  const bounds = getBubbleViewportBounds(size);
+  if (bounds.maxTop <= bounds.minTop) return 0;
+  const clampedTop = clampNumber(top, bounds.minTop, bounds.maxTop);
+  return clampNumber((clampedTop - bounds.minTop) / (bounds.maxTop - bounds.minTop), 0, 1);
+};
+
+const getBubblePositionFromDock = (
+  side: BubbleDockSide,
+  topRatio: number,
+  size: BubbleSize
+): BubblePosition => {
+  const bounds = getBubbleViewportBounds(size);
+  const normalizedRatio = normalizeBubbleTopRatio(topRatio);
+  return {
+    left: side === 'left' ? BUBBLE_EDGE_OFFSET : bounds.maxLeft,
+    top: bounds.minTop + (bounds.maxTop - bounds.minTop) * normalizedRatio,
+    side,
+    topRatio: normalizedRatio,
+  };
+};
+
+const getBubblePositionFromPoint = (
+  left: number,
+  top: number,
+  size: BubbleSize,
+  preferredSide?: BubbleDockSide
+): BubblePosition => {
+  const bounds = getBubbleViewportBounds(size);
+  const clampedLeft = clampNumber(left, BUBBLE_EDGE_OFFSET, bounds.maxLeft);
+  const clampedTop = clampNumber(top, bounds.minTop, bounds.maxTop);
+  const side = preferredSide || (clampedLeft + size.width / 2 < bounds.viewportWidth / 2 ? 'left' : 'right');
+  return {
+    left: clampedLeft,
+    top: clampedTop,
+    side,
+    topRatio: getBubbleTopRatioFromTop(clampedTop, size),
+  };
+};
+
+const readBubblePosition = (size: BubbleSize): BubblePosition => {
+  const storedSide = String(ConfigService.get('universal_bubble_side') || '').trim();
+  const storedRatio = ConfigService.get('universal_bubble_top_ratio') as string;
+  if (storedSide || storedRatio) {
+    return getBubblePositionFromDock(
+      normalizeBubbleSide(storedSide),
+      normalizeBubbleTopRatio(storedRatio),
+      size
+    );
+  }
+
+  const legacyLeft = Number.parseFloat(ConfigService.get(LEGACY_BUBBLE_STORAGE_KEYS[0]) as string);
+  const legacyTop = Number.parseFloat(ConfigService.get(LEGACY_BUBBLE_STORAGE_KEYS[1]) as string);
+  if (Number.isFinite(legacyLeft) && Number.isFinite(legacyTop)) {
+    const legacyPosition = getBubblePositionFromPoint(legacyLeft, legacyTop, size);
+    return getBubblePositionFromDock(legacyPosition.side, legacyPosition.topRatio, size);
+  }
+
+  return getBubblePositionFromDock('right', DEFAULT_BUBBLE_TOP_RATIO, size);
+};
+
+const saveBubblePosition = (position: BubblePosition) => {
   try {
+    ConfigService.set('universal_bubble_side', position.side);
+    ConfigService.set('universal_bubble_top_ratio', position.topRatio.toFixed(4));
     ConfigService.set('universal_bubble_left', String(Math.round(position.left)));
     ConfigService.set('universal_bubble_top', String(Math.round(position.top)));
   } catch (err) {
@@ -305,20 +415,18 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
   const [message, setMessage] = useState('');
   const [reservedHeight, setReservedHeight] = useState(getDefaultExpandedHeight);
   const [queueCount, setQueueCount] = useState(0);
-  const [bubblePosition, setBubblePosition] = useState<{ left: number; top: number } | null>(() => {
-    const left = Number.parseFloat(ConfigService.get(BUBBLE_STORAGE_KEYS[0]) as string);
-    const top = Number.parseFloat(ConfigService.get(BUBBLE_STORAGE_KEYS[1]) as string);
-    return Number.isFinite(left) && Number.isFinite(top) ? { left, top } : null;
-  });
-  const [expandedAnchor, setExpandedAnchor] = useState<{ left: number; top: number } | null>(null);
+  const [bubblePosition, setBubblePosition] = useState<BubblePosition>(() => (
+    readBubblePosition({ width: DEFAULT_BUBBLE_WIDTH, height: DEFAULT_BUBBLE_HEIGHT })
+  ));
+  const [expandedAnchor, setExpandedAnchor] = useState<ExpandedAnchor | null>(null);
 
   const widgetRef = useRef<HTMLDivElement | null>(null);
   const bubbleRef = useRef<HTMLDivElement | null>(null);
-  const bubbleSizeRef = useRef({ width: DEFAULT_BUBBLE_WIDTH, height: DEFAULT_BUBBLE_HEIGHT });
+  const bubbleSizeRef = useRef<BubbleSize>({ width: DEFAULT_BUBBLE_WIDTH, height: DEFAULT_BUBBLE_HEIGHT });
   const bubblePositionRef = useRef(bubblePosition);
   const bubbleDragRef = useRef<{ pointerId: number; startX: number; startY: number; left: number; top: number } | null>(null);
   const bubbleMovedRef = useRef(false);
-  const expandedDragRef = useRef<{ pointerId: number; startX: number; startY: number; left: number; top: number } | null>(null);
+  const expandedDragRef = useRef<{ pointerId: number; startX: number; startY: number; side: BubbleDockSide; edge: number; top: number } | null>(null);
   const selectionTimerRef = useRef<number | null>(null);
   const articleTranslation = useArticleTranslation();
 
@@ -532,22 +640,11 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
     window.dispatchEvent(new Event(QUEUE_REQUEST_COUNT_EVENT));
   };
 
-  const clampBubblePosition = useCallback((left: number, top: number) => {
-    const rect = bubbleRef.current?.getBoundingClientRect();
-    const width = rect?.width || bubbleSizeRef.current.width;
-    const height = rect?.height || bubbleSizeRef.current.height;
-    const maxLeft = Math.max(BUBBLE_MARGIN, window.innerWidth - width - BUBBLE_MARGIN);
-    const maxTop = Math.max(BUBBLE_MARGIN, window.innerHeight - height - BUBBLE_MARGIN);
-    return {
-      left: Math.max(BUBBLE_MARGIN, Math.min(left, maxLeft)),
-      top: Math.max(BUBBLE_MARGIN, Math.min(top, maxTop)),
-    };
-  }, []);
-
   const handleBubblePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     if (event.pointerType === 'mouse' && event.button !== 0) return;
     const rect = bubbleRef.current?.getBoundingClientRect();
     if (!rect) return;
+    bubbleSizeRef.current = { width: rect.width, height: rect.height };
 
     bubbleMovedRef.current = false;
     bubbleDragRef.current = {
@@ -567,7 +664,7 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
     const deltaX = event.clientX - drag.startX;
     const deltaY = event.clientY - drag.startY;
     if (Math.abs(deltaX) > 3 || Math.abs(deltaY) > 3) bubbleMovedRef.current = true;
-    const nextPosition = clampBubblePosition(drag.left + deltaX, drag.top + deltaY);
+    const nextPosition = getBubblePositionFromPoint(drag.left + deltaX, drag.top + deltaY, bubbleSizeRef.current);
     bubblePositionRef.current = nextPosition;
     setBubblePosition(nextPosition);
   };
@@ -576,26 +673,65 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
     const drag = bubbleDragRef.current;
     if (!drag || drag.pointerId !== event.pointerId) return;
 
-    const nextPosition = bubblePositionRef.current || clampBubblePosition(drag.left, drag.top);
+    const currentPosition = bubblePositionRef.current || getBubblePositionFromPoint(drag.left, drag.top, bubbleSizeRef.current);
+    const nextPosition = getBubblePositionFromDock(currentPosition.side, currentPosition.topRatio, bubbleSizeRef.current);
     bubbleDragRef.current = null;
     if (bubbleMovedRef.current) {
+      bubblePositionRef.current = nextPosition;
+      setBubblePosition(nextPosition);
       saveBubblePosition(nextPosition);
     }
   };
 
   useEffect(() => {
-    if (!bubblePosition) return undefined;
-
+    const refreshBubbleSize = () => {
+      const rect = bubbleRef.current?.getBoundingClientRect();
+      if (rect) bubbleSizeRef.current = { width: rect.width, height: rect.height };
+    };
     const clampCurrentPosition = () => setBubblePosition((current) => {
-      if (!current) return current;
-      const nextPosition = clampBubblePosition(current.left, current.top);
+      refreshBubbleSize();
+      const nextPosition = getBubblePositionFromDock(current.side, current.topRatio, bubbleSizeRef.current);
       bubblePositionRef.current = nextPosition;
       return nextPosition;
     });
+
     clampCurrentPosition();
     window.addEventListener('resize', clampCurrentPosition);
-    return () => window.removeEventListener('resize', clampCurrentPosition);
-  }, [bubblePosition, clampBubblePosition]);
+    window.visualViewport?.addEventListener('resize', clampCurrentPosition);
+    return () => {
+      window.removeEventListener('resize', clampCurrentPosition);
+      window.visualViewport?.removeEventListener('resize', clampCurrentPosition);
+    };
+  }, []);
+
+  useEffect(() => {
+    const syncStoredBubblePosition = () => {
+      if (isExpanded || bubbleDragRef.current || expandedDragRef.current) return;
+      const rect = bubbleRef.current?.getBoundingClientRect();
+      if (rect) bubbleSizeRef.current = { width: rect.width, height: rect.height };
+      const nextPosition = readBubblePosition(bubbleSizeRef.current);
+      bubblePositionRef.current = nextPosition;
+      setBubblePosition(nextPosition);
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') syncStoredBubblePosition();
+    };
+    const handleStorage = (event: StorageEvent) => {
+      if (!event.key || !event.key.startsWith('linkual_universal_bubble_')) return;
+      syncStoredBubblePosition();
+    };
+
+    window.addEventListener('focus', syncStoredBubblePosition);
+    window.addEventListener('pageshow', syncStoredBubblePosition);
+    window.addEventListener('storage', handleStorage);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      window.removeEventListener('focus', syncStoredBubblePosition);
+      window.removeEventListener('pageshow', syncStoredBubblePosition);
+      window.removeEventListener('storage', handleStorage);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isExpanded]);
 
   const handleBubbleButtonPointerDown = (event: React.PointerEvent<HTMLButtonElement>) => {
     event.stopPropagation();
@@ -619,62 +755,84 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
     return bubbleSizeRef.current;
   }, []);
 
-  const getBubbleAnchor = useCallback(() => {
+  const getBubbleAnchor = useCallback((): ExpandedAnchor => {
     const rect = bubbleRef.current?.getBoundingClientRect();
+    const current = bubblePositionRef.current;
+    const side = current?.side || 'right';
     if (rect) {
       bubbleSizeRef.current = { width: rect.width, height: rect.height };
       return {
-        left: rect.left + rect.width / 2,
-        top: rect.top + rect.height / 2,
+        side,
+        edge: side === 'right' ? Math.max(0, getViewportWidth() - rect.right) : Math.max(0, rect.left),
+        top: rect.top,
       };
     }
 
-    const current = bubblePositionRef.current;
     if (current) {
       const size = getBubbleSize();
       return {
-        left: current.left + size.width / 2,
-        top: current.top + size.height / 2,
+        side: current.side,
+        edge: current.side === 'right'
+          ? Math.max(0, getViewportWidth() - current.left - size.width)
+          : Math.max(0, current.left),
+        top: current.top,
       };
     }
 
     return {
-      left: window.innerWidth - BUBBLE_DEFAULT_EDGE_OFFSET - DEFAULT_BUBBLE_WIDTH / 2,
-      top: window.innerHeight - 18 - DEFAULT_BUBBLE_HEIGHT / 2,
+      side: 'right',
+      edge: BUBBLE_EDGE_OFFSET,
+      top: getBubblePositionFromDock('right', DEFAULT_BUBBLE_TOP_RATIO, {
+        width: DEFAULT_BUBBLE_WIDTH,
+        height: DEFAULT_BUBBLE_HEIGHT,
+      }).top,
     };
   }, [getBubbleSize]);
 
-  const clampExpandedAnchor = useCallback((anchor: { left: number; top: number }) => {
+  const clampExpandedAnchor = useCallback((anchor: ExpandedAnchor) => {
+    const maxEdge = Math.max(BUBBLE_EDGE_OFFSET, getViewportWidth() - BUBBLE_MARGIN);
+    const maxTop = Math.max(BUBBLE_MARGIN, getVisualViewportHeight() - BUBBLE_MARGIN);
     return {
-      left: anchor.left,
-      top: anchor.top,
+      side: anchor.side,
+      edge: clampNumber(anchor.edge, BUBBLE_EDGE_OFFSET, maxEdge),
+      top: clampNumber(anchor.top, BUBBLE_MARGIN, maxTop),
     };
   }, []);
 
-  const getExpandedWindowStyle = useCallback((anchor: { left: number; top: number } | null) => {
+  const getExpandedWindowStyle = useCallback((anchor: ExpandedAnchor | null) => {
     if (!anchor) return {};
 
-    return {
+    const baseStyle = {
       top: anchor.top,
-      right: window.innerWidth - anchor.left,
-      left: 'auto',
       bottom: 'auto',
-    } as React.CSSProperties;
+    };
+
+    return anchor.side === 'left'
+      ? {
+          ...baseStyle,
+          left: anchor.edge,
+          right: 'auto',
+        } as React.CSSProperties
+      : {
+          ...baseStyle,
+          right: anchor.edge,
+          left: 'auto',
+        } as React.CSSProperties;
   }, []);
 
-  const persistBubblePosition = useCallback((position: { left: number; top: number }) => {
-    const nextPosition = clampBubblePosition(position.left, position.top);
+  const persistBubblePosition = useCallback((position: BubblePosition) => {
+    const nextPosition = getBubblePositionFromDock(position.side, position.topRatio, getBubbleSize());
     setBubblePosition(nextPosition);
     bubblePositionRef.current = nextPosition;
     saveBubblePosition(nextPosition);
-  }, [clampBubblePosition]);
+  }, [getBubbleSize]);
 
-  const persistBubblePositionFromAnchor = useCallback((anchor: { left: number; top: number }) => {
+  const persistBubblePositionFromAnchor = useCallback((anchor: ExpandedAnchor) => {
     const size = getBubbleSize();
-    persistBubblePosition({
-      left: anchor.left - size.width / 2,
-      top: anchor.top - size.height / 2,
-    });
+    const left = anchor.side === 'right'
+      ? getViewportWidth() - anchor.edge - size.width
+      : anchor.edge;
+    persistBubblePosition(getBubblePositionFromPoint(left, anchor.top, size, anchor.side));
   }, [getBubbleSize, persistBubblePosition]);
 
   const handleExpandedPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
@@ -685,7 +843,8 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
       pointerId: event.pointerId,
       startX: event.clientX,
       startY: event.clientY,
-      left: anchor.left,
+      side: anchor.side,
+      edge: anchor.edge,
       top: anchor.top,
     };
     event.currentTarget.setPointerCapture?.(event.pointerId);
@@ -694,8 +853,10 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
   const handleExpandedPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
     const drag = expandedDragRef.current;
     if (!drag || drag.pointerId !== event.pointerId) return;
+    const deltaX = event.clientX - drag.startX;
     setExpandedAnchor(clampExpandedAnchor({
-      left: drag.left + event.clientX - drag.startX,
+      side: drag.side,
+      edge: drag.side === 'right' ? drag.edge - deltaX : drag.edge + deltaX,
       top: drag.top + event.clientY - drag.startY,
     }));
   };
@@ -704,8 +865,10 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
     const drag = expandedDragRef.current;
     if (!drag || drag.pointerId !== event.pointerId) return;
     expandedDragRef.current = null;
+    const deltaX = event.clientX - drag.startX;
     const anchor = clampExpandedAnchor({
-      left: drag.left + event.clientX - drag.startX,
+      side: drag.side,
+      edge: drag.side === 'right' ? drag.edge - deltaX : drag.edge + deltaX,
       top: drag.top + event.clientY - drag.startY,
     });
     setExpandedAnchor(anchor);
@@ -743,7 +906,7 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
     return (
       <div
         ref={bubbleRef}
-        className={`linkual-universal-expand-bar ${bubblePosition ? 'is-custom-position' : 'is-edge-default'}`}
+        className={`linkual-universal-expand-bar is-side-${bubblePosition.side}`}
         onPointerDown={handleBubblePointerDown}
         onPointerMove={handleBubblePointerMove}
         onPointerUp={handleBubblePointerUp}
@@ -751,7 +914,10 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
         onClick={handleBubbleClick}
         style={{
           '--linkual-theme': themeColor,
-          ...(bubblePosition ? { left: bubblePosition.left, top: bubblePosition.top, right: 'auto', bottom: 'auto' } : {}),
+          left: bubblePosition.left,
+          top: bubblePosition.top,
+          right: 'auto',
+          bottom: 'auto',
         } as React.CSSProperties}
         title="Linkual"
       >

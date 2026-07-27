@@ -16,6 +16,8 @@ export const DEFAULTS = {
   mobile_fullscreen_mode: 'video',
   lan_sync_url: 'http://localhost:8080/api/vocabulary/add',
   lan_action: 'daily',
+  universal_bubble_side: '',
+  universal_bubble_top_ratio: '',
   universal_bubble_left: '',
   universal_bubble_top: ''
 };

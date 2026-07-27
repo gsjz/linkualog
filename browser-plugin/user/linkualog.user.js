@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Linkual Log
 // @namespace    npm/vite-plugin-monkey
-// @version      0.0.40
+// @version      0.0.41
 // @author       Sergio Gao
 // @icon         https://vitejs.dev/logo.svg
 // @downloadURL  https://raw.githubusercontent.com/gsjz/linkualog/main/browser-plugin/user/linkualog.user.js
@@ -12732,6 +12732,8 @@
     mobile_fullscreen_mode: "video",
     lan_sync_url: "http://localhost:8080/api/vocabulary/add",
     lan_action: "daily",
+    universal_bubble_side: "",
+    universal_bubble_top_ratio: "",
     universal_bubble_left: "",
     universal_bubble_top: ""
   };
@@ -14874,10 +14876,11 @@ ${paragraph.text}`,
   const LINKUAL_NAVIGATION_EVENT$2 = "linkual_navigation";
   const FLOATING_BUTTON_MARGIN = 10;
   const BUBBLE_MARGIN = 12;
-  const BUBBLE_DEFAULT_EDGE_OFFSET = 0;
+  const BUBBLE_EDGE_OFFSET = 0;
+  const DEFAULT_BUBBLE_TOP_RATIO = 1;
   const DEFAULT_BUBBLE_WIDTH = 180;
   const DEFAULT_BUBBLE_HEIGHT = 44;
-  const BUBBLE_STORAGE_KEYS = ["universal_bubble_left", "universal_bubble_top"];
+  const LEGACY_BUBBLE_STORAGE_KEYS = ["universal_bubble_left", "universal_bubble_top"];
   const getDefaultExpandedHeight = () => window.matchMedia("(max-width: 720px)").matches ? MOBILE_WIDGET_HEIGHT : DESKTOP_WIDGET_HEIGHT;
   const getVisualViewportHeight = () => {
     var _a;
@@ -14894,8 +14897,75 @@ ${paragraph.text}`,
     COLLAPSED_WIDGET_HEIGHT,
     Math.floor(getVisualViewportHeight() - WIDGET_VIEWPORT_MARGIN)
   );
+  const clampNumber = (value, min, max) => Math.max(min, Math.min(value, max));
+  const getViewportWidth = () => Math.max(
+    DEFAULT_BUBBLE_WIDTH,
+    window.innerWidth || document.documentElement.clientWidth || DEFAULT_BUBBLE_WIDTH
+  );
+  const normalizeBubbleSide = (value) => String(value || "").trim() === "left" ? "left" : "right";
+  const normalizeBubbleTopRatio = (value, fallback = DEFAULT_BUBBLE_TOP_RATIO) => {
+    const parsed = Number.parseFloat(String(value ?? ""));
+    if (!Number.isFinite(parsed)) return fallback;
+    return clampNumber(parsed, 0, 1);
+  };
+  const getBubbleViewportBounds = (size) => {
+    const viewportWidth = getViewportWidth();
+    const viewportHeight = Math.max(DEFAULT_BUBBLE_HEIGHT, getVisualViewportHeight());
+    const maxLeft = Math.max(BUBBLE_EDGE_OFFSET, viewportWidth - size.width - BUBBLE_EDGE_OFFSET);
+    const minTop = BUBBLE_MARGIN;
+    const maxTop = Math.max(minTop, viewportHeight - size.height - BUBBLE_MARGIN);
+    return { viewportWidth, viewportHeight, maxLeft, minTop, maxTop };
+  };
+  const getBubbleTopRatioFromTop = (top, size) => {
+    const bounds = getBubbleViewportBounds(size);
+    if (bounds.maxTop <= bounds.minTop) return 0;
+    const clampedTop = clampNumber(top, bounds.minTop, bounds.maxTop);
+    return clampNumber((clampedTop - bounds.minTop) / (bounds.maxTop - bounds.minTop), 0, 1);
+  };
+  const getBubblePositionFromDock = (side, topRatio, size) => {
+    const bounds = getBubbleViewportBounds(size);
+    const normalizedRatio = normalizeBubbleTopRatio(topRatio);
+    return {
+      left: side === "left" ? BUBBLE_EDGE_OFFSET : bounds.maxLeft,
+      top: bounds.minTop + (bounds.maxTop - bounds.minTop) * normalizedRatio,
+      side,
+      topRatio: normalizedRatio
+    };
+  };
+  const getBubblePositionFromPoint = (left, top, size, preferredSide) => {
+    const bounds = getBubbleViewportBounds(size);
+    const clampedLeft = clampNumber(left, BUBBLE_EDGE_OFFSET, bounds.maxLeft);
+    const clampedTop = clampNumber(top, bounds.minTop, bounds.maxTop);
+    const side = preferredSide || (clampedLeft + size.width / 2 < bounds.viewportWidth / 2 ? "left" : "right");
+    return {
+      left: clampedLeft,
+      top: clampedTop,
+      side,
+      topRatio: getBubbleTopRatioFromTop(clampedTop, size)
+    };
+  };
+  const readBubblePosition = (size) => {
+    const storedSide = String(ConfigService.get("universal_bubble_side") || "").trim();
+    const storedRatio = ConfigService.get("universal_bubble_top_ratio");
+    if (storedSide || storedRatio) {
+      return getBubblePositionFromDock(
+        normalizeBubbleSide(storedSide),
+        normalizeBubbleTopRatio(storedRatio),
+        size
+      );
+    }
+    const legacyLeft = Number.parseFloat(ConfigService.get(LEGACY_BUBBLE_STORAGE_KEYS[0]));
+    const legacyTop = Number.parseFloat(ConfigService.get(LEGACY_BUBBLE_STORAGE_KEYS[1]));
+    if (Number.isFinite(legacyLeft) && Number.isFinite(legacyTop)) {
+      const legacyPosition = getBubblePositionFromPoint(legacyLeft, legacyTop, size);
+      return getBubblePositionFromDock(legacyPosition.side, legacyPosition.topRatio, size);
+    }
+    return getBubblePositionFromDock("right", DEFAULT_BUBBLE_TOP_RATIO, size);
+  };
   const saveBubblePosition = (position) => {
     try {
+      ConfigService.set("universal_bubble_side", position.side);
+      ConfigService.set("universal_bubble_top_ratio", position.topRatio.toFixed(4));
       ConfigService.set("universal_bubble_left", String(Math.round(position.left)));
       ConfigService.set("universal_bubble_top", String(Math.round(position.top)));
     } catch (err) {
@@ -15078,11 +15148,7 @@ ${paragraph.text}`,
     const [message, setMessage] = reactExports.useState("");
     const [reservedHeight, setReservedHeight] = reactExports.useState(getDefaultExpandedHeight);
     const [queueCount, setQueueCount] = reactExports.useState(0);
-    const [bubblePosition, setBubblePosition] = reactExports.useState(() => {
-      const left = Number.parseFloat(ConfigService.get(BUBBLE_STORAGE_KEYS[0]));
-      const top = Number.parseFloat(ConfigService.get(BUBBLE_STORAGE_KEYS[1]));
-      return Number.isFinite(left) && Number.isFinite(top) ? { left, top } : null;
-    });
+    const [bubblePosition, setBubblePosition] = reactExports.useState(() => readBubblePosition({ width: DEFAULT_BUBBLE_WIDTH, height: DEFAULT_BUBBLE_HEIGHT }));
     const [expandedAnchor, setExpandedAnchor] = reactExports.useState(null);
     const widgetRef = reactExports.useRef(null);
     const bubbleRef = reactExports.useRef(null);
@@ -15269,23 +15335,12 @@ ${paragraph.text}`,
       window.dispatchEvent(new Event(QUEUE_TOGGLE_EVENT));
       window.dispatchEvent(new Event(QUEUE_REQUEST_COUNT_EVENT));
     };
-    const clampBubblePosition = reactExports.useCallback((left, top) => {
-      var _a;
-      const rect = (_a = bubbleRef.current) == null ? void 0 : _a.getBoundingClientRect();
-      const width = (rect == null ? void 0 : rect.width) || bubbleSizeRef.current.width;
-      const height = (rect == null ? void 0 : rect.height) || bubbleSizeRef.current.height;
-      const maxLeft = Math.max(BUBBLE_MARGIN, window.innerWidth - width - BUBBLE_MARGIN);
-      const maxTop = Math.max(BUBBLE_MARGIN, window.innerHeight - height - BUBBLE_MARGIN);
-      return {
-        left: Math.max(BUBBLE_MARGIN, Math.min(left, maxLeft)),
-        top: Math.max(BUBBLE_MARGIN, Math.min(top, maxTop))
-      };
-    }, []);
     const handleBubblePointerDown = (event) => {
       var _a, _b, _c;
       if (event.pointerType === "mouse" && event.button !== 0) return;
       const rect = (_a = bubbleRef.current) == null ? void 0 : _a.getBoundingClientRect();
       if (!rect) return;
+      bubbleSizeRef.current = { width: rect.width, height: rect.height };
       bubbleMovedRef.current = false;
       bubbleDragRef.current = {
         pointerId: event.pointerId,
@@ -15302,31 +15357,72 @@ ${paragraph.text}`,
       const deltaX = event.clientX - drag.startX;
       const deltaY = event.clientY - drag.startY;
       if (Math.abs(deltaX) > 3 || Math.abs(deltaY) > 3) bubbleMovedRef.current = true;
-      const nextPosition = clampBubblePosition(drag.left + deltaX, drag.top + deltaY);
+      const nextPosition = getBubblePositionFromPoint(drag.left + deltaX, drag.top + deltaY, bubbleSizeRef.current);
       bubblePositionRef.current = nextPosition;
       setBubblePosition(nextPosition);
     };
     const handleBubblePointerUp = (event) => {
       const drag = bubbleDragRef.current;
       if (!drag || drag.pointerId !== event.pointerId) return;
-      const nextPosition = bubblePositionRef.current || clampBubblePosition(drag.left, drag.top);
+      const currentPosition = bubblePositionRef.current || getBubblePositionFromPoint(drag.left, drag.top, bubbleSizeRef.current);
+      const nextPosition = getBubblePositionFromDock(currentPosition.side, currentPosition.topRatio, bubbleSizeRef.current);
       bubbleDragRef.current = null;
       if (bubbleMovedRef.current) {
+        bubblePositionRef.current = nextPosition;
+        setBubblePosition(nextPosition);
         saveBubblePosition(nextPosition);
       }
     };
     reactExports.useEffect(() => {
-      if (!bubblePosition) return void 0;
+      var _a;
+      const refreshBubbleSize = () => {
+        var _a2;
+        const rect = (_a2 = bubbleRef.current) == null ? void 0 : _a2.getBoundingClientRect();
+        if (rect) bubbleSizeRef.current = { width: rect.width, height: rect.height };
+      };
       const clampCurrentPosition = () => setBubblePosition((current) => {
-        if (!current) return current;
-        const nextPosition = clampBubblePosition(current.left, current.top);
+        refreshBubbleSize();
+        const nextPosition = getBubblePositionFromDock(current.side, current.topRatio, bubbleSizeRef.current);
         bubblePositionRef.current = nextPosition;
         return nextPosition;
       });
       clampCurrentPosition();
       window.addEventListener("resize", clampCurrentPosition);
-      return () => window.removeEventListener("resize", clampCurrentPosition);
-    }, [bubblePosition, clampBubblePosition]);
+      (_a = window.visualViewport) == null ? void 0 : _a.addEventListener("resize", clampCurrentPosition);
+      return () => {
+        var _a2;
+        window.removeEventListener("resize", clampCurrentPosition);
+        (_a2 = window.visualViewport) == null ? void 0 : _a2.removeEventListener("resize", clampCurrentPosition);
+      };
+    }, []);
+    reactExports.useEffect(() => {
+      const syncStoredBubblePosition = () => {
+        var _a;
+        if (isExpanded || bubbleDragRef.current || expandedDragRef.current) return;
+        const rect = (_a = bubbleRef.current) == null ? void 0 : _a.getBoundingClientRect();
+        if (rect) bubbleSizeRef.current = { width: rect.width, height: rect.height };
+        const nextPosition = readBubblePosition(bubbleSizeRef.current);
+        bubblePositionRef.current = nextPosition;
+        setBubblePosition(nextPosition);
+      };
+      const handleVisibilityChange = () => {
+        if (document.visibilityState === "visible") syncStoredBubblePosition();
+      };
+      const handleStorage = (event) => {
+        if (!event.key || !event.key.startsWith("linkual_universal_bubble_")) return;
+        syncStoredBubblePosition();
+      };
+      window.addEventListener("focus", syncStoredBubblePosition);
+      window.addEventListener("pageshow", syncStoredBubblePosition);
+      window.addEventListener("storage", handleStorage);
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+      return () => {
+        window.removeEventListener("focus", syncStoredBubblePosition);
+        window.removeEventListener("pageshow", syncStoredBubblePosition);
+        window.removeEventListener("storage", handleStorage);
+        document.removeEventListener("visibilitychange", handleVisibilityChange);
+      };
+    }, [isExpanded]);
     const handleBubbleButtonPointerDown = (event) => {
       event.stopPropagation();
     };
@@ -15349,53 +15445,68 @@ ${paragraph.text}`,
     const getBubbleAnchor = reactExports.useCallback(() => {
       var _a;
       const rect = (_a = bubbleRef.current) == null ? void 0 : _a.getBoundingClientRect();
+      const current = bubblePositionRef.current;
+      const side = (current == null ? void 0 : current.side) || "right";
       if (rect) {
         bubbleSizeRef.current = { width: rect.width, height: rect.height };
         return {
-          left: rect.left + rect.width / 2,
-          top: rect.top + rect.height / 2
+          side,
+          edge: side === "right" ? Math.max(0, getViewportWidth() - rect.right) : Math.max(0, rect.left),
+          top: rect.top
         };
       }
-      const current = bubblePositionRef.current;
       if (current) {
         const size = getBubbleSize();
         return {
-          left: current.left + size.width / 2,
-          top: current.top + size.height / 2
+          side: current.side,
+          edge: current.side === "right" ? Math.max(0, getViewportWidth() - current.left - size.width) : Math.max(0, current.left),
+          top: current.top
         };
       }
       return {
-        left: window.innerWidth - BUBBLE_DEFAULT_EDGE_OFFSET - DEFAULT_BUBBLE_WIDTH / 2,
-        top: window.innerHeight - 18 - DEFAULT_BUBBLE_HEIGHT / 2
+        side: "right",
+        edge: BUBBLE_EDGE_OFFSET,
+        top: getBubblePositionFromDock("right", DEFAULT_BUBBLE_TOP_RATIO, {
+          width: DEFAULT_BUBBLE_WIDTH,
+          height: DEFAULT_BUBBLE_HEIGHT
+        }).top
       };
     }, [getBubbleSize]);
     const clampExpandedAnchor = reactExports.useCallback((anchor) => {
+      const maxEdge = Math.max(BUBBLE_EDGE_OFFSET, getViewportWidth() - BUBBLE_MARGIN);
+      const maxTop = Math.max(BUBBLE_MARGIN, getVisualViewportHeight() - BUBBLE_MARGIN);
       return {
-        left: anchor.left,
-        top: anchor.top
+        side: anchor.side,
+        edge: clampNumber(anchor.edge, BUBBLE_EDGE_OFFSET, maxEdge),
+        top: clampNumber(anchor.top, BUBBLE_MARGIN, maxTop)
       };
     }, []);
     const getExpandedWindowStyle = reactExports.useCallback((anchor) => {
       if (!anchor) return {};
-      return {
+      const baseStyle = {
         top: anchor.top,
-        right: window.innerWidth - anchor.left,
-        left: "auto",
         bottom: "auto"
+      };
+      return anchor.side === "left" ? {
+        ...baseStyle,
+        left: anchor.edge,
+        right: "auto"
+      } : {
+        ...baseStyle,
+        right: anchor.edge,
+        left: "auto"
       };
     }, []);
     const persistBubblePosition = reactExports.useCallback((position) => {
-      const nextPosition = clampBubblePosition(position.left, position.top);
+      const nextPosition = getBubblePositionFromDock(position.side, position.topRatio, getBubbleSize());
       setBubblePosition(nextPosition);
       bubblePositionRef.current = nextPosition;
       saveBubblePosition(nextPosition);
-    }, [clampBubblePosition]);
+    }, [getBubbleSize]);
     const persistBubblePositionFromAnchor = reactExports.useCallback((anchor) => {
       const size = getBubbleSize();
-      persistBubblePosition({
-        left: anchor.left - size.width / 2,
-        top: anchor.top - size.height / 2
-      });
+      const left = anchor.side === "right" ? getViewportWidth() - anchor.edge - size.width : anchor.edge;
+      persistBubblePosition(getBubblePositionFromPoint(left, anchor.top, size, anchor.side));
     }, [getBubbleSize, persistBubblePosition]);
     const handleExpandedPointerDown = (event) => {
       var _a, _b;
@@ -15406,7 +15517,8 @@ ${paragraph.text}`,
         pointerId: event.pointerId,
         startX: event.clientX,
         startY: event.clientY,
-        left: anchor.left,
+        side: anchor.side,
+        edge: anchor.edge,
         top: anchor.top
       };
       (_b = (_a = event.currentTarget).setPointerCapture) == null ? void 0 : _b.call(_a, event.pointerId);
@@ -15414,8 +15526,10 @@ ${paragraph.text}`,
     const handleExpandedPointerMove = (event) => {
       const drag = expandedDragRef.current;
       if (!drag || drag.pointerId !== event.pointerId) return;
+      const deltaX = event.clientX - drag.startX;
       setExpandedAnchor(clampExpandedAnchor({
-        left: drag.left + event.clientX - drag.startX,
+        side: drag.side,
+        edge: drag.side === "right" ? drag.edge - deltaX : drag.edge + deltaX,
         top: drag.top + event.clientY - drag.startY
       }));
     };
@@ -15423,8 +15537,10 @@ ${paragraph.text}`,
       const drag = expandedDragRef.current;
       if (!drag || drag.pointerId !== event.pointerId) return;
       expandedDragRef.current = null;
+      const deltaX = event.clientX - drag.startX;
       const anchor = clampExpandedAnchor({
-        left: drag.left + event.clientX - drag.startX,
+        side: drag.side,
+        edge: drag.side === "right" ? drag.edge - deltaX : drag.edge + deltaX,
         top: drag.top + event.clientY - drag.startY
       });
       setExpandedAnchor(anchor);
@@ -15458,7 +15574,7 @@ ${paragraph.text}`,
         "div",
         {
           ref: bubbleRef,
-          className: `linkual-universal-expand-bar ${bubblePosition ? "is-custom-position" : "is-edge-default"}`,
+          className: `linkual-universal-expand-bar is-side-${bubblePosition.side}`,
           onPointerDown: handleBubblePointerDown,
           onPointerMove: handleBubblePointerMove,
           onPointerUp: handleBubblePointerUp,
@@ -15466,7 +15582,10 @@ ${paragraph.text}`,
           onClick: handleBubbleClick,
           style: {
             "--linkual-theme": themeColor,
-            ...bubblePosition ? { left: bubblePosition.left, top: bubblePosition.top, right: "auto", bottom: "auto" } : {}
+            left: bubblePosition.left,
+            top: bubblePosition.top,
+            right: "auto",
+            bottom: "auto"
           },
           title: "Linkual",
           children: [
@@ -18307,13 +18426,10 @@ html.linkual-mobile-fullscreen-fallback {
   min-height: 38px;
   padding: 5px 7px 5px 8px;
   border: 1px solid rgba(255, 255, 255, 0.18);
-  border-right: 0;
-  border-radius: 8px 0 0 8px;
+  border-radius: 8px;
   background: rgba(20, 20, 22, 0.58);
   color: rgba(255, 255, 255, 0.92);
-  box-shadow:
-    0 8px 22px rgba(0, 0, 0, 0.18),
-    inset 3px 0 0 var(--linkual-theme, #000);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.18);
   cursor: grab;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   user-select: none;
@@ -18325,9 +18441,20 @@ html.linkual-mobile-fullscreen-fallback {
   transition: opacity 0.16s ease, background-color 0.16s ease, box-shadow 0.16s ease;
 }
 
-#linkual-root .linkual-universal-expand-bar.is-custom-position {
-  border-right: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 8px;
+#linkual-root .linkual-universal-expand-bar.is-side-right {
+  border-right: 0;
+  border-radius: 8px 0 0 8px;
+  box-shadow:
+    0 8px 22px rgba(0, 0, 0, 0.18),
+    inset 3px 0 0 var(--linkual-theme, #000);
+}
+
+#linkual-root .linkual-universal-expand-bar.is-side-left {
+  border-left: 0;
+  border-radius: 0 8px 8px 0;
+  box-shadow:
+    0 8px 22px rgba(0, 0, 0, 0.18),
+    inset -3px 0 0 var(--linkual-theme, #000);
 }
 
 #linkual-root .linkual-universal-expand-bar:active {
@@ -18337,10 +18464,21 @@ html.linkual-mobile-fullscreen-fallback {
 #linkual-root .linkual-universal-expand-bar:hover,
 #linkual-root .linkual-universal-expand-bar:focus-within {
   background: rgba(20, 20, 22, 0.72);
+  opacity: 0.96;
+}
+
+#linkual-root .linkual-universal-expand-bar.is-side-right:hover,
+#linkual-root .linkual-universal-expand-bar.is-side-right:focus-within {
   box-shadow:
     0 10px 26px rgba(0, 0, 0, 0.22),
     inset 3px 0 0 var(--linkual-theme, #000);
-  opacity: 0.96;
+}
+
+#linkual-root .linkual-universal-expand-bar.is-side-left:hover,
+#linkual-root .linkual-universal-expand-bar.is-side-left:focus-within {
+  box-shadow:
+    0 10px 26px rgba(0, 0, 0, 0.22),
+    inset -3px 0 0 var(--linkual-theme, #000);
 }
 
 #linkual-root .linkual-universal-bubble-grip {
