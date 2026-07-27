@@ -19,14 +19,28 @@ from core.refine_cache import (
     build_relation_suggest_cache_key,
     delete_refine_cache_for_entry,
     has_relation_suggest_cache_for_entry,
+    load_latest_relation_cache_for_entry,
     load_refine_cache,
     payload_fingerprint,
     save_refine_cache,
+)
+from core.vocabulary_redirects import (
+    resolve_redirect,
+    save_redirect,
 )
 from core.review_analysis_jobs import (
     create_analysis_job,
     get_analysis_job,
     update_job_progress,
+)
+from core.vocabulary_preprocess_queue import (
+    VocabularyPreprocessBusyError,
+    active_preprocess_entry,
+    finish_preprocess_item,
+    get_preprocess_queue,
+    register_preprocess_job,
+    set_preprocess_stage,
+    vocabulary_preprocess_write_lock,
 )
 from core.review import (
     append_or_replace_today_review,
@@ -144,6 +158,7 @@ class FileRefineRequest(BaseModel):
     data: dict | None = None
     use_cache: bool = True
     refresh_cache: bool = False
+    cache_only: bool = False
     custom_prompt: str = ""
 
 
@@ -163,6 +178,7 @@ class RelationSuggestRequest(BaseModel):
     custom_prompt: str = ""
     use_cache: bool = True
     refresh_cache: bool = False
+    cache_only: bool = False
 
 
 class RelationSuggestPrefetchRequest(BaseModel):
@@ -303,8 +319,68 @@ def _build_entry_ref(category: str, filename: str, word: str = "") -> dict:
     }
 
 
+def _entry_lock_spec(category: str, filename: str) -> tuple[str, str]:
+    return (_require_category(category), _normalize_json_filename(filename))
+
+
+def _preprocess_busy_http(exc: VocabularyPreprocessBusyError) -> HTTPException:
+    return HTTPException(
+        status_code=409,
+        detail={
+            "message": str(exc),
+            "code": "vocabulary_preprocess_busy",
+            "busy_items": exc.busy_items,
+        },
+    )
+
+
 def _entry_ref_id(ref: dict) -> str:
     return f"{str(ref.get('category') or '').strip()}/{_normalize_json_filename(ref.get('file'))}"
+
+
+def _entry_ref_exists(ref: dict) -> bool:
+    if not isinstance(ref, dict) or not _entry_ref_id(ref):
+        return False
+    try:
+        load_vocab_entry(str(ref.get("category") or ""), str(ref.get("file") or ""))
+        return True
+    except Exception:
+        return False
+
+
+def _resolve_entry_ref_for_relation(ref: dict) -> dict:
+    original = _build_entry_ref(
+        str(ref.get("category") or ""),
+        str(ref.get("file") or ""),
+        str(ref.get("word") or ""),
+    )
+    resolved = resolve_redirect(str(original.get("category") or ""), str(original.get("file") or ""))
+    resolved_ref = resolved.get("resolved") if isinstance(resolved.get("resolved"), dict) else None
+    if not resolved_ref:
+        return {
+            "status": str(resolved.get("status") or "missing"),
+            "original": original,
+            "resolved": None,
+            "chain": resolved.get("chain") if isinstance(resolved.get("chain"), list) else [],
+            "exists": False,
+        }
+
+    final_ref = _build_entry_ref(
+        str(resolved_ref.get("category") or ""),
+        str(resolved_ref.get("file") or ""),
+        str(resolved_ref.get("word") or ""),
+    )
+    exists = _entry_ref_exists(final_ref)
+    status = str(resolved.get("status") or "current")
+    if status == "current" and not exists:
+        status = "missing"
+    return {
+        "status": status,
+        "original": original,
+        "resolved": final_ref,
+        "chain": resolved.get("chain") if isinstance(resolved.get("chain"), list) else [],
+        "exists": exists,
+    }
 
 
 def _normalize_relation_type(value) -> str:
@@ -815,6 +891,51 @@ def _normalize_payload_relations_for_entry(payload: dict, category: str, filenam
     else:
         payload.pop("relations", None)
     return payload
+
+
+def _dedupe_lock_specs(specs: list[tuple[str, str]]) -> list[tuple[str, str]]:
+    deduped = []
+    seen = set()
+    for category, filename in specs:
+        normalized_category = str(category or "").strip()
+        normalized_filename = _normalize_json_filename(filename)
+        if not normalized_category or not normalized_filename:
+            continue
+        key = (normalized_category, normalized_filename.lower())
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append((normalized_category, normalized_filename))
+    return deduped
+
+
+def _relation_target_lock_specs(category: str, filename: str, payload: dict) -> list[tuple[str, str]]:
+    if not isinstance(payload, dict):
+        return []
+    source_ref = _build_entry_ref(
+        category,
+        filename,
+        payload.get("word") or os.path.splitext(filename)[0],
+    )
+    specs = []
+    for relation in _normalize_relations(payload, category, source_ref=source_ref):
+        target_ref = relation.get("target") if isinstance(relation.get("target"), dict) else {}
+        target_category = str(target_ref.get("category") or "").strip()
+        target_file = _normalize_json_filename(target_ref.get("file"))
+        if target_category and target_file:
+            specs.append((target_category, target_file))
+    return specs
+
+
+def _incoming_relation_source_lock_specs(target_ref: dict) -> list[tuple[str, str]]:
+    specs = []
+    for relation in _find_incoming_relations(target_ref):
+        source_ref = relation.get("target") if isinstance(relation.get("target"), dict) else {}
+        source_category = str(source_ref.get("category") or "").strip()
+        source_file = _normalize_json_filename(source_ref.get("file"))
+        if source_category and source_file:
+            specs.append((source_category, source_file))
+    return specs
 
 
 def _safe_created_at(raw_value: str | None) -> str:
@@ -2491,15 +2612,157 @@ def _normalize_relation_suggestion_for_response(item: dict, default_category: st
     if not relation:
         return None
     target_ref = relation.get("target") if isinstance(relation.get("target"), dict) else {}
-    if not _load_entry_by_ref(target_ref):
+    resolved_target = _resolve_entry_ref_for_relation(target_ref)
+    if not resolved_target.get("exists") or not isinstance(resolved_target.get("resolved"), dict):
         return None
+    original_target = target_ref
+    target_ref = resolved_target["resolved"]
+    relation["target"] = target_ref
+    if _entry_ref_id(original_target) != _entry_ref_id(target_ref):
+        relation["original_target"] = original_target
     try:
         confidence = round(_clamp_probability(item.get("confidence"), fallback=0.72), 3)
     except Exception:
         confidence = 0.72
     relation["confidence"] = confidence
     relation["source"] = str(item.get("source") or relation.get("source") or "llm").strip() or "llm"
+    relation["validation"] = {
+        "status": "redirected" if resolved_target.get("status") == "redirected" else "active",
+        "target_status": resolved_target.get("status"),
+        "target": target_ref,
+        "original_target": original_target,
+        "chain": resolved_target.get("chain") or [],
+    }
     return relation
+
+
+def _relation_validation_message(status: str, relation: dict) -> str:
+    target = relation.get("target") if isinstance(relation.get("target"), dict) else {}
+    original = relation.get("original_target") if isinstance(relation.get("original_target"), dict) else {}
+    if status == "stale_source":
+        return "源词条已合并或迁移，这条旧建议只保留作参考。"
+    if status == "duplicate":
+        return "当前词条已经存在等价连边或平凡同词边，无需重复应用。"
+    if status == "self_loop":
+        return "目标解析后指向当前词条自身，不能应用。"
+    if status == "missing":
+        return "目标词条不存在或重定向无法解析，不能应用。"
+    if status == "redirected":
+        return f"目标已从 {original.get('category') or ''}/{original.get('file') or ''} 迁移到 {target.get('category') or ''}/{target.get('file') or ''}。"
+    return ""
+
+
+def _relation_is_trivial_same_word(source_ref: dict, target_ref: dict, relation_type: str) -> bool:
+    source_word = _normalize_text_key(source_ref.get("word"))
+    target_word = _normalize_text_key(target_ref.get("word"))
+    if not source_word or source_word != target_word:
+        return False
+    if _entry_ref_id(source_ref) == _entry_ref_id(target_ref):
+        return True
+    return _normalize_relation_type(relation_type) in {"same_word", "related"}
+
+
+def _annotate_relation_suggestions(
+    suggestions: list[dict],
+    *,
+    source_ref: dict,
+    existing_relations: list[dict],
+) -> list[dict]:
+    existing_keys = {_relation_key(item) for item in existing_relations}
+    annotated = []
+    for raw_item in suggestions or []:
+        if not isinstance(raw_item, dict):
+            continue
+        item = deepcopy(raw_item)
+        target_ref = item.get("target") if isinstance(item.get("target"), dict) else {}
+        relation_type = _normalize_relation_type(item.get("type") or "related")
+        validation = item.get("validation") if isinstance(item.get("validation"), dict) else {}
+        status = str(validation.get("status") or "active")
+
+        source_resolution = _resolve_entry_ref_for_relation(source_ref)
+        if source_resolution.get("status") == "redirected":
+            status = "stale_source"
+        elif not source_resolution.get("exists"):
+            status = "missing"
+
+        target_resolution = _resolve_entry_ref_for_relation(target_ref)
+        if not target_resolution.get("exists") or not isinstance(target_resolution.get("resolved"), dict):
+            status = "missing"
+        else:
+            resolved_target = target_resolution["resolved"]
+            if _entry_ref_id(resolved_target) != _entry_ref_id(target_ref):
+                item["original_target"] = item.get("original_target") if isinstance(item.get("original_target"), dict) else target_ref
+                item["target"] = resolved_target
+                target_ref = resolved_target
+                if status == "active":
+                    status = "redirected"
+
+        key = (_entry_ref_id(target_ref), relation_type)
+        if status in {"active", "redirected"}:
+            if _entry_ref_id(target_ref) == _entry_ref_id(source_ref):
+                status = "self_loop"
+            elif key in existing_keys or _relation_is_trivial_same_word(source_ref, target_ref, relation_type):
+                status = "duplicate"
+
+        validation = {
+            **validation,
+            "status": status,
+            "applicable": status in {"active", "redirected"},
+            "message": _relation_validation_message(status, item),
+        }
+        item["validation"] = validation
+        annotated.append(item)
+    return annotated
+
+
+def _build_stale_relation_cache_response_for_redirected_source(
+    *,
+    category: str,
+    filename: str,
+    limit: int,
+    candidate_limit: int,
+) -> dict | None:
+    source_resolution = _resolve_entry_ref_for_relation(_build_entry_ref(category, filename, ""))
+    if source_resolution.get("status") != "redirected":
+        return None
+    cached = load_latest_relation_cache_for_entry(category, filename)
+    cached_response = cached.get("llm") if isinstance(cached, dict) else None
+    if not isinstance(cached_response, dict) or cached.get("llm_error"):
+        return None
+
+    source_ref = _build_entry_ref(category, filename, "")
+    response = deepcopy(cached_response)
+    suggestions = response.get("suggestions") if isinstance(response.get("suggestions"), list) else []
+    response["status"] = "success"
+    response["category"] = category
+    response["file"] = _normalize_json_filename(filename)
+    response["source"] = response.get("source") if isinstance(response.get("source"), dict) else source_ref
+    response["suggestions"] = _annotate_relation_suggestions(
+        suggestions[: max(1, int(limit or 12))],
+        source_ref=source_ref,
+        existing_relations=[],
+    )
+    response["heuristic"] = response.get("heuristic") if isinstance(response.get("heuristic"), dict) else {"suggestions": []}
+    response["llm"] = response.get("llm") if isinstance(response.get("llm"), dict) else {
+        "suggestions": [],
+        "notes": [],
+        "selection": {"selected": {}, "notes": []},
+    }
+    response["llm_error"] = response.get("llm_error")
+    response["notes"] = response.get("notes") if isinstance(response.get("notes"), list) else []
+    response["meta"] = {
+        **(response.get("meta") if isinstance(response.get("meta"), dict) else {}),
+        "candidate_limit": max(12, min(int(candidate_limit or 72), 180)),
+        "source_redirect": source_resolution,
+    }
+    response["cache"] = {
+        "status": "hit",
+        "enabled": True,
+        "cache_key": cached.get("meta", {}).get("cache_key") if isinstance(cached.get("meta"), dict) else None,
+        "content_hash": cached.get("meta", {}).get("content_hash") if isinstance(cached.get("meta"), dict) else None,
+        "stale_source": True,
+    }
+    return response
 
 
 def _merge_relation_suggestions(
@@ -2681,6 +2944,7 @@ def _build_file_refine_response(
     include_llm: bool,
     use_cache: bool,
     refresh_cache: bool,
+    cache_only: bool = False,
     custom_prompt: str = "",
 ) -> dict:
     heuristic = analyze_file_cleaning_suggestions(file_name, payload_for_analysis)
@@ -2718,7 +2982,9 @@ def _build_file_refine_response(
     elif can_use_cache and refresh_cache:
         cache_status = "refresh"
 
-    if llm is None and cache_status != "hit":
+    if cache_only and cache_status != "hit":
+        llm = {"entry": [], "definitions": [], "examples": [], "global_notes": []}
+    elif llm is None and cache_status != "hit":
         llm, llm_error = _build_file_refine_llm_result(
             file_name,
             payload_for_analysis,
@@ -2820,6 +3086,7 @@ def _run_file_refine_prefetch_job(
                 include_llm=True,
                 use_cache=True,
                 refresh_cache=bool(refresh_cache),
+                cache_only=False,
             )
             cache_status = str(result.get("cache", {}).get("status") or "")
             suggestion_count = _count_refine_response_suggestions(result)
@@ -2923,6 +3190,7 @@ def _run_file_refine_job(job_id: str, req: FileRefineRequest, category: str) -> 
         include_llm=req.include_llm,
         use_cache=req.use_cache,
         refresh_cache=req.refresh_cache,
+        cache_only=req.cache_only,
         custom_prompt=req.custom_prompt,
     )
     update_job_progress(
@@ -3098,6 +3366,7 @@ def _run_combined_prefetch_job(
     suggestion_limit: int,
     candidate_limit: int,
 ) -> dict:
+    register_preprocess_job(job_id, category, filenames)
     results = []
     counts = Counter()
     total = len(filenames)
@@ -3111,62 +3380,84 @@ def _run_combined_prefetch_job(
         )
         item = {"file": filename, "status": "success"}
         try:
-            with vocabulary_operation_lock():
-                path, payload = load_vocab_entry(category, filename)
-            file_name = os.path.basename(path)
+            with active_preprocess_entry(job_id, category, filename):
+                with vocabulary_operation_lock():
+                    path, payload = load_vocab_entry(category, filename)
+                file_name = os.path.basename(path)
 
-            refine_result = _build_file_refine_response(
-                category=category,
-                file_name=file_name,
-                payload_for_analysis=payload,
-                analyzed_from="file",
-                include_llm=True,
-                use_cache=True,
-                refresh_cache=bool(refresh_cache),
-            )
-            item["file"] = file_name
-            item["refine"] = {
-                "status": "success",
-                "cache": refine_result.get("cache"),
-                "llm_error": refine_result.get("llm_error"),
-                "suggestion_count": _count_refine_response_suggestions(refine_result),
-            }
-            refine_cache_status = str(refine_result.get("cache", {}).get("status") or "")
-            counts[f"refine_{refine_cache_status}"] += 1
-
-            update_job_progress(
-                job_id,
-                done=index - 1,
-                total=total,
-                current={"category": category, "file": file_name, "stage": "relations"},
-                summary=_summarize_job_results(results + [item], counts),
-            )
-
-            relation_result = suggest_vocab_relations(
-                RelationSuggestRequest(
+                refine_result = _build_file_refine_response(
                     category=category,
-                    filename=file_name,
-                    data=None,
-                    limit=suggestion_limit,
-                    candidate_limit=candidate_limit,
-                    custom_prompt="",
+                    file_name=file_name,
+                    payload_for_analysis=payload,
+                    analyzed_from="file",
+                    include_llm=True,
                     use_cache=True,
                     refresh_cache=bool(refresh_cache),
+                    cache_only=False,
                 )
+                item["file"] = file_name
+                item["refine"] = {
+                    "status": "success",
+                    "cache": refine_result.get("cache"),
+                    "llm_error": refine_result.get("llm_error"),
+                    "suggestion_count": _count_refine_response_suggestions(refine_result),
+                }
+                refine_cache_status = str(refine_result.get("cache", {}).get("status") or "")
+                counts[f"refine_{refine_cache_status}"] += 1
+
+                set_preprocess_stage(
+                    job_id,
+                    category,
+                    file_name,
+                    stage="relations",
+                    status="running",
+                    summary={"refine": item["refine"]},
+                )
+                update_job_progress(
+                    job_id,
+                    done=index - 1,
+                    total=total,
+                    current={"category": category, "file": file_name, "stage": "relations"},
+                    summary=_summarize_job_results(results + [item], counts),
+                )
+
+                relation_result = suggest_vocab_relations(
+                    RelationSuggestRequest(
+                        category=category,
+                        filename=file_name,
+                        data=None,
+                        limit=suggestion_limit,
+                        candidate_limit=candidate_limit,
+                        custom_prompt="",
+                        use_cache=True,
+                        refresh_cache=bool(refresh_cache),
+                    )
+                )
+                item["relations"] = {
+                    "status": "success",
+                    "cache": relation_result.get("cache"),
+                    "llm_error": relation_result.get("llm_error"),
+                    "suggestion_count": len(relation_result.get("suggestions", []) if isinstance(relation_result.get("suggestions"), list) else []),
+                }
+                relation_cache_status = str(relation_result.get("cache", {}).get("status") or "")
+                counts[f"relations_{relation_cache_status}"] += 1
+                if refine_result.get("llm_error") or relation_result.get("llm_error"):
+                    item["status"] = "partial"
+                    counts["partial"] += 1
+                else:
+                    counts["success"] += 1
+
+            finish_preprocess_item(
+                job_id,
+                category,
+                item.get("file") or filename,
+                status="success",
+                summary={
+                    "refine": item.get("refine"),
+                    "relations": item.get("relations"),
+                    "status": item.get("status"),
+                },
             )
-            item["relations"] = {
-                "status": "success",
-                "cache": relation_result.get("cache"),
-                "llm_error": relation_result.get("llm_error"),
-                "suggestion_count": len(relation_result.get("suggestions", []) if isinstance(relation_result.get("suggestions"), list) else []),
-            }
-            relation_cache_status = str(relation_result.get("cache", {}).get("status") or "")
-            counts[f"relations_{relation_cache_status}"] += 1
-            if refine_result.get("llm_error") or relation_result.get("llm_error"):
-                item["status"] = "partial"
-                counts["partial"] += 1
-            else:
-                counts["success"] += 1
         except Exception as exc:
             counts["error"] += 1
             item = {
@@ -3174,6 +3465,14 @@ def _run_combined_prefetch_job(
                 "status": "error",
                 "error": str(exc),
             }
+            finish_preprocess_item(
+                job_id,
+                category,
+                filename,
+                status="error",
+                summary={"status": "error"},
+                error=str(exc),
+            )
         finally:
             results.append(item)
             update_job_progress(
@@ -3217,7 +3516,7 @@ def _start_combined_prefetch_job(req: CombinedPrefetchRequest) -> dict:
     category = _require_category(req.category)
     limit = min(max(int(req.limit or 20), 1), 50)
     filenames = _normalize_prefetch_filenames(req.filenames, limit)
-    return create_analysis_job(
+    job = create_analysis_job(
         kind="vocabulary_combined_prefetch",
         description=f"预生成整理+连接建议 {category}",
         total=len(filenames),
@@ -3240,6 +3539,8 @@ def _start_combined_prefetch_job(req: CombinedPrefetchRequest) -> dict:
             candidate_limit=req.candidate_limit,
         ),
     )
+    register_preprocess_job(str(job.get("job_id") or job.get("id") or ""), category, filenames)
+    return job
 
 
 @router.get("/api/health")
@@ -3253,6 +3554,11 @@ def get_review_analysis_job(job_id: str):
     if not job:
         raise HTTPException(status_code=404, detail="分析任务不存在")
     return job
+
+
+@router.get("/api/vocabulary/preprocess/queue")
+def vocabulary_preprocess_queue(include_finished: bool = True, limit: int = 80):
+    return get_preprocess_queue(include_finished=include_finished, limit=limit)
 
 
 @router.get("/api/review/visualization")
@@ -3679,7 +3985,19 @@ def review_visualization(
 def suggest_vocab_relations(req: RelationSuggestRequest):
     try:
         category = _require_category(req.category)
-        path, existing = load_vocab_entry(category, req.filename)
+        try:
+            path, existing = load_vocab_entry(category, req.filename)
+        except FileNotFoundError:
+            if req.cache_only and req.use_cache and not isinstance(req.data, dict):
+                stale_response = _build_stale_relation_cache_response_for_redirected_source(
+                    category=category,
+                    filename=req.filename,
+                    limit=req.limit,
+                    candidate_limit=req.candidate_limit,
+                )
+                if stale_response is not None:
+                    return stale_response
+            raise
         file_name = os.path.basename(path)
         fallback_word = os.path.splitext(file_name)[0]
         source_payload = _normalize_vocab_payload(
@@ -3725,6 +4043,69 @@ def suggest_vocab_relations(req: RelationSuggestRequest):
                 cache_status = "miss"
         elif can_use_cache and req.refresh_cache:
             cache_status = "refresh"
+
+        if req.cache_only and cached_response is not None:
+            response = deepcopy(cached_response)
+            if not isinstance(response, dict):
+                response = {}
+            response["status"] = "success"
+            response["category"] = category
+            response["file"] = file_name
+            response["source"] = response.get("source") if isinstance(response.get("source"), dict) else source_ref
+            response["suggestions"] = response.get("suggestions") if isinstance(response.get("suggestions"), list) else []
+            response["suggestions"] = _annotate_relation_suggestions(
+                response["suggestions"],
+                source_ref=source_ref,
+                existing_relations=existing_relations,
+            )
+            response["heuristic"] = response.get("heuristic") if isinstance(response.get("heuristic"), dict) else {"suggestions": []}
+            response["llm"] = response.get("llm") if isinstance(response.get("llm"), dict) else {
+                "suggestions": [],
+                "notes": [],
+                "selection": {"selected": {}, "notes": []},
+            }
+            response["llm_error"] = response.get("llm_error")
+            response["notes"] = response.get("notes") if isinstance(response.get("notes"), list) else []
+            response["meta"] = response.get("meta") if isinstance(response.get("meta"), dict) else {}
+            response["cache"] = {
+                **(response.get("cache") if isinstance(response.get("cache"), dict) else {}),
+                "status": "hit",
+                "enabled": can_use_cache,
+                "cache_key": cache_meta.get("cache_key"),
+                "content_hash": cache_meta.get("content_hash"),
+            }
+            return response
+
+        if req.cache_only and cached_response is None:
+            return {
+                "status": "success",
+                "category": category,
+                "file": file_name,
+                "source": source_ref,
+                "suggestions": [],
+                "heuristic": {"suggestions": []},
+                "llm": {
+                    "suggestions": [],
+                    "notes": [],
+                    "selection": {"selected": {}, "notes": []},
+                },
+                "llm_error": None,
+                "notes": [],
+                "meta": {
+                    "candidate_count": 0,
+                    "full_vocabulary_candidate_count": 0,
+                    "rule_candidate_count": 0,
+                    "candidate_limit": normalized_candidate_limit,
+                    "llm_selected_count": 0,
+                    "skipped": [],
+                },
+                "cache": {
+                    "status": cache_status,
+                    "enabled": can_use_cache,
+                    "cache_key": cache_meta.get("cache_key"),
+                    "content_hash": cache_meta.get("content_hash"),
+                },
+            }
 
         rule_candidates, rule_skipped = _build_relation_candidates(
             source_ref,
@@ -3833,6 +4214,11 @@ def suggest_vocab_relations(req: RelationSuggestRequest):
             source_ref,
             existing_relations,
             limit=normalized_limit,
+        )
+        suggestions = _annotate_relation_suggestions(
+            suggestions,
+            source_ref=source_ref,
+            existing_relations=existing_relations,
         )
 
         response = {
@@ -4115,13 +4501,18 @@ def delete_vocab(req: VocabDeleteRequest):
                 file_name,
                 existing.get("word") or os.path.splitext(file_name)[0],
             )
-            updated_relation_files = _delete_entry_relations(target_ref)
-            try:
-                os.remove(path)
-                deleted = True
-            except FileNotFoundError:
-                deleted = False
-            delete_refine_cache_for_entry(category, file_name)
+            lock_specs = _dedupe_lock_specs(
+                [_entry_lock_spec(category, file_name)]
+                + _incoming_relation_source_lock_specs(target_ref)
+            )
+            with vocabulary_preprocess_write_lock(lock_specs):
+                updated_relation_files = _delete_entry_relations(target_ref)
+                try:
+                    os.remove(path)
+                    deleted = True
+                except FileNotFoundError:
+                    deleted = False
+                delete_refine_cache_for_entry(category, file_name)
 
         return {
             "status": "success",
@@ -4135,6 +4526,8 @@ def delete_vocab(req: VocabDeleteRequest):
         raise HTTPException(status_code=404, detail=str(exc))
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
+    except VocabularyPreprocessBusyError as exc:
+        raise _preprocess_busy_http(exc)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
 
@@ -4145,38 +4538,47 @@ def save_vocab(req: VocabSaveRequest):
         category = _require_category(req.category)
         with vocabulary_operation_lock():
             path, existing = load_vocab_entry(category, req.filename)
-            fallback_word = os.path.splitext(os.path.basename(path))[0]
+            file_name = os.path.basename(path)
+            fallback_word = os.path.splitext(file_name)[0]
             normalized = _normalize_vocab_payload(
                 req.data,
                 fallback_word=fallback_word,
                 fallback_created_at=str(existing.get("createdAt", "")),
                 category=category,
-                filename=os.path.basename(path),
+                filename=file_name,
             )
-            save_vocab_file(path, normalized)
-            _sync_bidirectional_relations_for_entry(
-                category,
-                os.path.basename(path),
-                existing,
-                normalized,
+            lock_specs = _dedupe_lock_specs(
+                [_entry_lock_spec(category, file_name)]
+                + _relation_target_lock_specs(category, file_name, existing)
+                + _relation_target_lock_specs(category, file_name, normalized)
             )
-            _delete_refine_cache_if_analysis_changed(
-                category,
-                os.path.basename(path),
-                existing,
-                normalized,
-            )
+            with vocabulary_preprocess_write_lock(lock_specs):
+                save_vocab_file(path, normalized)
+                _sync_bidirectional_relations_for_entry(
+                    category,
+                    file_name,
+                    existing,
+                    normalized,
+                )
+                _delete_refine_cache_if_analysis_changed(
+                    category,
+                    file_name,
+                    existing,
+                    normalized,
+                )
 
         return {
             "status": "success",
             "category": category,
-            "file": os.path.basename(path),
+            "file": file_name,
             "data": normalized,
         }
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
+    except VocabularyPreprocessBusyError as exc:
+        raise _preprocess_busy_http(exc)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
 
@@ -4215,43 +4617,60 @@ def rename_vocab(req: VocabRenameRequest):
                 target_word=target_display_word,
             )
             target_existed = bool(not same_target and os.path.exists(target_path))
-            if target_existed:
-                target_payload = load_vocab_file(target_path)
-                normalized["word"] = source_word
-                normalized = _merge_vocab_payload(
-                    target_payload=target_payload,
-                    source_payload=normalized,
-                    target_fallback_word=target_display_word,
-                    target_category=category,
-                    target_filename=target_filename,
-                    source_category=category,
-                    source_filename=source_file,
-                )
-                source_ref = _build_entry_ref(category, source_file, source_word)
-                target_ref = _build_entry_ref(category, target_filename, normalized.get("word") or target_display_word)
-                normalized, rewritten_relation_files = _finalize_vocab_merge_relations(
-                    source_ref=source_ref,
-                    target_ref=target_ref,
-                    merged_payload=normalized,
-                )
-            else:
-                rewritten_relation_files = 0
-            save_vocab_file(target_path, normalized)
-            _sync_bidirectional_relations_for_entry(
-                category,
-                os.path.basename(target_path),
-                existing,
-                normalized,
-                before_filename=source_file,
+            target_payload = load_vocab_file(target_path) if target_existed else {}
+            lock_specs = _dedupe_lock_specs(
+                [_entry_lock_spec(category, source_file), _entry_lock_spec(category, target_filename)]
+                + _relation_target_lock_specs(category, source_file, existing)
+                + _relation_target_lock_specs(category, target_filename, target_payload)
+                + _relation_target_lock_specs(category, target_filename, normalized)
+                + _incoming_relation_source_lock_specs(_build_entry_ref(category, source_file, source_word))
             )
-            delete_refine_cache_for_entry(category, source_file)
-            delete_refine_cache_for_entry(category, os.path.basename(target_path))
+            with vocabulary_preprocess_write_lock(lock_specs):
+                if target_existed:
+                    normalized["word"] = source_word
+                    normalized = _merge_vocab_payload(
+                        target_payload=target_payload,
+                        source_payload=normalized,
+                        target_fallback_word=target_display_word,
+                        target_category=category,
+                        target_filename=target_filename,
+                        source_category=category,
+                        source_filename=source_file,
+                    )
+                    source_ref = _build_entry_ref(category, source_file, source_word)
+                    target_ref = _build_entry_ref(category, target_filename, normalized.get("word") or target_display_word)
+                    normalized, rewritten_relation_files = _finalize_vocab_merge_relations(
+                        source_ref=source_ref,
+                        target_ref=target_ref,
+                        merged_payload=normalized,
+                    )
+                else:
+                    rewritten_relation_files = 0
+                save_vocab_file(target_path, normalized)
+                _sync_bidirectional_relations_for_entry(
+                    category,
+                    os.path.basename(target_path),
+                    existing,
+                    normalized,
+                    before_filename=source_file,
+                )
+                delete_refine_cache_for_entry(category, source_file, kinds={"file_refine_llm"})
+                delete_refine_cache_for_entry(category, os.path.basename(target_path))
 
-            if not same_target:
-                try:
-                    os.remove(source_path)
-                except FileNotFoundError:
-                    pass
+                if not same_target:
+                    try:
+                        os.remove(source_path)
+                        save_redirect(
+                            source_category=category,
+                            source_filename=source_file,
+                            source_word=source_word,
+                            target_category=category,
+                            target_filename=os.path.basename(target_path),
+                            target_word=str(normalized.get("word") or target_display_word).strip(),
+                            reason="rename_merge" if target_existed else "rename",
+                        )
+                    except FileNotFoundError:
+                        pass
 
         return {
             "status": "success",
@@ -4269,6 +4688,8 @@ def rename_vocab(req: VocabRenameRequest):
         raise HTTPException(status_code=404, detail=str(exc))
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
+    except VocabularyPreprocessBusyError as exc:
+        raise _preprocess_busy_http(exc)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
 
@@ -4526,26 +4947,46 @@ def apply_merge(req: MergeApplyRequest):
             )
             source_ref = _build_entry_ref(category, os.path.basename(source_path), source_payload.get("word") or os.path.splitext(os.path.basename(source_path))[0])
             target_ref = _build_entry_ref(category, os.path.basename(target_path), merged_payload.get("word") or os.path.splitext(os.path.basename(target_path))[0])
-            merged_payload, rewritten_relation_files = _finalize_vocab_merge_relations(
-                source_ref=source_ref,
-                target_ref=target_ref,
-                merged_payload=merged_payload,
+            lock_specs = _dedupe_lock_specs(
+                [
+                    _entry_lock_spec(category, os.path.basename(source_path)),
+                    _entry_lock_spec(category, os.path.basename(target_path)),
+                ]
+                + _relation_target_lock_specs(category, os.path.basename(source_path), source_payload)
+                + _relation_target_lock_specs(category, os.path.basename(target_path), target_payload)
+                + _relation_target_lock_specs(category, os.path.basename(target_path), merged_payload)
+                + _incoming_relation_source_lock_specs(source_ref)
             )
-            save_vocab_file(target_path, merged_payload)
-            _sync_bidirectional_relations_for_entry(
-                category,
-                os.path.basename(target_path),
-                target_payload if isinstance(target_payload, dict) else {},
-                merged_payload,
-            )
-            delete_refine_cache_for_entry(category, os.path.basename(source_path))
-            delete_refine_cache_for_entry(category, os.path.basename(target_path))
+            with vocabulary_preprocess_write_lock(lock_specs):
+                merged_payload, rewritten_relation_files = _finalize_vocab_merge_relations(
+                    source_ref=source_ref,
+                    target_ref=target_ref,
+                    merged_payload=merged_payload,
+                )
+                save_vocab_file(target_path, merged_payload)
+                _sync_bidirectional_relations_for_entry(
+                    category,
+                    os.path.basename(target_path),
+                    target_payload if isinstance(target_payload, dict) else {},
+                    merged_payload,
+                )
+                delete_refine_cache_for_entry(category, os.path.basename(source_path), kinds={"file_refine_llm"})
+                delete_refine_cache_for_entry(category, os.path.basename(target_path))
 
-            if req.delete_source:
-                try:
-                    os.remove(source_path)
-                except FileNotFoundError:
-                    pass
+                if req.delete_source:
+                    try:
+                        os.remove(source_path)
+                        save_redirect(
+                            source_category=category,
+                            source_filename=os.path.basename(source_path),
+                            source_word=str(source_payload.get("word") or os.path.splitext(os.path.basename(source_path))[0]).strip(),
+                            target_category=category,
+                            target_filename=os.path.basename(target_path),
+                            target_word=str(merged_payload.get("word") or os.path.splitext(os.path.basename(target_path))[0]).strip(),
+                            reason="merge_suggestion",
+                        )
+                    except FileNotFoundError:
+                        pass
 
         return {
             "status": "success",
@@ -4562,6 +5003,8 @@ def apply_merge(req: MergeApplyRequest):
         raise HTTPException(status_code=404, detail=str(exc))
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
+    except VocabularyPreprocessBusyError as exc:
+        raise _preprocess_busy_http(exc)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
 
@@ -4623,29 +5066,49 @@ def manual_merge_vocab(req: ManualVocabMergeRequest):
                 merged_payload["word"] = target_word
             source_ref = _build_entry_ref(source_category, source_file, source_word)
             target_ref = _build_entry_ref(target_category, target_filename, merged_payload.get("word") or target_word or target_fallback_word)
-            merged_payload, rewritten_relation_files = _finalize_vocab_merge_relations(
-                source_ref=source_ref,
-                target_ref=target_ref,
-                merged_payload=merged_payload,
+            lock_specs = _dedupe_lock_specs(
+                [
+                    _entry_lock_spec(source_category, source_file),
+                    _entry_lock_spec(target_category, target_filename),
+                ]
+                + _relation_target_lock_specs(source_category, source_file, source_payload)
+                + _relation_target_lock_specs(target_category, target_filename, target_payload)
+                + _relation_target_lock_specs(target_category, target_filename, merged_payload)
+                + _incoming_relation_source_lock_specs(source_ref)
             )
+            with vocabulary_preprocess_write_lock(lock_specs):
+                merged_payload, rewritten_relation_files = _finalize_vocab_merge_relations(
+                    source_ref=source_ref,
+                    target_ref=target_ref,
+                    merged_payload=merged_payload,
+                )
 
-            save_vocab_file(target_path, merged_payload)
-            _sync_bidirectional_relations_for_entry(
-                target_category,
-                os.path.basename(target_path),
-                target_payload if isinstance(target_payload, dict) else {},
-                merged_payload,
-            )
-            delete_refine_cache_for_entry(source_category, source_file)
-            delete_refine_cache_for_entry(target_category, os.path.basename(target_path))
+                save_vocab_file(target_path, merged_payload)
+                _sync_bidirectional_relations_for_entry(
+                    target_category,
+                    os.path.basename(target_path),
+                    target_payload if isinstance(target_payload, dict) else {},
+                    merged_payload,
+                )
+                delete_refine_cache_for_entry(source_category, source_file, kinds={"file_refine_llm"})
+                delete_refine_cache_for_entry(target_category, os.path.basename(target_path))
 
-            source_deleted = False
-            if req.delete_source:
-                try:
-                    os.remove(source_path)
-                    source_deleted = True
-                except FileNotFoundError:
-                    source_deleted = False
+                source_deleted = False
+                if req.delete_source:
+                    try:
+                        os.remove(source_path)
+                        source_deleted = True
+                        save_redirect(
+                            source_category=source_category,
+                            source_filename=source_file,
+                            source_word=source_word,
+                            target_category=target_category,
+                            target_filename=os.path.basename(target_path),
+                            target_word=str(merged_payload.get("word") or target_word or target_fallback_word).strip(),
+                            reason="manual_merge",
+                        )
+                    except FileNotFoundError:
+                        source_deleted = False
 
         return {
             "status": "success",
@@ -4664,6 +5127,8 @@ def manual_merge_vocab(req: ManualVocabMergeRequest):
         raise HTTPException(status_code=404, detail=str(exc))
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
+    except VocabularyPreprocessBusyError as exc:
+        raise _preprocess_busy_http(exc)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
 
@@ -4765,7 +5230,7 @@ def apply_split(req: SplitApplyRequest):
                 os.remove(source_path)
             except FileNotFoundError:
                 pass
-            delete_refine_cache_for_entry(category, source_file)
+            delete_refine_cache_for_entry(category, source_file, kinds={"file_refine_llm"})
 
         return {
             "status": "success",
@@ -4820,6 +5285,7 @@ def refine_file(req: FileRefineRequest):
             include_llm=req.include_llm,
             use_cache=req.use_cache,
             refresh_cache=req.refresh_cache,
+            cache_only=req.cache_only,
             custom_prompt=req.custom_prompt,
         )
     except FileNotFoundError as exc:
@@ -4883,6 +5349,7 @@ def prefetch_file_refine(req: FileRefinePrefetchRequest):
                     include_llm=True,
                     use_cache=True,
                     refresh_cache=bool(req.refresh_cache),
+                    cache_only=False,
                 )
                 cache_status = str(result.get("cache", {}).get("status") or "")
                 counts[cache_status] += 1

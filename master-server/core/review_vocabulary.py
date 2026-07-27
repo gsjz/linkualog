@@ -33,7 +33,7 @@ def list_categories() -> list[str]:
     root = _vocab_root()
     categories = [
         name for name in os.listdir(root)
-        if os.path.isdir(os.path.join(root, name))
+        if os.path.isdir(os.path.join(root, name)) and not name.startswith(".")
     ]
     categories.sort()
     return categories

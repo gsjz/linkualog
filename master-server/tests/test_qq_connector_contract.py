@@ -978,6 +978,51 @@ class QQConnectorContractTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(second["cache"]["status"], "hit")
         self.assertEqual(second["llm"], llm_payload)
 
+    def test_refine_file_cache_only_returns_cached_result_without_llm(self):
+        category_dir = self.vocab_dir / "daily"
+        category_dir.mkdir(parents=True, exist_ok=True)
+        payload = {
+            "word": "cached only",
+            "createdAt": "2026-05-01",
+            "reviews": [],
+            "definitions": ["缓存只读"],
+            "examples": [],
+        }
+        review_vocabulary.save_vocab_file(str(category_dir / "cached-only.json"), payload)
+        llm_payload = {
+            "entry": [],
+            "definitions": [{"action": "append", "suggested": "缓存命中"}],
+            "examples": [],
+            "global_notes": [],
+        }
+        refine_cache.save_refine_cache(
+            refine_cache.build_refine_cache_key("daily", "cached-only.json", payload),
+            llm_payload,
+        )
+
+        with patch.object(review_routes, "suggest_file_cleaning_with_llm") as mocked_llm:
+            hit = review_routes.refine_file(
+                review_routes.FileRefineRequest(
+                    category="daily",
+                    filename="cached-only.json",
+                    cache_only=True,
+                )
+            )
+            miss = review_routes.refine_file(
+                review_routes.FileRefineRequest(
+                    category="daily",
+                    filename="cached-only.json",
+                    cache_only=True,
+                    refresh_cache=True,
+                )
+            )
+
+        mocked_llm.assert_not_called()
+        self.assertEqual(hit["cache"]["status"], "hit")
+        self.assertEqual(hit["llm"], llm_payload)
+        self.assertEqual(miss["cache"]["status"], "refresh")
+        self.assertEqual(miss["llm"], {"entry": [], "definitions": [], "examples": [], "global_notes": []})
+
     def test_refine_file_includes_lemma_rule_rename_when_llm_misses_it(self):
         category_dir = self.vocab_dir / "daily"
         category_dir.mkdir(parents=True, exist_ok=True)

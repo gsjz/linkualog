@@ -353,9 +353,10 @@ def save_refine_cache(cache_meta: dict, llm: dict | None, llm_error: str | None 
     return data
 
 
-def delete_refine_cache_for_entry(category: str, filename: str) -> int:
+def delete_refine_cache_for_entry(category: str, filename: str, kinds: set[str] | None = None) -> int:
     normalized_category = _normalize_category(category)
     normalized_filename = _normalize_filename(filename)
+    allowed_kinds = {str(kind) for kind in kinds or set() if str(kind)}
     deleted = 0
     root = _cache_root()
     for path in root.glob("*.json"):
@@ -368,6 +369,7 @@ def delete_refine_cache_for_entry(category: str, filename: str) -> int:
         if (
             meta.get("category") == normalized_category
             and meta.get("filename") == normalized_filename
+            and (not allowed_kinds or str(meta.get("kind") or "") in allowed_kinds)
         ):
             try:
                 path.unlink()
@@ -375,3 +377,29 @@ def delete_refine_cache_for_entry(category: str, filename: str) -> int:
             except FileNotFoundError:
                 pass
     return deleted
+
+
+def load_latest_relation_cache_for_entry(category: str, filename: str) -> dict | None:
+    normalized_category = _normalize_category(category)
+    normalized_filename = _normalize_filename(filename)
+    latest: tuple[str, dict] | None = None
+    root = _cache_root()
+    for path in root.glob("*.json"):
+        try:
+            with FileLock(f"{path}.lock", timeout=1):
+                data = json.loads(path.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        if not isinstance(data, dict):
+            continue
+        meta = data.get("meta") if isinstance(data.get("meta"), dict) else {}
+        if (
+            meta.get("kind") != "relation_suggest_llm"
+            or meta.get("category") != normalized_category
+            or meta.get("filename") != normalized_filename
+        ):
+            continue
+        created_at = str(meta.get("created_at") or "")
+        if latest is None or created_at > latest[0]:
+            latest = (created_at, data)
+    return latest[1] if latest else None
