@@ -3,7 +3,10 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import VocabularyReview from './VocabularyReview.jsx';
 import ReviewWorkspace from '../review/App.jsx';
 import UiIcon from './UiIcon.jsx';
+import VocabularyQueueDock from './VocabularyQueueDock.jsx';
+import { useVocabularyQueues } from '../hooks/useVocabularyQueues.js';
 import {
+  fetchVocabularyPreprocessQueue,
   fetchReviewAnalysisJob,
   startVocabularyPreprocessJob,
 } from '../api/client.js';
@@ -31,16 +34,35 @@ const buildReviewLaunchRequest = ({ category = '', word = '', focus = 'clean' } 
   };
 };
 
-const STUDY_MODE_OPTIONS = [
-  { key: 'random', label: '随机', icon: 'shuffle' },
-  { key: 'manual', label: '手动', icon: 'list' },
-];
-
 const AUTO_LLM_STORAGE_KEY = 'vocabWorkspaceAutoLlmOnOpen';
+const QUEUE_LIMITS_STORAGE_KEY = 'linkualog:vocabulary-queue-limits:v1';
+const QUEUE_LIMIT_DEFAULTS = {
+  randomQueueLimit: 8,
+  preprocessLimit: 50,
+};
 
 const getStoredAutoLlmOnOpen = () => (
   localStorage.getItem(AUTO_LLM_STORAGE_KEY) !== '0'
 );
+
+const normalizeQueueLimit = (value, fallback) => {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.max(1, Math.min(50, parsed));
+};
+
+const normalizeQueueLimits = (value = {}) => ({
+  randomQueueLimit: normalizeQueueLimit(value.randomQueueLimit, QUEUE_LIMIT_DEFAULTS.randomQueueLimit),
+  preprocessLimit: normalizeQueueLimit(value.preprocessLimit, QUEUE_LIMIT_DEFAULTS.preprocessLimit),
+});
+
+const getStoredQueueLimits = () => {
+  try {
+    return normalizeQueueLimits(JSON.parse(localStorage.getItem(QUEUE_LIMITS_STORAGE_KEY) || '{}'));
+  } catch {
+    return normalizeQueueLimits();
+  }
+};
 
 const buildAutoLlmLaunchToken = () => `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
@@ -49,6 +71,18 @@ const sleep = (ms) => new Promise((resolve) => {
 });
 
 const isTerminalAnalysisJob = (job) => ['success', 'error'].includes(String(job?.status || '').trim());
+
+const preprocessStageLabel = (item) => {
+  const label = String(item?.stage_label || item?.status_label || '').trim();
+  if (label) return label;
+  const stage = String(item?.stage || item?.status || '').trim();
+  if (stage === 'refine') return '编辑建议';
+  if (stage === 'relations') return '连边建议';
+  if (stage === 'queued') return '等待';
+  if (stage === 'success') return '完成';
+  if (stage === 'error') return '失败';
+  return '预处理';
+};
 
 const waitForAnalysisJob = async (jobOrId, onUpdate = null) => {
   const jobId = String(jobOrId?.job_id || jobOrId?.id || jobOrId || '').trim();
@@ -67,25 +101,6 @@ const waitForAnalysisJob = async (jobOrId, onUpdate = null) => {
 
   return current;
 };
-
-function StudyModeSwitch({ mode, onChange }) {
-  return (
-    <div className="vocab-study-switch" role="tablist" aria-label="选词模式">
-      {STUDY_MODE_OPTIONS.map((option) => (
-        <button
-          key={option.key}
-          type="button"
-          className={`vocab-study-chip ${mode === option.key ? 'active' : ''}`}
-          onClick={() => onChange(option.key)}
-          aria-label={`${option.label}模式`}
-        >
-          <UiIcon name={option.icon} size={15} />
-          <span>{option.label}</span>
-        </button>
-      ))}
-    </div>
-  );
-}
 
 function SurfaceLaunchButton({
   surface,
@@ -120,7 +135,6 @@ export default function VocabularyWorkspace({
   launchRequest = null,
   mobileSimple = false,
   compactDesktop = false,
-  compactViewport = false,
   onOpenConfig = null,
   onSelectionChange = null,
 }) {
@@ -130,7 +144,8 @@ export default function VocabularyWorkspace({
   const [autoLlmOnOpen, setAutoLlmOnOpen] = useState(getStoredAutoLlmOnOpen);
   const [reviewEntryUpdate, setReviewEntryUpdate] = useState(null);
   const [prefetchedRefineUpdate, setPrefetchedRefineUpdate] = useState(null);
-  const [reviewToolbarControlsHost, setReviewToolbarControlsHost] = useState(null);
+  const [queueDockControlsHost, setQueueDockControlsHost] = useState(null);
+  const [editorHeaderActionsHost, setEditorHeaderActionsHost] = useState(null);
   const [visibleScope, setVisibleScope] = useState({
     entries: [],
     selectedEntry: null,
@@ -143,15 +158,44 @@ export default function VocabularyWorkspace({
   const [prefetchingRelations, setPrefetchingRelations] = useState(false);
   const [prefetchProgress, setPrefetchProgress] = useState({ done: 0, total: 0 });
   const [relationPrefetchProgress, setRelationPrefetchProgress] = useState({ done: 0, total: 0 });
+  const [preprocessQueue, setPreprocessQueue] = useState({ items: [], active_count: 0, total: 0 });
+  const [preprocessQueueError, setPreprocessQueueError] = useState('');
+  const [queueLimits, setQueueLimits] = useState(getStoredQueueLimits);
+  const [queueJumpRequest, setQueueJumpRequest] = useState(null);
+  const [currentEntryActions, setCurrentEntryActions] = useState(null);
+  const {
+    activeQueue,
+    nextQueue,
+    collapsed: queueDockCollapsed,
+    dockPosition: queueDockPosition,
+    mobileSheet: queueDockMobileSheet,
+    queues,
+    cursor,
+    todoIds,
+    setActiveQueue,
+    setNextQueue,
+    setCollapsed: setQueueDockCollapsed,
+    setDockPosition: setQueueDockPosition,
+    resetDockPosition: resetQueueDockPosition,
+    setMobileSheet: setQueueDockMobileSheet,
+    syncQueue,
+    addToTodo,
+    removeTodo,
+    clearTodo,
+    getNextEntry,
+    advanceQueue,
+  } = useVocabularyQueues();
   const reviewSurfaceMobileSimple = mobileSimple;
 
-  const sharedLaunchRequest = useMemo(() => (
-    buildReviewLaunchRequest({
+  const sharedLaunchRequest = useMemo(() => {
+    const request = buildReviewLaunchRequest({
       category: currentSelection?.category || launchRequest?.category,
       word: currentSelection?.word || currentSelection?.filename || launchRequest?.fileKey || launchRequest?.word,
       focus: launchRequest?.focus || 'editor',
-    })
-  ), [currentSelection?.category, currentSelection?.filename, currentSelection?.word, launchRequest?.category, launchRequest?.fileKey, launchRequest?.focus, launchRequest?.word]);
+    });
+    const queueSource = String(launchRequest?.queueSource || launchRequest?.sourceQueue || '').trim();
+    return request && queueSource ? { ...request, queueSource } : request;
+  }, [currentSelection?.category, currentSelection?.filename, currentSelection?.word, launchRequest?.category, launchRequest?.fileKey, launchRequest?.focus, launchRequest?.queueSource, launchRequest?.sourceQueue, launchRequest?.word]);
 
   const reviewSurfaceCompactDesktop = compactDesktop;
   const hasSelection = Boolean(sharedLaunchRequest?.filename);
@@ -182,6 +226,18 @@ export default function VocabularyWorkspace({
     window.addEventListener('config-updated', handleConfigUpdate);
     return () => window.removeEventListener('config-updated', handleConfigUpdate);
   }, []);
+
+  const handleQueueLimitsChange = useCallback((nextLimitsOrUpdater) => {
+    setQueueLimits((current) => normalizeQueueLimits(
+      typeof nextLimitsOrUpdater === 'function'
+        ? nextLimitsOrUpdater(current)
+        : nextLimitsOrUpdater,
+    ));
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(QUEUE_LIMITS_STORAGE_KEY, JSON.stringify(queueLimits));
+  }, [queueLimits]);
 
   const openWorkspaceSurface = (surface = 'editor') => {
     if (!hasSelection) return;
@@ -238,25 +294,79 @@ export default function VocabularyWorkspace({
     }));
   }, []);
 
+  const refreshPreprocessQueue = useCallback(async () => {
+    try {
+      const queue = await fetchVocabularyPreprocessQueue({ includeFinished: true, limit: 24 });
+      setPreprocessQueue({
+        items: Array.isArray(queue?.items) ? queue.items : [],
+        active: Array.isArray(queue?.active) ? queue.active : [],
+        active_count: Number(queue?.active_count || 0),
+        total: Number(queue?.total || 0),
+      });
+      setPreprocessQueueError('');
+      return queue;
+    } catch (error) {
+      setPreprocessQueueError(error?.message || '读取预处理队列失败');
+      return null;
+    }
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    let timer = 0;
+
+    const poll = async () => {
+      if (cancelled) return;
+      const queue = await refreshPreprocessQueue();
+      if (cancelled) return;
+      const hasActive = Number(queue?.active_count || 0) > 0 || prefetchingRefine || prefetchingRelations;
+      timer = window.setTimeout(poll, hasActive ? 1600 : 7000);
+    };
+
+    void poll();
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [prefetchingRefine, prefetchingRelations, refreshPreprocessQueue]);
+
   const handleVisibleScopeChange = useCallback((scope) => {
     setVisibleScope(scope || {});
   }, []);
 
-  const handleReviewToolbarControlsHostRef = useCallback((node) => {
-    setReviewToolbarControlsHost(node);
+  const handleQueueSnapshotChange = useCallback((snapshot) => {
+    if (Array.isArray(snapshot?.manual)) {
+      syncQueue('manual', snapshot.manual, 'manual');
+    }
+    if (Array.isArray(snapshot?.random)) {
+      syncQueue('random', snapshot.random, 'random');
+    }
+  }, [syncQueue]);
+
+  const handleQueueDockControlsHostRef = useCallback((node) => {
+    setQueueDockControlsHost(node);
+  }, []);
+
+  const handleEditorHeaderActionsHostRef = useCallback((node) => {
+    setEditorHeaderActionsHost(node);
+  }, []);
+
+  const handleCurrentEntryActionsChange = useCallback((actions) => {
+    setCurrentEntryActions(actions || null);
   }, []);
 
   const handlePrefetchVisible = useCallback(async () => {
     if (prefetchingRefine || prefetchingRelations) return;
 
     const rawEntries = Array.isArray(visibleScope.entries) ? visibleScope.entries : [];
+    const preprocessLimit = normalizeQueueLimit(queueLimits.preprocessLimit, QUEUE_LIMIT_DEFAULTS.preprocessLimit);
     const targetsByCategory = new Map();
     rawEntries
       .filter((entry) => (
         (entry?.needsProcessing && !entry?.refineCached)
         || !entry?.relationCached
       ))
-      .slice(0, 50)
+      .slice(0, preprocessLimit)
       .forEach((entry) => {
         const category = String(entry.category || '').trim();
         const file = String(entry.file || '').trim();
@@ -278,6 +388,7 @@ export default function VocabularyWorkspace({
       for (const [category, files] of targetsByCategory.entries()) {
         try {
           const job = await startVocabularyPreprocessJob(category, files, { limit: files.length });
+          void refreshPreprocessQueue();
           const finalJob = await waitForAnalysisJob(job, (currentJob) => {
             const progress = currentJob?.progress || {};
             const done = Math.min(total, completedBeforeCategory + Number(progress.done || 0));
@@ -286,7 +397,9 @@ export default function VocabularyWorkspace({
               done,
               total,
             });
+            void refreshPreprocessQueue();
           });
+          void refreshPreprocessQueue();
           const resultItems = Array.isArray(finalJob?.result?.results) ? finalJob.result.results : [];
           const refineReadyFiles = resultItems
             .filter((item) => (
@@ -323,8 +436,9 @@ export default function VocabularyWorkspace({
     } finally {
       setPrefetchingRefine(false);
       setPrefetchingRelations(false);
+      void refreshPreprocessQueue();
     }
-  }, [markRefineCached, markRelationCached, prefetchingRefine, prefetchingRelations, visibleScope.entries]);
+  }, [markRefineCached, markRelationCached, prefetchingRefine, prefetchingRelations, queueLimits.preprocessLimit, refreshPreprocessQueue, visibleScope.entries]);
 
   const handleVocabularyEntryChange = (change) => {
     const normalizedCategory = String(change?.category || sharedLaunchRequest?.category || '').trim();
@@ -362,10 +476,69 @@ export default function VocabularyWorkspace({
       });
     }
 
-    if (change?.closeEditor !== false) {
+    const shouldKeepSelection = Boolean(change?.keepSelection || change?.keep_selection);
+    if (change?.closeEditor === true || (change?.closeEditor !== false && !shouldKeepSelection)) {
       setEditorSurface('');
     }
   };
+
+  useEffect(() => {
+    const items = preprocessQueueError
+      ? [{
+          category: 'system',
+          file: 'preprocess-error.json',
+          word: preprocessQueueError,
+          source: 'preprocess',
+          status: 'error',
+          stageLabel: '读取失败',
+        }]
+      : (Array.isArray(preprocessQueue.items) ? preprocessQueue.items : []).map((item) => ({
+          category: item.category,
+          file: item.file,
+          word: item.word || String(item.file || '').replace(/\.json$/i, ''),
+          source: 'preprocess',
+          status: item.locked ? 'locked' : item.status,
+          stage: item.stage,
+          stageLabel: preprocessStageLabel(item),
+          statusLabel: item.status_label,
+          locked: item.locked,
+          addedAt: item.queued_at,
+          updatedAt: item.updated_at,
+        }));
+    syncQueue('preprocess', items, 'preprocess');
+  }, [preprocessQueue.items, preprocessQueueError, syncQueue]);
+
+  const jumpToQueueEntry = useCallback((item, sourceQueue = activeQueue) => {
+    const category = String(item?.category || '').trim();
+    const file = String(item?.file || '').trim();
+    if (!category || !file) return;
+    const normalizedSourceQueue = ['random', 'manual', 'todo', 'preprocess'].includes(sourceQueue)
+      ? sourceQueue
+      : activeQueue;
+    setQueueJumpRequest({
+      category,
+      file,
+      word: item.word || file.replace(/\.json$/i, ''),
+      sourceQueue: normalizedSourceQueue,
+      token: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    });
+    if (typeof onSelectionChange === 'function') {
+      onSelectionChange({
+        category,
+        filename: file,
+        fileKey: file,
+        word: item.word || file.replace(/\.json$/i, ''),
+        queueSource: normalizedSourceQueue,
+      });
+    }
+  }, [activeQueue, onSelectionChange]);
+
+  const handleQueueNextEntry = useCallback(() => {
+    const nextEntry = getNextEntry();
+    if (!nextEntry) return;
+    jumpToQueueEntry(nextEntry, nextQueue);
+    advanceQueue(nextQueue);
+  }, [advanceQueue, getNextEntry, jumpToQueueEntry, nextQueue]);
   const visibleEntries = Array.isArray(visibleScope.entries) ? visibleScope.entries : [];
   const selectedVisibleEntry = visibleScope.selectedEntry || null;
   const prefetchTargetCount = visibleEntries.filter((entry) => entry?.needsProcessing && !entry?.refineCached).length;
@@ -373,6 +546,7 @@ export default function VocabularyWorkspace({
   const selectedHasReadySuggestion = Boolean(selectedVisibleEntry?.refineCached);
   const selectedHasReadyRelationSuggestion = Boolean(selectedVisibleEntry?.relationCached);
   const prefetching = prefetchingRefine || prefetchingRelations;
+  const preprocessLimit = normalizeQueueLimit(queueLimits.preprocessLimit, QUEUE_LIMIT_DEFAULTS.preprocessLimit);
   const prefetchTargetTotal = prefetchTargetCount + relationPrefetchTargetCount;
   const prefetchLabel = prefetchingRefine
     ? `整理 ${prefetchProgress.done}/${prefetchProgress.total}`
@@ -380,8 +554,8 @@ export default function VocabularyWorkspace({
     ? `连边 ${relationPrefetchProgress.done}/${relationPrefetchProgress.total}`
     : '预生成';
   const prefetchTitleTargets = [
-    prefetchTargetCount ? `整理 ${Math.min(prefetchTargetCount, 50)}` : '',
-    relationPrefetchTargetCount ? `连接 ${Math.min(relationPrefetchTargetCount, 50)}` : '',
+    prefetchTargetCount ? `整理 ${Math.min(prefetchTargetCount, preprocessLimit)}` : '',
+    relationPrefetchTargetCount ? `连接 ${Math.min(relationPrefetchTargetCount, preprocessLimit)}` : '',
   ].filter(Boolean);
   const prefetchTitle = `预生成当前范围内的整理和连接建议${prefetchTitleTargets.length ? ` (${prefetchTitleTargets.join('，')})` : ''}`;
   const editorSurfaceTitle = {
@@ -392,48 +566,61 @@ export default function VocabularyWorkspace({
     editor: '手动整理面板',
     connection: '连接面板',
   }[editorSurface] || '手动整理面板';
-
+  const entryActionsNode = hasSelection ? (
+    <div className="vocab-word-inline-actions" aria-label="当前词条操作">
+      <SurfaceLaunchButton
+        surface="editor"
+        label="编辑"
+        icon="edit"
+        disabled={!hasSelection}
+        onOpen={openWorkspaceSurface}
+        active={editorSurface === 'editor'}
+        hasReadySuggestion={selectedHasReadySuggestion}
+        title={selectedHasReadySuggestion ? '打开手动整理；已有预生成整理建议' : '打开手动整理'}
+      />
+      <SurfaceLaunchButton
+        surface="connection"
+        label="连接"
+        icon="external-link"
+        disabled={!hasSelection}
+        onOpen={openWorkspaceSurface}
+        active={editorSurface === 'connection'}
+        hasReadySuggestion={selectedHasReadyRelationSuggestion}
+        title={selectedHasReadyRelationSuggestion ? '打开连接面板；已有预生成连接建议' : '打开连接面板'}
+      />
+    </div>
+  ) : null;
   return (
     <div className={`vocab-workspace${compactDesktop ? ' is-compact-desktop' : ''} is-study-mode${overlayLaunchRequest ? ' is-editor-open' : ''}`}>
-      <div className="vocab-workspace-toolbar">
-        <div className="vocab-workspace-review-tools-host" ref={handleReviewToolbarControlsHostRef} />
-        <div className="vocab-workspace-actions">
-          <StudyModeSwitch mode={studyMode} onChange={setStudyMode} />
-          <button
-            type="button"
-            className="vocab-mode-switch vocab-prefetch-switch"
-            aria-label="预生成当前范围内的整理和连接建议"
-            title={prefetchTitle}
-            onClick={() => void handlePrefetchVisible()}
-            disabled={prefetching || prefetchTargetTotal <= 0}
-          >
-            <span className="vocab-mode-switch-icon">
-              <UiIcon name="wand" size={17} />
-            </span>
-            <span className="vocab-mode-switch-copy">{prefetchLabel}</span>
-          </button>
-          <SurfaceLaunchButton
-            surface="editor"
-            label="编辑"
-            icon="edit"
-            disabled={!hasSelection}
-            onOpen={openWorkspaceSurface}
-            active={editorSurface === 'editor'}
-            hasReadySuggestion={selectedHasReadySuggestion}
-            title={selectedHasReadySuggestion ? '打开手动整理；已有预生成整理建议' : '打开手动整理'}
-          />
-          <SurfaceLaunchButton
-            surface="connection"
-            label="连接"
-            icon="external-link"
-            disabled={!hasSelection}
-            onOpen={openWorkspaceSurface}
-            active={editorSurface === 'connection'}
-            hasReadySuggestion={selectedHasReadyRelationSuggestion}
-            title={selectedHasReadyRelationSuggestion ? '打开连接面板；已有预生成连接建议' : '打开连接面板'}
-          />
-        </div>
-      </div>
+      <VocabularyQueueDock
+        activeQueue={activeQueue}
+        nextQueue={nextQueue}
+        collapsed={queueDockCollapsed}
+        dockPosition={queueDockPosition}
+        mobileSheet={queueDockMobileSheet}
+        queues={queues}
+        cursor={cursor}
+        todoIds={todoIds}
+        currentEntryActions={currentEntryActions}
+        onActiveQueueChange={setActiveQueue}
+        onNextQueueChange={setNextQueue}
+        onCollapsedChange={setQueueDockCollapsed}
+        onDockPositionChange={setQueueDockPosition}
+        onDockPositionReset={resetQueueDockPosition}
+        onMobileSheetChange={setQueueDockMobileSheet}
+        onSelectEntry={jumpToQueueEntry}
+        onNextEntry={handleQueueNextEntry}
+        onAddToTodo={addToTodo}
+        onRemoveTodo={removeTodo}
+        onClearTodo={clearTodo}
+        studyMode={studyMode}
+        onStudyModeChange={setStudyMode}
+        controlsHostRef={handleQueueDockControlsHostRef}
+        prefetchLabel={prefetchLabel}
+        prefetchTitle={prefetchTitle}
+        prefetchDisabled={prefetching || prefetchTargetTotal <= 0}
+        onPrefetchVisible={handlePrefetchVisible}
+      />
 
       <div className="vocab-workspace-panels">
         <section className="vocab-workspace-panel is-active">
@@ -443,11 +630,17 @@ export default function VocabularyWorkspace({
             prefetchedRefineRequest={prefetchedRefineUpdate}
             mobileSimple={reviewSurfaceMobileSimple}
             compactDesktop={reviewSurfaceCompactDesktop}
-            compactViewport={compactViewport}
             selectionMode={studyMode}
             onSelectionChange={onSelectionChange}
             onVisibleScopeChange={handleVisibleScopeChange}
-            workspaceToolbarControlsHost={reviewToolbarControlsHost}
+            onQueueSnapshotChange={handleQueueSnapshotChange}
+            onCurrentEntryActionsChange={handleCurrentEntryActionsChange}
+            queueLimits={queueLimits}
+            onQueueLimitsChange={handleQueueLimitsChange}
+            queueJumpRequest={queueJumpRequest}
+            queueDockControlsActive
+            queueDockControlsHost={queueDockControlsHost}
+            entryActionsNode={entryActionsNode}
           />
         </section>
 
@@ -470,6 +663,9 @@ export default function VocabularyWorkspace({
                   </div>
                 </div>
                 <div className="vocab-editor-panel-actions">
+                  {editorSurface === 'connection' ? (
+                    <div className="vocab-editor-panel-action-host" ref={handleEditorHeaderActionsHostRef} />
+                  ) : null}
                   <button
                     type="button"
                     className="vocab-edit-fab vocab-edit-fab-icon"
@@ -488,6 +684,7 @@ export default function VocabularyWorkspace({
                   launchRequest={finalOverlayLaunchRequest}
                   onSelectionChange={onSelectionChange}
                   onVocabularyChange={handleVocabularyEntryChange}
+                  headerActionsHost={editorSurface === 'connection' ? editorHeaderActionsHost : null}
                 />
               </div>
             </section>

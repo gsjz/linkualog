@@ -16,6 +16,9 @@ const readErrorMessage = async (res) => {
       return detail.trim();
     }
     if (detail && typeof detail === 'object') {
+      if (typeof detail.message === 'string' && detail.message.trim()) {
+        return detail.message.trim();
+      }
       return JSON.stringify(detail);
     }
     if (typeof payload?.error === 'string' && payload.error.trim()) {
@@ -155,6 +158,7 @@ export const runFileRefine = async (category, filename, includeLlm = true, data 
       data,
       use_cache: options?.useCache !== false,
       refresh_cache: Boolean(options?.refreshCache),
+      cache_only: Boolean(options?.cacheOnly),
       custom_prompt: String(options?.customPrompt || '').trim(),
     }),
   });
@@ -172,6 +176,7 @@ export const startFileRefineJob = async (category, filename, includeLlm = true, 
       data,
       use_cache: options?.useCache !== false,
       refresh_cache: Boolean(options?.refreshCache),
+      cache_only: Boolean(options?.cacheOnly),
       custom_prompt: String(options?.customPrompt || '').trim(),
     }),
   });
@@ -231,6 +236,7 @@ export const suggestVocabRelations = async (category, filename, data = null, lim
       custom_prompt: String(options?.customPrompt || '').trim(),
       use_cache: options?.useCache !== false,
       refresh_cache: Boolean(options?.refreshCache),
+      cache_only: Boolean(options?.cacheOnly),
     }),
   });
 };
@@ -248,6 +254,7 @@ export const startVocabRelationsSuggestJob = async (category, filename, data = n
       custom_prompt: String(options?.customPrompt || '').trim(),
       use_cache: options?.useCache !== false,
       refresh_cache: Boolean(options?.refreshCache),
+      cache_only: Boolean(options?.cacheOnly),
     }),
   });
 };
@@ -302,6 +309,14 @@ export const startVocabPreprocessJob = async (category, filenames = [], options 
 
 export const fetchReviewAnalysisJob = async (jobId) => {
   return requestJson(`/api/review/analysis/jobs/${encodeURIComponent(jobId)}`);
+};
+
+export const fetchVocabularyPreprocessQueue = async (options = {}) => {
+  const params = new URLSearchParams();
+  if (options?.includeFinished === false) params.set('include_finished', 'false');
+  if (options?.limit) params.set('limit', String(options.limit));
+  const query = params.toString();
+  return requestJson(`/api/vocabulary/preprocess/queue${query ? `?${query}` : ''}`);
 };
 
 export const renameVocabDetail = async (category, filename, word, data = null) => {

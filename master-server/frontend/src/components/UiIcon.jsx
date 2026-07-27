@@ -458,6 +458,19 @@ export default function UiIcon({ name, size = 18 }) {
     );
   }
 
+  if (name === 'drag') {
+    return (
+      <svg {...commonProps}>
+        <path d="M9 5h.01" />
+        <path d="M15 5h.01" />
+        <path d="M9 12h.01" />
+        <path d="M15 12h.01" />
+        <path d="M9 19h.01" />
+        <path d="M15 19h.01" />
+      </svg>
+    );
+  }
+
   return (
     <svg {...commonProps}>
       <path d="M18 6 6 18" />

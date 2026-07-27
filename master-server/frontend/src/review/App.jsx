@@ -19,6 +19,7 @@ import {
   saveConfig,
   saveVocabDetail,
   fetchReviewAnalysisJob,
+  suggestVocabRelations,
   startFileRefineJob,
   startVocabRelationsSuggestJob,
   submitReviewScore,
@@ -1852,6 +1853,7 @@ function ConnectionPanel({
   onReset,
   onSave,
   onLoadEntriesForCategory,
+  draftActionsHost = null,
 }) {
   const relations = normalizeDraftRelationsForEdit(draft, currentCategory, currentFilename, { includeIncomplete: true });
   const categorizedEntries = useMemo(() => {
@@ -1901,6 +1903,13 @@ function ConnectionPanel({
   const skippedCount = Array.isArray(relationSuggestMeta?.skipped)
     ? relationSuggestMeta.skipped.length
     : Number(relationSuggestMeta?.skipped || 0);
+  const draftActionsNode = (
+    <div className="connection-draft-actions">
+      <button type="button" className="ghost" onClick={onReset} disabled={!dirty || saving}>重置草稿</button>
+      <button type="button" className="primary" onClick={onSave} disabled={!dirty || saving}>{saving ? '保存中...' : '保存到 data'}</button>
+    </div>
+  );
+  const draftActionsPortal = draftActionsHost ? createPortal(draftActionsNode, draftActionsHost) : null;
 
   useEffect(() => {
     if (!draft) return;
@@ -1951,6 +1960,7 @@ function ConnectionPanel({
           {dirty ? <span className="dirty-dot">未保存</span> : <span className="saved-dot">已同步</span>}
         </div>
       </div>
+      {draftActionsPortal}
 
       <div className="panel-body list-body connection-body">
         <section className="editor-section relation-editor-section">
@@ -1988,21 +1998,46 @@ function ConnectionPanel({
             {suggestions.length === 0 ? <div className="empty">暂无建议。点击“LLM 建议连边”生成候选关系。</div> : null}
             {suggestions.map((suggestion, index) => {
               const target = suggestion.target || {};
+              const validation = suggestion.validation || {};
+              const validationStatus = String(validation.status || 'active');
+              const applicable = validation.applicable !== false && ['active', 'redirected'].includes(validationStatus);
+              const statusLabel = {
+                active: '可应用',
+                redirected: '已重定向',
+                stale_source: '已过时',
+                duplicate: '已存在',
+                self_loop: '自环',
+                missing: '目标缺失',
+              }[validationStatus] || validationStatus;
               return (
                 <div
-                  className="relation-editor-card relation-suggestion-card"
+                  className={`relation-editor-card relation-suggestion-card ${applicable ? '' : 'is-stale'}`}
                   key={`${relationEntryId(target)}-${suggestion.type}-${index}`}
                   style={suggestionConfidenceStyle(suggestion.confidence)}
                 >
                   <div className="relation-card-head">
                     <strong>{target.word || filenameToWord(target.file)} · {suggestion.type || 'related'}</strong>
-                    <button type="button" className="primary" onClick={() => onApplyRelationSuggestion(suggestion, index)}>应用</button>
+                    <button
+                      type="button"
+                      className={applicable ? 'primary' : 'ghost'}
+                      onClick={() => onApplyRelationSuggestion(suggestion, index)}
+                      disabled={!applicable}
+                    >
+                      {applicable ? '应用' : '不可应用'}
+                    </button>
                   </div>
                   <div className="relation-suggestion-meta">
                     <span>{target.category || currentCategory} / {target.file}</span>
                     {suggestion.confidence !== undefined ? <span>confidence {Number(suggestion.confidence).toFixed(2)}</span> : null}
                     {suggestion.source ? <span>{suggestion.source}</span> : null}
+                    <span>{statusLabel}</span>
                   </div>
+                  {suggestion.original_target && relationEntryId(suggestion.original_target) !== relationEntryId(target) ? (
+                    <div className="relation-suggestion-redirect">
+                      原目标 {suggestion.original_target.category || currentCategory} / {suggestion.original_target.file}
+                    </div>
+                  ) : null}
+                  {validation.message ? <div className="relation-suggestion-warning">{validation.message}</div> : null}
                   {suggestion.reason ? <div className="muted">{suggestion.reason}</div> : null}
                 </div>
               );
@@ -2183,10 +2218,11 @@ function ConnectionPanel({
           </div>
         </section>
 
-        <div className="editor-footer">
-          <button type="button" className="ghost" onClick={onReset} disabled={!dirty || saving}>重置草稿</button>
-          <button type="button" className="primary" onClick={onSave} disabled={!dirty || saving}>{saving ? '保存中...' : '保存到 data'}</button>
-        </div>
+        {draftActionsHost ? null : (
+          <div className="editor-footer">
+            {draftActionsNode}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -3154,6 +3190,7 @@ export default function App({
   launchRequest = null,
   onSelectionChange = null,
   onVocabularyChange = null,
+  headerActionsHost = null,
 }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [topbarToolsOpen, setTopbarToolsOpen] = useState(false);
@@ -3835,6 +3872,26 @@ export default function App({
         ? sanitizeCurrentDraft(draft, filename.replace(/\.json$/i, ''))
         : null;
       const shouldRefreshCache = !analysisDraft && cleanData?.cache?.status === 'hit';
+      const normalizedPrompt = collapseWhitespace(organizeCustomPrompt);
+      if (!analysisDraft && !shouldRefreshCache && !normalizedPrompt) {
+        const cached = await runFileRefine(
+          apiCategory,
+          filename,
+          ORGANIZE_CURRENT_WORD_INCLUDE_LLM,
+          null,
+          {
+            useCache: true,
+            refreshCache: false,
+            cacheOnly: true,
+            customPrompt: '',
+          },
+        );
+        if (cached?.cache?.status === 'hit') {
+          setCleanData(cached);
+          showNotice('已加载预生成建议');
+          return;
+        }
+      }
       const job = await startFileRefineJob(
         apiCategory,
         filename,
@@ -3952,6 +4009,13 @@ export default function App({
 
   const handleApplyRelationSuggestion = (suggestion, suggestionIndex = -1) => {
     if (!draft || !suggestion) return;
+    const validation = suggestion.validation || {};
+    const validationStatus = String(validation.status || 'active');
+    const applicable = validation.applicable !== false && ['active', 'redirected'].includes(validationStatus);
+    if (!applicable) {
+      showError(validation.message || '这条连边建议已过时，不能应用');
+      return;
+    }
     updateDraft((base) => {
       const relations = upsertRelationList(
         base.relations,
@@ -3988,6 +4052,31 @@ export default function App({
         ? sanitizeCurrentDraft(draft, filename.replace(/\.json$/i, ''))
         : null;
       const shouldRefreshCache = !draftDirty && !hasCustomPrompt && relationSuggestMeta?.cache_status === 'hit';
+      if (!payload && !shouldRefreshCache && !hasCustomPrompt) {
+        const cached = await suggestVocabRelations(apiCategory, filename, null, 12, {
+          customPrompt: '',
+          useCache: true,
+          refreshCache: false,
+          cacheOnly: true,
+        });
+        if (cached?.cache?.status === 'hit') {
+          setRelationSuggestions(Array.isArray(cached?.suggestions) ? cached.suggestions : []);
+          setRelationSuggestMeta({
+            ...(cached?.meta || {}),
+            cache_status: cached?.cache?.status || '',
+            cache: cached?.cache || null,
+          });
+          if (cached?.llm_error) {
+            setRelationSuggestError(cached.llm_error);
+          }
+          if (Array.isArray(cached?.suggestions) && cached.suggestions.length) {
+            showNotice(`已加载预生成连边建议 ${cached.suggestions.length} 条`);
+          } else {
+            showNotice('已加载预生成连边建议');
+          }
+          return;
+        }
+      }
       const job = await startVocabRelationsSuggestJob(apiCategory, filename, payload, 12, {
         customPrompt: relationSuggestPrompt,
         useCache: !draftDirty && !hasCustomPrompt,
@@ -4825,6 +4914,7 @@ export default function App({
       onReset={handleDraftReset}
       onSave={() => handleDraftSave({ closeEditor: overlayMode })}
       onLoadEntriesForCategory={getEntriesForCategory}
+      draftActionsHost={overlayMode && overlayFocus === 'connection' ? headerActionsHost : null}
     />
   );
 

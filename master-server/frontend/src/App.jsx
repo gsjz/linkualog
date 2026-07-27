@@ -299,6 +299,25 @@ function App() {
   const handleVocabularySelectionChange = useCallback((selection) => {
     const nextCategory = normalizeUrlPart(selection?.category);
     const nextWord = normalizeUrlWord(selection?.word || selection?.fileKey || selection?.filename);
+    const nextQueueSource = String(selection?.queueSource || selection?.sourceQueue || '').trim();
+    setVocabularyLaunchRequest((current) => {
+      if (!nextQueueSource) return current;
+      if (
+        current
+        && current.category === nextCategory
+        && normalizeUrlWord(current.word || current.fileKey) === nextWord
+        && current.queueSource === nextQueueSource
+      ) {
+        return current;
+      }
+      return {
+        ...(current || {}),
+        category: nextCategory,
+        word: nextWord,
+        fileKey: nextWord,
+        queueSource: nextQueueSource,
+      };
+    });
     setVocabularyRouteState((prev) => {
       if (prev.category === nextCategory && prev.word === nextWord) return prev;
       return {

@@ -18,6 +18,9 @@ const readErrorMessage = async (res) => {
       return detail.trim();
     }
     if (detail && typeof detail === 'object') {
+      if (typeof detail.message === 'string' && detail.message.trim()) {
+        return detail.message.trim();
+      }
       return JSON.stringify(detail);
     }
   }
@@ -280,6 +283,15 @@ export const startVocabularyPreprocessJob = async (category, filenames = [], opt
 
 export const fetchReviewAnalysisJob = async (jobId) => {
   const res = await fetch(`${BACKEND_URL}/api/review/analysis/jobs/${encodeURIComponent(jobId)}`);
+  return handleResponse(res);
+};
+
+export const fetchVocabularyPreprocessQueue = async (options = {}) => {
+  const params = new URLSearchParams();
+  if (options?.includeFinished === false) params.set('include_finished', 'false');
+  if (options?.limit) params.set('limit', String(options.limit));
+  const query = params.toString();
+  const res = await fetch(`${BACKEND_URL}/api/vocabulary/preprocess/queue${query ? `?${query}` : ''}`);
   return handleResponse(res);
 };
 

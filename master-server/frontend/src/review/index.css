@@ -2135,6 +2135,29 @@
   white-space: normal;
 }
 
+.connection-draft-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+
+.connection-draft-actions button {
+  min-height: 34px;
+  padding: 0 12px;
+  white-space: nowrap;
+}
+
+.editor-footer .connection-draft-actions {
+  width: 100%;
+}
+
+.editor-footer .connection-draft-actions button {
+  flex: 0 1 auto;
+}
+
 .relation-list,
 .relation-suggestion-list {
   display: grid;
@@ -2263,6 +2286,11 @@
   opacity: var(--suggestion-confidence-opacity, 1);
 }
 
+.relation-suggestion-card.is-stale {
+  border-color: rgba(148, 163, 184, 0.42);
+  background: #f8fafc;
+}
+
 .relation-suggestion-meta {
   display: flex;
   flex-wrap: wrap;
@@ -2270,6 +2298,19 @@
   color: var(--ink-faint);
   font-size: 11px;
   font-weight: 720;
+}
+
+.relation-suggestion-warning,
+.relation-suggestion-redirect {
+  color: var(--ink-faint);
+  font-size: 12px;
+  font-weight: 720;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.relation-suggestion-warning {
+  color: #9f1239;
 }
 
 .example-focus-preview {
