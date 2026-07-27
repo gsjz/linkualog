@@ -1,0 +1,48 @@
+{
+  "word": "amplify",
+  "createdAt": "2026-07-14",
+  "reviews": [
+    {
+      "date": "2026-07-16",
+      "score": 3
+    }
+  ],
+  "definitions": [
+    "放大；增强；使加剧"
+  ],
+  "examples": [
+    {
+      "text": "This mismatch later gets amplified by softmax/topk in generation, causing decoding divergence.",
+      "explanation": "这里 amplified 是 amplify 的过去分词，意思是“被放大、被加剧”。句子表示这个不匹配后来被 softmax/topk 操作进一步放大，导致解码结果出现差异。",
+      "focusWords": [
+        "amplify"
+      ],
+      "source": {
+        "text": "LLaDA inference logits differ across NVIDIA GPUs (Blackwell vs 4090) with same weights/code · Issue #131 · ML-GSAI/LLaDA",
+        "url": "https://github.com/ML-GSAI/LLaDA/issues/131"
+      }
+    }
+  ],
+  "relations": [
+    {
+      "type": "synonym",
+      "target": {
+        "category": "cet",
+        "file": "intensify.json",
+        "word": "intensify"
+      },
+      "reason": "amplify 和 intensify 都可表示“增强、加剧”，常用于 problem、effect、heat、emotion、conflict 等抽象事物程度变强，近义关系明确。",
+      "source": "llm"
+    },
+    {
+      "type": "antonym",
+      "target": {
+        "category": "daily",
+        "file": "downplay.json",
+        "word": "downplay"
+      },
+      "reason": "amplify 表示把影响、问题、声音等“放大、增强、加剧”，而 downplay 表示“淡化、轻描淡写、弱化严重性”，在表达对问题或影响的处理方式时语义相反。",
+      "source": "llm"
+    }
+  ]
+}

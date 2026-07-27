@@ -1,14 +1,21 @@
 {
-  "word": "circumventing",
+  "word": "circumvent",
   "createdAt": "2026-07-14",
-  "reviews": [],
-  "definitions": [],
+  "reviews": [
+    {
+      "date": "2026-07-15",
+      "score": 2
+    }
+  ],
+  "definitions": [
+    "绕过，规避；设法避开规则、限制或机制（circumvent）。"
+  ],
   "examples": [
     {
       "text": ", 2024). A prominent approach, introduced by Zou et al. , appends adversarial suffixes to prompts, circumventing the model’s safety mechanisms. These suffixes compel the model to respond to harmful queries instead of issuing refusal statements like \"I’m sorry, but I can’t provide that information.\" However, generating effective adversarial suffixes typically involves iterative token searches, a computationally expensive and time-intensive process requiring tens of thousands of queries per adversarial prompt (Geisler et al.",
-      "explanation": "",
+      "explanation": "这里 circumventing the model’s safety mechanisms 指“绕过模型的安全机制”。circumvent 常用于描述用某种方法避开规则、限制、审查或防护措施。",
       "focusWords": [
-        "circumventing"
+        "circumvent"
       ],
       "source": {
         "text": "扩散攻击：用于 LLM 越狱的扩散驱动提示操控技术 --- DiffusionAttacker: Diffusion-Driven Prompt Manipulation for LLM Jailbreak",

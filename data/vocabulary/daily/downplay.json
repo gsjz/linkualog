@@ -59,5 +59,17 @@
         "需要回忆出目标词 downplay"
       ]
     }
+  ],
+  "relations": [
+    {
+      "type": "antonym",
+      "target": {
+        "category": "daily",
+        "file": "amplify.json",
+        "word": "amplify"
+      },
+      "reason": "amplify 表示把影响、问题、声音等“放大、增强、加剧”，而 downplay 表示“淡化、轻描淡写、弱化严重性”，在表达对问题或影响的处理方式时语义相反。",
+      "source": "llm"
+    }
   ]
 }

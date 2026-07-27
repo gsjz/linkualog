@@ -52,5 +52,17 @@
       ],
       "missing_points": []
     }
+  ],
+  "relations": [
+    {
+      "type": "synonym",
+      "target": {
+        "category": "daily",
+        "file": "amplify.json",
+        "word": "amplify"
+      },
+      "reason": "amplify 和 intensify 都可表示“增强、加剧”，常用于 problem、effect、heat、emotion、conflict 等抽象事物程度变强，近义关系明确。",
+      "source": "llm"
+    }
   ]
 }

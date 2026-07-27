@@ -1,7 +1,12 @@
 {
   "word": "delicacy",
   "createdAt": "2026-07-08",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-07-16",
+      "score": 0
+    }
+  ],
   "definitions": [
     "珍馐美味；稀有而昂贵的食物或享受品"
   ],

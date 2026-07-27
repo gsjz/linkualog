@@ -17,6 +17,10 @@
     {
       "date": "2026-05-22",
       "score": 5
+    },
+    {
+      "date": "2026-07-16",
+      "score": 5
     }
   ],
   "definitions": [
@@ -44,6 +48,18 @@
         "url": "https://dictionary.cambridge.org/dictionary/english/abandon"
       },
       "explanation": "他小时候被母亲遗弃。"
+    }
+  ],
+  "relations": [
+    {
+      "type": "synonym",
+      "target": {
+        "category": "cet",
+        "file": "ditch.json",
+        "word": "ditch"
+      },
+      "reason": "ditch 在候选释义中明确为“放弃；抛弃；丢开”，与 abandon 的“放弃，抛弃”核心义高度重合，尤其都可用于放弃计划、抛开某事物，适合建立近义词关系。",
+      "source": "llm"
     }
   ]
 }
