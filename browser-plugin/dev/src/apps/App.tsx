@@ -7,7 +7,7 @@ import MobileFullscreenButton from '../components/MobileFullscreenButton';
 import UniversalVocabWidget from '../components/UniversalVocabWidget';
 import ArticleTranslator from '../components/ArticleTranslator';
 import { ArticleTranslationProvider } from '../components/ArticleTranslationContext';
-import { isArxivHtmlPage } from '../services/articleTranslator';
+import { isArticleTranslationSupportedPage } from '../services/articleTranslator';
 import { Subtitle } from '../types';
 import { IVideoAdapter } from '../adapters/BaseAdapter';
 import { ConfigService } from '../services/configService';
@@ -105,7 +105,7 @@ function clampSidebarHeight(height: number) {
 const App: React.FC<AppProps> = ({ adapter }) => {
   const [subs, setSubs] = useState<Subtitle[]>([]);
   const isVideoSite = isYouTubeHost();
-  const isArticleTranslationEnabled = isArxivHtmlPage();
+  const isArticleTranslationEnabled = isArticleTranslationSupportedPage();
   
   const [inVideo, setInVideo] = useState(adapter.isVideoPage());
 

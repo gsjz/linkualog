@@ -35,9 +35,38 @@ const EXCLUDED_SELECTOR = [
 const normalizeText = (value: string) => value.replace(/\s+/g, ' ').trim();
 
 const ARXIV_HOSTNAMES = new Set(['arxiv.org', 'www.arxiv.org']);
+const OPENREVIEW_HOSTNAMES = new Set(['openreview.net', 'www.openreview.net']);
+const OPENREVIEW_EXCLUDED_FIELDS = new Set([
+  'title',
+  'authors',
+  'authoremails',
+  'authorids',
+  'pdf',
+  'html',
+  'paperhash',
+  'ee',
+  'year',
+  'venue',
+  'venueid',
+  'submissionnumber',
+  'externalids',
+]);
 
 export function isArxivHtmlPage() {
   return ARXIV_HOSTNAMES.has(window.location.hostname) && window.location.pathname.startsWith('/html/');
+}
+
+export function isOpenReviewHost() {
+  return OPENREVIEW_HOSTNAMES.has(window.location.hostname);
+}
+
+export function isOpenReviewForumPage() {
+  const pathname = window.location.pathname.replace(/\/+$/, '') || '/';
+  return isOpenReviewHost() && (pathname === '/forum' || pathname.startsWith('/forum/'));
+}
+
+export function isArticleTranslationSupportedPage() {
+  return isArxivHtmlPage() || isOpenReviewForumPage();
 }
 
 function hashText(value: string) {
@@ -53,11 +82,44 @@ function isExcluded(element: HTMLElement) {
 }
 
 function getCandidateSelector() {
+  if (isOpenReviewForumPage()) {
+    return '.note-content .note-content-value';
+  }
+
   return '.ltx_document p.ltx_p, .ltx_document p';
 }
 
 function getArticleRoot() {
+  if (isOpenReviewForumPage()) {
+    return document.querySelector('.forum-container');
+  }
+
   return document.querySelector('.ltx_document');
+}
+
+function getOpenReviewFieldName(element: HTMLElement) {
+  let sibling: ChildNode | null = element.previousSibling;
+  while (sibling) {
+    if (sibling instanceof HTMLElement && sibling.classList.contains('note-content-field')) {
+      return normalizeText(sibling.textContent || '').replace(/:$/, '').trim();
+    }
+    sibling = sibling.previousSibling;
+  }
+
+  const field = element.parentElement?.querySelector<HTMLElement>('.note-content-field');
+  return field ? normalizeText(field.textContent || '').replace(/:$/, '').trim() : '';
+}
+
+function normalizeOpenReviewFieldName(fieldName: string) {
+  return fieldName.toLowerCase().replace(/[^a-z0-9]+/g, '');
+}
+
+function isOpenReviewFieldExcluded(element: HTMLElement) {
+  if (!isOpenReviewForumPage()) return false;
+
+  const fieldName = getOpenReviewFieldName(element);
+  if (!fieldName) return false;
+  return OPENREVIEW_EXCLUDED_FIELDS.has(normalizeOpenReviewFieldName(fieldName));
 }
 
 function getOrCreateHost(element: HTMLElement) {
@@ -74,17 +136,17 @@ function getOrCreateHost(element: HTMLElement) {
 }
 
 export function collectArticleParagraphs(): ArticleParagraph[] {
-  if (!isArxivHtmlPage()) return [];
+  if (!isArticleTranslationSupportedPage()) return [];
 
   const root = getArticleRoot();
   if (!root) return [];
 
   const candidates = Array.from(root.querySelectorAll<HTMLElement>(getCandidateSelector()))
-    .filter((element) => !isExcluded(element))
+    .filter((element) => !isExcluded(element) && !isOpenReviewFieldExcluded(element))
     .map((element) => ({ element, text: normalizeText(element.innerText || element.textContent || '') }))
     .filter(({ element, text }) => (
       text.length >= MIN_PARAGRAPH_LENGTH &&
-      !element.querySelector('img, video, iframe')
+      !element.querySelector('img, video, iframe, canvas, textarea, input, select, button, pre, code, .CodeMirror, .monaco-editor')
     ));
 
   const seen = new Set<HTMLElement>();

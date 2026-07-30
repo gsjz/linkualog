@@ -1067,17 +1067,19 @@ html.linkual-mobile-fullscreen-fallback {
 }
 
 #linkual-root .linkual-universal-bubble-translate {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  min-width: 28px;
   min-height: 28px;
+  padding: 0;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 6px;
   background: rgba(255, 255, 255, 0.12);
   color: rgba(255, 255, 255, 0.92);
   cursor: pointer;
   font: 650 12px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-}
-
-#linkual-root .linkual-universal-bubble-translate {
-  padding: 0 11px;
 }
 
 #linkual-root .linkual-universal-bubble-translate:disabled {
@@ -1102,6 +1104,12 @@ html.linkual-mobile-fullscreen-fallback {
 
 #linkual-root .linkual-universal-window-toggle .linkual-universal-button-icon {
   display: block;
+}
+
+#linkual-root .linkual-universal-bubble-translate .linkual-universal-button-icon {
+  display: block;
+  width: 17px;
+  height: 17px;
 }
 
 #linkual-root .linkual-universal-window-toggle .linkual-universal-button-text {

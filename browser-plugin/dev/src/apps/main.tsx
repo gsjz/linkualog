@@ -2,7 +2,7 @@ import { createElement } from 'react';
 import { createRoot, Root } from 'react-dom/client';
 import App from './App';
 import { getAdapter } from '../adapters';
-import { isArxivHtmlPage } from '../services/articleTranslator';
+import { isArticleTranslationSupportedPage, isOpenReviewHost } from '../services/articleTranslator';
 import { injectLinkualAppStyles, injectLinkualPageStyles } from './styles';
 
 declare const unsafeWindow: typeof window | undefined;
@@ -21,6 +21,10 @@ function isYouTubeHost() {
 function isGeminiHost() {
   return /(^|\.)gemini\.google\.com$/i.test(window.location.hostname) ||
     /(^|\.)bard\.google\.com$/i.test(window.location.hostname);
+}
+
+function shouldHookNavigation() {
+  return isYouTubeHost() || isOpenReviewHost();
 }
 
 function getPageWindow() {
@@ -92,7 +96,7 @@ function mountApp() {
   attachRootToActiveHost(app);
   isolateRoot(app);
 
-  if (isArxivHtmlPage()) {
+  if (isArticleTranslationSupportedPage()) {
     injectLinkualPageStyles();
   }
 
@@ -129,7 +133,7 @@ function scheduleNavigationRefresh() {
 }
 
 function installNavigationHooks() {
-  if (!isYouTubeHost()) return;
+  if (!shouldHookNavigation()) return;
 
   const pageWindow = getPageWindow() as Window & typeof globalThis & { __linkualNavigationHooked?: boolean };
   if (pageWindow.__linkualNavigationHooked) return;
@@ -171,9 +175,11 @@ if (!isGeminiHost()) {
     document.addEventListener('DOMContentLoaded', mountApp);
   }
 
-  if (isYouTubeHost()) {
+  if (shouldHookNavigation()) {
     installNavigationHooks();
-    window.addEventListener('yt-navigate-finish', scheduleNavigationRefresh);
+    if (isYouTubeHost()) {
+      window.addEventListener('yt-navigate-finish', scheduleNavigationRefresh);
+    }
   }
 
   document.addEventListener('fullscreenchange', () => {
@@ -181,7 +187,7 @@ if (!isGeminiHost()) {
     if (app) attachRootToActiveHost(app);
   });
 
-  if (isYouTubeHost() || isArxivHtmlPage()) {
+  if (shouldHookNavigation() || isArticleTranslationSupportedPage()) {
     const observer = new MutationObserver(() => {
       if (document.body && !document.getElementById(LINKUAL_ROOT_ID)) {
         console.log('[Linkual] 检测到根节点被意外移除，正在尝试恢复...');

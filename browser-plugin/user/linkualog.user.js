@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Linkual Log
 // @namespace    npm/vite-plugin-monkey
-// @version      0.0.41
+// @version      0.0.42
 // @author       Sergio Gao
 // @icon         https://vitejs.dev/logo.svg
 // @downloadURL  https://raw.githubusercontent.com/gsjz/linkualog/main/browser-plugin/user/linkualog.user.js
@@ -14436,8 +14436,34 @@ JSON 格式：
   ].join(",");
   const normalizeText$1 = (value) => value.replace(/\s+/g, " ").trim();
   const ARXIV_HOSTNAMES = /* @__PURE__ */ new Set(["arxiv.org", "www.arxiv.org"]);
+  const OPENREVIEW_HOSTNAMES = /* @__PURE__ */ new Set(["openreview.net", "www.openreview.net"]);
+  const OPENREVIEW_EXCLUDED_FIELDS = /* @__PURE__ */ new Set([
+    "title",
+    "authors",
+    "authoremails",
+    "authorids",
+    "pdf",
+    "html",
+    "paperhash",
+    "ee",
+    "year",
+    "venue",
+    "venueid",
+    "submissionnumber",
+    "externalids"
+  ]);
   function isArxivHtmlPage() {
     return ARXIV_HOSTNAMES.has(window.location.hostname) && window.location.pathname.startsWith("/html/");
+  }
+  function isOpenReviewHost() {
+    return OPENREVIEW_HOSTNAMES.has(window.location.hostname);
+  }
+  function isOpenReviewForumPage() {
+    const pathname = window.location.pathname.replace(/\/+$/, "") || "/";
+    return isOpenReviewHost() && (pathname === "/forum" || pathname.startsWith("/forum/"));
+  }
+  function isArticleTranslationSupportedPage() {
+    return isArxivHtmlPage() || isOpenReviewForumPage();
   }
   function hashText(value) {
     let hash = 0;
@@ -14450,10 +14476,37 @@ JSON 格式：
     return Boolean(element.closest(EXCLUDED_SELECTOR)) || Boolean(element.closest("[data-linkual-article-host]"));
   }
   function getCandidateSelector() {
+    if (isOpenReviewForumPage()) {
+      return ".note-content .note-content-value";
+    }
     return ".ltx_document p.ltx_p, .ltx_document p";
   }
   function getArticleRoot() {
+    if (isOpenReviewForumPage()) {
+      return document.querySelector(".forum-container");
+    }
     return document.querySelector(".ltx_document");
+  }
+  function getOpenReviewFieldName(element) {
+    var _a;
+    let sibling = element.previousSibling;
+    while (sibling) {
+      if (sibling instanceof HTMLElement && sibling.classList.contains("note-content-field")) {
+        return normalizeText$1(sibling.textContent || "").replace(/:$/, "").trim();
+      }
+      sibling = sibling.previousSibling;
+    }
+    const field = (_a = element.parentElement) == null ? void 0 : _a.querySelector(".note-content-field");
+    return field ? normalizeText$1(field.textContent || "").replace(/:$/, "").trim() : "";
+  }
+  function normalizeOpenReviewFieldName(fieldName) {
+    return fieldName.toLowerCase().replace(/[^a-z0-9]+/g, "");
+  }
+  function isOpenReviewFieldExcluded(element) {
+    if (!isOpenReviewForumPage()) return false;
+    const fieldName = getOpenReviewFieldName(element);
+    if (!fieldName) return false;
+    return OPENREVIEW_EXCLUDED_FIELDS.has(normalizeOpenReviewFieldName(fieldName));
   }
   function getOrCreateHost(element) {
     const next = element.nextElementSibling;
@@ -14467,10 +14520,10 @@ JSON 格式：
     return host;
   }
   function collectArticleParagraphs() {
-    if (!isArxivHtmlPage()) return [];
+    if (!isArticleTranslationSupportedPage()) return [];
     const root2 = getArticleRoot();
     if (!root2) return [];
-    const candidates = Array.from(root2.querySelectorAll(getCandidateSelector())).filter((element) => !isExcluded(element)).map((element) => ({ element, text: normalizeText$1(element.innerText || element.textContent || "") })).filter(({ element, text }) => text.length >= MIN_PARAGRAPH_LENGTH && !element.querySelector("img, video, iframe"));
+    const candidates = Array.from(root2.querySelectorAll(getCandidateSelector())).filter((element) => !isExcluded(element) && !isOpenReviewFieldExcluded(element)).map((element) => ({ element, text: normalizeText$1(element.innerText || element.textContent || "") })).filter(({ element, text }) => text.length >= MIN_PARAGRAPH_LENGTH && !element.querySelector("img, video, iframe, canvas, textarea, input, select, button, pre, code, .CodeMirror, .monaco-editor"));
     const seen = /* @__PURE__ */ new Set();
     return candidates.slice(0, MAX_PARAGRAPHS).filter(({ element }) => {
       if (seen.has(element)) return false;
@@ -14992,7 +15045,15 @@ ${paragraph.text}`,
         /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M19.4 15a1.7 1.7 0 0 0 .34 1.88l.04.04a2 2 0 1 1-2.83 2.83l-.04-.04a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.07a1.7 1.7 0 0 0-1.03-1.56 1.7 1.7 0 0 0-1.88.34l-.04.04a2 2 0 1 1-2.83-2.83l.04-.04A1.7 1.7 0 0 0 4.6 15 1.7 1.7 0 0 0 3 14H3a2 2 0 1 1 0-4h.07A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.88l-.04-.04a2 2 0 1 1 2.83-2.83l.04.04A1.7 1.7 0 0 0 9 4.6 1.7 1.7 0 0 0 10 3V3a2 2 0 1 1 4 0v.07A1.7 1.7 0 0 0 15 4.6a1.7 1.7 0 0 0 1.88-.34l.04-.04a2 2 0 1 1 2.83 2.83l-.04.04A1.7 1.7 0 0 0 19.4 9c.17.62.7 1 1.6 1H21a2 2 0 1 1 0 4h-.07a1.7 1.7 0 0 0-1.53 1Z" })
       ] }),
       expand: /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "m6 15 6-6 6 6" }),
-      collapse: /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "m6 9 6 6 6-6" })
+      collapse: /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "m6 9 6 6 6-6" }),
+      translate: /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M4 5h8" }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M8 3v2" }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M10.5 5c-.8 3.2-2.6 5.6-5.5 7" }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M5 8c1.1 1.8 2.5 3.1 4.3 4" }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M13 19l4-9 4 9" }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M14.4 16h5.2" })
+      ] })
     };
     return /* @__PURE__ */ jsxRuntimeExports.jsx("svg", { className: "linkual-universal-button-icon", viewBox: "0 0 24 24", "aria-hidden": "true", children: paths[name] });
   };
@@ -15600,7 +15661,7 @@ ${paragraph.text}`,
                 disabled: articleTranslation.isTranslatingAll,
                 "aria-label": "翻译页面",
                 title: "翻译页面",
-                children: articleTranslation.isTranslatingAll ? "翻译中…" : "翻译页面"
+                children: /* @__PURE__ */ jsxRuntimeExports.jsx(ActionIcon, { name: "translate" })
               }
             ),
             /* @__PURE__ */ jsxRuntimeExports.jsxs(
@@ -15949,7 +16010,7 @@ ${paragraph.text}`,
   const App = ({ adapter }) => {
     const [subs, setSubs] = reactExports.useState([]);
     const isVideoSite = isYouTubeHost$1();
-    const isArticleTranslationEnabled = isArxivHtmlPage();
+    const isArticleTranslationEnabled = isArticleTranslationSupportedPage();
     const [inVideo, setInVideo] = reactExports.useState(adapter.isVideoPage());
     const getAdpCfg = (key) => {
       const val = ConfigService.get(`${key}_${adapter.platformName}`);
@@ -18502,17 +18563,19 @@ html.linkual-mobile-fullscreen-fallback {
 }
 
 #linkual-root .linkual-universal-bubble-translate {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  min-width: 28px;
   min-height: 28px;
+  padding: 0;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 6px;
   background: rgba(255, 255, 255, 0.12);
   color: rgba(255, 255, 255, 0.92);
   cursor: pointer;
   font: 650 12px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-}
-
-#linkual-root .linkual-universal-bubble-translate {
-  padding: 0 11px;
 }
 
 #linkual-root .linkual-universal-bubble-translate:disabled {
@@ -18537,6 +18600,12 @@ html.linkual-mobile-fullscreen-fallback {
 
 #linkual-root .linkual-universal-window-toggle .linkual-universal-button-icon {
   display: block;
+}
+
+#linkual-root .linkual-universal-bubble-translate .linkual-universal-button-icon {
+  display: block;
+  width: 17px;
+  height: 17px;
 }
 
 #linkual-root .linkual-universal-window-toggle .linkual-universal-button-text {
@@ -19000,6 +19069,9 @@ ${appCss}`;
   function isGeminiHost() {
     return /(^|\.)gemini\.google\.com$/i.test(window.location.hostname) || /(^|\.)bard\.google\.com$/i.test(window.location.hostname);
   }
+  function shouldHookNavigation() {
+    return isYouTubeHost() || isOpenReviewHost();
+  }
   function getPageWindow() {
     try {
       return typeof unsafeWindow !== "undefined" ? unsafeWindow : window;
@@ -19059,7 +19131,7 @@ ${appCss}`;
     }
     attachRootToActiveHost(app);
     isolateRoot(app);
-    if (isArxivHtmlPage()) {
+    if (isArticleTranslationSupportedPage()) {
       injectLinkualPageStyles();
     }
     const nextMountNode = getShadowMount(app);
@@ -19090,7 +19162,7 @@ ${appCss}`;
     }, 80);
   }
   function installNavigationHooks() {
-    if (!isYouTubeHost()) return;
+    if (!shouldHookNavigation()) return;
     const pageWindow = getPageWindow();
     if (pageWindow.__linkualNavigationHooked) return;
     pageWindow.__linkualNavigationHooked = true;
@@ -19126,15 +19198,17 @@ ${appCss}`;
     } else {
       document.addEventListener("DOMContentLoaded", mountApp);
     }
-    if (isYouTubeHost()) {
+    if (shouldHookNavigation()) {
       installNavigationHooks();
-      window.addEventListener("yt-navigate-finish", scheduleNavigationRefresh);
+      if (isYouTubeHost()) {
+        window.addEventListener("yt-navigate-finish", scheduleNavigationRefresh);
+      }
     }
     document.addEventListener("fullscreenchange", () => {
       const app = document.getElementById(LINKUAL_ROOT_ID);
       if (app) attachRootToActiveHost(app);
     });
-    if (isYouTubeHost() || isArxivHtmlPage()) {
+    if (shouldHookNavigation() || isArticleTranslationSupportedPage()) {
       const observer = new MutationObserver(() => {
         if (document.body && !document.getElementById(LINKUAL_ROOT_ID)) {
           console.log("[Linkual] 检测到根节点被意外移除，正在尝试恢复...");

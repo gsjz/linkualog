@@ -14,7 +14,7 @@ interface UniversalVocabWidgetProps {
 
 type SendStatus = 'idle' | 'filled' | 'success' | 'error';
 type SelectionMode = 'word' | 'context';
-type WidgetIcon = 'add' | 'queue' | 'settings' | 'expand' | 'collapse';
+type WidgetIcon = 'add' | 'queue' | 'settings' | 'expand' | 'collapse' | 'translate';
 
 interface SelectionCapture {
   text: string;
@@ -209,6 +209,16 @@ const ActionIcon: React.FC<{ name: WidgetIcon }> = ({ name }) => {
     ),
     expand: <path d="m6 15 6-6 6 6" />,
     collapse: <path d="m6 9 6 6 6-6" />,
+    translate: (
+      <>
+        <path d="M4 5h8" />
+        <path d="M8 3v2" />
+        <path d="M10.5 5c-.8 3.2-2.6 5.6-5.5 7" />
+        <path d="M5 8c1.1 1.8 2.5 3.1 4.3 4" />
+        <path d="M13 19l4-9 4 9" />
+        <path d="M14.4 16h5.2" />
+      </>
+    ),
   };
 
   return (
@@ -932,7 +942,7 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
             aria-label="翻译页面"
             title="翻译页面"
           >
-            {articleTranslation.isTranslatingAll ? '翻译中…' : '翻译页面'}
+            <ActionIcon name="translate" />
           </button>
         )}
         <button
