@@ -91,6 +91,12 @@ const getViewportWidth = () => Math.max(
   window.innerWidth || document.documentElement.clientWidth || DEFAULT_BUBBLE_WIDTH
 );
 
+const getRightScrollbarInset = () => {
+  const viewportWidth = getViewportWidth();
+  const contentWidth = document.documentElement.clientWidth || viewportWidth;
+  return Math.max(BUBBLE_EDGE_OFFSET, Math.ceil(viewportWidth - contentWidth));
+};
+
 const normalizeBubbleSide = (value: unknown): BubbleDockSide => (
   String(value || '').trim() === 'left' ? 'left' : 'right'
 );
@@ -104,7 +110,8 @@ const normalizeBubbleTopRatio = (value: unknown, fallback = DEFAULT_BUBBLE_TOP_R
 const getBubbleViewportBounds = (size: BubbleSize) => {
   const viewportWidth = getViewportWidth();
   const viewportHeight = Math.max(DEFAULT_BUBBLE_HEIGHT, getVisualViewportHeight());
-  const maxLeft = Math.max(BUBBLE_EDGE_OFFSET, viewportWidth - size.width - BUBBLE_EDGE_OFFSET);
+  const rightInset = getRightScrollbarInset();
+  const maxLeft = Math.max(BUBBLE_EDGE_OFFSET, viewportWidth - size.width - rightInset);
   const minTop = BUBBLE_MARGIN;
   const maxTop = Math.max(minTop, viewportHeight - size.height - BUBBLE_MARGIN);
   return { viewportWidth, viewportHeight, maxLeft, minTop, maxTop };
@@ -773,7 +780,7 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
       bubbleSizeRef.current = { width: rect.width, height: rect.height };
       return {
         side,
-        edge: side === 'right' ? Math.max(0, getViewportWidth() - rect.right) : Math.max(0, rect.left),
+        edge: side === 'right' ? Math.max(getRightScrollbarInset(), getViewportWidth() - rect.right) : Math.max(0, rect.left),
         top: rect.top,
       };
     }
@@ -783,7 +790,7 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
       return {
         side: current.side,
         edge: current.side === 'right'
-          ? Math.max(0, getViewportWidth() - current.left - size.width)
+          ? Math.max(getRightScrollbarInset(), getViewportWidth() - current.left - size.width)
           : Math.max(0, current.left),
         top: current.top,
       };
@@ -800,11 +807,12 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
   }, [getBubbleSize]);
 
   const clampExpandedAnchor = useCallback((anchor: ExpandedAnchor) => {
-    const maxEdge = Math.max(BUBBLE_EDGE_OFFSET, getViewportWidth() - BUBBLE_MARGIN);
+    const minEdge = anchor.side === 'right' ? getRightScrollbarInset() : BUBBLE_EDGE_OFFSET;
+    const maxEdge = Math.max(minEdge, getViewportWidth() - BUBBLE_MARGIN);
     const maxTop = Math.max(BUBBLE_MARGIN, getVisualViewportHeight() - BUBBLE_MARGIN);
     return {
       side: anchor.side,
-      edge: clampNumber(anchor.edge, BUBBLE_EDGE_OFFSET, maxEdge),
+      edge: clampNumber(anchor.edge, minEdge, maxEdge),
       top: clampNumber(anchor.top, BUBBLE_MARGIN, maxTop),
     };
   }, []);
