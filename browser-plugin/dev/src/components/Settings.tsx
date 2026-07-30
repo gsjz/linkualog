@@ -289,7 +289,7 @@ const Settings: React.FC<SettingsProps> = ({ adapter, onClose }) => {
               <div className="setting-col">
                 <label>网页翻译提示词</label>
                 <textarea name="webTranslationPrompt" value={cfg.webTranslationPrompt} onChange={handleChange} placeholder="留空则使用默认学术翻译提示词" />
-                <div className="setting-help">网页翻译会按段请求模型；提示词应要求模型只输出译文。</div>
+                <div className="setting-help">网页翻译会按段请求模型；提示词应要求模型只输出译文，行内公式写成 $...$，行间公式写成 $$...$$，表格输出为 GitHub Flavored Markdown 表格。</div>
               </div>
               <div className="setting-col linkual-translation-cache-manager">
                 <div className="linkual-cache-manager-heading">

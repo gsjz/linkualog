@@ -335,6 +335,13 @@ html.linkual-mobile-fullscreen-fallback {
   line-height: 1.3 !important;
 }
 
+.linkual-article-translation-actions {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  flex: 0 0 auto !important;
+}
+
 .linkual-article-translation-label {
   color: #7652a6 !important;
   font-weight: 700 !important;
@@ -363,6 +370,41 @@ html.linkual-mobile-fullscreen-fallback {
 .linkual-universal-translation-row button:disabled {
   cursor: wait !important;
   opacity: 0.65 !important;
+}
+
+.linkual-article-translation-toolbar button.linkual-article-copy-source {
+  width: 28px !important;
+  min-width: 28px !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.linkual-article-translation-toolbar button.linkual-article-copy-source:disabled {
+  cursor: default !important;
+}
+
+.linkual-article-translation-toolbar button.linkual-article-copy-source.copied {
+  border-color: rgba(46, 125, 50, 0.35) !important;
+  background: #edf7ed !important;
+  color: #2e7d32 !important;
+}
+
+.linkual-article-translation-toolbar button.linkual-article-copy-source.error {
+  border-color: rgba(198, 40, 40, 0.35) !important;
+  background: #fdecea !important;
+  color: #c62828 !important;
+}
+
+.linkual-article-copy-source svg {
+  width: 15px !important;
+  height: 15px !important;
+  fill: none !important;
+  stroke: currentColor !important;
+  stroke-width: 2 !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
 }
 
 .linkual-article-translation-text,
@@ -394,6 +436,64 @@ html.linkual-mobile-fullscreen-fallback {
   content: ' ' !important;
 }
 
+.linkual-article-markdown-text {
+  white-space: pre-wrap !important;
+}
+
+.linkual-article-markdown-table-wrap {
+  width: 100% !important;
+  margin: 0.55em 0 !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+
+.linkual-article-markdown-table {
+  width: max-content !important;
+  min-width: 100% !important;
+  border-collapse: collapse !important;
+  background: rgba(255, 255, 255, 0.62) !important;
+  color: inherit !important;
+  font: inherit !important;
+  white-space: normal !important;
+}
+
+.linkual-article-markdown-table th,
+.linkual-article-markdown-table td {
+  padding: 0.35em 0.55em !important;
+  border: 1px solid rgba(83, 65, 111, 0.2) !important;
+  vertical-align: top !important;
+  overflow-wrap: anywhere !important;
+}
+
+.linkual-article-markdown-table th {
+  background: rgba(126, 87, 194, 0.12) !important;
+  color: #49345f !important;
+  font-weight: 700 !important;
+}
+
+.linkual-article-math.inline {
+  display: inline !important;
+  white-space: normal !important;
+}
+
+.linkual-article-math.display {
+  display: block !important;
+  margin: 0.55em 0 !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  text-align: center !important;
+  white-space: normal !important;
+}
+
+.linkual-article-math math {
+  max-width: 100% !important;
+  font-size: 1em !important;
+}
+
+.linkual-article-math.display math {
+  display: inline-block !important;
+}
+
 .linkual-article-translation-sentence:hover,
 .linkual-article-translation-sentence.active {
   background: rgba(104, 69, 154, 0.18) !important;
@@ -415,6 +515,10 @@ html.linkual-mobile-fullscreen-fallback {
     align-items: flex-start !important;
     flex-direction: column !important;
     gap: 5px !important;
+  }
+
+  .linkual-article-translation-actions {
+    flex-wrap: wrap !important;
   }
 }
 

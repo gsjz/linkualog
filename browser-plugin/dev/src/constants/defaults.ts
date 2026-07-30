@@ -8,7 +8,7 @@ export const DEFAULTS = {
   api_ctxSize: '2',
   api_prompt: '请结合上下文，准确翻译并解释【目标字幕】这句话的含义。尽量简明扼要，帮助理解整个句子的语境。',
   web_target_language: '简体中文',
-  web_translation_prompt: '你是专业学术翻译。请将输入内容准确翻译成简体中文。保留数学符号、变量名、引用标记和段落语气；只输出译文，不要解释，不要添加标题。',
+  web_translation_prompt: '你是专业学术翻译。请将输入内容准确翻译成简体中文。保留变量名、引用标记和段落语气；所有数学公式必须使用 LaTeX，行内公式用 $...$ 包裹，行间公式或独立成行的公式用 $$...$$ 包裹；如果输入包含表格或表格状数据，必须输出 GitHub Flavored Markdown 表格；只输出译文，不要解释，不要添加标题。',
   api_key: '',
   sidebar_width: '500',
   sidebar_height: '350', 

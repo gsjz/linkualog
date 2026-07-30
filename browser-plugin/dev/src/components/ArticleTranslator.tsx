@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useArticleTranslation } from './ArticleTranslationContext';
 import { ArticleParagraph } from '../services/articleTranslator';
 import { TranslationState } from './ArticleTranslationContext';
+import ArticleMarkdown, { hasMarkdownTable } from './ArticleMarkdown';
 import {
   alignSentencePairs,
   findSentenceRange,
@@ -11,6 +12,34 @@ import {
 
 const SOURCE_HIGHLIGHT_NAME = 'linkual-article-source-active';
 let activeSourceHighlightOwner: object | null = null;
+
+function copyTextToClipboard(text: string) {
+  const fallbackCopy = () => {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'fixed';
+    textarea.style.left = '-9999px';
+    textarea.style.top = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+
+    try {
+      document.execCommand('copy');
+      return Promise.resolve();
+    } catch (error) {
+      return Promise.reject(error);
+    } finally {
+      textarea.remove();
+    }
+  };
+
+  if (navigator.clipboard?.writeText) {
+    return navigator.clipboard.writeText(text).catch(fallbackCopy);
+  }
+
+  return fallbackCopy();
+}
 
 function TranslationBlock({
   paragraph,
@@ -23,12 +52,16 @@ function TranslationBlock({
 }) {
   const isLoading = state?.status === 'loading';
   const hasTranslation = Boolean(state?.text);
+  const rawTranslation = state?.text || '';
+  const shouldRenderWholeTranslation = hasMarkdownTable(rawTranslation);
   const pairs = useMemo(() => (
     state?.sentences?.length ? state.sentences : alignSentencePairs(paragraph.text, state?.text || '')
   ), [paragraph.text, state?.sentences, state?.text]);
+  const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'error'>('idle');
   const [activePairIndex, setActivePairIndex] = useState(-1);
   const sentenceRefs = useRef(new Map<number, HTMLButtonElement>());
   const sourceHighlightOwnerRef = useRef<object>({});
+  const copyResetTimerRef = useRef<number | null>(null);
 
   const focusSource = (pairIndex: number) => {
     const pair = pairs[pairIndex];
@@ -48,8 +81,33 @@ function TranslationBlock({
     setActivePairIndex(pairIndex);
   };
 
+  const handleCopy = () => {
+    if (!rawTranslation) return;
+    copyTextToClipboard(rawTranslation).then(() => {
+      setCopyStatus('copied');
+      if (copyResetTimerRef.current) window.clearTimeout(copyResetTimerRef.current);
+      copyResetTimerRef.current = window.setTimeout(() => setCopyStatus('idle'), 1200);
+    }).catch(() => {
+      setCopyStatus('error');
+      if (copyResetTimerRef.current) window.clearTimeout(copyResetTimerRef.current);
+      copyResetTimerRef.current = window.setTimeout(() => setCopyStatus('idle'), 1600);
+    });
+  };
+
   useEffect(() => {
-    if (!hasTranslation || pairs.length === 0) return undefined;
+    setCopyStatus('idle');
+    if (copyResetTimerRef.current) {
+      window.clearTimeout(copyResetTimerRef.current);
+      copyResetTimerRef.current = null;
+    }
+  }, [rawTranslation]);
+
+  useEffect(() => () => {
+    if (copyResetTimerRef.current) window.clearTimeout(copyResetTimerRef.current);
+  }, []);
+
+  useEffect(() => {
+    if (!hasTranslation || shouldRenderWholeTranslation || pairs.length === 0) return undefined;
 
     const handleSourceClick = (event: MouseEvent) => {
       const sourceIndex = getSentenceIndexAtPoint(paragraph.element, event, paragraph.text);
@@ -64,7 +122,7 @@ function TranslationBlock({
       paragraph.element.classList.remove('linkual-article-source-locatable');
       paragraph.element.removeEventListener('click', handleSourceClick);
     };
-  }, [hasTranslation, pairs, paragraph.element, paragraph.text]);
+  }, [hasTranslation, shouldRenderWholeTranslation, pairs, paragraph.element, paragraph.text]);
 
   useEffect(() => {
     const browserWindow = window as Window & {
@@ -81,7 +139,7 @@ function TranslationBlock({
       activeSourceHighlightOwner = null;
     };
 
-    if (!highlights || !HighlightConstructor || !pair) {
+    if (!highlights || !HighlightConstructor || !pair || shouldRenderWholeTranslation) {
       clearHighlight();
       return undefined;
     }
@@ -94,19 +152,34 @@ function TranslationBlock({
     }
 
     return clearHighlight;
-  }, [activePairIndex, pairs, paragraph.element]);
+  }, [activePairIndex, shouldRenderWholeTranslation, pairs, paragraph.element]);
 
   return (
     <div className={`linkual-article-translation ${state?.status || 'idle'}`}>
       <div className="linkual-article-translation-toolbar">
-        <span className="linkual-article-translation-label">Linkual · 网页翻译</span>
-        <button type="button" onClick={() => onTranslate(paragraph)} disabled={isLoading}>
-          {isLoading ? '翻译中…' : hasTranslation ? '重新翻译' : '翻译本段'}
-        </button>
+        <span className="linkual-article-translation-label">网页翻译</span>
+        <div className="linkual-article-translation-actions">
+          <button type="button" onClick={() => onTranslate(paragraph)} disabled={isLoading}>
+            {isLoading ? '翻译中…' : hasTranslation ? '重新翻译' : '翻译本段'}
+          </button>
+          <button
+            type="button"
+            className={`linkual-article-copy-source ${copyStatus}`}
+            onClick={handleCopy}
+            disabled={!rawTranslation}
+            aria-label={copyStatus === 'copied' ? '已复制译文源码' : '复制译文源码'}
+            title={copyStatus === 'copied' ? '已复制译文源码' : copyStatus === 'error' ? '复制失败' : '复制译文源码'}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="9" y="9" width="10" height="10" rx="2" />
+              <path d="M5 15V7a2 2 0 0 1 2-2h8" />
+            </svg>
+          </button>
+        </div>
       </div>
       {hasTranslation ? (
         <div className="linkual-article-translation-text">
-          {pairs.length > 0 ? pairs.map((pair, pairIndex) => (
+          {shouldRenderWholeTranslation ? <ArticleMarkdown text={rawTranslation} /> : pairs.length > 0 ? pairs.map((pair, pairIndex) => (
             <button
               type="button"
               className={`linkual-article-translation-sentence ${activePairIndex === pairIndex ? 'active' : ''}`}
@@ -118,9 +191,9 @@ function TranslationBlock({
               onClick={() => focusSource(pairIndex)}
               title="定位到原文句子"
             >
-              {pair.translation}
+              <ArticleMarkdown text={pair.translation} />
             </button>
-          )) : state?.text}
+          )) : <ArticleMarkdown text={rawTranslation} />}
         </div>
       ) : (
         <div className="linkual-article-translation-placeholder">

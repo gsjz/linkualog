@@ -45,8 +45,20 @@ const MIN_TRANSLATION_CONCURRENCY = 1;
 const MAX_TRANSLATION_CONCURRENCY = 8;
 const HEALTHY_RESPONSES_TO_SCALE = 3;
 const RATE_LIMIT_ERROR_PATTERN = /(?:429|rate\s*limit|too\s*many\s*requests|限流|请求过多)/i;
+const WEB_MATH_FORMAT_INSTRUCTION = '所有数学公式必须使用 LaTeX；行内公式用 $...$ 包裹，行间公式或独立成行的公式用 $$...$$ 包裹。';
+const WEB_MARKDOWN_TABLE_FORMAT_INSTRUCTION = '如果输入包含表格或表格状数据，必须输出 GitHub Flavored Markdown 表格；表格单元格中的公式同样遵守 $...$ 和 $$...$$ 规则。';
 
 const ArticleTranslationContext = createContext<ArticleTranslationContextValue | null>(null);
+
+function getWebTranslationSystemPrompt(targetLanguage: string, promptTemplate: string) {
+  const basePrompt = promptTemplate ||
+    `你是专业学术翻译。请将输入内容准确翻译成${targetLanguage}。保留变量名、引用标记和段落语气；只输出译文，不要解释，不要添加标题。`;
+
+  return [WEB_MATH_FORMAT_INSTRUCTION, WEB_MARKDOWN_TABLE_FORMAT_INSTRUCTION]
+    .reduce((prompt, instruction) => (
+      prompt.includes(instruction) ? prompt : `${prompt}\n${instruction}`
+    ), basePrompt);
+}
 
 export const ArticleTranslationProvider: React.FC<React.PropsWithChildren<{ enabled: boolean }>> = ({ enabled, children }) => {
   const [paragraphs, setParagraphs] = useState<ArticleParagraph[]>([]);
@@ -222,8 +234,8 @@ export const ArticleTranslationProvider: React.FC<React.PropsWithChildren<{ enab
         apiModel,
         stream: false,
         timeoutSec: timeout,
-        systemPrompt: promptTemplate || `你是专业学术翻译。请将输入内容准确翻译成${targetLanguage}。保留数学符号、变量名、引用标记和段落语气；只输出译文，不要解释，不要添加标题。`,
-        userPrompt: `请将下面这一个网页论文段落翻译成${targetLanguage}：\n\n${paragraph.text}`,
+        systemPrompt: getWebTranslationSystemPrompt(targetLanguage, promptTemplate),
+        userPrompt: `请将下面这一个网页论文段落或表格翻译成${targetLanguage}：\n\n${paragraph.text}`,
         onData: (chunk) => {
           content += chunk;
           setTranslations((previous) => ({
