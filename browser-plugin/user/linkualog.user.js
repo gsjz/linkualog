@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Linkual Log
 // @namespace    npm/vite-plugin-monkey
-// @version      0.0.45
+// @version      0.0.46
 // @author       Sergio Gao
 // @icon         https://vitejs.dev/logo.svg
 // @downloadURL  https://raw.githubusercontent.com/gsjz/linkualog/main/browser-plugin/user/linkualog.user.js
@@ -14434,9 +14434,23 @@ JSON 格式：
     ".ltx_authors",
     ".ltx_note"
   ].join(",");
+  const BLOCKING_DESCENDANT_SELECTOR = [
+    "img",
+    "video",
+    "iframe",
+    "canvas",
+    "textarea",
+    "input",
+    "select",
+    "button",
+    "pre",
+    ".CodeMirror",
+    ".monaco-editor"
+  ].join(",");
   const normalizeText$1 = (value) => value.replace(/\s+/g, " ").trim();
   const normalizeMarkdownText = (value) => value.replace(/\r\n?/g, "\n").split("\n").map((line) => normalizeText$1(line)).join("\n").replace(/\n{3,}/g, "\n\n").trim();
   const TRANSLATABLE_TABLE_SELECTOR = "table, .ltx_table";
+  const OPENREVIEW_VALUE_SELECTOR = ".note-content-value, .markdown-rendered";
   const TABLE_EXCLUDED_ANCESTOR_SELECTOR = [
     "[data-linkual-article-host]",
     "nav",
@@ -14515,6 +14529,10 @@ JSON 格式：
   function isTranslatableTableElement(element) {
     return element.matches(TRANSLATABLE_TABLE_SELECTOR);
   }
+  function getOpenReviewValueElement(element) {
+    const value = element.closest(OPENREVIEW_VALUE_SELECTOR);
+    return value instanceof HTMLElement ? value : null;
+  }
   function elementToTranslatableText(element) {
     if (isTranslatableTableElement(element)) {
       return ltxTableToMarkdown(element) || normalizeMarkdownText(element.innerText || element.textContent || "");
@@ -14548,9 +14566,39 @@ ${markdown}
   }
   function getCandidateSelector() {
     if (isOpenReviewForumPage()) {
-      return ".note-content .note-content-value";
+      return [
+        ".note-content .note-content-value > p",
+        ".note-content .note-content-value > ul > li",
+        ".note-content .note-content-value > ol > li",
+        ".note-content .note-content-value blockquote",
+        ".note-content .note-content-value table",
+        ".note-content .note-content-value",
+        ".note-content-value > p",
+        ".note-content-value > ul > li",
+        ".note-content-value > ol > li",
+        ".note-content-value blockquote",
+        ".note-content-value table",
+        ".note-content-value",
+        ".markdown-rendered > p",
+        ".markdown-rendered > ul > li",
+        ".markdown-rendered > ol > li",
+        ".markdown-rendered blockquote",
+        ".markdown-rendered table",
+        ".markdown-rendered"
+      ].join(",");
     }
-    return ".ltx_document p.ltx_p, .ltx_document p, .ltx_document .ltx_table, .ltx_document table";
+    return [
+      ".ltx_document .ltx_para",
+      ".ltx_document p.ltx_p",
+      ".ltx_document p",
+      ".ltx_document blockquote.ltx_quote",
+      ".ltx_document li.ltx_item",
+      ".ltx_document .ltx_theorem",
+      ".ltx_document .ltx_proof",
+      ".ltx_document .ltx_quote",
+      ".ltx_document .ltx_table",
+      ".ltx_document table"
+    ].join(",");
   }
   function getArticleRoot() {
     if (isOpenReviewForumPage()) {
@@ -14559,15 +14607,16 @@ ${markdown}
     return document.querySelector(".ltx_document");
   }
   function getOpenReviewFieldName(element) {
-    var _a;
-    let sibling = element.previousSibling;
+    var _a, _b;
+    const fieldAnchor = getOpenReviewValueElement(element) || element;
+    let sibling = fieldAnchor.previousSibling;
     while (sibling) {
       if (sibling instanceof HTMLElement && sibling.classList.contains("note-content-field")) {
         return normalizeText$1(sibling.textContent || "").replace(/:$/, "").trim();
       }
       sibling = sibling.previousSibling;
     }
-    const field = (_a = element.parentElement) == null ? void 0 : _a.querySelector(".note-content-field");
+    const field = ((_a = fieldAnchor.parentElement) == null ? void 0 : _a.querySelector(".note-content-field")) || ((_b = fieldAnchor.closest(".note-content")) == null ? void 0 : _b.querySelector(".note-content-field"));
     return field ? normalizeText$1(field.textContent || "").replace(/:$/, "").trim() : "";
   }
   function normalizeOpenReviewFieldName(fieldName) {
@@ -14590,11 +14639,37 @@ ${markdown}
     element.insertAdjacentElement("afterend", host);
     return host;
   }
+  function canonicalizeCandidateElement(element) {
+    if (isArxivHtmlPage()) {
+      const tableWrapper = element.closest(".ltx_table");
+      if (tableWrapper instanceof HTMLElement) return tableWrapper;
+      const paragraphWrapper = element.closest(".ltx_para");
+      if (paragraphWrapper instanceof HTMLElement) return paragraphWrapper;
+    }
+    return element;
+  }
+  function hasNestedTextCandidate(element, candidates) {
+    return candidates.some((candidate) => candidate !== element && element.contains(candidate) && !isTranslatableTableElement(candidate));
+  }
+  function shouldSkipNestedCandidate(element, candidates) {
+    if (isOpenReviewForumPage() && isTranslatableTableElement(element)) {
+      const value = getOpenReviewValueElement(element);
+      if (value && value !== element && candidates.includes(value) && !hasNestedTextCandidate(value, candidates)) {
+        return true;
+      }
+    }
+    return !isTranslatableTableElement(element) && hasNestedTextCandidate(element, candidates);
+  }
+  function collectCandidateElements(root2) {
+    const elements = Array.from(root2.querySelectorAll(getCandidateSelector())).map(canonicalizeCandidateElement);
+    const uniqueElements = Array.from(new Set(elements));
+    return uniqueElements.filter((element) => !shouldSkipNestedCandidate(element, uniqueElements));
+  }
   function collectArticleParagraphs() {
     if (!isArticleTranslationSupportedPage()) return [];
     const root2 = getArticleRoot();
     if (!root2) return [];
-    const candidates = Array.from(root2.querySelectorAll(getCandidateSelector())).filter((element) => !isExcluded(element) && !isOpenReviewFieldExcluded(element)).map((element) => ({ element, text: elementToTranslatableText(element) })).filter(({ element, text: text2 }) => text2.length >= MIN_PARAGRAPH_LENGTH && (isTranslatableTableElement(element) || !element.querySelector("img, video, iframe, canvas, textarea, input, select, button, pre, code, .CodeMirror, .monaco-editor")));
+    const candidates = collectCandidateElements(root2).filter((element) => !isExcluded(element) && !isOpenReviewFieldExcluded(element)).map((element) => ({ element, text: elementToTranslatableText(element) })).filter(({ element, text: text2 }) => text2.length >= MIN_PARAGRAPH_LENGTH && (isTranslatableTableElement(element) || !element.querySelector(BLOCKING_DESCENDANT_SELECTOR)));
     const seen = /* @__PURE__ */ new Set();
     return candidates.slice(0, MAX_PARAGRAPHS).filter(({ element }) => {
       if (seen.has(element)) return false;

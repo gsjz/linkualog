@@ -32,6 +32,20 @@ const EXCLUDED_SELECTOR = [
   '.ltx_note',
 ].join(',');
 
+const BLOCKING_DESCENDANT_SELECTOR = [
+  'img',
+  'video',
+  'iframe',
+  'canvas',
+  'textarea',
+  'input',
+  'select',
+  'button',
+  'pre',
+  '.CodeMirror',
+  '.monaco-editor',
+].join(',');
+
 const normalizeText = (value: string) => value.replace(/\s+/g, ' ').trim();
 const normalizeMarkdownText = (value: string) => value
   .replace(/\r\n?/g, '\n')
@@ -41,6 +55,7 @@ const normalizeMarkdownText = (value: string) => value
   .replace(/\n{3,}/g, '\n\n')
   .trim();
 const TRANSLATABLE_TABLE_SELECTOR = 'table, .ltx_table';
+const OPENREVIEW_VALUE_SELECTOR = '.note-content-value, .markdown-rendered';
 const TABLE_EXCLUDED_ANCESTOR_SELECTOR = [
   '[data-linkual-article-host]',
   'nav',
@@ -136,6 +151,11 @@ function isTranslatableTableElement(element: HTMLElement) {
   return element.matches(TRANSLATABLE_TABLE_SELECTOR);
 }
 
+function getOpenReviewValueElement(element: HTMLElement) {
+  const value = element.closest(OPENREVIEW_VALUE_SELECTOR);
+  return value instanceof HTMLElement ? value : null;
+}
+
 function elementToTranslatableText(element: HTMLElement) {
   if (isTranslatableTableElement(element)) {
     return ltxTableToMarkdown(element) || normalizeMarkdownText(element.innerText || element.textContent || '');
@@ -173,10 +193,40 @@ function isExcluded(element: HTMLElement) {
 
 function getCandidateSelector() {
   if (isOpenReviewForumPage()) {
-    return '.note-content .note-content-value';
+    return [
+      '.note-content .note-content-value > p',
+      '.note-content .note-content-value > ul > li',
+      '.note-content .note-content-value > ol > li',
+      '.note-content .note-content-value blockquote',
+      '.note-content .note-content-value table',
+      '.note-content .note-content-value',
+      '.note-content-value > p',
+      '.note-content-value > ul > li',
+      '.note-content-value > ol > li',
+      '.note-content-value blockquote',
+      '.note-content-value table',
+      '.note-content-value',
+      '.markdown-rendered > p',
+      '.markdown-rendered > ul > li',
+      '.markdown-rendered > ol > li',
+      '.markdown-rendered blockquote',
+      '.markdown-rendered table',
+      '.markdown-rendered',
+    ].join(',');
   }
 
-  return '.ltx_document p.ltx_p, .ltx_document p, .ltx_document .ltx_table, .ltx_document table';
+  return [
+    '.ltx_document .ltx_para',
+    '.ltx_document p.ltx_p',
+    '.ltx_document p',
+    '.ltx_document blockquote.ltx_quote',
+    '.ltx_document li.ltx_item',
+    '.ltx_document .ltx_theorem',
+    '.ltx_document .ltx_proof',
+    '.ltx_document .ltx_quote',
+    '.ltx_document .ltx_table',
+    '.ltx_document table',
+  ].join(',');
 }
 
 function getArticleRoot() {
@@ -188,7 +238,8 @@ function getArticleRoot() {
 }
 
 function getOpenReviewFieldName(element: HTMLElement) {
-  let sibling: ChildNode | null = element.previousSibling;
+  const fieldAnchor = getOpenReviewValueElement(element) || element;
+  let sibling: ChildNode | null = fieldAnchor.previousSibling;
   while (sibling) {
     if (sibling instanceof HTMLElement && sibling.classList.contains('note-content-field')) {
       return normalizeText(sibling.textContent || '').replace(/:$/, '').trim();
@@ -196,7 +247,8 @@ function getOpenReviewFieldName(element: HTMLElement) {
     sibling = sibling.previousSibling;
   }
 
-  const field = element.parentElement?.querySelector<HTMLElement>('.note-content-field');
+  const field = fieldAnchor.parentElement?.querySelector<HTMLElement>('.note-content-field') ||
+    fieldAnchor.closest('.note-content')?.querySelector<HTMLElement>('.note-content-field');
   return field ? normalizeText(field.textContent || '').replace(/:$/, '').trim() : '';
 }
 
@@ -225,18 +277,56 @@ function getOrCreateHost(element: HTMLElement) {
   return host;
 }
 
+function canonicalizeCandidateElement(element: HTMLElement) {
+  if (isArxivHtmlPage()) {
+    const tableWrapper = element.closest('.ltx_table');
+    if (tableWrapper instanceof HTMLElement) return tableWrapper;
+
+    const paragraphWrapper = element.closest('.ltx_para');
+    if (paragraphWrapper instanceof HTMLElement) return paragraphWrapper;
+  }
+
+  return element;
+}
+
+function hasNestedTextCandidate(element: HTMLElement, candidates: HTMLElement[]) {
+  return candidates.some((candidate) => (
+    candidate !== element &&
+    element.contains(candidate) &&
+    !isTranslatableTableElement(candidate)
+  ));
+}
+
+function shouldSkipNestedCandidate(element: HTMLElement, candidates: HTMLElement[]) {
+  if (isOpenReviewForumPage() && isTranslatableTableElement(element)) {
+    const value = getOpenReviewValueElement(element);
+    if (value && value !== element && candidates.includes(value) && !hasNestedTextCandidate(value, candidates)) {
+      return true;
+    }
+  }
+
+  return !isTranslatableTableElement(element) && hasNestedTextCandidate(element, candidates);
+}
+
+function collectCandidateElements(root: Element) {
+  const elements = Array.from(root.querySelectorAll<HTMLElement>(getCandidateSelector()))
+    .map(canonicalizeCandidateElement);
+  const uniqueElements = Array.from(new Set(elements));
+  return uniqueElements.filter((element) => !shouldSkipNestedCandidate(element, uniqueElements));
+}
+
 export function collectArticleParagraphs(): ArticleParagraph[] {
   if (!isArticleTranslationSupportedPage()) return [];
 
   const root = getArticleRoot();
   if (!root) return [];
 
-  const candidates = Array.from(root.querySelectorAll<HTMLElement>(getCandidateSelector()))
+  const candidates = collectCandidateElements(root)
     .filter((element) => !isExcluded(element) && !isOpenReviewFieldExcluded(element))
     .map((element) => ({ element, text: elementToTranslatableText(element) }))
     .filter(({ element, text }) => (
       text.length >= MIN_PARAGRAPH_LENGTH &&
-      (isTranslatableTableElement(element) || !element.querySelector('img, video, iframe, canvas, textarea, input, select, button, pre, code, .CodeMirror, .monaco-editor'))
+      (isTranslatableTableElement(element) || !element.querySelector(BLOCKING_DESCENDANT_SELECTOR))
     ));
 
   const seen = new Set<HTMLElement>();
