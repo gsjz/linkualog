@@ -1152,6 +1152,7 @@ const SimilarVocabularyMatches = ({
   const popoverContent = activePopoverItem && popoverStyle ? (
     <div
       ref={popoverRef}
+      className="task-vocab-popover"
       onClick={(event) => event.stopPropagation()}
       style={popoverStyle}
     >
@@ -1596,6 +1597,8 @@ export default function TaskVisualizer({
   const [historyTasks, setHistoryTasks] = useState([]);
   const [tasksListLoaded, setTasksListLoaded] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState(null);
+  const [loadedTaskId, setLoadedTaskId] = useState(null);
+  const [taskDetailLoadingId, setTaskDetailLoadingId] = useState('');
   const [taskData, setTaskData] = useState(null);
 
   const [createTaskName, setCreateTaskName] = useState('');
@@ -1633,6 +1636,7 @@ export default function TaskVisualizer({
   const [isRightPanelCollapsed, setIsRightPanelCollapsed] = useState(() => localStorage.getItem('taskRightPanelCollapsed') === '1');
   const saveTimersRef = useRef({});
   const selectedTaskIdRef = useRef(selectedTaskId);
+  const taskDetailRequestRef = useRef(0);
   const taskRestoredRef = useRef(false);
 
   const foldedKeysConfig = (localStorage.getItem('defaultFoldedKeys') !== null
@@ -1678,11 +1682,15 @@ export default function TaskVisualizer({
 
   useEffect(() => {
     let detailInterval;
-    if (selectedTaskId && taskData?.status !== 'finished' && taskData?.status !== 'paused') {
+    if (selectedTaskId && !taskDetailLoadingId && taskData?.status !== 'finished' && taskData?.status !== 'paused') {
+      const intervalTaskId = selectedTaskId;
       detailInterval = setInterval(async () => {
         try {
-          const data = await getTaskStatus(selectedTaskId);
+          const data = await getTaskStatus(intervalTaskId);
+          if (selectedTaskIdRef.current !== intervalTaskId || taskDetailLoadingId) return;
+          if (data?.error) throw new Error(data.error);
           setTaskData(data);
+          setLoadedTaskId(intervalTaskId);
           fetchTasksList();
         } catch {
           // ignore
@@ -1690,7 +1698,7 @@ export default function TaskVisualizer({
       }, 5000);
     }
     return () => clearInterval(detailInterval);
-  }, [selectedTaskId, taskData?.status]);
+  }, [selectedTaskId, taskData?.status, taskDetailLoadingId]);
 
   useEffect(() => {
     const prev = prevStagedRef.current;
@@ -1815,6 +1823,7 @@ export default function TaskVisualizer({
   }, [currentVocabCategory]);
 
   const schedulePersistPageMarks = (taskId, pageIndex, pageContent, marks) => {
+    if (taskDetailRequestRef.current && taskDetailLoadingId) return;
     if (!taskId) return;
     if (!pageContent || typeof pageContent !== 'object' || Array.isArray(pageContent)) return;
     if (!Array.isArray(marks) || marks.length === 0) return;
@@ -1851,10 +1860,20 @@ export default function TaskVisualizer({
   };
 
   const handleSelectTask = async (taskId) => {
+    const normalizedTaskId = String(taskId || '').trim();
+    if (!normalizedTaskId) return;
+    if (normalizedTaskId === selectedTaskId && taskData && !taskDetailLoadingId) {
+      setPageMode('browse');
+      return;
+    }
+
     clearAllSaveTimers();
+    const requestId = taskDetailRequestRef.current + 1;
+    taskDetailRequestRef.current = requestId;
     setPageMode('browse');
-    setSelectedTaskId(taskId);
-    setTaskData(null);
+    setSelectedTaskId(normalizedTaskId);
+    selectedTaskIdRef.current = normalizedTaskId;
+    setTaskDetailLoadingId(normalizedTaskId);
     setSelectedMarkByPage({});
     setSelectedMarkSignalByPage({});
     setEditedMarksByPage({});
@@ -1866,17 +1885,27 @@ export default function TaskVisualizer({
     setSavingPages({});
     setExistingTaskNameSuggestion(null);
     setExistingTaskNameSuggestionError('');
+    setVocabQueueOpen(false);
+    setTaskToolsOpen(false);
 
     try {
-      const data = await getTaskStatus(taskId);
-      localStorage.setItem(SELECTED_TASK_STORAGE_KEY, taskId);
+      const data = await getTaskStatus(normalizedTaskId);
+      if (taskDetailRequestRef.current !== requestId) return;
+      if (data?.error) throw new Error(data.error);
+      localStorage.setItem(SELECTED_TASK_STORAGE_KEY, normalizedTaskId);
       setTaskData(data);
+      setLoadedTaskId(normalizedTaskId);
       setEditingTaskName(data?.name || '');
+      setTaskDetailLoadingId('');
     } catch (error) {
+      if (taskDetailRequestRef.current !== requestId) return;
       localStorage.removeItem(SELECTED_TASK_STORAGE_KEY);
       setSelectedTaskId(null);
+      selectedTaskIdRef.current = null;
+      setLoadedTaskId(null);
       setTaskData(null);
       setEditingTaskName('');
+      setTaskDetailLoadingId('');
       throw error;
     }
   };
@@ -1897,12 +1926,15 @@ export default function TaskVisualizer({
   }, [historyTasks, selectedTaskId, simpleCreateOnly, tasksListLoaded]);
 
   const handleDeleteTask = async () => {
-    if (!selectedTaskId) return;
+    if (!selectedTaskId || isTaskDetailPending) return;
     if (window.confirm('确定要永久删除该任务及记录吗？')) {
       clearAllSaveTimers();
       await deleteTask(selectedTaskId);
       localStorage.removeItem(SELECTED_TASK_STORAGE_KEY);
       setSelectedTaskId(null);
+      selectedTaskIdRef.current = null;
+      setLoadedTaskId(null);
+      setTaskDetailLoadingId('');
       setTaskData(null);
       setEditingTaskName('');
       setExistingTaskNameSuggestion(null);
@@ -1921,7 +1953,7 @@ export default function TaskVisualizer({
   };
 
   const handleRenameTask = async () => {
-    if (!selectedTaskId || !taskData) return;
+    if (!selectedTaskId || !taskData || isTaskDetailPending) return;
     setIsSavingTaskName(true);
     try {
       const result = await renameTask(selectedTaskId, editingTaskName);
@@ -1939,14 +1971,14 @@ export default function TaskVisualizer({
   };
 
   const handleResume = async () => {
-    if (!selectedTaskId) return;
+    if (!selectedTaskId || isTaskDetailPending) return;
     await resumeTask(selectedTaskId);
     setTaskData({ ...taskData, status: 'processing' });
     fetchTasksList();
   };
 
   const handleRegenerate = async (index) => {
-    if (!selectedTaskId) return;
+    if (!selectedTaskId || isTaskDetailPending) return;
     clearSaveTimerForPage(index);
     setRegeneratingPages((prev) => ({ ...prev, [index]: true }));
     try {
@@ -2010,6 +2042,7 @@ export default function TaskVisualizer({
   };
 
   const updatePageMark = (pageIndex, fallbackMarks, pageContent, markId, updater) => {
+    if (isTaskDetailPending) return;
     setEditedMarksByPage((prev) => {
       const baseMarks = (prev[pageIndex] || fallbackMarks).map(cloneMark);
       const nextMarks = baseMarks.map((mark) => (mark.id === markId ? updater(mark) : mark));
@@ -2061,15 +2094,18 @@ export default function TaskVisualizer({
   };
 
   const handleToggleRegionMode = (pageIndex) => {
+    if (isTaskDetailPending) return;
     setRegionModeByPage((prev) => ({ ...prev, [pageIndex]: !prev[pageIndex] }));
   };
 
   const handleDraftRegionChange = (pageIndex, region) => {
+    if (isTaskDetailPending) return;
     const normalized = normalizeDraftRegion(region);
     setDraftRegionByPage((prev) => ({ ...prev, [pageIndex]: normalized || region }));
   };
 
   const handleDraftRegionCommit = (pageIndex) => {
+    if (isTaskDetailPending) return;
     setDraftRegionByPage((prevDrafts) => {
       const normalized = normalizeDraftRegion(prevDrafts[pageIndex]);
       if (!isUsableRegion(normalized)) {
@@ -2086,6 +2122,7 @@ export default function TaskVisualizer({
   };
 
   const handleClearRegion = (pageIndex) => {
+    if (isTaskDetailPending) return;
     setDraftRegionByPage((prev) => {
       const next = { ...prev };
       delete next[pageIndex];
@@ -2099,7 +2136,7 @@ export default function TaskVisualizer({
   };
 
   const handleRecognizeRegion = async (pageIndex) => {
-    if (!selectedTaskId) return;
+    if (!selectedTaskId || isTaskDetailPending) return;
     const region = normalizeDraftRegion(selectedRegionByPage[pageIndex]);
     if (!isUsableRegion(region)) {
       alert('请先在左侧图片上拖出一个局部识别矩形。');
@@ -2156,7 +2193,7 @@ export default function TaskVisualizer({
   };
 
   const handleRecommendTaskName = async () => {
-    if (!selectedTaskId || !taskData) return;
+    if (!selectedTaskId || !taskData || isTaskDetailPending) return;
     const subject = (editingTaskName || '').trim();
     const beforeName = subject || '未填写';
     const context = formattedResults
@@ -2316,12 +2353,16 @@ export default function TaskVisualizer({
   const formattedResults = getFormattedResults();
   const taskHasOverlayMarks = formattedResults.some((item) => item.overlay_marks.length > 0);
   const showOverlayToggle = taskHasOverlayMarks;
+  const isTaskDetailPending = Boolean(taskDetailLoadingId);
+  const hasStaleTaskDetail = Boolean(isTaskDetailPending && taskData && loadedTaskId && loadedTaskId !== taskDetailLoadingId);
+  const pendingTaskSummary = historyTasks.find((task) => String(task?.id || '') === taskDetailLoadingId);
+  const pendingTaskName = pendingTaskSummary?.name || '任务详情';
   const normalizedCurrentTaskName = (taskData?.name || '').trim() || '资源解析任务';
   const normalizedEditingTaskName = (editingTaskName || '').trim() || '资源解析任务';
   const isTaskNameDirty = normalizedCurrentTaskName !== normalizedEditingTaskName;
   const progressPct = taskData?.total ? ((taskData.completed / taskData.total) * 100) : 0;
   const currentPageMode = simpleCreateOnly ? 'create' : pageMode;
-  const canTuneBrowseView = currentPageMode === 'browse' && Boolean(taskData);
+  const canTuneBrowseView = currentPageMode === 'browse' && Boolean(taskData) && !isTaskDetailPending;
   const taskProgressColor = taskData?.status === 'paused'
     ? 'var(--ms-danger)'
     : taskData?.status === 'finished'
@@ -2389,6 +2430,7 @@ export default function TaskVisualizer({
     </div>
   );
   const handleToggleVocabQueue = () => {
+    if (isTaskDetailPending) return;
     setVocabQueueOpen((open) => !open);
     setCreateToolsOpen(false);
     setCreateMetaOpen(false);
@@ -2400,6 +2442,7 @@ export default function TaskVisualizer({
       type="button"
       className={`task-icon-button task-vocab-queue-trigger${vocabQueueOpen ? ' is-active' : ''}${queueBadgeCount > 0 ? ' has-badge' : ''}${className ? ` ${className}` : ''}`}
       onClick={handleToggleVocabQueue}
+      disabled={isTaskDetailPending}
       aria-label={`打开加词工具，保存目录 ${addVocabularyCategoryLabel}`}
       aria-expanded={vocabQueueOpen}
       title={`加词 · ${addVocabularyCategoryLabel}`}
@@ -2560,22 +2603,28 @@ export default function TaskVisualizer({
             </div>
           </div>
         ) : taskData ? (
-          <div className="task-detail-wrapper" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <div className={`task-detail-wrapper${isTaskDetailPending ? ' is-detail-loading' : ''}`} style={{ position: 'relative', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            {isTaskDetailPending ? (
+              <div className="task-detail-loading-overlay" aria-live="polite">
+                <span className="task-detail-loading-bar" aria-hidden="true" />
+                <span>{hasStaleTaskDetail ? `正在切换到 ${pendingTaskName}` : '正在加载任务详情'}</span>
+              </div>
+            ) : null}
             <div className="task-toolbar" style={{ padding: '10px 16px', borderBottom: '1px solid #e4e4e7', background: '#fafafa', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
               <div className="task-status-bar" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', fontSize: '12px', color: '#71717a' }}>
                 <span>任务名</span>
-                <input className="task-inline-input" value={editingTaskName} onChange={(e) => { setEditingTaskName(e.target.value); setExistingTaskNameSuggestion(null); setExistingTaskNameSuggestionError(''); }} onKeyDown={(e) => { if (e.key === 'Enter' && isTaskNameDirty && !isSavingTaskName) handleRenameTask(); }} style={{ padding: '4px 8px', border: '1px solid #e4e4e7', borderRadius: '4px', fontSize: '12px', width: '220px', outline: 'none' }} />
+                <input className="task-inline-input" value={editingTaskName} disabled={isTaskDetailPending} onChange={(e) => { setEditingTaskName(e.target.value); setExistingTaskNameSuggestion(null); setExistingTaskNameSuggestionError(''); }} onKeyDown={(e) => { if (e.key === 'Enter' && isTaskNameDirty && !isSavingTaskName && !isTaskDetailPending) handleRenameTask(); }} style={{ padding: '4px 8px', border: '1px solid #e4e4e7', borderRadius: '4px', fontSize: '12px', width: '220px', outline: 'none' }} />
                 <button
                   type="button"
                   className="task-secondary-button task-name-recommend-button task-icon-text-button"
                   onClick={handleRecommendTaskName}
-                  disabled={isRecommendingExistingTaskName || isSavingTaskName}
+                  disabled={isTaskDetailPending || isRecommendingExistingTaskName || isSavingTaskName}
                   title="根据当前任务名和已有词条来源推荐任务名"
                 >
                   <UiIcon name="star" size={15} />
                   <span>{isRecommendingExistingTaskName ? '推荐中' : '推荐'}</span>
                 </button>
-                <button className="task-secondary-button" onClick={handleRenameTask} disabled={!isTaskNameDirty || isSavingTaskName} style={{ padding: '4px 8px', border: '1px solid #e4e4e7', borderRadius: '4px', background: '#fff', fontSize: '12px', cursor: (!isTaskNameDirty || isSavingTaskName) ? 'not-allowed' : 'pointer', color: (!isTaskNameDirty || isSavingTaskName) ? '#a1a1aa' : '#09090b' }}>{isSavingTaskName ? '保存中...' : '保存'}</button>
+                <button className="task-secondary-button" onClick={handleRenameTask} disabled={isTaskDetailPending || !isTaskNameDirty || isSavingTaskName} style={{ padding: '4px 8px', border: '1px solid #e4e4e7', borderRadius: '4px', background: '#fff', fontSize: '12px', cursor: (isTaskDetailPending || !isTaskNameDirty || isSavingTaskName) ? 'not-allowed' : 'pointer', color: (isTaskDetailPending || !isTaskNameDirty || isSavingTaskName) ? '#a1a1aa' : '#09090b' }}>{isSavingTaskName ? '保存中...' : '保存'}</button>
                 {renderTaskNameRecommendationStatus()}
                 <span>进度 {taskData.completed} / {taskData.total}</span>
                 <span>状态 {getStatusText(taskData.status)}</span>
@@ -2583,13 +2632,14 @@ export default function TaskVisualizer({
 
               <div className="task-toolbar-actions" style={{ display: 'flex', gap: '8px' }}>
                 {renderVocabQueueButton()}
-                {taskData.status === 'paused' && <button className="task-secondary-button" onClick={handleResume} style={{ padding: '4px 10px', border: '1px solid #e4e4e7', borderRadius: '4px', background: '#fff', fontSize: '12px', cursor: 'pointer' }}>继续</button>}
-                <button className="task-secondary-button task-danger-button" onClick={handleDeleteTask} style={{ padding: '4px 10px', border: '1px solid var(--ms-border)', borderRadius: '4px', background: '#fff', color: 'var(--ms-text)', fontSize: '12px', cursor: 'pointer' }}>删除任务</button>
+                {taskData.status === 'paused' && <button className="task-secondary-button" onClick={handleResume} disabled={isTaskDetailPending} style={{ padding: '4px 10px', border: '1px solid #e4e4e7', borderRadius: '4px', background: '#fff', fontSize: '12px', cursor: isTaskDetailPending ? 'not-allowed' : 'pointer' }}>继续</button>}
+                <button className="task-secondary-button task-danger-button" onClick={handleDeleteTask} disabled={isTaskDetailPending} style={{ padding: '4px 10px', border: '1px solid var(--ms-border)', borderRadius: '4px', background: '#fff', color: 'var(--ms-text)', fontSize: '12px', cursor: isTaskDetailPending ? 'not-allowed' : 'pointer' }}>删除任务</button>
               </div>
               <button
                 type="button"
                 className={`task-icon-button task-toolbar-mobile-trigger${taskToolsOpen ? ' is-active' : ''}`}
                 onClick={() => setTaskToolsOpen((open) => !open)}
+                disabled={isTaskDetailPending}
                 aria-label="打开任务工具"
                 aria-expanded={taskToolsOpen}
               >
@@ -2613,25 +2663,25 @@ export default function TaskVisualizer({
                   <div className="task-floating-stack">
                     <label className="task-control-field">
                       <span className="task-inline-label">任务名</span>
-                      <input className="task-inline-input" value={editingTaskName} onChange={(e) => { setEditingTaskName(e.target.value); setExistingTaskNameSuggestion(null); setExistingTaskNameSuggestionError(''); }} onKeyDown={(e) => { if (e.key === 'Enter' && isTaskNameDirty && !isSavingTaskName) handleRenameTask(); }} />
+                      <input className="task-inline-input" value={editingTaskName} disabled={isTaskDetailPending} onChange={(e) => { setEditingTaskName(e.target.value); setExistingTaskNameSuggestion(null); setExistingTaskNameSuggestionError(''); }} onKeyDown={(e) => { if (e.key === 'Enter' && isTaskNameDirty && !isSavingTaskName && !isTaskDetailPending) handleRenameTask(); }} />
                     </label>
                     <button
                       type="button"
                       className="task-secondary-button task-name-recommend-button task-icon-text-button"
                       onClick={handleRecommendTaskName}
-                      disabled={isRecommendingExistingTaskName || isSavingTaskName}
+                      disabled={isTaskDetailPending || isRecommendingExistingTaskName || isSavingTaskName}
                     >
                       <UiIcon name="star" size={15} />
                       <span>{isRecommendingExistingTaskName ? '推荐中' : '推荐'}</span>
                     </button>
                     {renderTaskNameRecommendationStatus()}
-                    <button className="task-secondary-button" onClick={handleRenameTask} disabled={!isTaskNameDirty || isSavingTaskName}>
+                    <button className="task-secondary-button" onClick={handleRenameTask} disabled={isTaskDetailPending || !isTaskNameDirty || isSavingTaskName}>
                       {isSavingTaskName ? '保存中...' : '保存'}
                     </button>
                     <div className="task-floating-action-row">
-                      {taskData.status === 'paused' ? <button className="task-secondary-button" onClick={handleResume}>继续</button> : null}
+                      {taskData.status === 'paused' ? <button className="task-secondary-button" onClick={handleResume} disabled={isTaskDetailPending}>继续</button> : null}
                       {renderVocabQueueButton('task-floating-icon-row')}
-                      <button className="task-secondary-button task-danger-button" onClick={handleDeleteTask}>删除</button>
+                      <button className="task-secondary-button task-danger-button" onClick={handleDeleteTask} disabled={isTaskDetailPending}>删除</button>
                     </div>
                   </div>
                 </section>
@@ -2673,9 +2723,9 @@ export default function TaskVisualizer({
                           type="button"
                           className={`task-secondary-button task-icon-text-button${regionModeActive ? ' is-active' : ''}`}
                           onClick={() => handleToggleRegionMode(idx)}
-                          disabled={item.status === 'processing' || isRecognizingRegion}
+                          disabled={isTaskDetailPending || item.status === 'processing' || isRecognizingRegion}
                           title="在左侧图片上拖拽矩形，专门识别该局部区域"
-                          style={{ padding: '4px 10px', border: '1px solid #e4e4e7', borderRadius: '4px', background: regionModeActive ? 'var(--ms-surface-muted)' : '#fff', fontSize: '12px', cursor: (item.status === 'processing' || isRecognizingRegion) ? 'not-allowed' : 'pointer', color: '#09090b', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                          style={{ padding: '4px 10px', border: '1px solid #e4e4e7', borderRadius: '4px', background: regionModeActive ? 'var(--ms-surface-muted)' : '#fff', fontSize: '12px', cursor: (isTaskDetailPending || item.status === 'processing' || isRecognizingRegion) ? 'not-allowed' : 'pointer', color: '#09090b', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                         >
                           <UiIcon name="target" size={14} />
                           <span>{regionModeActive ? '标记中' : '局部框'}</span>
@@ -2684,9 +2734,9 @@ export default function TaskVisualizer({
                           type="button"
                           className="task-secondary-button"
                           onClick={() => handleRecognizeRegion(idx)}
-                          disabled={!canRecognizeRegion || isRecognizingRegion}
+                          disabled={isTaskDetailPending || !canRecognizeRegion || isRecognizingRegion}
                           title={activeRegion ? `识别选区 (${activeRegion.left.toFixed(3)}, ${activeRegion.top.toFixed(3)})` : '先拖出局部识别矩形'}
-                          style={{ padding: '4px 10px', border: '1px solid #e4e4e7', borderRadius: '4px', background: '#fff', fontSize: '12px', cursor: (!canRecognizeRegion || isRecognizingRegion) ? 'not-allowed' : 'pointer', color: (!canRecognizeRegion || isRecognizingRegion) ? '#a1a1aa' : '#09090b' }}
+                          style={{ padding: '4px 10px', border: '1px solid #e4e4e7', borderRadius: '4px', background: '#fff', fontSize: '12px', cursor: (isTaskDetailPending || !canRecognizeRegion || isRecognizingRegion) ? 'not-allowed' : 'pointer', color: (isTaskDetailPending || !canRecognizeRegion || isRecognizingRegion) ? '#a1a1aa' : '#09090b' }}
                         >
                           {isRecognizingRegion ? '识别中...' : '识别选区'}
                         </button>
@@ -2695,13 +2745,13 @@ export default function TaskVisualizer({
                             type="button"
                             className="task-secondary-button"
                             onClick={() => handleClearRegion(idx)}
-                            disabled={isRecognizingRegion}
-                            style={{ padding: '4px 10px', border: '1px solid #e4e4e7', borderRadius: '4px', background: '#fff', fontSize: '12px', cursor: isRecognizingRegion ? 'not-allowed' : 'pointer', color: '#09090b' }}
+                            disabled={isTaskDetailPending || isRecognizingRegion}
+                            style={{ padding: '4px 10px', border: '1px solid #e4e4e7', borderRadius: '4px', background: '#fff', fontSize: '12px', cursor: (isTaskDetailPending || isRecognizingRegion) ? 'not-allowed' : 'pointer', color: '#09090b' }}
                           >
                             清除选区
                           </button>
                         ) : null}
-                        <button className="task-secondary-button" onClick={() => handleRegenerate(idx)} disabled={isRegenerating || item.status === 'processing'} style={{ padding: '4px 10px', border: '1px solid #e4e4e7', borderRadius: '4px', background: '#fff', fontSize: '12px', cursor: (isRegenerating || item.status === 'processing') ? 'not-allowed' : 'pointer', color: (isRegenerating || item.status === 'processing') ? '#a1a1aa' : '#09090b' }}>{isRegenerating ? '请求中...' : '重新生成'}</button>
+                        <button className="task-secondary-button" onClick={() => handleRegenerate(idx)} disabled={isTaskDetailPending || isRegenerating || item.status === 'processing'} style={{ padding: '4px 10px', border: '1px solid #e4e4e7', borderRadius: '4px', background: '#fff', fontSize: '12px', cursor: (isTaskDetailPending || isRegenerating || item.status === 'processing') ? 'not-allowed' : 'pointer', color: (isTaskDetailPending || isRegenerating || item.status === 'processing') ? '#a1a1aa' : '#09090b' }}>{isRegenerating ? '请求中...' : '重新生成'}</button>
                       </div>
                     </div>
 
@@ -2766,6 +2816,15 @@ export default function TaskVisualizer({
               })}
             </div>
           </div>
+        ) : isTaskDetailPending ? (
+          <div className="task-empty-state task-empty-state-card task-detail-loading-state" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+            <div className="task-empty-state-panel" style={{ width: '100%', maxWidth: '420px', display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'flex-start', border: '1px dashed var(--ms-border)', borderRadius: '6px', padding: '20px', background: 'linear-gradient(180deg, rgba(255,255,255,0.98), rgba(250,250,250,0.98))' }}>
+              <div className="task-detail-loading-overlay is-inline" aria-live="polite">
+                <span className="task-detail-loading-bar" aria-hidden="true" />
+                <span>正在加载 {pendingTaskName}</span>
+              </div>
+            </div>
+          </div>
         ) : (
           <div className="task-empty-state task-empty-state-card" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
             <div className="task-empty-state-panel" style={{ width: '100%', maxWidth: '520px', display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'flex-start', border: '1px dashed var(--ms-border)', borderRadius: '6px', padding: '20px', background: 'linear-gradient(180deg, rgba(255,255,255,0.98), rgba(250,250,250,0.98))' }}>
@@ -2827,8 +2886,15 @@ export default function TaskVisualizer({
             <div className="task-history-list" style={{ flex: 1, overflowY: 'auto' }}>
               {historyTasks.map((task) => {
                 const isSelected = selectedTaskId === task.id;
+                const isLoadingTarget = taskDetailLoadingId === String(task.id || '');
                 return (
-                  <div key={task.id} className={`task-history-item${isSelected ? ' is-selected' : ''}`} onClick={() => handleSelectTask(task.id)} style={{ padding: '10px 12px', borderBottom: '1px solid #e4e4e7', cursor: 'pointer', background: isSelected ? '#e4e4e7' : 'transparent' }}>
+                  <div
+                    key={task.id}
+                    className={`task-history-item${isSelected ? ' is-selected' : ''}${isLoadingTarget ? ' is-loading' : ''}`}
+                    onClick={() => { if (!isLoadingTarget) handleSelectTask(task.id); }}
+                    aria-busy={isLoadingTarget}
+                    style={{ padding: '10px 12px', borderBottom: '1px solid #e4e4e7', cursor: isLoadingTarget ? 'progress' : 'pointer', background: isSelected ? '#e4e4e7' : 'transparent' }}
+                  >
                     <div className="task-history-name" style={{ fontSize: '13px', fontWeight: isSelected ? 600 : 400, color: '#09090b', marginBottom: '4px', wordBreak: 'break-all', overflow: 'hidden', textOverflow: 'ellipsis' }}>{task.name || '未命名'}</div>
                     <div className="task-history-meta" style={{ fontSize: '12px', color: '#71717a', display: 'flex', justifyContent: 'space-between' }}>
                       <span>{task.completed} / {task.total}</span>

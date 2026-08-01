@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import UiIcon from './UiIcon.jsx';
 import { QUEUE_LABELS } from '../hooks/useVocabularyQueues.js';
@@ -29,9 +29,7 @@ const TABS = [
 ];
 
 const NAV_QUEUES = new Set(['random', 'manual', 'todo']);
-const MOBILE_QUERY = '(max-width: 760px)';
-const DEFAULT_DESKTOP_OFFSET = 18;
-const DOCK_MARGIN = 8;
+const MOBILE_QUERY = '(max-width: 1180px)';
 const SCORE_AUTO_NEXT_STORAGE_KEY = 'linkualog:vocab-queue-score-auto-next';
 
 const statusLabel = (item) => {
@@ -44,18 +42,6 @@ const statusLabel = (item) => {
   if (status === 'success' || status === 'done') return '完成';
   if (status === 'error') return '失败';
   return status || '就绪';
-};
-
-const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
-
-const clampDockPosition = (position, rect) => {
-  if (typeof window === 'undefined' || !rect) return position;
-  const maxX = Math.max(DOCK_MARGIN, window.innerWidth - rect.width - DOCK_MARGIN);
-  const maxY = Math.max(DOCK_MARGIN, window.innerHeight - rect.height - DOCK_MARGIN);
-  return {
-    x: clamp(Number(position?.x || 0), DOCK_MARGIN, maxX),
-    y: clamp(Number(position?.y || 0), DOCK_MARGIN, maxY),
-  };
 };
 
 const useIsMobileQueueDock = () => {
@@ -76,12 +62,14 @@ const useIsMobileQueueDock = () => {
 };
 
 const latestReviewLabel = (actions) => {
+  if (actions?.loadingDetail) return '正在切换词条';
   const score = actions?.latestScore;
   if (score === 0 || score) return `最近 ${score}/5`;
   return actions?.hasDetail ? '记录今天熟练度' : '尚未选择词条';
 };
 
 const latestReviewEmoji = (actions) => {
+  if (actions?.loadingDetail) return '⏳';
   const score = actions?.latestScore;
   if (score === 0 || score) return SCORE_EMOJIS[score] || '📊';
   return actions?.hasDetail ? '📝' : '▫️';
@@ -108,7 +96,6 @@ export default function VocabularyQueueDock({
   activeQueue,
   nextQueue,
   collapsed,
-  dockPosition,
   mobileSheet,
   queues,
   cursor,
@@ -117,8 +104,6 @@ export default function VocabularyQueueDock({
   onActiveQueueChange,
   onNextQueueChange,
   onCollapsedChange,
-  onDockPositionChange,
-  onDockPositionReset,
   onMobileSheetChange,
   onSelectEntry,
   onNextEntry,
@@ -134,8 +119,6 @@ export default function VocabularyQueueDock({
   onPrefetchVisible,
 }) {
   const dockRef = useRef(null);
-  const dragStateRef = useRef(null);
-  const [dragPosition, setDragPosition] = useState(null);
   const [scoreAutoNext, setScoreAutoNext] = useState(() => {
     if (typeof window === 'undefined') return true;
     return window.localStorage.getItem(SCORE_AUTO_NEXT_STORAGE_KEY) !== 'false';
@@ -148,6 +131,7 @@ export default function VocabularyQueueDock({
   const currentCursor = Number(cursor?.[activeQueue] || 0);
   const actions = currentEntryActions || {};
   const hasCurrentEntry = Boolean(actions?.hasDetail);
+  const entryBusy = Boolean(actions?.loadingDetail);
   const currentEntryId = buildQueueEntryId(actions.category, actions.file);
   const currentEntrySource = NAV_QUEUES.has(actions.queueSource) || actions.queueSource === 'preprocess'
     ? actions.queueSource
@@ -161,100 +145,41 @@ export default function VocabularyQueueDock({
   const scoreStatusLabel = actions.savingScore ? '保存中' : latestReviewLabel(actions);
   const scoreStatusEmoji = actions.savingScore ? '⏳' : latestReviewEmoji(actions);
   const resolvedMobileSheet = mobileSheet === 'expanded' ? 'expanded' : 'compact';
-  const activePosition = dragPosition || dockPosition || null;
-  const dockStyle = useMemo(() => {
-    if (isMobile || !activePosition) return undefined;
-    return {
-      left: `${activePosition.x}px`,
-      top: `${activePosition.y}px`,
-      right: 'auto',
-      bottom: 'auto',
-    };
-  }, [activePosition, isMobile]);
+  const mobileExpanded = isMobile && resolvedMobileSheet === 'expanded';
 
   useEffect(() => {
-    if (isMobile || collapsed) return undefined;
-    const handleResize = () => {
-      const node = dockRef.current;
-      if (!node || !dockPosition) return;
-      const nextPosition = clampDockPosition(dockPosition, node.getBoundingClientRect());
-      if (nextPosition.x !== dockPosition.x || nextPosition.y !== dockPosition.y) {
-        onDockPositionChange?.(nextPosition);
-      }
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [collapsed, dockPosition, isMobile, onDockPositionChange]);
+    if (collapsed) onCollapsedChange?.(false);
+  }, [collapsed, onCollapsedChange]);
 
   useEffect(() => {
-    if (collapsed || !activeQueueHasCurrentEntry || !currentEntryId) return;
+    if ((isMobile && !mobileExpanded) || !activeQueueHasCurrentEntry || !currentEntryId) return;
     const node = dockRef.current;
     const itemNode = node?.querySelector?.(`[data-queue-entry-id="${escapeSelectorValue(currentEntryId)}"]`);
     itemNode?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
-  }, [activeQueue, activeQueueHasCurrentEntry, collapsed, currentEntryId, currentQueue.length]);
+  }, [activeQueue, activeQueueHasCurrentEntry, currentEntryId, currentQueue.length, isMobile, mobileExpanded]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
     window.localStorage.setItem(SCORE_AUTO_NEXT_STORAGE_KEY, scoreAutoNext ? 'true' : 'false');
   }, [scoreAutoNext]);
 
-  const handlePointerDown = (event) => {
-    if (isMobile || event.button !== 0) return;
-    const target = event.target;
-    const dragHandle = target?.closest?.('.vocab-queue-drag-handle');
-    if (!dragHandle && target?.closest?.('button, a, input, select, textarea')) return;
-    const node = dockRef.current;
-    if (!node) return;
-    const rect = node.getBoundingClientRect();
-    const startPosition = activePosition || {
-      x: window.innerWidth - rect.width - DEFAULT_DESKTOP_OFFSET,
-      y: window.innerHeight - rect.height - DEFAULT_DESKTOP_OFFSET,
-    };
-    const clamped = clampDockPosition(startPosition, rect);
-    dragStateRef.current = {
-      pointerId: event.pointerId,
-      offsetX: event.clientX - clamped.x,
-      offsetY: event.clientY - clamped.y,
-      rect,
-    };
-    setDragPosition(clamped);
-    event.currentTarget.setPointerCapture?.(event.pointerId);
-    event.preventDefault();
-  };
-
-  const handlePointerMove = (event) => {
-    const dragState = dragStateRef.current;
-    if (!dragState || dragState.pointerId !== event.pointerId) return;
-    setDragPosition(clampDockPosition({
-      x: event.clientX - dragState.offsetX,
-      y: event.clientY - dragState.offsetY,
-    }, dragState.rect));
-  };
-
-  const finishDrag = (event) => {
-    const dragState = dragStateRef.current;
-    if (!dragState || dragState.pointerId !== event.pointerId) return;
-    const finalPosition = clampDockPosition({
-      x: event.clientX - dragState.offsetX,
-      y: event.clientY - dragState.offsetY,
-    }, dragState.rect);
-    dragStateRef.current = null;
-    setDragPosition(null);
-    onDockPositionChange?.(finalPosition);
-    event.currentTarget.releasePointerCapture?.(event.pointerId);
-  };
-
-  const toggleCollapsed = () => {
-    onCollapsedChange(!collapsed);
-  };
-
   const toggleMobileSheet = () => {
-    if (!isMobile || collapsed) return;
+    if (!isMobile) return;
     onMobileSheetChange?.(resolvedMobileSheet === 'expanded' ? 'compact' : 'expanded');
   };
 
+  const closeMobileSheet = () => {
+    if (!isMobile) return;
+    onMobileSheetChange?.('compact');
+  };
+
+  const handleSelectQueueEntry = (item) => {
+    onSelectEntry?.(item);
+    closeMobileSheet();
+  };
+
   const handleScoreClick = async (score) => {
-    if (!hasCurrentEntry || actions.savingScore) return;
+    if (!hasCurrentEntry || entryBusy || actions.savingScore) return;
     if (typeof actions.onSubmitScore !== 'function') return;
     const saved = await Promise.resolve(actions.onSubmitScore?.(score, { autoAdvance: false }));
     if (saved === false) return;
@@ -265,69 +190,60 @@ export default function VocabularyQueueDock({
 
   const dockClassName = [
     'vocab-queue-dock',
-    collapsed ? 'is-collapsed' : '',
-    isMobile ? 'is-mobile-sheet' : 'is-desktop-float',
-    isMobile && !collapsed ? `is-${resolvedMobileSheet}` : '',
-    dragPosition ? 'is-dragging' : '',
+    isMobile ? 'is-mobile-sheet' : 'is-desktop-fixed',
+    isMobile ? `is-${resolvedMobileSheet}` : '',
   ].filter(Boolean).join(' ');
 
   return (
-    <aside ref={dockRef} className={dockClassName} style={dockStyle} aria-label="词条队列">
-      <div
-        className="vocab-queue-dock-head"
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={finishDrag}
-        onPointerCancel={finishDrag}
-        onDoubleClick={() => {
-          if (!isMobile) onDockPositionReset?.();
-        }}
-      >
+    <>
+      {mobileExpanded ? (
         <button
           type="button"
-          className="vocab-queue-collapse"
-          onClick={toggleCollapsed}
-          aria-label={collapsed ? '展开队列' : '收起队列'}
-          title={collapsed ? '展开队列' : '收起队列'}
-        >
-          <UiIcon name={collapsed ? 'list' : 'close'} size={15} />
-        </button>
-        {!collapsed ? (
-          <>
+          className="vocab-queue-sheet-backdrop"
+          aria-label="关闭队列详情"
+          onClick={closeMobileSheet}
+        />
+      ) : null}
+      <aside
+        ref={dockRef}
+        className={dockClassName}
+        aria-label="词条队列"
+        aria-expanded={isMobile ? mobileExpanded : undefined}
+      >
+        <div className="vocab-queue-dock-head">
+          {isMobile ? (
             <button
               type="button"
-              className="vocab-queue-drag-handle"
+              className="vocab-queue-sheet-toggle"
               onClick={toggleMobileSheet}
-              aria-label={isMobile ? '切换队列高度' : '拖动队列窗口'}
-              title={isMobile ? '切换队列高度' : '拖动队列窗口；双击标题重置位置'}
+              aria-label={mobileExpanded ? '收起队列详情' : '展开队列详情'}
+              title={mobileExpanded ? '收起队列详情' : '展开队列详情'}
             >
-              <UiIcon name="drag" size={14} />
+              <UiIcon name={mobileExpanded ? 'chevron-down' : 'list'} size={15} />
             </button>
-            <div
-              className="vocab-queue-title"
-              onClick={toggleMobileSheet}
-              onKeyDown={(event) => {
-                if (!isMobile || (event.key !== 'Enter' && event.key !== ' ')) return;
-                event.preventDefault();
-                toggleMobileSheet();
-              }}
-              role={isMobile ? 'button' : undefined}
-              tabIndex={isMobile ? 0 : undefined}
-            >
-              <strong>队列</strong>
-              <span>来源: {QUEUE_LABELS[nextQueue] || '未设置'}</span>
-            </div>
-          </>
-        ) : null}
-      </div>
+          ) : null}
+          <div
+            className="vocab-queue-title"
+            onClick={isMobile ? toggleMobileSheet : undefined}
+            onKeyDown={(event) => {
+              if (!isMobile || (event.key !== 'Enter' && event.key !== ' ')) return;
+              event.preventDefault();
+              toggleMobileSheet();
+            }}
+            role={isMobile ? 'button' : undefined}
+            tabIndex={isMobile ? 0 : undefined}
+          >
+            <strong>队列</strong>
+            <span>来源: {QUEUE_LABELS[nextQueue] || '未设置'}</span>
+          </div>
+        </div>
 
-      {!collapsed ? (
         <>
           <div className="vocab-queue-current">
             <div className="vocab-queue-current-head">
               <div className="vocab-queue-current-title">
                 <strong>{actions.word || actions.file || '当前词条'}</strong>
-                <span>{hasCurrentEntry ? `${actions.categoryLabel || actions.category || '目录'} / ${actions.file || ''}` : '选择词条后可在这里处理'}</span>
+                <span>{hasCurrentEntry || entryBusy ? `${actions.categoryLabel || actions.category || '目录'} / ${actions.file || ''}` : '选择词条后可在这里处理'}</span>
               </div>
               <div className="vocab-queue-current-meta">
                 <div
@@ -362,7 +278,7 @@ export default function VocabularyQueueDock({
                   type="button"
                   className={`vocab-queue-score-button${latestScore === score ? ' is-latest' : ''}`}
                   onClick={() => { void handleScoreClick(score); }}
-                  disabled={!hasCurrentEntry || actions.savingScore}
+                  disabled={!hasCurrentEntry || entryBusy || actions.savingScore}
                   aria-label={`${score}: ${SCORE_SHORT_LABELS[score]}`}
                   title={`${score}: ${SCORE_SHORT_LABELS[score]}`}
                 >
@@ -375,7 +291,7 @@ export default function VocabularyQueueDock({
                 type="button"
                 className={`vocab-queue-current-action${actions.marked ? ' is-active' : ''}`}
                 onClick={() => actions.onToggleMarked?.()}
-                disabled={!hasCurrentEntry || actions.savingMarked}
+                disabled={!hasCurrentEntry || entryBusy || actions.savingMarked}
                 aria-label={actions.marked ? '已标记' : '标记'}
                 title={actions.marked ? '已标记' : '标记'}
               >
@@ -386,7 +302,7 @@ export default function VocabularyQueueDock({
                 type="button"
                 className="vocab-queue-current-action is-danger"
                 onClick={() => actions.onDelete?.()}
-                disabled={!hasCurrentEntry || actions.savingMarked}
+                disabled={!hasCurrentEntry || entryBusy || actions.savingMarked}
                 aria-label="删除"
                 title="删除"
               >
@@ -404,6 +320,17 @@ export default function VocabularyQueueDock({
                 <UiIcon name="shuffle" size={14} />
                 <span>下一个</span>
               </button>
+              {isMobile && !mobileExpanded ? (
+                <button
+                  type="button"
+                  className="vocab-queue-current-action vocab-queue-mobile-sheet-toggle"
+                  onClick={toggleMobileSheet}
+                  aria-label="展开队列详情"
+                  title="展开队列详情"
+                >
+                  <UiIcon name="list" size={14} />
+                </button>
+              ) : null}
             </div>
           </div>
 
@@ -497,7 +424,7 @@ export default function VocabularyQueueDock({
                   <button
                     type="button"
                     className="vocab-queue-item-main"
-                    onClick={() => onSelectEntry(item)}
+                    onClick={() => handleSelectQueueEntry(item)}
                     title={`${item.category} / ${item.file}`}
                   >
                     <span className="vocab-queue-word">{item.word || item.file}</span>
@@ -535,7 +462,7 @@ export default function VocabularyQueueDock({
             )}
           </div>
         </>
-      ) : null}
-    </aside>
+      </aside>
+    </>
   );
 }

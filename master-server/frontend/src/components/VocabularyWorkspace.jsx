@@ -111,11 +111,12 @@ function SurfaceLaunchButton({
   active = false,
   hasReadySuggestion = false,
   title = '',
+  compactIconOnly = false,
 }) {
   return (
     <button
       type="button"
-      className={`vocab-mode-switch${active ? ' is-on' : ''}${hasReadySuggestion ? ' has-ready-suggestion' : ''}`}
+      className={`vocab-mode-switch${active ? ' is-on' : ''}${hasReadySuggestion ? ' has-ready-suggestion' : ''}${compactIconOnly ? ' is-icon-only' : ''}`}
       aria-label={`打开${label}面板`}
       title={title || `打开${label}面板`}
       onClick={() => onOpen(surface)}
@@ -125,7 +126,7 @@ function SurfaceLaunchButton({
       <span className="vocab-mode-switch-icon">
         <UiIcon name={icon} size={17} />
       </span>
-      <span className="vocab-mode-switch-copy">{label}</span>
+      {compactIconOnly ? null : <span className="vocab-mode-switch-copy">{label}</span>}
     </button>
   );
 }
@@ -566,6 +567,7 @@ export default function VocabularyWorkspace({
     editor: '手动整理面板',
     connection: '连接面板',
   }[editorSurface] || '手动整理面板';
+  const compactEntryActionLabels = reviewSurfaceMobileSimple && !reviewSurfaceCompactDesktop;
   const entryActionsNode = hasSelection ? (
     <div className="vocab-word-inline-actions" aria-label="当前词条操作">
       <SurfaceLaunchButton
@@ -577,6 +579,7 @@ export default function VocabularyWorkspace({
         active={editorSurface === 'editor'}
         hasReadySuggestion={selectedHasReadySuggestion}
         title={selectedHasReadySuggestion ? '打开手动整理；已有预生成整理建议' : '打开手动整理'}
+        compactIconOnly={compactEntryActionLabels}
       />
       <SurfaceLaunchButton
         surface="connection"
@@ -587,6 +590,7 @@ export default function VocabularyWorkspace({
         active={editorSurface === 'connection'}
         hasReadySuggestion={selectedHasReadyRelationSuggestion}
         title={selectedHasReadyRelationSuggestion ? '打开连接面板；已有预生成连接建议' : '打开连接面板'}
+        compactIconOnly={compactEntryActionLabels}
       />
     </div>
   ) : null;

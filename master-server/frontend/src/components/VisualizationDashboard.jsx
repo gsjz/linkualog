@@ -35,10 +35,14 @@ const GRAPH_COMPONENT_COLORS = ['#0f766e', '#3b6f9f', '#b45309', '#7c3aed', '#be
 const GRAPH_NODE_DOUBLE_CLICK_MS = 420;
 const GRAPH_CURRENT_NODE_FILL = '#fff7ed';
 const GRAPH_CURRENT_NODE_STROKE = '#f97316';
-const GRAPH_MIN_ZOOM = 0.45;
+const GRAPH_MIN_ZOOM = 0.3;
 const GRAPH_MAX_ZOOM = 3;
 const GRAPH_ZOOM_STEP = 1.22;
 const GRAPH_INITIAL_VIEWPORT = Object.freeze({ scale: 1, x: 0, y: 0 });
+const GRAPH_PREVIEW_LABEL_LIMIT = 4;
+const GRAPH_PREVIEW_DENSE_LABEL_LIMIT = 3;
+const GRAPH_PREVIEW_DOT_LIMIT = 26;
+const GRAPH_PREVIEW_EDGE_LIMIT = 24;
 
 const formatNumber = (value) => new Intl.NumberFormat('zh-CN').format(Number(value) || 0);
 
@@ -311,16 +315,14 @@ function CategoryRank({ items = [], selectedCategory = '', onSelect }) {
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 
-function clampGraphViewportTransform(transform, dimensions = {}) {
+function clampGraphViewportTransform(transform) {
   const scale = clamp(Number(transform?.scale) || 1, GRAPH_MIN_ZOOM, GRAPH_MAX_ZOOM);
-  const width = Math.max(320, Number(dimensions?.width) || 320);
-  const height = Math.max(132, Number(dimensions?.height) || 132);
-  const horizontalLimit = width * Math.max(1.25, scale + 0.5);
-  const verticalLimit = height * Math.max(1.25, scale + 0.5);
+  const x = Number(transform?.x);
+  const y = Number(transform?.y);
   return {
     scale,
-    x: clamp(Number(transform?.x) || 0, -horizontalLimit, horizontalLimit),
-    y: clamp(Number(transform?.y) || 0, -verticalLimit, verticalLimit),
+    x: Number.isFinite(x) ? x : 0,
+    y: Number.isFinite(y) ? y : 0,
   };
 }
 
@@ -553,9 +555,120 @@ function estimateGraphHeight(summaries, width, compactMode = false) {
   return Math.max(420, total);
 }
 
-function buildGraphZones(summaries, width, height) {
+function estimateMergedGraphWorldDimensions(summaries, nodes, edges, viewportWidth, viewportHeight) {
+  const nodeCount = Math.max(1, Array.isArray(nodes) ? nodes.length : 0);
+  const edgeCount = Math.max(1, Array.isArray(edges) ? edges.length : 0);
+  const componentCount = Math.max(1, Array.isArray(summaries) ? summaries.length : 0);
+  const compact = viewportWidth <= 640;
+  const medium = viewportWidth <= 980;
+  const widthMultiplier = compact ? 1.9 : medium ? 1.58 : 1.3;
+  const heightMultiplier = compact ? 2.05 : medium ? 1.7 : 1.38;
+  const nodeSpreadWidth = Math.sqrt(nodeCount) * (compact ? 165 : 198);
+  const nodeSpreadHeight = Math.sqrt(nodeCount) * (compact ? 150 : 170);
+  const componentSpreadWidth = Math.sqrt(componentCount) * (compact ? 110 : 132);
+  const componentSpreadHeight = componentCount * (compact ? 80 : 66);
+  const edgeSpread = Math.sqrt(edgeCount) * (compact ? 32 : 36);
+
+  return {
+    width: Math.round(Math.max(
+      viewportWidth,
+      viewportWidth * widthMultiplier,
+      compact ? 780 : 980,
+      nodeSpreadWidth + componentSpreadWidth + edgeSpread,
+    )),
+    height: Math.round(Math.max(
+      viewportHeight,
+      viewportHeight * heightMultiplier,
+      compact ? 900 : 720,
+      nodeSpreadHeight + componentSpreadHeight + edgeSpread,
+    )),
+  };
+}
+
+function buildInitialGraphViewportTransform(layoutDimensions, viewportDimensions, fitToWorld = false, centerPoint = null) {
+  if (!fitToWorld) return GRAPH_INITIAL_VIEWPORT;
+  const layoutWidth = Math.max(1, Number(layoutDimensions?.width) || 1);
+  const layoutHeight = Math.max(1, Number(layoutDimensions?.height) || 1);
+  const viewportWidth = Math.max(1, Number(viewportDimensions?.width) || 1);
+  const viewportHeight = Math.max(1, Number(viewportDimensions?.height) || 1);
+  const compact = viewportWidth <= 640;
+  const medium = viewportWidth <= 980;
+  const padding = compact ? 28 : 44;
+  const fitScale = Math.min(
+    (viewportWidth - padding) / layoutWidth,
+    (viewportHeight - padding) / layoutHeight,
+  );
+  const readableScale = compact ? 0.42 : medium ? 0.64 : 0.78;
+  const scale = clamp(Math.max(fitScale, readableScale), GRAPH_MIN_ZOOM, 1);
+  const centerX = Number.isFinite(centerPoint?.x) ? centerPoint.x : layoutWidth / 2;
+  const centerY = Number.isFinite(centerPoint?.y) ? centerPoint.y : layoutHeight / 2;
+  return {
+    scale,
+    x: (viewportWidth / 2) - centerX * scale,
+    y: (viewportHeight / 2) - centerY * scale,
+  };
+}
+
+function getGraphCenterPoint(nodes, anchors, layoutDimensions) {
+  const points = (Array.isArray(nodes) ? nodes : [])
+    .map((node) => ({ x: Number(node?.x), y: Number(node?.y) }))
+    .filter((point) => Number.isFinite(point.x) && Number.isFinite(point.y));
+  if (!points.length && anchors instanceof Map) {
+    anchors.forEach((anchor) => {
+      const x = Number(anchor?.x);
+      const y = Number(anchor?.y);
+      if (Number.isFinite(x) && Number.isFinite(y)) points.push({ x, y });
+    });
+  }
+  if (!points.length) {
+    return {
+      x: (Number(layoutDimensions?.width) || 0) / 2,
+      y: (Number(layoutDimensions?.height) || 0) / 2,
+    };
+  }
+  return points.reduce((acc, point) => ({
+    x: acc.x + point.x / points.length,
+    y: acc.y + point.y / points.length,
+  }), { x: 0, y: 0 });
+}
+
+function buildGraphZones(summaries, width, height, mergeComponentsInGraph = false) {
   const count = Math.max(1, summaries.length);
   const zones = new Map();
+  if (mergeComponentsInGraph) {
+    const padding = width <= 640 ? 18 : 24;
+    const graphWidth = Math.max(1, width - padding * 2);
+    const graphHeight = Math.max(1, height - padding * 2);
+    const centerX = width / 2;
+    const centerY = height / 2;
+    const radiusX = count <= 1
+      ? 0
+      : Math.max(118, Math.min(width * (width <= 700 ? 0.34 : 0.36), width / 2 - 132));
+    const radiusY = count <= 1
+      ? 0
+      : Math.max(104, Math.min(height * (width <= 700 ? 0.32 : 0.34), height / 2 - 92));
+
+    (summaries.length ? summaries : [{ id: 'component-1' }]).forEach((summary, index) => {
+      const angle = count <= 1 ? 0 : (-Math.PI / 2) + (index / count) * Math.PI * 2;
+      const minAnchorX = padding + 96;
+      const maxAnchorX = width - padding - 96;
+      const minAnchorY = padding + 68;
+      const maxAnchorY = height - padding - 68;
+      const rawX = centerX + Math.cos(angle) * radiusX;
+      const rawY = centerY + Math.sin(angle) * radiusY;
+      zones.set(summary.id, {
+        id: summary.id,
+        x: padding,
+        y: padding,
+        width: graphWidth,
+        height: graphHeight,
+        cx: minAnchorX <= maxAnchorX ? clamp(rawX, minAnchorX, maxAnchorX) : centerX,
+        cy: minAnchorY <= maxAnchorY ? clamp(rawY, minAnchorY, maxAnchorY) : centerY,
+      });
+    });
+    return zones;
+  }
+
   if (count === 1) {
     const id = summaries[0]?.id || 'component-1';
     zones.set(id, {
@@ -687,8 +800,10 @@ function snapshotLayoutNodes(nodes) {
   }));
 }
 
-function stepForceLayout(nodes, edges, anchors, zones, dimensions, alpha) {
+function stepForceLayout(nodes, edges, anchors, zones, dimensions, alpha, options = {}) {
   const { width, height } = dimensions;
+  const mergeComponentsInGraph = Boolean(options.mergeComponentsInGraph);
+  const compactViewport = Boolean(options.compactViewport);
   const nodeById = new Map(nodes.map((node) => [node.id, node]));
 
   edges.forEach((edge) => {
@@ -698,8 +813,12 @@ function stepForceLayout(nodes, edges, anchors, zones, dimensions, alpha) {
     const dx = target.x - source.x;
     const dy = target.y - source.y;
     const distance = Math.max(1, Math.hypot(dx, dy));
-    const desired = edge.scope === 'cross_category' ? 112 : 88;
-    const force = (distance - desired) * 0.028 * alpha;
+    const desired = mergeComponentsInGraph
+      ? (edge.scope === 'cross_category'
+          ? (compactViewport ? 152 : 136)
+          : (compactViewport ? 118 : 104))
+      : (edge.scope === 'cross_category' ? 112 : 88);
+    const force = (distance - desired) * (mergeComponentsInGraph ? 0.024 : 0.028) * alpha;
     const fx = (dx / distance) * force;
     const fy = (dy / distance) * force;
     source.vx += fx;
@@ -712,7 +831,8 @@ function stepForceLayout(nodes, edges, anchors, zones, dimensions, alpha) {
     for (let j = i + 1; j < nodes.length; j += 1) {
       const left = nodes[i];
       const right = nodes[j];
-      if (left.componentId !== right.componentId) continue;
+      const sameComponent = left.componentId === right.componentId;
+      if (!mergeComponentsInGraph && !sameComponent) continue;
       let dx = right.x - left.x;
       let dy = right.y - left.y;
       let distance = Math.hypot(dx, dy);
@@ -722,9 +842,19 @@ function stepForceLayout(nodes, edges, anchors, zones, dimensions, alpha) {
         dy = jitter % 11;
         distance = Math.max(1, Math.hypot(dx, dy));
       }
-      const minDistance = (left.boxWidth + right.boxWidth) * 0.34 + 10;
-      const charge = Math.min(4.6, 3900 / (distance * distance)) * alpha;
-      const overlap = distance < minDistance ? (minDistance - distance) * 0.018 * alpha : 0;
+      const minDistance = mergeComponentsInGraph
+        ? (left.boxWidth + right.boxWidth) * (compactViewport ? 0.5 : 0.44) + (compactViewport ? 22 : 16)
+        : (left.boxWidth + right.boxWidth) * 0.34 + 10;
+      const chargeBase = mergeComponentsInGraph
+        ? (sameComponent ? 5600 : 4400)
+        : (sameComponent ? 3900 : 3000);
+      const chargeCap = mergeComponentsInGraph
+        ? (sameComponent ? 5.8 : 4.8)
+        : (sameComponent ? 4.6 : 3.4);
+      const charge = Math.min(chargeCap, chargeBase / (distance * distance)) * alpha;
+      const overlap = distance < minDistance
+        ? (minDistance - distance) * (mergeComponentsInGraph ? 0.03 : 0.018) * alpha
+        : 0;
       const force = charge + overlap;
       const fx = (dx / distance) * force;
       const fy = (dy / distance) * force;
@@ -737,8 +867,9 @@ function stepForceLayout(nodes, edges, anchors, zones, dimensions, alpha) {
 
   nodes.forEach((node) => {
     const anchor = anchors.get(node.componentId) || { x: width / 2, y: height / 2 };
-    node.vx += (anchor.x - node.x) * 0.0038 * alpha;
-    node.vy += (anchor.y - node.y) * 0.0038 * alpha;
+    const anchorStrength = mergeComponentsInGraph ? (compactViewport ? 0.0068 : 0.0056) : 0.0038;
+    node.vx += (anchor.x - node.x) * anchorStrength * alpha;
+    node.vy += (anchor.y - node.y) * anchorStrength * alpha;
     node.vx *= 0.93;
     node.vy *= 0.93;
 
@@ -752,11 +883,13 @@ function stepForceLayout(nodes, edges, anchors, zones, dimensions, alpha) {
       node.y += node.vy;
     }
 
-    const beforeX = node.x;
-    const beforeY = node.y;
-    clampNodeToZone(node, zones.get(node.componentId), dimensions);
-    if (node.x !== beforeX) node.vx *= -0.54;
-    if (node.y !== beforeY) node.vy *= -0.54;
+    if (!mergeComponentsInGraph) {
+      const beforeX = node.x;
+      const beforeY = node.y;
+      clampNodeToZone(node, zones.get(node.componentId), dimensions);
+      if (node.x !== beforeX) node.vx *= -0.54;
+      if (node.y !== beforeY) node.vy *= -0.54;
+    }
   });
 }
 
@@ -772,8 +905,8 @@ function RelationGraphPreview({ graph = {}, index = 0 }) {
     const count = Math.max(1, model.nodes.length);
     const centerX = width / 2;
     const centerY = height / 2;
-    const radiusX = Math.min(98, 36 + count * 8);
-    const radiusY = Math.min(38, 20 + count * 3);
+    const radiusX = Math.min(88, 34 + count * 7);
+    const radiusY = Math.min(34, 19 + count * 2.4);
     return model.nodes.map((node, nodeIndex) => {
       const seed = Math.abs(hashString(`${node.id}-${index}`));
       const angle = count === 1
@@ -785,13 +918,34 @@ function RelationGraphPreview({ graph = {}, index = 0 }) {
         ...node,
         label,
         labelWidth,
-        x: clamp(centerX + Math.cos(angle) * radiusX, labelWidth / 2 + 12, width - labelWidth / 2 - 12),
-        y: clamp(centerY + Math.sin(angle) * radiusY, 20, height - 17),
+        x: clamp(centerX + Math.cos(angle) * radiusX, labelWidth / 2 + 22, width - labelWidth / 2 - 22),
+        y: clamp(centerY + Math.sin(angle) * radiusY, 24, height - 23),
       };
     });
   }, [index, model.nodes]);
   const nodeById = useMemo(() => new Map(nodes.map((node) => [node.id, node])), [nodes]);
-  const labeledNodes = nodes.slice(0, 12);
+  const labeledNodes = useMemo(() => {
+    const labelLimit = model.nodes.length > 8 ? GRAPH_PREVIEW_DENSE_LABEL_LIMIT : GRAPH_PREVIEW_LABEL_LIMIT;
+    const rankedNodes = [...nodes].sort((left, right) => (
+      (right.degree || 0) - (left.degree || 0)
+      || String(left.label || '').localeCompare(String(right.label || ''), undefined, { sensitivity: 'base' })
+    ));
+    const picked = [];
+    rankedNodes.forEach((candidate) => {
+      if (picked.length >= labelLimit) return;
+      const hasOverlap = picked.some((existing) => (
+        Math.abs(candidate.x - existing.x) < ((candidate.labelWidth + existing.labelWidth) / 2 + 10)
+        && Math.abs(candidate.y - existing.y) < 25
+      ));
+      if (!hasOverlap) picked.push(candidate);
+    });
+    return picked;
+  }, [model.nodes.length, nodes]);
+  const labeledNodeIds = useMemo(() => (
+    new Set(labeledNodes.map((node) => node.id))
+  ), [labeledNodes]);
+  const dotNodes = nodes.filter((node) => !labeledNodeIds.has(node.id)).slice(0, GRAPH_PREVIEW_DOT_LIMIT);
+  const previewEdges = model.edges.slice(0, GRAPH_PREVIEW_EDGE_LIMIT);
 
   return (
     <svg
@@ -802,7 +956,7 @@ function RelationGraphPreview({ graph = {}, index = 0 }) {
     >
       <rect className="visual-graph-preview-bg" x="8" y="8" width={width - 16} height={height - 16} rx="8" />
       <g>
-        {model.edges.slice(0, 16).map((edge, edgeIndex) => {
+        {previewEdges.map((edge, edgeIndex) => {
           const source = nodeById.get(edge.source);
           const target = nodeById.get(edge.target);
           if (!source || !target) return null;
@@ -820,13 +974,13 @@ function RelationGraphPreview({ graph = {}, index = 0 }) {
         })}
       </g>
       <g>
-        {nodes.slice(0, 18).map((node) => (
+        {dotNodes.map((node) => (
           <circle
             key={node.id}
             className="visual-graph-preview-node"
             cx={node.x}
             cy={node.y}
-            r={Math.max(4, Math.min(8, 5 + node.degree))}
+            r={Math.max(3.2, Math.min(5.4, 3.3 + (node.degree || 0) * 0.42))}
           />
         ))}
       </g>
@@ -868,6 +1022,7 @@ export function RelationGraphPanel({
   openNodeOnClick = false,
   deckMode = false,
   fitContainerHeight = false,
+  mergeComponentsInGraph = false,
   onRefreshGraph = null,
   graphRefreshing = false,
 }) {
@@ -883,6 +1038,7 @@ export function RelationGraphPanel({
   const [layoutNodes, setLayoutNodes] = useState([]);
   const [viewportTransform, setViewportTransform] = useState(GRAPH_INITIAL_VIEWPORT);
   const [graphPanning, setGraphPanning] = useState(false);
+  const [graphCenteredPulse, setGraphCenteredPulse] = useState(false);
   const viewportRef = useRef(null);
   const svgRef = useRef(null);
   const simNodesRef = useRef([]);
@@ -890,6 +1046,7 @@ export function RelationGraphPanel({
   const anchorsRef = useRef(new Map());
   const zonesRef = useRef(new Map());
   const dimensionsRef = useRef({ width: 760, height: 420 });
+  const viewportDimensionsRef = useRef({ width: 760, height: 420 });
   const alphaRef = useRef(0);
   const frameRef = useRef(null);
   const dragRef = useRef(null);
@@ -901,15 +1058,37 @@ export function RelationGraphPanel({
   const pinchRef = useRef(null);
   const panRef = useRef(null);
   const viewportTransformRef = useRef(GRAPH_INITIAL_VIEWPORT);
+  const centerPulseTimerRef = useRef(null);
   const [selectedComponentId, setSelectedComponentId] = useState('');
 
   const graphHeight = useMemo(() => {
     if (fitContainerHeight) {
-      const minHeight = compact ? 132 : 340;
+      const minHeight = mergeComponentsInGraph
+        ? (canvasWidth <= 640 ? 460 : 420)
+        : (compact ? 132 : 340);
       return Math.max(minHeight, canvasHeight);
     }
+    if (mergeComponentsInGraph) {
+      return Math.max(canvasWidth <= 640 ? 460 : 420, canvasHeight);
+    }
     return estimateGraphHeight(model.summaries, canvasWidth, compact);
-  }, [canvasHeight, canvasWidth, compact, fitContainerHeight, model.summaries]);
+  }, [canvasHeight, canvasWidth, compact, fitContainerHeight, mergeComponentsInGraph, model.summaries]);
+  const viewportDimensions = useMemo(() => ({
+    width: Math.max(320, canvasWidth),
+    height: graphHeight,
+  }), [canvasWidth, graphHeight]);
+  const layoutDimensions = useMemo(() => {
+    if (!mergeComponentsInGraph) {
+      return { width: viewportDimensions.width, height: viewportDimensions.height };
+    }
+    return estimateMergedGraphWorldDimensions(
+      model.summaries,
+      model.nodes,
+      model.edges,
+      viewportDimensions.width,
+      viewportDimensions.height,
+    );
+  }, [mergeComponentsInGraph, model.edges, model.nodes, model.summaries, viewportDimensions.height, viewportDimensions.width]);
 
   const selectedNode = selectedNodeId ? nodeById.get(selectedNodeId) : null;
   const selectedEdges = selectedNode
@@ -989,11 +1168,19 @@ export function RelationGraphPanel({
       return;
     }
 
-    stepForceLayout(nodes, simEdgesRef.current, anchorsRef.current, zonesRef.current, dimensionsRef.current, alphaRef.current);
+    stepForceLayout(
+      nodes,
+      simEdgesRef.current,
+      anchorsRef.current,
+      zonesRef.current,
+      dimensionsRef.current,
+      alphaRef.current,
+      { mergeComponentsInGraph, compactViewport: viewportDimensionsRef.current.width <= 640 },
+    );
     alphaRef.current = dragging ? Math.max(alphaRef.current * 0.97, 0.32) : alphaRef.current * 0.965;
     setLayoutNodes(snapshotLayoutNodes(nodes));
     frameRef.current = window.requestAnimationFrame(tick);
-  }, []);
+  }, [mergeComponentsInGraph]);
 
   const ensureSimulation = useCallback(() => {
     if (!frameRef.current) {
@@ -1004,7 +1191,7 @@ export function RelationGraphPanel({
   const getViewportPointFromClient = useCallback((clientX, clientY) => {
     const svg = svgRef.current;
     const rect = svg?.getBoundingClientRect();
-    const dimensions = dimensionsRef.current;
+    const dimensions = viewportDimensionsRef.current;
     if (!rect || !rect.width || !rect.height) return null;
     return {
       x: ((clientX - rect.left) / rect.width) * dimensions.width,
@@ -1017,7 +1204,6 @@ export function RelationGraphPanel({
       typeof nextTransform === 'function'
         ? nextTransform(viewportTransformRef.current)
         : nextTransform,
-      dimensionsRef.current,
     );
     viewportTransformRef.current = normalizedTransform;
     setViewportTransform(normalizedTransform);
@@ -1041,23 +1227,55 @@ export function RelationGraphPanel({
   }, [applyViewportTransform]);
 
   const handleViewportZoomButton = useCallback((scaleFactor) => {
-    const dimensions = dimensionsRef.current;
+    const dimensions = viewportDimensionsRef.current;
     zoomGraphAtPoint({ x: dimensions.width / 2, y: dimensions.height / 2 }, scaleFactor);
   }, [zoomGraphAtPoint]);
 
+  const getInitialViewportTransform = useCallback(() => (
+    buildInitialGraphViewportTransform(
+      dimensionsRef.current,
+      viewportDimensionsRef.current,
+      mergeComponentsInGraph,
+      getGraphCenterPoint(simNodesRef.current, anchorsRef.current, dimensionsRef.current),
+    )
+  ), [mergeComponentsInGraph]);
+
   const resetViewportTransform = useCallback(() => {
-    applyViewportTransform(GRAPH_INITIAL_VIEWPORT);
-  }, [applyViewportTransform]);
+    applyViewportTransform(getInitialViewportTransform());
+  }, [applyViewportTransform, getInitialViewportTransform]);
+
+  const centerGraphOnCentroid = useCallback(() => {
+    const nodes = layoutNodes.length ? layoutNodes : simNodesRef.current;
+    if (!nodes.length) return;
+    const centroid = nodes.reduce((acc, node) => ({
+      x: acc.x + (Number(node.x) || 0),
+      y: acc.y + (Number(node.y) || 0),
+    }), { x: 0, y: 0 });
+    const scale = viewportTransformRef.current.scale || 1;
+    const dimensions = viewportDimensionsRef.current;
+    applyViewportTransform({
+      scale,
+      x: (dimensions.width / 2) - (centroid.x / nodes.length) * scale,
+      y: (dimensions.height / 2) - (centroid.y / nodes.length) * scale,
+    });
+    if (centerPulseTimerRef.current) {
+      window.clearTimeout(centerPulseTimerRef.current);
+    }
+    setGraphCenteredPulse(true);
+    centerPulseTimerRef.current = window.setTimeout(() => {
+      centerPulseTimerRef.current = null;
+      setGraphCenteredPulse(false);
+    }, 650);
+  }, [applyViewportTransform, layoutNodes]);
 
   const graphPointFromEvent = useCallback((event) => {
     const viewportPoint = getViewportPointFromClient(event.clientX, event.clientY);
-    const dimensions = dimensionsRef.current;
     const transform = viewportTransformRef.current;
     if (!viewportPoint) return null;
     const scale = transform.scale || 1;
     return {
-      x: clamp((viewportPoint.x - (transform.x || 0)) / scale, 0, dimensions.width),
-      y: clamp((viewportPoint.y - (transform.y || 0)) / scale, 0, dimensions.height),
+      x: (viewportPoint.x - (transform.x || 0)) / scale,
+      y: (viewportPoint.y - (transform.y || 0)) / scale,
     };
   }, [getViewportPointFromClient]);
 
@@ -1158,12 +1376,22 @@ export function RelationGraphPanel({
 
   const handleGraphWheel = useCallback((event) => {
     event.preventDefault();
+    event.stopPropagation();
     const viewportPoint = getViewportPointFromClient(event.clientX, event.clientY);
     if (!viewportPoint) return;
     const deltaUnit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? 240 : 1;
     const scaleFactor = Math.exp(-event.deltaY * deltaUnit * 0.001);
     zoomGraphAtPoint(viewportPoint, scaleFactor);
   }, [getViewportPointFromClient, zoomGraphAtPoint]);
+
+  useEffect(() => {
+    const node = viewportRef.current;
+    if (!node) return undefined;
+    node.addEventListener('wheel', handleGraphWheel, { passive: false });
+    return () => {
+      node.removeEventListener('wheel', handleGraphWheel);
+    };
+  }, [handleGraphWheel]);
 
   useEffect(() => {
     const node = viewportRef.current;
@@ -1197,9 +1425,9 @@ export function RelationGraphPanel({
   }, [focusNodeId, nodeById, selectedNodeId]);
 
   useEffect(() => {
-    const width = Math.max(320, canvasWidth);
-    const height = graphHeight;
-    const zones = buildGraphZones(model.summaries, width, height);
+    const width = layoutDimensions.width;
+    const height = layoutDimensions.height;
+    const zones = buildGraphZones(model.summaries, width, height, mergeComponentsInGraph);
     const anchors = buildGraphAnchors(zones);
     const simNodes = model.nodes.map((node) => {
       const anchor = anchors.get(node.componentId) || { x: width / 2, y: height / 2 };
@@ -1221,6 +1449,7 @@ export function RelationGraphPanel({
     });
 
     dimensionsRef.current = { width, height };
+    viewportDimensionsRef.current = viewportDimensions;
     zonesRef.current = zones;
     anchorsRef.current = anchors;
     simNodesRef.current = simNodes;
@@ -1228,7 +1457,13 @@ export function RelationGraphPanel({
     alphaRef.current = 0.92;
     setLayoutNodes(simNodes);
     ensureSimulation();
-  }, [canvasWidth, ensureSimulation, graphHeight, model.edges, model.key, model.nodes, model.summaries]);
+    applyViewportTransform(buildInitialGraphViewportTransform(
+      { width, height },
+      viewportDimensions,
+      mergeComponentsInGraph,
+      getGraphCenterPoint(simNodes, anchors, { width, height }),
+    ));
+  }, [applyViewportTransform, ensureSimulation, layoutDimensions.height, layoutDimensions.width, mergeComponentsInGraph, model.edges, model.key, model.nodes, model.summaries, viewportDimensions]);
 
   useEffect(() => {
     graphPointersRef.current.clear();
@@ -1237,13 +1472,17 @@ export function RelationGraphPanel({
     pointerSelectionRef.current = null;
     dragRef.current = null;
     setGraphPanning(false);
-    applyViewportTransform(GRAPH_INITIAL_VIEWPORT);
-  }, [applyViewportTransform, canvasWidth, graphHeight, model.key]);
+    applyViewportTransform(getInitialViewportTransform());
+  }, [applyViewportTransform, getInitialViewportTransform, mergeComponentsInGraph, model.key, viewportDimensions]);
 
   useEffect(() => () => {
     if (frameRef.current) {
       window.cancelAnimationFrame(frameRef.current);
       frameRef.current = null;
+    }
+    if (centerPulseTimerRef.current) {
+      window.clearTimeout(centerPulseTimerRef.current);
+      centerPulseTimerRef.current = null;
     }
   }, []);
 
@@ -1279,14 +1518,18 @@ export function RelationGraphPanel({
       vy: 0,
     };
     if (simNode) {
-      const position = setNodePositionInZone(
-        simNode,
-        originX,
-        originY,
-        zonesRef.current.get(simNode.componentId),
-        dimensionsRef.current,
-        2,
-      );
+      const position = mergeComponentsInGraph
+        ? { x: originX, y: originY }
+        : setNodePositionInZone(
+            simNode,
+            originX,
+            originY,
+            zonesRef.current.get(simNode.componentId),
+            dimensionsRef.current,
+            2,
+          );
+      simNode.x = position.x;
+      simNode.y = position.y;
       simNode.fx = position.x;
       simNode.fy = position.y;
       dragRef.current.lastX = position.x;
@@ -1295,7 +1538,7 @@ export function RelationGraphPanel({
     setLayoutNodes(snapshotLayoutNodes(simNodesRef.current));
     alphaRef.current = 0.95;
     ensureSimulation();
-  }, [ensureSimulation, graphPointFromEvent, selectedNodeId]);
+  }, [ensureSimulation, graphPointFromEvent, mergeComponentsInGraph, selectedNodeId]);
 
   const handleGraphPointerMove = useCallback((event) => {
     if (graphPointersRef.current.has(event.pointerId)) {
@@ -1338,14 +1581,20 @@ export function RelationGraphPanel({
     const simNode = simNodesRef.current.find((item) => item.id === drag.id);
     if (!simNode) return;
     const now = performance.now();
-    const position = setNodePositionInZone(
-      simNode,
-      point.x + (drag.offsetX || 0),
-      point.y + (drag.offsetY || 0),
-      zonesRef.current.get(simNode.componentId),
-      dimensionsRef.current,
-      2,
-    );
+    const nextX = point.x + (drag.offsetX || 0);
+    const nextY = point.y + (drag.offsetY || 0);
+    const position = mergeComponentsInGraph
+      ? { x: nextX, y: nextY }
+      : setNodePositionInZone(
+          simNode,
+          nextX,
+          nextY,
+          zonesRef.current.get(simNode.componentId),
+          dimensionsRef.current,
+          2,
+        );
+    simNode.x = position.x;
+    simNode.y = position.y;
     const elapsed = Math.max(16, now - (drag.lastTime || now));
     drag.vx = ((position.x - drag.lastX) / elapsed) * 16;
     drag.vy = ((position.y - drag.lastY) / elapsed) * 16;
@@ -1357,7 +1606,7 @@ export function RelationGraphPanel({
     setLayoutNodes(snapshotLayoutNodes(simNodesRef.current));
     alphaRef.current = Math.max(alphaRef.current, 0.78);
     ensureSimulation();
-  }, [applyViewportTransform, ensureSimulation, getPinchMetrics, graphPointFromEvent, handleGraphPanMove, startPinchZoom]);
+  }, [applyViewportTransform, ensureSimulation, getPinchMetrics, graphPointFromEvent, handleGraphPanMove, mergeComponentsInGraph, startPinchZoom]);
 
   const handleGraphPointerUp = useCallback((event) => {
     const wasPinching = graphPointersRef.current.size >= 2 || Boolean(pinchRef.current);
@@ -1523,8 +1772,8 @@ export function RelationGraphPanel({
   }
 
   const placedById = new Map(layoutNodes.map((node) => [node.id, node]));
-  const width = Math.max(320, canvasWidth);
-  const height = graphHeight;
+  const viewportWidth = viewportDimensions.width;
+  const viewportHeight = viewportDimensions.height;
   const scopeLabel = graph?.scope?.label || graph?.scope?.category || '全部目录';
   const zones = [...zonesRef.current.values()];
   const summaryById = new Map(model.summaries.map((summary) => [summary.id, summary]));
@@ -1566,11 +1815,11 @@ export function RelationGraphPanel({
           <svg
             ref={svgRef}
             className="visual-force-graph"
-            viewBox={`0 0 ${width} ${height}`}
+            viewBox={`0 0 ${viewportWidth} ${viewportHeight}`}
+            overflow="visible"
             role="img"
             aria-label={`${scopeLabel} 词条关系图`}
             onPointerDown={handleGraphPointerDown}
-            onWheel={handleGraphWheel}
           >
             <g className="visual-force-viewport" transform={viewportTransformValue}>
               <g className="visual-force-zones">
@@ -1674,6 +1923,16 @@ export function RelationGraphPanel({
             >
               <UiIcon name="refresh" size={13} />
               <span>{zoomLevel}</span>
+            </button>
+            <button
+              type="button"
+              className={`visual-graph-zoom-button visual-graph-center-button${graphCenteredPulse ? ' is-pulsing' : ''}`}
+              onClick={centerGraphOnCentroid}
+              disabled={!layoutNodes.length}
+              title="将关系块重心移到画布中心"
+              aria-label="将关系块重心移到画布中心"
+            >
+              <UiIcon name="center" size={14} />
             </button>
             <button
               type="button"
@@ -1799,30 +2058,41 @@ export default function VisualizationDashboard({ categories = [], defaultCategor
   const unreviewed = selected.mastery?.find((item) => item.key === 'unreviewed')?.count || 0;
   const graphRefreshing = loading && graphRequest.random;
   const showContent = Boolean(data && (!loading || graphRefreshing));
+  const metricCards = (
+    <>
+      <MetricCard label="总单词" value={total} hint={selectedCategory || '全部目录'} icon="book" />
+      <MetricCard label="熟练" value={mastered} hint={total ? percent(mastered / total) : '0%'} icon="check" />
+      <MetricCard label="陌生" value={unfamiliar} hint={`未复习 ${formatNumber(unreviewed)}`} icon="target" />
+      <MetricCard label="今日复习" value={counts.today_reviewed || 0} hint={`已复习 ${formatNumber(counts.reviewed || 0)}`} icon="calendar" />
+    </>
+  );
 
   return (
     <div className="visual-dashboard">
       <div className="visual-toolbar">
-        <div className="visual-heading">
-          <div className="visual-title">可视化</div>
-          <div className="visual-caption">
-            {selectedCategory ? `${selectedCategory} 目录` : '全部目录'} · {data?.generated_at || ''}
+        <div className="visual-toolbar-main">
+          <div className="visual-heading">
+            <div className="visual-title">可视化</div>
+            <div className="visual-caption">
+              {selectedCategory ? `${selectedCategory} 目录` : '全部目录'} · {data?.generated_at || ''}
+            </div>
+          </div>
+          <div className="visual-controls">
+            <label className="visual-select-label">
+              目录
+              <select value={selectedCategory} onChange={(event) => handleSelectCategory(event.target.value)}>
+                <option value="">全部目录</option>
+                {categoryOptions.map((category) => (
+                  <option key={category} value={category}>{category}</option>
+                ))}
+              </select>
+            </label>
+            <button type="button" className="master-secondary-button" onClick={() => handleSelectCategory('')}>
+              全部
+            </button>
           </div>
         </div>
-        <div className="visual-controls">
-          <label className="visual-select-label">
-            目录
-            <select value={selectedCategory} onChange={(event) => handleSelectCategory(event.target.value)}>
-              <option value="">全部目录</option>
-              {categoryOptions.map((category) => (
-                <option key={category} value={category}>{category}</option>
-              ))}
-            </select>
-          </label>
-          <button type="button" className="master-secondary-button" onClick={() => handleSelectCategory('')}>
-            全部
-          </button>
-        </div>
+        {showContent ? <div className="visual-metrics visual-overview-metrics">{metricCards}</div> : null}
       </div>
 
       {error ? <div className="visual-message is-error">{error}</div> : null}
@@ -1834,17 +2104,12 @@ export default function VisualizationDashboard({ categories = [], defaultCategor
             graph={data.graph || {}}
             onOpenVocabularyEntry={onOpenVocabularyEntry}
             title="推荐关系图"
-            deckMode
+            className="visual-dashboard-relation-graph"
+            fitContainerHeight
+            mergeComponentsInGraph
             onRefreshGraph={handleRefreshGraph}
             graphRefreshing={graphRefreshing}
           />
-
-          <div className="visual-metrics">
-            <MetricCard label="总单词" value={total} hint={selectedCategory || '全部目录'} icon="book" />
-            <MetricCard label="熟练" value={mastered} hint={total ? percent(mastered / total) : '0%'} icon="check" />
-            <MetricCard label="陌生" value={unfamiliar} hint={`未复习 ${formatNumber(unreviewed)}`} icon="target" />
-            <MetricCard label="今日复习" value={counts.today_reviewed || 0} hint={`已复习 ${formatNumber(counts.reviewed || 0)}`} icon="calendar" />
-          </div>
 
           <div className="visual-grid visual-grid-main">
             <DistributionCard title="熟练度分布" items={selected.mastery || []} colors={MASTERY_COLORS} />

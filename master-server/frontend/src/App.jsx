@@ -7,12 +7,14 @@ import ExperimentalFeatures from './components/ExperimentalFeatures';
 import UiIcon from './components/UiIcon';
 import { getVocabularyCategories } from './api/client';
 import './App.css';
+import './raft-theme.css';
 
 const COMPACT_LAYOUT_MEDIA_QUERY = '(max-width: 1180px)';
 const DESKTOP_MINIMAL_MODE_KEY = 'linkualogDesktopMinimalMode';
-const VALID_TABS = new Set(['tasks', 'vocabulary', 'visualization', 'experiments']);
+const VALID_TABS = new Set(['tasks', 'vocabulary', 'visualization', 'todo', 'experiments']);
 const DEFAULT_TAB = 'visualization';
 const MOBILE_TOOLS_PANEL_ID = 'master-mobile-tools-panel';
+const RAFT_THEME_BODY_CLASS = 'is-raft-theme-body';
 const ADD_VOCAB_CATEGORY_KEY = 'addVocabularyCategory';
 const ADD_VOCAB_CATEGORY_EVENT = 'add-vocabulary-category-updated';
 const LEGACY_UPLOAD_DEFAULT_CATEGORY_KEY = 'uploadDefaultCategory';
@@ -131,6 +133,21 @@ const buildVocabularyLaunchRequest = ({ category = '', word = '' } = {}) => {
   };
 };
 
+const TODO_EMBED_URL = '/todo/?embed=1';
+
+function TodoPane({ isActive }) {
+  return (
+    <section className="todo-pane-shell" aria-label="待办事项">
+      <iframe
+        className="todo-pane-frame"
+        title="待办事项"
+        src={TODO_EMBED_URL}
+        loading={isActive ? 'eager' : 'lazy'}
+      />
+    </section>
+  );
+}
+
 const writeUrlState = ({ tab, minimal, category, word }) => {
   if (typeof window === 'undefined') return;
 
@@ -175,6 +192,12 @@ function App() {
   const brandSubtitle = useDesktopMinimalMode
     ? 'Desktop Study'
     : (usesCompactLayout ? 'Mobile Study' : 'Master Server Workspace');
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return undefined;
+    document.body.classList.add(RAFT_THEME_BODY_CLASS);
+    return () => document.body.classList.remove(RAFT_THEME_BODY_CLASS);
+  }, []);
 
   useEffect(() => {
     getVocabularyCategories()
@@ -362,11 +385,6 @@ function App() {
     setShowConfig(true);
   }, []);
 
-  const handleOpenTodo = useCallback(() => {
-    if (typeof window === 'undefined') return;
-    window.location.assign('/todo');
-  }, []);
-
   const handleFullscreenToggle = useCallback(() => {
     if (typeof document === 'undefined') return;
 
@@ -387,19 +405,19 @@ function App() {
   const fullscreenIconName = isFullscreen ? 'fullscreen-exit' : 'fullscreen';
 
   return (
-    <div className={`master-shell${useDesktopMinimalMode ? ' is-desktop-minimal' : ''}`}>
+    <div className={`master-shell is-raft-theme${useDesktopMinimalMode ? ' is-desktop-minimal' : ''}`}>
+      <button
+        type="button"
+        className="master-announcement-bar"
+        onClick={handleBrandReset}
+        aria-label="回到 Linkual Log 首页"
+      >
+        <span>Linkual Log</span>
+        <span aria-hidden="true">/</span>
+        <span>{brandSubtitle}</span>
+      </button>
       <header className={`master-header${mobileToolsOpen ? ' has-mobile-tools-open' : ''}`}>
         <div className="master-brand-wrap">
-          <button
-            type="button"
-            className="master-brand-block master-brand-button"
-            onClick={handleBrandReset}
-            aria-label="回到 Linkual Log 首页"
-          >
-            <span className="master-brand">Linkual Log</span>
-            <div className="master-brand-subtitle">{brandSubtitle}</div>
-          </button>
-
           <div className="master-tabs">
             <button
               onClick={() => handleTabChange('visualization')}
@@ -433,9 +451,9 @@ function App() {
             </button>
             <button
               type="button"
-              onClick={handleOpenTodo}
-              aria-label="打开待办页面"
-              className="master-tab"
+              onClick={() => handleTabChange('todo')}
+              aria-label="打开待办事项"
+              className={`master-tab${currentTab === 'todo' ? ' active' : ''}`}
             >
               <span className="master-tab-icon">
                 <UiIcon name="todo" size={17} />
@@ -606,6 +624,12 @@ function App() {
               categories={categories}
               onOpenVocabularyEntry={handleOpenVocabularyEntry}
             />
+          </div>
+          <div
+            className={`master-pane${currentTab === 'todo' ? ' is-active' : ''}`}
+            aria-hidden={currentTab !== 'todo'}
+          >
+            <TodoPane isActive={currentTab === 'todo'} />
           </div>
           <div
             className={`master-pane${currentTab === 'experiments' ? ' is-active' : ''}`}

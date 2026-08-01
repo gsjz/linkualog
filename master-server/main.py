@@ -1,10 +1,12 @@
 import os
 import logging
+import asyncio
 import threading
 from pathlib import Path
 
+import requests
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -179,6 +181,81 @@ def _mount_frontend_static(target_app: FastAPI) -> bool:
     target_app.mount("/", FrontendStaticFiles(directory=dist_dir, html=True, spa_fallback_file=index_file), name="frontend")
     return True
 
+
+def _get_knotodo_proxy_base_url() -> str:
+    default_base_url = "http://knotodo:18083/todo" if is_running_in_docker() else "http://127.0.0.1:18082/todo"
+    return _first_non_empty(
+        "MASTER_SERVER_KNOTODO_BASE_URL",
+        "KNOTODO_INTERNAL_BASE_URL",
+        fallback=default_base_url,
+    ).rstrip("/")
+
+
+HOP_BY_HOP_HEADERS = {
+    "connection",
+    "keep-alive",
+    "proxy-authenticate",
+    "proxy-authorization",
+    "te",
+    "trailers",
+    "transfer-encoding",
+    "upgrade",
+    "host",
+    "content-length",
+}
+
+
+def _proxy_request_headers(request: Request) -> dict[str, str]:
+    headers = {
+        key: value
+        for key, value in request.headers.items()
+        if key.lower() not in HOP_BY_HOP_HEADERS
+    }
+    headers["accept-encoding"] = "identity"
+    return headers
+
+
+def _proxy_response_headers(response: requests.Response) -> dict[str, str]:
+    excluded = HOP_BY_HOP_HEADERS | {"content-encoding"}
+    return {
+        key: value
+        for key, value in response.headers.items()
+        if key.lower() not in excluded
+    }
+
+
+async def _proxy_knotodo_request(request: Request, path: str = "") -> Response:
+    base_url = _get_knotodo_proxy_base_url()
+    normalized_path = str(path or "").lstrip("/")
+    target_url = f"{base_url}/{normalized_path}" if normalized_path else base_url
+    if request.url.query:
+        target_url = f"{target_url}?{request.url.query}"
+
+    try:
+        upstream = await asyncio.to_thread(
+            requests.request,
+            method=request.method,
+            url=target_url,
+            headers=_proxy_request_headers(request),
+            data=await request.body(),
+            timeout=30,
+            allow_redirects=False,
+        )
+    except requests.RequestException as exc:
+        return Response(
+            content=f"KnoTodo service is not available: {exc}",
+            status_code=502,
+            media_type="text/plain; charset=utf-8",
+        )
+
+    content = b"" if request.method.upper() == "HEAD" else upstream.content
+    return Response(
+        content=content,
+        status_code=upstream.status_code,
+        headers=_proxy_response_headers(upstream),
+        media_type=upstream.headers.get("content-type"),
+    )
+
 class EndpointFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
         msg = record.getMessage()
@@ -200,6 +277,18 @@ app.add_middleware(
 
 app.include_router(master_router)
 app.include_router(review_router)
+
+
+@app.api_route("/todo", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"], include_in_schema=False)
+async def proxy_knotodo_root(request: Request):
+    return await _proxy_knotodo_request(request)
+
+
+@app.api_route("/todo/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"], include_in_schema=False)
+async def proxy_knotodo_path(request: Request, path: str):
+    return await _proxy_knotodo_request(request, path)
+
+
 SERVING_BUILT_FRONTEND = _mount_frontend_static(app)
 
 if __name__ == "__main__":

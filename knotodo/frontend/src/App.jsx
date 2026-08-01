@@ -641,6 +641,10 @@ const RichText = ({ value, className = '' }) => (
 
 function App() {
   const today = useMemo(() => formatIso(new Date()), [])
+  const isEmbedded = useMemo(() => {
+    if (typeof window === 'undefined') return false
+    return new URLSearchParams(window.location.search).get('embed') === '1'
+  }, [])
   const [boards, setBoards] = useState([])
   const [activeBoardId, setActiveBoardId] = useState('')
   const [selectedDay, setSelectedDay] = useState(today)
@@ -1918,18 +1922,20 @@ function App() {
   const isCardDetailVisible = Boolean(selectedCard && isCardDetailOpen)
 
   return (
-    <div className="knt-app">
-      <header className="knt-topbar">
-        <div className="knt-topbar-left">
-          <h1>KnoTodo</h1>
-          <p>Boards, timeline, and scheduled cards</p>
-        </div>
-        <div className="knt-topbar-right">
-          <a className="knt-btn knt-return-link" href="/">
-            返回 Linkual Log
-          </a>
-        </div>
-      </header>
+    <div className={`knt-app${isEmbedded ? ' is-embedded' : ''}`}>
+      {!isEmbedded ? (
+        <header className="knt-topbar">
+          <div className="knt-topbar-left">
+            <h1>KnoTodo</h1>
+            <p>Boards, timeline, and scheduled cards</p>
+          </div>
+          <div className="knt-topbar-right">
+            <a className="knt-btn knt-return-link" href="/">
+              返回 Linkual Log
+            </a>
+          </div>
+        </header>
+      ) : null}
       <section className="knt-layout knt-layout--three">
         <aside className={`knt-leftbar${isCardDetailVisible ? ' is-detail-open' : ''}`}>
           <section className="knt-panel">

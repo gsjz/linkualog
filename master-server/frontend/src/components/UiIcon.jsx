@@ -295,6 +295,18 @@ export default function UiIcon({ name, size = 18 }) {
     );
   }
 
+  if (name === 'center') {
+    return (
+      <svg {...commonProps}>
+        <path d="M4 12h5" />
+        <path d="M15 12h5" />
+        <path d="M12 4v5" />
+        <path d="M12 15v5" />
+        <circle cx="12" cy="12" r="1.6" />
+      </svg>
+    );
+  }
+
   if (name === 'search') {
     return (
       <svg {...commonProps}>

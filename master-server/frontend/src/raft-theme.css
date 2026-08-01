@@ -1,0 +1,2466 @@
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap");
+
+body.is-raft-theme-body,
+.master-shell.is-raft-theme {
+  --ms-bg: #fffaef;
+  --ms-bg-soft: #fffdf8;
+  --ms-surface: #ffffff;
+  --ms-surface-strong: #fffdf8;
+  --ms-surface-muted: #f5f1e8;
+  --ms-surface-inset: #ece6da;
+  --ms-border: #141111;
+  --ms-border-strong: #141111;
+  --ms-text: #141111;
+  --ms-text-muted: rgba(20, 17, 17, 0.68);
+  --ms-text-faint: rgba(20, 17, 17, 0.46);
+  --ms-success: #238947;
+  --ms-success-soft: rgba(35, 137, 71, 0.12);
+  --ms-success-strong: #12672d;
+  --ms-danger: #c9342c;
+  --ms-danger-soft: rgba(201, 52, 44, 0.1);
+  --ms-danger-strong: #9c241d;
+  --ms-overlay: rgba(20, 17, 17, 0.36);
+  --ms-shadow-soft: 2px 2px 0 #141111;
+  --ms-shadow: 4px 4px 0 #141111;
+  --ms-shadow-hard: 6px 6px 0 #141111;
+  --ms-focus-ring: 0 0 0 2px #fffaef, 0 0 0 5px #141111;
+  --ms-radius-sm: 0;
+  --ms-radius: 0;
+  --ms-radius-lg: 0;
+  --raft-ink: #141111;
+  --raft-cream: #fffaef;
+  --raft-cream-strong: #fffdf8;
+  --raft-yellow: #fffdf8;
+  --raft-pink: #fe7da8;
+  --raft-cyan: #f5f1e8;
+  --raft-lavender: #f5f1e8;
+  --raft-orange: #f5f1e8;
+  --raft-lime: #f5f1e8;
+  --raft-red: #c9342c;
+  --raft-stone: #ebe6dc;
+  --raft-shadow-sm: 2px 2px 0 #141111;
+  --raft-shadow: 4px 4px 0 #141111;
+  --raft-shadow-lg: 6px 6px 0 #141111;
+  color: var(--raft-ink);
+  font-family: "Space Grotesk", "Hanken Grotesk", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+}
+
+body.is-raft-theme-body {
+  overflow: hidden;
+  background: var(--raft-cream);
+}
+
+body.is-raft-theme-body,
+body.is-raft-theme-body #root {
+  color: var(--raft-ink);
+}
+
+.master-shell.is-raft-theme {
+  isolation: isolate;
+  overflow: hidden;
+  background:
+    linear-gradient(rgba(20, 17, 17, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(20, 17, 17, 0.035) 1px, transparent 1px),
+    var(--raft-cream) !important;
+  background-size: 32px 32px;
+}
+
+.master-shell.is-raft-theme,
+.master-shell.is-raft-theme * {
+  scrollbar-color: var(--raft-ink) var(--raft-cream);
+}
+
+.master-shell.is-raft-theme ::selection {
+  background: var(--raft-pink);
+  color: var(--raft-ink);
+}
+
+.master-shell.is-raft-theme ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.master-shell.is-raft-theme ::-webkit-scrollbar-track {
+  background: var(--raft-cream);
+}
+
+.master-shell.is-raft-theme ::-webkit-scrollbar-thumb {
+  background: var(--raft-ink);
+  border: 2px solid var(--raft-cream);
+}
+
+.master-shell.is-raft-theme button,
+.master-shell.is-raft-theme input,
+.master-shell.is-raft-theme select,
+.master-shell.is-raft-theme textarea {
+  border-radius: 0 !important;
+  letter-spacing: 0 !important;
+}
+
+.master-shell.is-raft-theme button:focus-visible,
+.master-shell.is-raft-theme input:focus,
+.master-shell.is-raft-theme select:focus,
+.master-shell.is-raft-theme textarea:focus {
+  outline: 2px solid var(--raft-ink) !important;
+  outline-offset: 2px !important;
+  border-color: var(--raft-ink) !important;
+  box-shadow: var(--ms-focus-ring) !important;
+}
+
+.master-announcement-bar {
+  appearance: none;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  flex: 0 0 30px;
+  min-height: 30px;
+  padding: 0 12px;
+  border: 0;
+  overflow: hidden;
+  background: #000;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.master-announcement-bar span:first-child {
+  color: var(--raft-pink);
+}
+
+.master-header {
+  z-index: 35 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 20px !important;
+  flex: 0 0 62px !important;
+  min-height: 62px !important;
+  padding: 0 30px !important;
+  border: 0 !important;
+  border-bottom: 2px solid var(--raft-ink) !important;
+  background: var(--raft-yellow) !important;
+  box-shadow: none !important;
+}
+
+.master-header.has-mobile-tools-open {
+  z-index: 99999 !important;
+}
+
+.master-brand-wrap {
+  display: flex !important;
+  align-items: center !important;
+  gap: 22px !important;
+  min-width: 0 !important;
+}
+
+.master-brand-button,
+.master-brand-block {
+  display: inline-grid !important;
+  grid-template-columns: auto 1fr !important;
+  grid-template-areas: "mark title" "mark subtitle" !important;
+  align-items: center !important;
+  column-gap: 8px !important;
+  row-gap: 1px !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: var(--raft-ink) !important;
+  box-shadow: none !important;
+  text-align: left !important;
+}
+
+.master-brand-button::before {
+  grid-area: mark;
+  width: 22px;
+  height: 18px;
+  border: 2px solid var(--raft-ink);
+  background:
+    linear-gradient(90deg, transparent 0 6px, var(--raft-cyan) 6px 12px, transparent 12px),
+    linear-gradient(var(--raft-pink), var(--raft-pink));
+  box-shadow: var(--raft-shadow-sm);
+  content: "";
+  transform: rotate(-8deg);
+}
+
+.master-brand {
+  grid-area: title;
+  min-width: 0;
+  color: var(--raft-ink) !important;
+  font-size: 19px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0 !important;
+  line-height: 0.95 !important;
+  text-transform: uppercase !important;
+  white-space: nowrap;
+}
+
+.master-brand-subtitle {
+  grid-area: subtitle;
+  min-width: 0;
+  overflow: hidden;
+  color: rgba(20, 17, 17, 0.62) !important;
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.04em !important;
+  line-height: 1.1 !important;
+  text-overflow: ellipsis;
+  text-transform: uppercase !important;
+  white-space: nowrap;
+}
+
+.master-tabs {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.master-tab {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 7px !important;
+  flex: 0 0 auto !important;
+  min-height: 32px !important;
+  padding: 0 12px !important;
+  border: 2px solid var(--raft-ink) !important;
+  background: #fff !important;
+  color: var(--raft-ink) !important;
+  box-shadow: var(--raft-shadow-sm) !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  text-decoration: none !important;
+  white-space: nowrap !important;
+}
+
+.master-tab-icon,
+.master-tab-label {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.master-tab:hover:not(.active) {
+  background: #fff !important;
+  color: var(--raft-ink) !important;
+  box-shadow: var(--raft-shadow) !important;
+  transform: translate(-1px, -1px) !important;
+}
+
+.master-tab.active,
+.master-tab[aria-pressed="true"] {
+  background: var(--raft-pink) !important;
+  color: var(--raft-ink) !important;
+  box-shadow: var(--raft-shadow-sm) !important;
+}
+
+.master-actions {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 10px !important;
+  flex-wrap: nowrap !important;
+}
+
+.master-primary-button,
+.master-shell .master-primary-button,
+.task-primary-button,
+.queue-submit-button,
+.queue-fab,
+.visual-graph-jump,
+.vocab-review .vocab-review-empty-primary-action,
+.vocab-review .vocab-review-hero-primary-action,
+.vocab-review .vocab-review-draw-button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  min-height: 34px !important;
+  border: 2px solid var(--raft-ink) !important;
+  background: var(--raft-pink) !important;
+  color: var(--raft-ink) !important;
+  box-shadow: var(--raft-shadow-sm) !important;
+  font-family: "Space Grotesk", "Noto Sans SC", system-ui, sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
+  line-height: 1 !important;
+  text-shadow: none !important;
+}
+
+.master-secondary-button,
+.master-icon-button,
+.task-secondary-button,
+.task-icon-button,
+.task-icon-text-button,
+.task-segment-button,
+.vocab-mode-switch,
+.visual-entry-jump,
+.visual-graph-refresh-button,
+.visual-graph-zoom-button,
+.visual-graph-zoom-reset,
+.config-modal-tab,
+.config-modal-close,
+.experiment-segment button,
+.experiment-preset,
+.experiment-fine-toggle,
+.vocab-recommend-preset,
+.vocab-recommend-fine-toggle,
+.vocab-recommend-segment button,
+.vocab-review .vocab-review-filter-pill,
+.vocab-review-mobile-tools-button,
+.vocab-review-info-button,
+.vocab-review-random-refresh-button,
+.vocab-review-search-action,
+.vocab-review-mark-button,
+.vocab-queue-tab,
+.vocab-queue-control-button,
+.vocab-queue-current-action,
+.vocab-queue-refresh-button,
+.vocab-queue-icon-button,
+.queue-tab-button,
+.queue-filter-button,
+.queue-inline-action,
+.queue-close-button,
+.ghost,
+.score-btn,
+.vocab-queue-score-button {
+  border: 2px solid var(--raft-ink) !important;
+  background: #fff !important;
+  color: var(--raft-ink) !important;
+  box-shadow: var(--raft-shadow-sm) !important;
+  font-weight: 700 !important;
+}
+
+.master-primary-button:hover:not(:disabled),
+.master-secondary-button:hover:not(:disabled),
+.master-icon-button:hover:not(:disabled),
+.task-primary-button:hover:not(:disabled),
+.task-secondary-button:hover:not(:disabled),
+.task-icon-button:hover:not(:disabled),
+.task-icon-text-button:hover:not(:disabled),
+.task-segment-button:hover:not(:disabled),
+.vocab-mode-switch:hover:not(:disabled),
+.visual-entry-jump:hover:not(:disabled),
+.visual-graph-refresh-button:hover:not(:disabled),
+.visual-graph-jump:hover:not(:disabled),
+.visual-graph-zoom-button:hover:not(:disabled),
+.visual-graph-zoom-reset:hover:not(:disabled),
+.config-modal-tab:hover:not(:disabled),
+.config-modal-close:hover:not(:disabled),
+.experiment-preset:hover:not(:disabled),
+.experiment-fine-toggle:hover:not(:disabled),
+.vocab-recommend-preset:hover:not(:disabled),
+.vocab-recommend-fine-toggle:hover:not(:disabled),
+.vocab-review .vocab-review-filter-pill:hover:not(:disabled),
+.vocab-review-mobile-tools-button:hover:not(:disabled),
+.vocab-review-info-button:hover:not(:disabled),
+.vocab-review-random-refresh-button:hover:not(:disabled),
+.vocab-review-search-action:hover:not(:disabled),
+.vocab-review-mark-button:hover:not(:disabled),
+.vocab-queue-tab:hover:not(:disabled),
+.vocab-queue-control-button:hover:not(:disabled),
+.vocab-queue-current-action:hover:not(:disabled),
+.vocab-queue-refresh-button:hover:not(:disabled),
+.vocab-queue-icon-button:hover:not(:disabled),
+.queue-fab:hover:not(:disabled),
+.queue-tab-button:hover:not(:disabled),
+.queue-filter-button:hover:not(:disabled),
+.queue-inline-action:hover:not(:disabled),
+.ghost:hover:not(:disabled),
+.score-btn:hover:not(:disabled) {
+  box-shadow: var(--raft-shadow) !important;
+  transform: translate(-1px, -1px) !important;
+}
+
+.master-primary-button:active:not(:disabled),
+.master-secondary-button:active:not(:disabled),
+.master-icon-button:active:not(:disabled),
+.master-tab:active:not(:disabled),
+.task-primary-button:active:not(:disabled),
+.task-secondary-button:active:not(:disabled),
+.task-segment-button:active:not(:disabled),
+.queue-fab:active:not(:disabled) {
+  box-shadow: none !important;
+  transform: translate(2px, 2px) !important;
+}
+
+.master-primary-button:disabled,
+.master-secondary-button:disabled,
+.master-icon-button:disabled,
+.task-primary-button:disabled,
+.task-secondary-button:disabled,
+.task-segment-button:disabled,
+.vocab-mode-switch:disabled,
+.visual-graph-refresh-button:disabled,
+.vocab-review button:disabled,
+.vocab-queue button:disabled,
+.queue-fab:disabled {
+  background: var(--raft-stone) !important;
+  color: rgba(20, 17, 17, 0.46) !important;
+  opacity: 1 !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.master-layout-toggle.is-active,
+.master-fullscreen-button.is-active,
+.master-mobile-fullscreen-button.is-active,
+.master-mobile-tools-trigger.is-active,
+.master-icon-button.is-active,
+.task-segment-button.is-active,
+.task-icon-text-button.is-active,
+.vocab-mode-switch.is-on,
+.visual-rank-item.is-active,
+.visual-graph-component-card.is-selected,
+.config-modal-tab.is-active,
+.experiment-segment button.is-active,
+.experiment-preset.is-active,
+.experiment-fine-toggle.is-active,
+.vocab-recommend-preset.is-active,
+.vocab-recommend-fine-toggle.is-active,
+.vocab-recommend-segment button.active,
+.vocab-review .vocab-review-filter-pill.is-active,
+.vocab-review-mobile-tools-button.is-active,
+.vocab-review-info-button.is-active,
+.vocab-review-word-item.is-selected,
+.vocab-review-random-preview-item.is-selected,
+.vocab-review-search-result-item.is-selected,
+.vocab-review-mark-button.is-active,
+.vocab-queue-tab.is-active,
+.vocab-queue-control-button.is-active,
+.vocab-queue-current-action.is-primary,
+.queue-tab-button.is-active,
+.queue-filter-button.is-active,
+.vocab-queue-score-button.is-latest {
+  border-color: var(--raft-ink) !important;
+  background: var(--raft-yellow) !important;
+  color: var(--raft-ink) !important;
+  box-shadow: var(--raft-shadow-sm) !important;
+}
+
+.master-fullscreen-button.is-active,
+.master-layout-toggle.is-active,
+.vocab-review-mark-button.is-active {
+  background: var(--raft-cyan) !important;
+}
+
+.visual-graph-center-button.is-pulsing {
+  background: var(--raft-panel-alt) !important;
+  color: var(--raft-ink) !important;
+  box-shadow: inset 0 -4px 0 var(--raft-accent), var(--raft-shadow-sm) !important;
+  transform: none !important;
+}
+
+.app-main,
+.task-container-wrapper {
+  position: relative !important;
+  z-index: 1;
+  min-height: 0 !important;
+  background: transparent !important;
+}
+
+.master-pane {
+  min-width: 0;
+}
+
+.master-pane.is-active {
+  min-width: 0;
+}
+
+.todo-pane-shell {
+  width: 100%;
+  background: var(--raft-cream) !important;
+}
+
+.todo-pane-frame {
+  display: block;
+  height: 100%;
+  border: 2px solid var(--raft-ink) !important;
+  box-shadow: var(--raft-shadow-sm) !important;
+}
+
+.master-shell.is-desktop-minimal {
+  background:
+    linear-gradient(rgba(20, 17, 17, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(20, 17, 17, 0.03) 1px, transparent 1px),
+    var(--raft-cream) !important;
+  background-size: 28px 28px;
+}
+
+.master-shell.is-desktop-minimal .master-header {
+  min-height: 62px !important;
+  padding: 0 24px !important;
+  background: var(--raft-yellow) !important;
+}
+
+.master-shell.is-desktop-minimal .master-tabs {
+  gap: 8px !important;
+}
+
+.master-shell.is-desktop-minimal .master-tab {
+  min-height: 32px !important;
+  padding: 0 10px !important;
+}
+
+/* Shared brutalist surfaces */
+.config-modal-card,
+.experimental-header,
+.experiment-demo-card,
+.experiment-triangle,
+.experiment-output div,
+.experiment-ratio-row span,
+.visual-toolbar,
+.visual-panel,
+.visual-metric,
+.visual-message,
+.visual-graph-canvas,
+.visual-graph-inspector,
+.visual-graph-component-card,
+.visual-graph-expanded-card,
+.visual-graph-expanded-panel,
+.visual-graph-deck-sidebar,
+.visual-graph-deck-detail,
+.vocab-workspace-toolbar,
+.vocab-review .vocab-review-sidebar,
+.vocab-review .vocab-review-content,
+.vocab-review .vocab-review-card,
+.vocab-review .vocab-review-example-card,
+.vocab-review .vocab-review-empty-card,
+.vocab-review .vocab-review-random-preview,
+.vocab-review .vocab-review-search-results,
+.vocab-review .vocab-review-floating-field,
+.vocab-review .vocab-review-desktop-review-controls,
+.vocab-review .vocab-review-desktop-preference-panel,
+.vocab-review .vocab-queue-limit-card,
+.vocab-review .vocab-recommend-triangle-card,
+.vocab-review .vocab-recommend-hybrid-card,
+.vocab-review .vocab-review-bottom-bar,
+.vocab-review .vocab-review-mobile-toolbar,
+.vocab-review .vocab-review-floating-panel,
+.vocab-review .vocab-review-recommend-panel,
+.vocab-review .vocab-review-mobile-pool-list,
+.vocab-queue .queue-panel,
+.vocab-queue .queue-task-card,
+.task-layout .task-main,
+.task-layout .task-detail-wrapper,
+.task-layout .task-page-body,
+.task-layout .task-toolbar,
+.task-layout .task-status-bar,
+.task-layout .task-right-panel,
+.task-layout .task-sidebar-section,
+.task-layout .task-history-item,
+.task-layout .result-item-container,
+.task-layout .result-image-box,
+.task-layout .result-json-box,
+.task-layout .task-empty-state-panel,
+.task-vocab-popover {
+  border: 2px solid var(--raft-ink) !important;
+  border-radius: 0 !important;
+  background: var(--raft-cream-strong) !important;
+  color: var(--raft-ink) !important;
+  box-shadow: var(--raft-shadow) !important;
+}
+
+.visual-toolbar,
+.config-modal-header,
+.config-modal-footer,
+.config-modal-tabs,
+.experimental-header,
+.visual-panel-header,
+.vocab-workspace-toolbar,
+.vocab-review .vocab-review-sidebar-header,
+.vocab-review .vocab-review-sidebar-meta,
+.vocab-review .vocab-review-floating-header,
+.vocab-review .vocab-review-mobile-tools-section-title,
+.vocab-review .vocab-review-random-preview-header,
+.vocab-review .vocab-review-bottom-title,
+.vocab-queue .queue-panel-header,
+.vocab-queue .queue-tabs,
+.vocab-queue .queue-filter-bar,
+.task-layout .task-toolbar,
+.task-layout .task-right-panel > div:first-child,
+.task-layout .result-item-container > div:first-child,
+.task-sidebar-title,
+.visual-graph-component-meta {
+  border-color: var(--raft-ink) !important;
+  background: var(--raft-yellow) !important;
+  color: var(--raft-ink) !important;
+}
+
+.visual-toolbar,
+.experimental-header,
+.vocab-workspace-toolbar,
+.task-layout .task-toolbar {
+  box-shadow: var(--raft-shadow) !important;
+}
+
+.visual-panel,
+.experiment-demo-card,
+.vocab-review .vocab-review-card,
+.vocab-review .vocab-review-example-card,
+.task-layout .result-item-container,
+.vocab-queue .queue-task-card {
+  box-shadow: var(--raft-shadow-sm) !important;
+}
+
+.config-modal {
+  background:
+    linear-gradient(rgba(20, 17, 17, 0.38), rgba(20, 17, 17, 0.38)),
+    var(--raft-cream) !important;
+}
+
+.config-modal-card {
+  max-width: min(940px, calc(100vw - 32px)) !important;
+  background: #fff !important;
+}
+
+.config-modal-header,
+.config-modal-footer {
+  border-color: var(--raft-ink) !important;
+  border-width: 0 !important;
+}
+
+.config-modal-header {
+  border-bottom: 2px solid var(--raft-ink) !important;
+}
+
+.config-modal-footer {
+  border-top: 2px solid var(--raft-ink) !important;
+}
+
+.config-modal-title,
+.visual-title,
+.experimental-header h1,
+.experiment-demo-card h2,
+.vocab-workspace-title,
+.vocab-review .vocab-review-hero-title,
+.vocab-review .vocab-review-empty-title,
+.task-empty-state-title {
+  color: var(--raft-ink) !important;
+  font-weight: 900 !important;
+  letter-spacing: 0 !important;
+}
+
+.config-modal-subtitle,
+.visual-caption,
+.experimental-header p,
+.experiment-demo-card p,
+.vocab-workspace-caption,
+.vocab-review .vocab-review-empty-status,
+.task-empty-state-copy,
+.visual-message {
+  color: var(--ms-text-muted) !important;
+  font-weight: 600 !important;
+}
+
+.config-info-box,
+.visual-empty,
+.vocab-review .vocab-review-empty,
+.task-history-empty,
+.task-error-box {
+  border: 2px dashed var(--raft-ink) !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+  color: var(--ms-text-muted) !important;
+  box-shadow: none !important;
+}
+
+.config-status.is-success,
+.visual-message.is-success,
+.queue-task-card.is-success {
+  color: var(--ms-success) !important;
+}
+
+.config-status.is-error,
+.visual-message.is-error,
+.queue-category-error,
+.task-error-box {
+  color: var(--ms-danger) !important;
+  background: var(--ms-danger-soft) !important;
+}
+
+.master-shell.is-raft-theme input,
+.master-shell.is-raft-theme select,
+.master-shell.is-raft-theme textarea,
+.config-modal input,
+.config-modal select,
+.config-modal textarea,
+.vocab-review input,
+.vocab-review select,
+.vocab-review textarea,
+.vocab-queue input,
+.vocab-queue select,
+.vocab-queue textarea,
+.task-layout input,
+.task-layout select,
+.task-layout textarea,
+.visual-select-label select,
+.queue-category-select,
+.queue-category-input,
+.queue-field-input,
+.vocab-review-search-input,
+.vocab-review-select,
+.vocab-queue-limit-input {
+  border: 2px solid var(--raft-ink) !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+  color: var(--raft-ink) !important;
+  box-shadow: var(--raft-shadow-sm) !important;
+  font-weight: 650 !important;
+}
+
+.master-shell.is-raft-theme input[type="checkbox"] {
+  width: 17px !important;
+  height: 17px !important;
+  border: 2px solid var(--raft-ink) !important;
+  box-shadow: none !important;
+  accent-color: var(--raft-cyan);
+}
+
+.master-shell.is-raft-theme input[type="range"] {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  accent-color: var(--raft-ink);
+}
+
+.master-shell.is-raft-theme pre,
+.master-shell.is-raft-theme code,
+.visual-row-foot,
+.visual-graph-legend,
+.visual-entry-meta,
+.visual-rank-head span,
+.visual-metric-body span,
+.vocab-review-chip,
+.vocab-review .vocab-review-field-label,
+.vocab-review .vocab-review-search-meta,
+.vocab-review .vocab-review-random-preview-count,
+.vocab-queue .queue-task-mode,
+.queue-fab-count,
+.task-history-meta,
+.task-sidebar-current,
+.task-image-preview-meta,
+.experimental-kicker,
+.experiment-demo-tag,
+.experiment-output span,
+.experiment-slider-row output {
+  font-family: "Space Mono", ui-monospace, monospace !important;
+}
+
+.vocab-review-chip,
+.visual-graph-legend span,
+.visual-entry-meta span,
+.visual-rank-head span,
+.visual-metric-icon,
+.experimental-total-chip,
+.experiment-output div,
+.experiment-ratio-row span,
+.task-image-mark-list button,
+.task-inline-toggle,
+.queue-task-mode,
+.queue-fab-count,
+.vocab-review .vocab-review-bottom-status,
+.vocab-review .vocab-review-search-result-score,
+.vocab-review .vocab-review-random-preview-score {
+  border: 2px solid var(--raft-ink) !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+  color: var(--raft-ink) !important;
+  box-shadow: var(--raft-shadow-sm) !important;
+  font-weight: 800 !important;
+}
+
+.visual-metric:nth-child(1) .visual-metric-icon,
+.visual-panel:nth-child(1) .visual-panel-header,
+.vocab-review .vocab-review-chip:nth-child(4n + 1),
+.queue-task-mode {
+  background: var(--raft-cyan) !important;
+}
+
+.visual-metric:nth-child(2) .visual-metric-icon,
+.visual-panel:nth-child(2) .visual-panel-header,
+.vocab-review .vocab-review-chip:nth-child(4n + 2),
+.vocab-review .vocab-review-bottom-status {
+  background: var(--raft-lavender) !important;
+}
+
+.visual-metric:nth-child(3) .visual-metric-icon,
+.visual-panel:nth-child(3) .visual-panel-header,
+.vocab-review .vocab-review-chip:nth-child(4n + 3) {
+  background: var(--raft-orange) !important;
+}
+
+.visual-metric:nth-child(4) .visual-metric-icon,
+.visual-panel:nth-child(4) .visual-panel-header,
+.vocab-review .vocab-review-chip:nth-child(4n + 4) {
+  background: var(--raft-lime) !important;
+}
+
+.visual-dashboard,
+.experimental-page {
+  background: transparent !important;
+  color: var(--raft-ink) !important;
+}
+
+.visual-dashboard {
+  padding: 20px !important;
+}
+
+.visual-toolbar {
+  padding: 14px 16px !important;
+}
+
+.visual-heading {
+  gap: 4px !important;
+}
+
+.visual-title {
+  font-size: 28px !important;
+  line-height: 1 !important;
+}
+
+.visual-caption {
+  font-size: 12px !important;
+}
+
+.visual-metrics {
+  gap: 14px !important;
+}
+
+.visual-metric {
+  grid-template-columns: 42px minmax(0, 1fr) !important;
+  gap: 12px !important;
+  padding: 14px !important;
+  background: #fff !important;
+}
+
+.visual-metric-icon {
+  width: 42px !important;
+  height: 42px !important;
+}
+
+.visual-metric-body strong {
+  color: var(--raft-ink) !important;
+  font-size: 28px !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+}
+
+.visual-panel {
+  overflow: hidden !important;
+  background: #fff !important;
+}
+
+.visual-panel-header {
+  margin: -1px -1px 0 !important;
+  padding: 12px 14px !important;
+  border-bottom: 2px solid var(--raft-ink) !important;
+}
+
+.visual-panel-header h2,
+.visual-panel-header h3,
+.visual-panel-header strong {
+  color: var(--raft-ink) !important;
+  font-weight: 900 !important;
+}
+
+.visual-progress,
+.vocab-review .vocab-review-progress,
+.vocab-queue .queue-progress {
+  overflow: hidden !important;
+  border: 2px solid var(--raft-ink) !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+}
+
+.visual-progress > span,
+.visual-progress > div,
+.vocab-review .vocab-review-progress > span,
+.vocab-queue .queue-progress > span {
+  background: var(--raft-cyan) !important;
+}
+
+.visual-donut-bg {
+  stroke: rgba(20, 17, 17, 0.18) !important;
+}
+
+.visual-donut-segment {
+  stroke: var(--raft-pink) !important;
+}
+
+.visual-graph-canvas,
+.visual-graph-preview-bg,
+.experiment-triangle,
+.task-image-stage,
+.result-image-box {
+  background:
+    linear-gradient(rgba(20, 17, 17, 0.09) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(20, 17, 17, 0.09) 1px, transparent 1px),
+    #fff4d2 !important;
+  background-size: 24px 24px !important;
+}
+
+.visual-graph-preview-bg {
+  fill: #fff4d2 !important;
+  stroke: var(--raft-ink) !important;
+  stroke-width: 2 !important;
+}
+
+.visual-force-node rect,
+.visual-force-node circle,
+.visual-graph-preview-node,
+.visual-graph-preview-label-bg {
+  stroke: var(--raft-ink) !important;
+  stroke-width: 2 !important;
+  filter: drop-shadow(2px 2px 0 #141111) !important;
+}
+
+.visual-force-link,
+.visual-graph-preview-link {
+  stroke-width: 2.5 !important;
+}
+
+.visual-force-zone-label,
+.visual-force-node-word,
+.visual-force-node-category,
+.visual-graph-preview-label-text {
+  fill: var(--raft-ink) !important;
+  font-weight: 800 !important;
+}
+
+.visual-graph-inspector {
+  background: #fffdf8 !important;
+}
+
+.visual-entry,
+.visual-rank-item,
+.visual-distribution-row,
+.visual-feature,
+.visual-trend-item,
+.visual-graph-neighbor,
+.visual-graph-component-card {
+  border: 2px solid var(--raft-ink) !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+  color: var(--raft-ink) !important;
+  box-shadow: var(--raft-shadow-sm) !important;
+}
+
+.visual-swatch,
+.visual-graph-legend i {
+  border: 2px solid var(--raft-ink) !important;
+  border-radius: 0 !important;
+}
+
+/* Vocabulary workspace */
+.vocab-workspace,
+.vocab-review {
+  background: transparent !important;
+  color: var(--raft-ink) !important;
+}
+
+.vocab-workspace {
+  padding: 18px !important;
+}
+
+.vocab-workspace-panels,
+.vocab-workspace-content {
+  min-width: 0;
+}
+
+.vocab-workspace-toolbar {
+  padding: 12px 14px !important;
+}
+
+.vocab-review .vocab-review-content {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: 0 !important;
+}
+
+.vocab-review .vocab-review-sidebar {
+  background: #fffdf8 !important;
+}
+
+.vocab-review .vocab-review-hero {
+  border-bottom: 2px solid var(--raft-ink) !important;
+  padding-bottom: 14px !important;
+}
+
+.vocab-review .vocab-review-word-line {
+  align-items: flex-start !important;
+}
+
+.vocab-review .vocab-review-hero-title {
+  font-size: clamp(34px, 5.4vw, 58px) !important;
+  line-height: 0.92 !important;
+  word-break: break-word !important;
+}
+
+.vocab-review .vocab-review-card,
+.vocab-review .vocab-review-example-card,
+.vocab-review .vocab-review-empty-card,
+.vocab-review .vocab-review-random-preview,
+.vocab-review .vocab-review-search-results {
+  padding: 14px !important;
+}
+
+.vocab-review .vocab-review-definition-card {
+  background: #fff !important;
+}
+
+.vocab-review .vocab-review-example-note,
+.vocab-review details,
+.vocab-review .vocab-review-search-result-item,
+.vocab-review .vocab-review-random-preview-item,
+.vocab-review .vocab-review-word-item,
+.vocab-review .vocab-review-mobile-pool-list,
+.vocab-review .vocab-review-mobile-pool-empty {
+  border: 2px solid var(--raft-ink) !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+  color: var(--raft-ink) !important;
+}
+
+.vocab-review .vocab-review-word-item {
+  margin: 8px !important;
+  box-shadow: none !important;
+}
+
+.vocab-review .vocab-review-word-item.is-selected,
+.vocab-review .vocab-review-random-preview-item.is-selected,
+.vocab-review .vocab-review-search-result-item.is-selected {
+  box-shadow: var(--raft-shadow-sm) !important;
+}
+
+.vocab-review .score-grid {
+  gap: 10px !important;
+}
+
+.vocab-review .score-btn {
+  min-height: 48px !important;
+  background: #fff !important;
+}
+
+.vocab-review .score-btn:nth-child(1),
+.vocab-queue-score-button:nth-child(1) {
+  background: var(--raft-red) !important;
+}
+
+.vocab-review .score-btn:nth-child(2),
+.vocab-queue-score-button:nth-child(2) {
+  background: var(--raft-orange) !important;
+}
+
+.vocab-review .score-btn:nth-child(3),
+.vocab-queue-score-button:nth-child(3) {
+  background: var(--raft-lime) !important;
+}
+
+.vocab-review .vocab-review-bottom-bar {
+  background: var(--raft-cream-strong) !important;
+  box-shadow: 0 -2px 0 var(--raft-ink) !important;
+}
+
+.vocab-review .vocab-review-floating-layer,
+.master-mobile-tools-layer {
+  background: rgba(20, 17, 17, 0.28) !important;
+}
+
+.vocab-review .vocab-review-floating-backdrop,
+.master-mobile-tools-backdrop {
+  background: transparent !important;
+}
+
+.vocab-review .vocab-review-floating-panel,
+.vocab-review .vocab-review-recommend-panel,
+.master-mobile-tools-panel {
+  border: 2px solid var(--raft-ink) !important;
+  border-radius: 0 !important;
+  background: var(--raft-cream-strong) !important;
+  color: var(--raft-ink) !important;
+  box-shadow: var(--raft-shadow-lg) !important;
+}
+
+.vocab-review .vocab-review-mobile-toolbar {
+  border: 0 !important;
+  border-bottom: 2px solid var(--raft-ink) !important;
+  background: var(--raft-yellow) !important;
+  box-shadow: none !important;
+}
+
+.vocab-recommend-triangle,
+.experiment-triangle {
+  border: 2px solid var(--raft-ink) !important;
+  border-radius: 0 !important;
+  background: #fff4d2 !important;
+}
+
+.vocab-recommend-triangle-bg,
+.experiment-triangle-bg {
+  fill: #fff4d2 !important;
+  stroke: var(--raft-ink) !important;
+  stroke-width: 2 !important;
+}
+
+.vocab-recommend-triangle-axis,
+.experiment-triangle-axis {
+  stroke: rgba(20, 17, 17, 0.32) !important;
+  stroke-width: 2 !important;
+}
+
+.vocab-recommend-triangle-node,
+.experiment-triangle-node,
+.vocab-recommend-triangle-pointer,
+.experiment-triangle-pointer {
+  fill: var(--raft-pink) !important;
+  stroke: var(--raft-ink) !important;
+  stroke-width: 2 !important;
+}
+
+/* Queue and upload/task UI */
+.vocab-queue .queue-panel {
+  background: #fffdf8 !important;
+  overflow: hidden !important;
+}
+
+.vocab-queue .queue-panel-header,
+.vocab-queue .queue-tabs,
+.vocab-queue .queue-filter-bar {
+  border-bottom: 2px solid var(--raft-ink) !important;
+}
+
+.vocab-queue .queue-fab {
+  min-height: 38px !important;
+  padding: 0 18px !important;
+}
+
+.vocab-queue .queue-fab-count {
+  min-width: 20px !important;
+  height: 20px !important;
+  background: var(--raft-yellow) !important;
+}
+
+.task-layout {
+  background: transparent !important;
+  color: var(--raft-ink) !important;
+}
+
+.task-layout .task-main,
+.task-layout .task-detail-wrapper,
+.task-layout .task-page-body {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.task-layout .task-toolbar,
+.task-layout .task-status-bar {
+  background: var(--raft-yellow) !important;
+}
+
+.task-layout .task-right-panel {
+  background: #fffdf8 !important;
+}
+
+.task-layout .task-sidebar-section,
+.task-layout .task-history-item {
+  box-shadow: none !important;
+  border-width: 0 0 2px !important;
+}
+
+.task-layout .task-history-item.is-selected {
+  background: var(--raft-yellow) !important;
+  box-shadow: inset 6px 0 0 var(--raft-pink) !important;
+}
+
+.task-layout .result-item-container,
+.task-layout .result-image-box,
+.task-layout .result-json-box {
+  overflow: hidden !important;
+  background: #fff !important;
+}
+
+.task-layout .result-json-box pre,
+.task-layout .result-json-box strong,
+.task-layout .result-json-box span,
+.task-layout .result-json-box div {
+  border-color: var(--raft-ink) !important;
+}
+
+.task-layout .task-empty-state-panel {
+  border-style: dashed !important;
+  background: #fffdf8 !important;
+}
+
+.task-image-region-layer > div,
+.task-image-overlay-layer > div,
+.task-image-draft-region-layer > div {
+  border-color: var(--raft-pink) !important;
+  border-radius: 0 !important;
+  background: rgba(254, 125, 168, 0.16) !important;
+}
+
+.task-image-region-hint {
+  border: 2px solid var(--raft-ink) !important;
+  border-radius: 0 !important;
+  background: var(--raft-cyan) !important;
+  color: var(--raft-ink) !important;
+  box-shadow: var(--raft-shadow-sm) !important;
+}
+
+.task-vocab-popover {
+  z-index: 100000 !important;
+  padding: 12px !important;
+}
+
+.task-vocab-popover > div {
+  border-radius: 0 !important;
+}
+
+/* Experimental page */
+.experimental-page {
+  padding: 20px !important;
+}
+
+.experimental-header {
+  background: var(--raft-yellow) !important;
+}
+
+.experimental-total-chip {
+  border: 2px solid var(--raft-ink) !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+  box-shadow: var(--raft-shadow-sm) !important;
+}
+
+.experiment-demo-card:nth-child(5n + 1) {
+  background: #fff !important;
+}
+
+.experiment-demo-card:nth-child(5n + 2) {
+  background: rgba(39, 204, 243, 0.16) !important;
+}
+
+.experiment-demo-card:nth-child(5n + 3) {
+  background: rgba(187, 175, 230, 0.22) !important;
+}
+
+.experiment-demo-card:nth-child(5n + 4) {
+  background: rgba(169, 216, 119, 0.2) !important;
+}
+
+.experiment-demo-card:nth-child(5n + 5) {
+  background: rgba(248, 161, 111, 0.2) !important;
+}
+
+/* Mobile tools */
+.master-mobile-tools-layer {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 99998 !important;
+}
+
+.master-mobile-tools-panel {
+  position: absolute !important;
+  right: 12px !important;
+  top: 104px !important;
+  width: min(320px, calc(100vw - 24px)) !important;
+  padding: 14px !important;
+}
+
+.master-mobile-tools-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  padding-bottom: 12px !important;
+  margin-bottom: 12px !important;
+  border-bottom: 2px solid var(--raft-ink) !important;
+}
+
+.master-mobile-tools-title {
+  color: var(--raft-ink) !important;
+  font-size: 18px !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+}
+
+.master-mobile-tools-caption {
+  color: var(--ms-text-muted) !important;
+  font-family: "Space Mono", ui-monospace, monospace !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+}
+
+@media (max-width: 1180px) {
+  .master-header {
+    gap: 10px !important;
+    padding: 0 14px !important;
+  }
+
+  .master-brand-wrap {
+    flex: 1 1 auto !important;
+    gap: 8px !important;
+    overflow: hidden !important;
+  }
+
+  .master-brand-button {
+    display: flex !important;
+    flex: 0 0 32px !important;
+    width: 32px !important;
+    max-width: 32px !important;
+    height: 34px !important;
+    min-width: 32px !important;
+    overflow: visible !important;
+  }
+
+  .master-tabs {
+    flex: 0 0 auto !important;
+    width: min(204px, calc(100vw - 186px)) !important;
+    max-width: min(204px, calc(100vw - 186px)) !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    padding: 3px 3px 6px !important;
+    scrollbar-width: none;
+  }
+
+  .master-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .master-tab {
+    width: 34px !important;
+    min-width: 34px !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    padding: 0 !important;
+  }
+
+  .master-tab-label {
+    display: none !important;
+  }
+
+  .master-actions {
+    flex: 0 0 auto !important;
+    gap: 8px !important;
+  }
+
+  .master-icon-button {
+    width: 36px !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    padding: 0 !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .master-announcement-bar {
+    flex-basis: 30px;
+    min-height: 30px;
+    font-size: 12px;
+  }
+
+  .master-header {
+    flex-direction: row !important;
+    align-items: center !important;
+    min-height: 62px !important;
+    padding: 0 12px !important;
+  }
+
+  .master-brand-wrap {
+    flex: 1 1 auto !important;
+  }
+
+  .master-brand-button {
+    display: none !important;
+  }
+
+  .master-brand-button::before {
+    width: 19px;
+    height: 16px;
+  }
+
+  .master-brand {
+    display: none !important;
+  }
+
+  .master-brand-subtitle {
+    display: none !important;
+  }
+
+  .master-tabs {
+    width: 198px !important;
+    max-width: calc(100vw - 160px) !important;
+    gap: 5px !important;
+  }
+
+  .visual-dashboard,
+  .experimental-page,
+  .vocab-workspace {
+    padding: 12px !important;
+  }
+
+  .visual-toolbar,
+  .experimental-header,
+  .vocab-workspace-toolbar,
+  .task-layout .task-toolbar {
+    padding: 12px !important;
+  }
+
+  .visual-title {
+    font-size: 24px !important;
+  }
+
+  .visual-metric {
+    grid-template-columns: 36px minmax(0, 1fr) !important;
+    padding: 12px !important;
+  }
+
+  .visual-metric-icon {
+    width: 36px !important;
+    height: 36px !important;
+  }
+
+  .visual-metric-body strong {
+    font-size: 24px !important;
+  }
+
+  .config-modal {
+    padding: 12px !important;
+  }
+
+  .config-modal-card {
+    max-width: calc(100vw - 24px) !important;
+    max-height: calc(100vh - 24px) !important;
+  }
+
+  .config-modal-header,
+  .config-modal-footer,
+  .config-modal-tabs,
+  .config-modal-body {
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+  }
+
+  .vocab-review .vocab-review-hero-title {
+    font-size: clamp(28px, 13.5vw, 46px) !important;
+  }
+
+  .vocab-review.vocab-review-mobile-simple .vocab-review-hero {
+    padding-bottom: 12px !important;
+  }
+
+  .vocab-review.vocab-review-mobile-simple .vocab-review-hero-body {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .vocab-review.vocab-review-mobile-simple .vocab-review-word-line {
+    display: grid !important;
+    grid-template-columns: repeat(5, minmax(0, max-content)) !important;
+    gap: 10px !important;
+    align-items: center !important;
+    justify-content: start !important;
+  }
+
+  .vocab-review.vocab-review-mobile-simple .vocab-review-word-line .vocab-review-hero-title {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    overflow-wrap: anywhere !important;
+    word-break: normal !important;
+    hyphens: auto !important;
+  }
+
+  .vocab-review.vocab-review-mobile-simple .vocab-review-audio-button,
+  .vocab-review.vocab-review-mobile-simple .vocab-review-info-button {
+    width: 36px !important;
+    min-width: 36px !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    padding: 0 !important;
+  }
+
+  .vocab-review.vocab-review-mobile-simple .vocab-review-info-button {
+    width: auto !important;
+    min-width: 90px !important;
+    padding: 0 10px !important;
+  }
+
+  .vocab-review.vocab-review-mobile-simple .vocab-review-hero-meta {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    padding: 0 2px 8px !important;
+    scrollbar-width: none;
+  }
+
+  .vocab-review.vocab-review-mobile-simple .vocab-review-hero-meta::-webkit-scrollbar {
+    display: none;
+  }
+
+  .vocab-review.vocab-review-mobile-simple .vocab-review-chip {
+    flex: 0 0 auto !important;
+    max-width: min(280px, calc(100vw - 72px)) !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  .vocab-review .vocab-review-content,
+  .vocab-review.vocab-review-mobile-simple .vocab-review-content {
+    padding: 14px !important;
+  }
+
+  .vocab-review .vocab-review-bottom-bar {
+    left: 8px !important;
+    right: 8px !important;
+    bottom: 8px !important;
+    width: auto !important;
+  }
+
+  .task-layout .task-page-body {
+    padding: 12px !important;
+  }
+
+  .task-layout .task-right-panel {
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .master-header {
+    gap: 6px !important;
+  }
+
+  .master-brand-wrap {
+    gap: 6px !important;
+  }
+
+  .master-brand-button {
+    display: none !important;
+  }
+
+  .master-tab,
+  .master-icon-button {
+    width: 32px !important;
+    min-width: 32px !important;
+    height: 32px !important;
+    min-height: 32px !important;
+  }
+}
+
+/* Restrained Raft-inspired pass: black/white structure, one accent, semantic colors only. */
+.master-shell.is-raft-theme {
+  --raft-panel-bg: #fffdf8;
+  --raft-panel-alt: #f5f1e8;
+  --raft-accent: #fe7da8;
+  --raft-grid: rgba(20, 17, 17, 0.035);
+}
+
+.master-shell.is-raft-theme,
+.master-shell.is-desktop-minimal {
+  background:
+    linear-gradient(var(--raft-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--raft-grid) 1px, transparent 1px),
+    var(--raft-cream) !important;
+  background-size: 32px 32px !important;
+}
+
+.master-announcement-bar:hover {
+  color: #fff !important;
+  text-decoration: none !important;
+}
+
+.master-announcement-bar:focus-visible {
+  outline: 2px solid var(--raft-accent) !important;
+  outline-offset: -4px !important;
+  box-shadow: none !important;
+}
+
+.master-header,
+.master-shell.is-desktop-minimal .master-header {
+  justify-content: space-between !important;
+  gap: 16px !important;
+  background: var(--raft-panel-bg) !important;
+}
+
+.master-brand-wrap {
+  flex: 1 1 auto !important;
+  overflow: hidden !important;
+}
+
+.master-brand-button,
+.master-brand-block {
+  display: none !important;
+}
+
+.master-tabs {
+  flex: 1 1 auto !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  padding: 4px 4px 8px !important;
+  scrollbar-width: none;
+}
+
+.master-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.master-tab,
+.master-shell.is-desktop-minimal .master-tab {
+  background: #fff !important;
+  color: var(--raft-ink) !important;
+}
+
+.master-tab.active,
+.master-tab[aria-pressed="true"],
+.master-primary-button,
+.master-shell .master-primary-button,
+.task-primary-button,
+.queue-submit-button,
+.queue-fab,
+.visual-graph-jump,
+.vocab-review .vocab-review-empty-primary-action,
+.vocab-review .vocab-review-hero-primary-action,
+.vocab-review .vocab-review-draw-button {
+  background: var(--raft-accent) !important;
+  color: var(--raft-ink) !important;
+}
+
+.master-layout-toggle.is-active,
+.master-fullscreen-button.is-active,
+.master-mobile-fullscreen-button.is-active,
+.master-mobile-tools-trigger.is-active,
+.master-icon-button.is-active,
+.task-segment-button.is-active,
+.task-icon-text-button.is-active,
+.vocab-mode-switch.is-on,
+.visual-rank-item.is-active,
+.visual-graph-component-card.is-selected,
+.config-modal-tab.is-active,
+.experiment-segment button.is-active,
+.experiment-preset.is-active,
+.experiment-fine-toggle.is-active,
+.vocab-recommend-preset.is-active,
+.vocab-recommend-fine-toggle.is-active,
+.vocab-recommend-segment button.active,
+.vocab-review .vocab-review-filter-pill.is-active,
+.vocab-review-mobile-tools-button.is-active,
+.vocab-review-info-button.is-active,
+.vocab-review-word-item.is-selected,
+.vocab-review-random-preview-item.is-selected,
+.vocab-review-search-result-item.is-selected,
+.vocab-review-mark-button.is-active,
+.vocab-queue-tab.is-active,
+.vocab-queue-control-button.is-active,
+.vocab-queue-current-action.is-primary,
+.queue-tab-button.is-active,
+.queue-filter-button.is-active,
+.vocab-queue-score-button.is-latest {
+  background: var(--raft-panel-alt) !important;
+  color: var(--raft-ink) !important;
+  box-shadow: inset 4px 0 0 var(--raft-accent), var(--raft-shadow-sm) !important;
+}
+
+.master-fullscreen-button.is-active,
+.master-layout-toggle.is-active,
+.vocab-review-mark-button.is-active {
+  background: var(--raft-panel-alt) !important;
+}
+
+.visual-toolbar,
+.config-modal-header,
+.config-modal-footer,
+.config-modal-tabs,
+.experimental-header,
+.visual-panel-header,
+.vocab-workspace-toolbar,
+.vocab-review .vocab-review-sidebar-header,
+.vocab-review .vocab-review-sidebar-meta,
+.vocab-review .vocab-review-floating-header,
+.vocab-review .vocab-review-mobile-tools-section-title,
+.vocab-review .vocab-review-random-preview-header,
+.vocab-review .vocab-review-bottom-title,
+.vocab-queue .queue-panel-header,
+.vocab-queue .queue-tabs,
+.vocab-queue .queue-filter-bar,
+.task-layout .task-toolbar,
+.task-layout .task-right-panel > div:first-child,
+.task-layout .result-item-container > div:first-child,
+.task-sidebar-title,
+.visual-graph-component-meta,
+.vocab-review .vocab-review-mobile-toolbar,
+.task-layout .task-status-bar,
+.experimental-header {
+  background: var(--raft-panel-bg) !important;
+  color: var(--raft-ink) !important;
+}
+
+.visual-toolbar,
+.experimental-header,
+.vocab-workspace-toolbar,
+.task-layout .task-toolbar {
+  border-bottom: 2px solid var(--raft-ink) !important;
+}
+
+.visual-metric:nth-child(1) .visual-metric-icon,
+.visual-metric:nth-child(2) .visual-metric-icon,
+.visual-metric:nth-child(3) .visual-metric-icon,
+.visual-metric:nth-child(4) .visual-metric-icon,
+.visual-panel:nth-child(1) .visual-panel-header,
+.visual-panel:nth-child(2) .visual-panel-header,
+.visual-panel:nth-child(3) .visual-panel-header,
+.visual-panel:nth-child(4) .visual-panel-header,
+.vocab-review .vocab-review-chip:nth-child(4n + 1),
+.vocab-review .vocab-review-chip:nth-child(4n + 2),
+.vocab-review .vocab-review-chip:nth-child(4n + 3),
+.vocab-review .vocab-review-chip:nth-child(4n + 4),
+.vocab-review .vocab-review-bottom-status,
+.queue-task-mode,
+.vocab-queue .queue-fab-count,
+.task-layout .task-toolbar,
+.task-layout .task-status-bar,
+.task-layout .task-history-item.is-selected,
+.experimental-total-chip,
+.experiment-demo-card:nth-child(5n + 1),
+.experiment-demo-card:nth-child(5n + 2),
+.experiment-demo-card:nth-child(5n + 3),
+.experiment-demo-card:nth-child(5n + 4),
+.experiment-demo-card:nth-child(5n + 5) {
+  background: var(--raft-panel-bg) !important;
+  color: var(--raft-ink) !important;
+}
+
+.visual-metric-icon,
+.vocab-review-chip,
+.visual-entry-meta span,
+.visual-rank-head span,
+.experimental-total-chip,
+.experiment-output div,
+.experiment-ratio-row span,
+.task-image-mark-list button,
+.task-inline-toggle,
+.queue-task-mode,
+.queue-fab-count,
+.vocab-review .vocab-review-bottom-status,
+.vocab-review .vocab-review-search-result-score,
+.vocab-review .vocab-review-random-preview-score {
+  background: #fff !important;
+  color: var(--raft-ink) !important;
+}
+
+.visual-progress > span,
+.visual-progress > div,
+.vocab-review .vocab-review-progress > span,
+.vocab-queue .queue-progress > span {
+  background: var(--raft-accent) !important;
+}
+
+.master-shell.is-raft-theme input[type="checkbox"] {
+  accent-color: var(--raft-accent);
+}
+
+.visual-graph-canvas,
+.visual-graph-preview-bg,
+.experiment-triangle,
+.task-image-stage,
+.result-image-box,
+.vocab-recommend-triangle {
+  background:
+    linear-gradient(rgba(20, 17, 17, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(20, 17, 17, 0.05) 1px, transparent 1px),
+    #fff !important;
+  background-size: 24px 24px !important;
+}
+
+.visual-graph-preview-bg,
+.vocab-recommend-triangle-bg,
+.experiment-triangle-bg {
+  fill: #fff !important;
+  stroke: var(--raft-ink) !important;
+}
+
+.visual-force-link,
+.visual-graph-preview-link {
+  stroke-width: 2.3 !important;
+}
+
+.visual-force-link.is-cross,
+.visual-graph-preview-link.is-cross {
+  stroke-dasharray: 6 5 !important;
+}
+
+.visual-force-link.is-same,
+.visual-graph-preview-link.is-same {
+  stroke-dasharray: none !important;
+}
+
+.visual-graph-preview {
+  overflow: hidden !important;
+  border-color: rgba(20, 17, 17, 0.22) !important;
+  background:
+    linear-gradient(rgba(20, 17, 17, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(20, 17, 17, 0.045) 1px, transparent 1px),
+    transparent !important;
+  background-size: 20px 20px !important;
+}
+
+.visual-graph-preview-bg {
+  fill: transparent !important;
+  stroke: transparent !important;
+  stroke-width: 0 !important;
+}
+
+.visual-graph-preview-node {
+  fill: rgba(20, 17, 17, 0.72) !important;
+  stroke: #fff !important;
+  stroke-width: 1.4 !important;
+  filter: none !important;
+}
+
+.visual-graph-preview-label-bg {
+  fill: rgba(255, 255, 255, 0.96) !important;
+  stroke: rgba(20, 17, 17, 0.82) !important;
+  stroke-width: 1.2 !important;
+  filter: none !important;
+}
+
+.visual-graph-preview-label-text {
+  font-size: 9px !important;
+}
+
+.visual-force-zones rect {
+  fill: transparent !important;
+  opacity: 0 !important;
+  stroke: transparent !important;
+  stroke-width: 0 !important;
+}
+
+.visual-force-zone-label {
+  display: none !important;
+}
+
+.visual-force-graph {
+  overflow: visible !important;
+}
+
+.vocab-review .vocab-review-relation-graph-frame {
+  overflow: hidden !important;
+}
+
+.vocab-review .vocab-review-relation-graph.visual-panel,
+.vocab-review .vocab-review-relation-graph .visual-graph-canvas {
+  border-color: transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.vocab-review .vocab-review-relation-graph.visual-panel {
+  overflow: hidden !important;
+}
+
+.vocab-review .vocab-review-relation-graph .visual-graph-canvas,
+.vocab-review .vocab-review-relation-graph .visual-force-graph {
+  overflow: hidden !important;
+}
+
+.visual-graph-legend span {
+  background: #fff !important;
+  color: var(--raft-ink) !important;
+}
+
+.visual-swatch,
+.visual-graph-legend i {
+  border: 1px solid var(--raft-ink) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.visual-graph-legend i {
+  height: 6px !important;
+  min-width: 18px !important;
+}
+
+.visual-graph-legend i.cross-category {
+  height: 0 !important;
+  min-width: 18px !important;
+  border: 0 !important;
+  border-top: 3px dashed var(--ms-text-muted) !important;
+  background: transparent !important;
+}
+
+.master-shell.is-raft-theme .visual-dashboard {
+  gap: 12px !important;
+  width: min(100%, 1240px) !important;
+  max-width: 1240px !important;
+  margin-inline: auto !important;
+  padding: 16px !important;
+}
+
+.master-shell.is-raft-theme .visual-toolbar {
+  display: grid !important;
+  grid-template-columns: minmax(240px, 0.42fr) minmax(0, 1fr) !important;
+  gap: 12px !important;
+  align-items: stretch !important;
+  padding: 10px 12px !important;
+  background: #fff !important;
+}
+
+.master-shell.is-raft-theme .visual-toolbar-main {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  gap: 12px !important;
+  align-items: end !important;
+  min-width: 0 !important;
+}
+
+.master-shell.is-raft-theme .visual-title {
+  font-size: 24px !important;
+}
+
+.master-shell.is-raft-theme .visual-overview-metrics {
+  grid-template-columns: repeat(4, minmax(120px, 1fr)) !important;
+  gap: 8px !important;
+  align-self: stretch !important;
+}
+
+.master-shell.is-raft-theme .visual-overview-metrics .visual-metric {
+  grid-template-columns: 30px minmax(0, 1fr) !important;
+  gap: 8px !important;
+  min-height: 70px !important;
+  padding: 10px !important;
+}
+
+.master-shell.is-raft-theme .visual-overview-metrics .visual-metric-icon {
+  width: 30px !important;
+  height: 30px !important;
+}
+
+.master-shell.is-raft-theme .visual-overview-metrics .visual-metric-body strong {
+  font-size: 22px !important;
+}
+
+.master-shell.is-raft-theme .visual-content {
+  gap: 12px !important;
+}
+
+.master-shell.is-raft-theme .visual-dashboard-relation-graph .visual-panel-header {
+  min-height: 50px !important;
+  padding: 10px 12px !important;
+}
+
+.master-shell.is-raft-theme .visual-dashboard-relation-graph .visual-graph-workspace {
+  grid-template-columns: minmax(0, 1fr) minmax(176px, 216px) !important;
+  gap: 8px !important;
+  padding: 8px !important;
+}
+
+.master-shell.is-raft-theme .visual-dashboard-relation-graph .visual-graph-canvas,
+.master-shell.is-raft-theme .visual-dashboard-relation-graph .visual-force-graph {
+  min-height: clamp(420px, 54vh, 560px) !important;
+  height: clamp(420px, 54vh, 560px) !important;
+}
+
+.master-shell.is-raft-theme .visual-dashboard-relation-graph .visual-graph-inspector {
+  padding: 8px !important;
+  background: #fff !important;
+}
+
+@media (max-width: 1180px) {
+  .master-shell.is-raft-theme .visual-dashboard {
+    width: 100% !important;
+    max-width: none !important;
+  }
+
+  .master-shell.is-raft-theme .visual-toolbar,
+  .master-shell.is-raft-theme .visual-dashboard-relation-graph .visual-graph-workspace {
+    grid-template-columns: 1fr !important;
+  }
+
+  .master-shell.is-raft-theme .visual-overview-metrics {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .master-shell.is-raft-theme .visual-dashboard {
+    padding: 10px !important;
+  }
+
+  .master-shell.is-raft-theme .visual-toolbar {
+    grid-template-columns: 1fr !important;
+  }
+
+  .master-shell.is-raft-theme .visual-toolbar-main {
+    grid-template-columns: minmax(0, 0.62fr) minmax(188px, 0.9fr) !important;
+    align-items: end !important;
+  }
+
+  .master-shell.is-raft-theme .visual-controls {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    align-items: end !important;
+    gap: 7px !important;
+  }
+
+  .master-shell.is-raft-theme .visual-select-label,
+  .master-shell.is-raft-theme .visual-select-label select {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+
+  .master-shell.is-raft-theme .visual-controls .master-secondary-button {
+    width: auto !important;
+    min-width: 58px !important;
+    min-height: 36px !important;
+  }
+
+  .master-shell.is-raft-theme .visual-title {
+    font-size: 22px !important;
+  }
+
+  .master-shell.is-raft-theme .visual-overview-metrics {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  .master-shell.is-raft-theme .visual-overview-metrics .visual-metric {
+    grid-template-columns: minmax(0, 1fr) !important;
+    min-height: 62px !important;
+    padding: 8px !important;
+  }
+
+  .master-shell.is-raft-theme .visual-overview-metrics .visual-metric-icon {
+    display: none !important;
+  }
+
+  .master-shell.is-raft-theme .visual-overview-metrics .visual-metric-body {
+    gap: 2px !important;
+  }
+
+  .master-shell.is-raft-theme .visual-overview-metrics .visual-metric-body strong {
+    font-size: 20px !important;
+  }
+
+  .master-shell.is-raft-theme .visual-overview-metrics .visual-metric-body span,
+  .master-shell.is-raft-theme .visual-overview-metrics .visual-metric-body em {
+    font-size: 10.5px !important;
+  }
+
+  .master-shell.is-raft-theme .visual-dashboard-relation-graph .visual-panel-header {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 8px !important;
+  }
+
+  .master-shell.is-raft-theme .visual-dashboard-relation-graph .visual-graph-header-actions {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    align-items: center !important;
+    justify-content: stretch !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+
+  .master-shell.is-raft-theme .visual-dashboard-relation-graph .visual-graph-legend {
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 7px !important;
+    min-width: 0 !important;
+    overflow-x: auto !important;
+    scrollbar-width: none !important;
+  }
+
+  .master-shell.is-raft-theme .visual-dashboard-relation-graph .visual-graph-legend::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .master-shell.is-raft-theme .visual-dashboard-relation-graph .visual-graph-legend span {
+    flex: 0 0 auto !important;
+  }
+
+  .master-shell.is-raft-theme .visual-dashboard-relation-graph .visual-graph-canvas,
+  .master-shell.is-raft-theme .visual-dashboard-relation-graph .visual-force-graph {
+    min-height: 460px !important;
+    height: min(62vh, 540px) !important;
+  }
+
+  @media (max-width: 360px) {
+    .master-shell.is-raft-theme .visual-toolbar-main,
+    .master-shell.is-raft-theme .visual-controls {
+      grid-template-columns: 1fr !important;
+    }
+
+    .master-shell.is-raft-theme .visual-overview-metrics {
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+  }
+}
+
+.vocab-review .score-btn:nth-child(1),
+.vocab-queue-score-button:nth-child(1) {
+  background: #fff !important;
+  color: var(--raft-ink) !important;
+}
+
+.vocab-review .score-btn:nth-child(2),
+.vocab-queue-score-button:nth-child(2) {
+  background: #fff !important;
+  color: var(--raft-ink) !important;
+}
+
+.vocab-review .score-btn:nth-child(3),
+.vocab-queue-score-button:nth-child(3) {
+  background: #fff !important;
+  color: var(--raft-ink) !important;
+}
+
+.task-image-region-hint {
+  background: #fff !important;
+}
+
+@media (max-width: 1180px) {
+  .master-header {
+    gap: 10px !important;
+  }
+
+  .master-brand-wrap {
+    gap: 0 !important;
+  }
+
+  .master-tabs {
+    flex: 1 1 auto !important;
+    width: auto !important;
+    max-width: none !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .master-tabs {
+    width: auto !important;
+    max-width: calc(100vw - 112px) !important;
+  }
+
+  .master-mobile-tools-panel {
+    top: 104px !important;
+  }
+}
+
+/* Final header guardrails: keep navigation left and global tools right at every zoom level. */
+.master-shell.is-raft-theme .master-header,
+.master-shell.is-raft-theme.is-desktop-minimal .master-header {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  justify-content: stretch !important;
+  gap: 12px !important;
+  overflow: visible !important;
+}
+
+.master-shell.is-raft-theme .master-brand-wrap,
+.master-shell.is-raft-theme.is-desktop-minimal .master-brand-wrap {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+}
+
+.master-shell.is-raft-theme .master-tabs,
+.master-shell.is-raft-theme.is-desktop-minimal .master-tabs {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  width: 100% !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  flex-wrap: nowrap !important;
+  scrollbar-width: none !important;
+}
+
+.master-shell.is-raft-theme .master-tabs::-webkit-scrollbar,
+.master-shell.is-raft-theme.is-desktop-minimal .master-tabs::-webkit-scrollbar {
+  display: none !important;
+}
+
+.master-shell.is-raft-theme .master-tab,
+.master-shell.is-raft-theme.is-desktop-minimal .master-tab {
+  flex: 0 0 auto !important;
+  white-space: nowrap !important;
+}
+
+.master-shell.is-raft-theme .master-actions,
+.master-shell.is-raft-theme.is-desktop-minimal .master-actions {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  flex-wrap: nowrap !important;
+  min-width: max-content !important;
+}
+
+@media (max-width: 1180px) {
+  .master-shell.is-raft-theme .master-header {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    min-height: 48px !important;
+    padding: 6px 8px !important;
+    gap: 6px !important;
+  }
+
+  .master-shell.is-raft-theme .master-brand-wrap {
+    display: flex !important;
+    width: auto !important;
+    grid-column: 1 !important;
+  }
+
+  .master-shell.is-raft-theme .master-tabs {
+    grid-column: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    justify-content: flex-start !important;
+    gap: 4px !important;
+    padding: 0 !important;
+  }
+
+  .master-shell.is-raft-theme .master-actions.is-mobile-actions,
+  .master-shell.is-raft-theme .master-actions {
+    grid-column: 2 !important;
+    width: auto !important;
+    min-width: max-content !important;
+    gap: 4px !important;
+  }
+}
+
+.master-shell.is-raft-theme .vocab-queue-dock {
+  border: 2px solid var(--raft-ink) !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+  color: var(--raft-ink) !important;
+  box-shadow: none !important;
+}
+
+.master-shell.is-raft-theme .vocab-queue-dock.is-mobile-sheet {
+  box-shadow: var(--raft-shadow) !important;
+}
+
+.master-shell.is-raft-theme .vocab-queue-current,
+.master-shell.is-raft-theme .vocab-queue-control-panel,
+.master-shell.is-raft-theme .vocab-review-recommend-panel.is-queue-inline,
+.master-shell.is-raft-theme .vocab-queue-item-main,
+.master-shell.is-raft-theme .vocab-queue-empty {
+  border: 2px solid var(--raft-ink) !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+  color: var(--raft-ink) !important;
+  box-shadow: none !important;
+}
+
+.master-shell.is-raft-theme .vocab-queue-dock-head,
+.master-shell.is-raft-theme .vocab-queue-current {
+  border-bottom: 2px solid var(--raft-ink) !important;
+}
+
+.master-shell.is-raft-theme .vocab-queue-score-button {
+  background: #fff !important;
+  color: var(--raft-ink) !important;
+}
+
+.master-shell.is-raft-theme .vocab-queue-score-button.is-latest,
+.master-shell.is-raft-theme .vocab-queue-current-action.is-primary,
+.master-shell.is-raft-theme .vocab-queue-tab.is-active,
+.master-shell.is-raft-theme .vocab-queue-tab.is-active.is-study-mode,
+.master-shell.is-raft-theme .vocab-queue-tab.is-active.is-current-source {
+  background: var(--raft-panel-alt) !important;
+  color: var(--raft-ink) !important;
+  box-shadow: inset 4px 0 0 var(--raft-accent), var(--raft-shadow-sm) !important;
+}
+
+.master-shell.is-raft-theme .vocab-queue-current-action.is-danger {
+  color: var(--ms-danger-strong) !important;
+}
+
+.master-shell.is-raft-theme .vocab-queue-auto-next-toggle input:checked + .vocab-queue-auto-next-switch {
+  border-color: var(--raft-ink) !important;
+  background: var(--raft-accent) !important;
+}
+
+@media (min-width: 1181px) {
+  .master-shell.is-raft-theme .vocab-workspace.is-study-mode,
+  .master-shell.is-raft-theme.master-shell.is-desktop-minimal .vocab-workspace.is-study-mode {
+    display: grid !important;
+  }
+
+  .master-shell.is-raft-theme .vocab-queue-dock.is-desktop-fixed {
+    position: relative !important;
+    inset: auto !important;
+    height: 100% !important;
+  }
+}
+
+@media (max-width: 1180px) {
+  .master-shell.is-raft-theme .vocab-queue-sheet-backdrop {
+    background: rgba(20, 17, 17, 0.28) !important;
+  }
+
+  .master-shell.is-raft-theme .vocab-queue-dock.is-mobile-sheet.is-compact {
+    box-shadow: 0 -2px 0 var(--raft-ink) !important;
+  }
+}
+
+.master-shell.is-raft-theme .vocab-review .vocab-review-word-line {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  grid-template-rows: auto auto !important;
+  align-items: start !important;
+  gap: 10px !important;
+  width: 100% !important;
+}
+
+.master-shell.is-raft-theme .vocab-review .vocab-review-word-actions {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 6px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  padding-bottom: 1px !important;
+  scrollbar-width: none !important;
+}
+
+.master-shell.is-raft-theme .vocab-review .vocab-review-word-actions::-webkit-scrollbar {
+  display: none !important;
+}
+
+.master-shell.is-raft-theme .vocab-review .vocab-review-word-actions .vocab-mode-switch,
+.master-shell.is-raft-theme .vocab-review .vocab-review-word-tool-button {
+  height: 38px !important;
+  min-height: 38px !important;
+  border: 2px solid var(--raft-ink) !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+  color: var(--raft-ink) !important;
+  box-shadow: var(--raft-shadow-sm) !important;
+}
+
+.master-shell.is-raft-theme .vocab-review .vocab-review-word-actions .vocab-mode-switch {
+  min-width: 66px !important;
+  padding: 0 10px !important;
+}
+
+.master-shell.is-raft-theme .vocab-review .vocab-review-word-tool-button {
+  width: 38px !important;
+  min-width: 38px !important;
+  padding: 0 !important;
+}
+
+.master-shell.is-raft-theme .vocab-review .vocab-review-word-actions .vocab-mode-switch.is-on {
+  background: var(--raft-ink) !important;
+  color: #fff !important;
+  box-shadow: none !important;
+}
+
+.master-shell.is-raft-theme .vocab-review .vocab-review-detail-loading-overlay {
+  border: 2px solid var(--raft-ink) !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+  color: var(--raft-ink) !important;
+  box-shadow: var(--raft-shadow-sm) !important;
+}
+
+.master-shell.is-raft-theme .vocab-review .vocab-review-detail-loading-bar {
+  background: rgba(20, 17, 17, 0.18) !important;
+}
+
+.master-shell.is-raft-theme .vocab-review .vocab-review-detail-loading-bar::after {
+  background: var(--raft-accent) !important;
+}
+
+.master-shell.is-raft-theme .task-layout .task-detail-loading-overlay {
+  border: 2px solid var(--raft-ink) !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+  color: var(--raft-ink) !important;
+  box-shadow: var(--raft-shadow-sm) !important;
+}
+
+.master-shell.is-raft-theme .task-layout .task-detail-loading-bar {
+  background: rgba(20, 17, 17, 0.18) !important;
+}
+
+.master-shell.is-raft-theme .task-layout .task-detail-loading-bar::after {
+  background: var(--raft-accent) !important;
+}
+
+@media (max-width: 1180px) {
+  .master-shell.is-raft-theme .vocab-review.vocab-review-mobile-simple .vocab-review-word-line {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 9px !important;
+    justify-content: stretch !important;
+  }
+
+  .master-shell.is-raft-theme .vocab-review.vocab-review-mobile-simple .vocab-review-word-actions {
+    width: 100% !important;
+    min-width: 0 !important;
+    justify-content: flex-start !important;
+    overflow-x: auto !important;
+    scrollbar-width: none !important;
+  }
+
+  .master-shell.is-raft-theme .vocab-review.vocab-review-mobile-simple .vocab-review-word-actions::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .master-shell.is-raft-theme .vocab-review.vocab-review-mobile-simple .vocab-review-word-actions .vocab-mode-switch,
+  .master-shell.is-raft-theme .vocab-review.vocab-review-mobile-simple .vocab-review-word-tool-button {
+    height: 36px !important;
+    min-height: 36px !important;
+    flex: 0 0 auto !important;
+  }
+
+  .master-shell.is-raft-theme .vocab-review.vocab-review-mobile-simple .vocab-review-word-tool-button {
+    width: 36px !important;
+    min-width: 36px !important;
+  }
+
+  .master-shell.is-raft-theme .vocab-review.vocab-review-mobile-simple .vocab-review-word-actions .vocab-review-info-button {
+    width: auto !important;
+    min-width: 58px !important;
+    padding: 0 9px !important;
+  }
+
+  .master-shell.is-raft-theme .vocab-review.vocab-review-mobile-simple .vocab-review-word-actions .vocab-mode-switch.is-icon-only {
+    width: 36px !important;
+    min-width: 36px !important;
+    padding: 0 !important;
+    gap: 0 !important;
+  }
+
+  .master-shell.is-raft-theme .vocab-review.vocab-review-mobile-simple .vocab-review-word-actions .vocab-mode-switch.is-icon-only .vocab-mode-switch-copy {
+    display: none !important;
+  }
+
+  .master-shell.is-raft-theme .vocab-review.vocab-review-mobile-simple .vocab-review-word-actions .vocab-mode-switch.is-icon-only .vocab-mode-switch-icon {
+    display: inline-flex !important;
+  }
+}
