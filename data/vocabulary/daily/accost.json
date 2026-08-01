@@ -1,7 +1,12 @@
 {
   "word": "accost",
   "createdAt": "2026-06-12",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-07-31",
+      "score": 0
+    }
+  ],
   "definitions": [
     "accost：走上前去搭话；（常指唐突、冒犯或带威胁地）拦住并接近某人"
   ],

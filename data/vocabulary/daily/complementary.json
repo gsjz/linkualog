@@ -1,0 +1,26 @@
+{
+  "word": "complementary",
+  "createdAt": "2026-07-29",
+  "reviews": [
+    {
+      "date": "2026-07-31",
+      "score": 2
+    }
+  ],
+  "definitions": [
+    "互补的；补充的；相互配合的"
+  ],
+  "examples": [
+    {
+      "text": "Complementary CDF confirms the long-tailed behavior of the token loss.",
+      "explanation": "这里的 “Complementary CDF” 指“互补累积分布函数”，大概意思就是正常的分布函数是从负无穷往上积分，这个分布函数是从正无穷往下积分。",
+      "focusWords": [
+        "complementary"
+      ],
+      "source": {
+        "text": "Membership Inference Attacks Against Fine-tuned Diffusion Language Models",
+        "url": "https://arxiv.org/html/2601.20125v3"
+      }
+    }
+  ]
+}
