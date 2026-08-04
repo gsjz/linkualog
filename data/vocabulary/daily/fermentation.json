@@ -2,11 +2,13 @@
   "word": "fermentation",
   "createdAt": "2026-07-08",
   "reviews": [],
-  "definitions": [],
+  "definitions": [
+    "发酵；指微生物（如酵母）分解糖类并产生酒精、酸或气体等物质的过程。"
+  ],
   "examples": [
     {
       "text": "As the yeasts feed on the fruit sugars they produce a compound called ethanol— the type of alcohol in alcoholic beverages. This process is called fermentation. Nobody knows exactly when humans began to create fermented beverages.",
-      "explanation": "",
+      "explanation": "这里 fermentation 指“发酵”过程：酵母以水果中的糖为食，产生乙醇，也就是酒精饮料中的酒精成分。",
       "focusWords": [
         "fermentation"
       ],
