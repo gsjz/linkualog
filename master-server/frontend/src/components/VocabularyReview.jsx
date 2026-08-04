@@ -63,6 +63,7 @@ const ALL_RECOMMEND_SCOPE = '__all_recommend_scope__';
 const DEFAULT_RANDOM_QUEUE_LIMIT = 8;
 const DEFAULT_PREPROCESS_LIMIT = 50;
 const MAX_QUEUE_LIMIT = 50;
+const RANDOM_QUEUE_CANDIDATE_MULTIPLIER = 4;
 const DEFAULT_RECOMMENDATION_PREFERENCES = {
   due_weight: 2.2,
   created_weight: 0.35,
@@ -166,6 +167,13 @@ const normalizeQueueLimit = (value, fallback) => {
   if (!Number.isFinite(parsed)) return fallback;
   return Math.max(1, Math.min(MAX_QUEUE_LIMIT, parsed));
 };
+
+const normalizeRecommendationFetchLimit = (value) => (
+  Math.max(
+    1,
+    Math.min(MAX_QUEUE_LIMIT, normalizeQueueLimit(value, DEFAULT_RANDOM_QUEUE_LIMIT) * RANDOM_QUEUE_CANDIDATE_MULTIPLIER),
+  )
+);
 
 const isAllCategoriesValue = (value) => String(value || '').trim() === ALL_CATEGORIES_VALUE;
 
@@ -489,6 +497,15 @@ const getRecommendationCategory = (item) => {
   return key.includes('/') ? key.split('/')[0] : '';
 };
 
+const hashQueueSeed = (value) => {
+  let hash = 2166136261;
+  String(value || '').split('').forEach((char) => {
+    hash ^= char.charCodeAt(0);
+    hash = Math.imul(hash, 16777619);
+  });
+  return hash >>> 0;
+};
+
 const buildRecommendationQueue = (res, pool = [], limit = DEFAULT_RANDOM_QUEUE_LIMIT) => {
   const poolMap = new Map((Array.isArray(pool) ? pool : [])
     .filter(Boolean)
@@ -531,7 +548,69 @@ const buildRecommendationQueue = (res, pool = [], limit = DEFAULT_RANDOM_QUEUE_L
       relationCached: Boolean(poolEntry.relationCached || item.relationCached || item.relation_cached),
       relation_cached: Boolean(poolEntry.relationCached || item.relationCached || item.relation_cached),
     };
-  }).filter(Boolean).slice(0, limit);
+  }).filter(Boolean)
+    .slice(0, limit);
+};
+
+const buildFallbackQueue = (pool = [], limit = DEFAULT_RANDOM_QUEUE_LIMIT, seed = '') => {
+  const normalizedLimit = normalizeQueueLimit(limit, DEFAULT_RANDOM_QUEUE_LIMIT);
+  return (Array.isArray(pool) ? pool : [])
+    .filter(Boolean)
+    .map((item, index) => {
+      const id = String(item.id || `${item.category || ''}/${item.file || item.key || item.word || index}`).trim();
+      return {
+        item,
+        rank: hashQueueSeed(`${seed}:${id}:${index}`),
+      };
+    })
+    .sort((a, b) => a.rank - b.rank)
+    .slice(0, normalizedLimit)
+    .map(({ item }) => item);
+};
+
+const buildVisibleRandomQueue = (recommended = [], pool = [], limit = DEFAULT_RANDOM_QUEUE_LIMIT) => {
+  const normalizedLimit = normalizeQueueLimit(limit, DEFAULT_RANDOM_QUEUE_LIMIT);
+  const queue = [];
+  const seen = new Set();
+
+  [...(Array.isArray(recommended) ? recommended : []), ...(Array.isArray(pool) ? pool : [])]
+    .filter(Boolean)
+    .forEach((item) => {
+      if (queue.length >= normalizedLimit) return;
+      const id = String(item.id || `${item.category || ''}/${item.file || item.key || item.word || ''}`).trim();
+      if (!id || seen.has(id)) return;
+      seen.add(id);
+      queue.push(item);
+    });
+
+  return queue;
+};
+
+const buildQueueSnapshotKey = ({
+  mode = '',
+  category = '',
+  filter = '',
+  query = '',
+  limit = '',
+  seed = '',
+  preferences = '',
+  entries = [],
+} = {}) => {
+  const pool = Array.isArray(entries) ? entries : [];
+  const first = pool[0]?.id || '';
+  const last = pool[pool.length - 1]?.id || '';
+  return [
+    mode,
+    String(category || '').trim(),
+    String(filter || '').trim(),
+    String(query || '').trim(),
+    String(limit || ''),
+    String(seed || ''),
+    String(preferences || ''),
+    pool.length,
+    first,
+    last,
+  ].join('\u0001');
 };
 
 const pickRandomEntry = (items, currentId = '') => {
@@ -1142,8 +1221,10 @@ export default function VocabularyReview({
   onVisibleScopeChange = null,
   onQueueSnapshotChange = null,
   onCurrentEntryActionsChange = null,
+  onQueueSettingsOpenChange = null,
   queueJumpRequest = null,
   prefetchedRefineRequest = null,
+  prefetchedRelationRequest = null,
   launchRequest = null,
   entryUpdateRequest = null,
   mobileSimple = false,
@@ -1196,6 +1277,7 @@ export default function VocabularyReview({
   const [savingRecommendPreferences, setSavingRecommendPreferences] = useState(false);
   const [recommendation, setRecommendation] = useState(null);
   const [recommendationQueue, setRecommendationQueue] = useState([]);
+  const [randomQueueSeed, setRandomQueueSeed] = useState(() => `${Date.now()}-${Math.random().toString(36).slice(2)}`);
   const [recommendExcludeKeys, setRecommendExcludeKeys] = useState([]);
   const [recommendScope, setRecommendScope] = useState(ALL_RECOMMEND_SCOPE);
   const [relationGraphData, setRelationGraphData] = useState(null);
@@ -1215,6 +1297,7 @@ export default function VocabularyReview({
   const detailRequestRef = useRef(0);
   const handledEntryUpdateTokenRef = useRef('');
   const handledPrefetchedRefineTokenRef = useRef('');
+  const handledPrefetchedRelationTokenRef = useRef('');
   const handledLaunchRequestKeyRef = useRef('');
   const recommendPreferenceHydratedRef = useRef(false);
   const recommendPreferenceDirtyRef = useRef(false);
@@ -1327,6 +1410,7 @@ export default function VocabularyReview({
     setRecommendExcludeKeys([]);
     setRecommendation(null);
     setRecommendationQueue([]);
+    setRandomQueueSeed(`${Date.now()}-${Math.random().toString(36).slice(2)}`);
     setLoadingRecommendation(false);
     setLoadingRecommendationQueue(Boolean(loading && randomSelectionModeRef.current));
   }, []);
@@ -1883,6 +1967,31 @@ export default function VocabularyReview({
     ));
   }, [prefetchedRefineRequest]);
 
+  useEffect(() => {
+    const updateToken = String(prefetchedRelationRequest?.token || '');
+    if (!updateToken || handledPrefetchedRelationTokenRef.current === updateToken) return;
+    handledPrefetchedRelationTokenRef.current = updateToken;
+
+    const targetCategory = String(prefetchedRelationRequest.category || '').trim();
+    const files = new Set((Array.isArray(prefetchedRelationRequest.files) ? prefetchedRelationRequest.files : [])
+      .map((file) => String(file || '').trim())
+      .filter(Boolean));
+    if (!targetCategory || !files.size) return;
+
+    setEntries((prev) => prev.map((item) => (
+      String(item.category || '').trim() === targetCategory && files.has(String(item.file || '').trim())
+        ? { ...item, relationCached: true, relation_cached: true }
+        : item
+    )));
+    setSelectedEntrySnapshot((prev) => (
+      prev
+      && String(prev.category || '').trim() === targetCategory
+      && files.has(String(prev.file || '').trim())
+        ? { ...prev, relationCached: true, relation_cached: true }
+        : prev
+    ));
+  }, [prefetchedRelationRequest]);
+
   const playAudio = (text, type = 2) => {
     if (!('speechSynthesis' in window)) {
       alert('您的浏览器不支持语音朗读功能');
@@ -2044,11 +2153,33 @@ export default function VocabularyReview({
 
   useEffect(() => {
     if (typeof onQueueSnapshotChange !== 'function') return;
+    const fallbackRandomQueue = buildFallbackQueue(visibleEntries, randomQueueLimit, randomQueueSeed);
+    const randomSyncKey = randomSelectionMode
+      ? buildQueueSnapshotKey({
+          mode: 'random',
+          category: recommendScope === ALL_RECOMMEND_SCOPE ? ALL_CATEGORIES_VALUE : recommendScope,
+          filter: entryFilter,
+          query: normalizedWordQuery,
+          limit: randomQueueLimit,
+          seed: randomQueueSeed,
+          preferences: recommendationPreferencesKey(recommendPreferences),
+          entries: visibleEntries,
+        })
+      : '';
+    const manualSyncKey = buildQueueSnapshotKey({
+      mode: 'manual',
+      category: selectedCategory,
+      filter: entryFilter,
+      query: normalizedWordQuery,
+      entries: visibleEntries,
+    });
     onQueueSnapshotChange({
       manual: visibleEntries,
-      random: randomSelectionMode ? (visibleRecommendationQueue.length ? visibleRecommendationQueue : visibleEntries.slice(0, randomQueueLimit)) : null,
+      manualSyncKey,
+      random: randomSelectionMode ? buildVisibleRandomQueue(visibleRecommendationQueue, fallbackRandomQueue, randomQueueLimit) : null,
+      randomSyncKey,
     });
-  }, [onQueueSnapshotChange, randomQueueLimit, randomSelectionMode, visibleEntries, visibleRecommendationQueue]);
+  }, [entryFilter, normalizedWordQuery, onQueueSnapshotChange, randomQueueLimit, randomQueueSeed, randomSelectionMode, recommendPreferences, recommendScope, selectedCategory, visibleEntries, visibleRecommendationQueue]);
 
   useEffect(() => {
     const token = String(queueJumpRequest?.token || '').trim();
@@ -2280,9 +2411,10 @@ export default function VocabularyReview({
       const res = await fetchRecommendedWord(
         scopeCategory,
         excludeKeys,
-        randomQueueLimit,
+        normalizeRecommendationFetchLimit(randomQueueLimit),
         requestPreferences,
         recommendationMarkFilterFromEntryFilter(entryFilter),
+        { randomize: true, seed: randomQueueSeed },
       );
       if (recommendationRefreshRequestRef.current !== requestId) return null;
       recommendationQueueRequestRef.current += 1;
@@ -2308,7 +2440,7 @@ export default function VocabularyReview({
         setLoadingRecommendation(false);
       }
     }
-  }, [applyRecommendationResult, entryFilter, handleDrawRandomEntry, handleUseRecommendation, randomQueueLimit, recommendScope, visibleEntries]);
+  }, [applyRecommendationResult, entryFilter, handleDrawRandomEntry, handleUseRecommendation, randomQueueLimit, randomQueueSeed, recommendScope, visibleEntries]);
 
   useEffect(() => {
     if (!randomSelectionMode || !visibleEntries.length || !recommendPreferenceHydrated) {
@@ -2327,9 +2459,10 @@ export default function VocabularyReview({
     fetchRecommendedWord(
       scopeCategory,
       [],
-      randomQueueLimit,
+      normalizeRecommendationFetchLimit(randomQueueLimit),
       requestPreferences,
       recommendationMarkFilterFromEntryFilter(entryFilter),
+      { randomize: true, seed: randomQueueSeed },
     )
       .then((res) => {
         if (recommendationQueueRequestRef.current !== requestId) return;
@@ -2347,7 +2480,7 @@ export default function VocabularyReview({
       });
 
     return undefined;
-  }, [entryFilter, randomQueueLimit, randomSelectionMode, recommendPreferenceHydrated, recommendPreferences, recommendScope, visibleEntries]);
+  }, [entryFilter, randomQueueLimit, randomQueueSeed, randomSelectionMode, recommendPreferenceHydrated, recommendPreferences, recommendScope, visibleEntries]);
 
   const handleRecommendationNext = useCallback((poolArg = null) => {
     const fallbackPool = Array.isArray(poolArg) ? poolArg : visibleEntries;
@@ -2362,6 +2495,9 @@ export default function VocabularyReview({
       && nextExcluded.every((item, index) => item === recommendExcludeKeys[index]);
     if (!excludeUnchanged) {
       setRecommendExcludeKeys(nextExcluded);
+    }
+    if (currentKey) {
+      setRecommendationQueue((current) => current.filter((item) => item.key !== currentKey));
     }
     void runRecommendationRefresh(nextExcluded, { fallbackPool, fallbackOnEmpty: true });
   }, [detailCategory, recommendExcludeKeys, recommendation?.key, runRecommendationRefresh, selectedEntry?.category, selectedEntry?.file, visibleEntries]);
@@ -2453,6 +2589,11 @@ export default function VocabularyReview({
     }
     invalidateRecommendationQueue();
   }, [invalidateRecommendationQueue, randomSelectionMode, recommendPreferences, recommendScope]);
+
+  useEffect(() => {
+    if (typeof onQueueSettingsOpenChange !== 'function') return;
+    onQueueSettingsOpenChange(Boolean(queueDockControlsActive && recommendSettingsOpen));
+  }, [onQueueSettingsOpenChange, queueDockControlsActive, recommendSettingsOpen]);
 
   useEffect(() => {
     if (randomSelectionMode || !selectedEntryId) return;
@@ -2818,8 +2959,8 @@ export default function VocabularyReview({
         className="vocab-review-word-tool-button vocab-review-audio-button"
         onClick={() => playAudio(detailData.word, 2)}
         disabled={detailLoading}
-        title={detailLoading ? '词条切换中' : '朗读单词'}
         aria-label="朗读单词"
+        data-tooltip={detailLoading ? '词条切换中' : '朗读单词'}
         style={{ cursor: detailLoading ? 'wait' : 'pointer', color: 'var(--ms-text)' }}
       >
         <UiIcon name="volume" size={18} />
@@ -2829,8 +2970,8 @@ export default function VocabularyReview({
         className="vocab-review-word-tool-button vocab-review-audio-button"
         onClick={openYoudao}
         disabled={detailLoading || !youdaoUrl}
-        title={detailLoading ? '词条切换中' : '打开有道词典'}
         aria-label="打开有道词典"
+        data-tooltip={detailLoading ? '词条切换中' : '打开有道词典'}
         style={{ cursor: detailLoading || !youdaoUrl ? 'not-allowed' : 'pointer', color: 'var(--ms-text)' }}
       >
         <UiIcon name="dictionary-link" size={17} />
@@ -2844,7 +2985,7 @@ export default function VocabularyReview({
           disabled={detailLoading}
           aria-label="查看详情"
           aria-expanded={mobileInfoOpen}
-          title={detailLoading ? '词条切换中' : '查看详情'}
+          data-tooltip={detailLoading ? '词条切换中' : '查看详情'}
         >
           <UiIcon name="info" size={15} />
           <span>详情</span>
@@ -2862,7 +3003,7 @@ export default function VocabularyReview({
         onClick={() => setManualSortOrder(option.value)}
         aria-pressed={selected}
         aria-label={`按${option.label}排序`}
-        title={`按${option.label}排序`}
+        data-tooltip={`按${option.label}排序`}
       >
         <span className="vocab-review-filter-pill-check">
           <UiIcon name="check" size={11} />
@@ -2937,7 +3078,7 @@ export default function VocabularyReview({
             className={searchMode === SEARCH_MODE_LOCAL ? 'is-active' : ''}
             onClick={() => handleSearchModeChange(SEARCH_MODE_LOCAL)}
             aria-pressed={searchMode === SEARCH_MODE_LOCAL}
-            title="普通筛选"
+            data-tooltip="普通筛选"
           >
             普通
           </button>
@@ -2946,7 +3087,7 @@ export default function VocabularyReview({
             className={llmSearchMode ? 'is-active' : ''}
             onClick={() => handleSearchModeChange(SEARCH_MODE_LLM)}
             aria-pressed={llmSearchMode}
-            title="基于 LLM 搜索"
+            data-tooltip="基于 LLM 搜索"
           >
             LLM
           </button>
@@ -2956,8 +3097,8 @@ export default function VocabularyReview({
           className={`vocab-review-search-action${llmSearchMode ? ' is-llm' : ''}`}
           onClick={() => void handleSemanticSearch()}
           disabled={semanticSearchLoading || !String(wordQuery || '').trim()}
-          title={llmSearchMode ? '基于 LLM 搜索' : '普通搜索'}
           aria-label={llmSearchMode ? '基于 LLM 搜索' : '普通搜索'}
+          data-tooltip={llmSearchMode ? '基于 LLM 搜索' : '普通搜索'}
         >
           <UiIcon name="search" size={14} />
           <span>{semanticSearchLoading ? '搜索中' : '搜索'}</span>
@@ -3102,8 +3243,8 @@ export default function VocabularyReview({
         className="vocab-queue-refresh-button"
         onClick={() => void refreshVocabularyPool({ refreshCategories: true, resetQueue: true })}
         disabled={randomSelectionMode ? (loadingRecommendationQueue || !String(selectedCategory || '').trim()) : !String(selectedCategory || '').trim()}
-        title={randomSelectionMode ? '刷新推荐队列' : '刷新当前词池'}
         aria-label={randomSelectionMode ? '刷新推荐队列' : '刷新当前词池'}
+        data-tooltip={randomSelectionMode ? '刷新推荐队列' : '刷新当前词池'}
       >
         <UiIcon name="refresh" size={13} />
       </button>
@@ -3120,6 +3261,53 @@ export default function VocabularyReview({
     </div>
   ) : null;
 
+  const queueLimitControlsNode = typeof onQueueLimitsChange === 'function' ? (
+    <div className="vocab-queue-limit-card" aria-label="队列上限设置">
+      <label className="vocab-queue-limit-field">
+        <span>随机队列容量</span>
+        <input
+          className="vocab-queue-limit-input"
+          type="number"
+          min="1"
+          max={MAX_QUEUE_LIMIT}
+          step="1"
+          inputMode="numeric"
+          value={randomQueueLimit}
+          onChange={(event) => {
+            const nextLimit = normalizeQueueLimit(event.target.value, randomQueueLimit);
+            if (typeof onQueueLimitsChange === 'function') {
+              onQueueLimitsChange((current) => ({
+                ...(current || {}),
+                randomQueueLimit: nextLimit,
+              }));
+            }
+          }}
+        />
+      </label>
+      <label className="vocab-queue-limit-field">
+        <span>预处理容量</span>
+        <input
+          className="vocab-queue-limit-input"
+          type="number"
+          min="1"
+          max={MAX_QUEUE_LIMIT}
+          step="1"
+          inputMode="numeric"
+          value={preprocessLimit}
+          onChange={(event) => {
+            const nextLimit = normalizeQueueLimit(event.target.value, preprocessLimit);
+            if (typeof onQueueLimitsChange === 'function') {
+              onQueueLimitsChange((current) => ({
+                ...(current || {}),
+                preprocessLimit: nextLimit,
+              }));
+            }
+          }}
+        />
+      </label>
+    </div>
+  ) : null;
+
   const queueDockSearchControlsNode = queueDockControlsActive ? (
     <div className="vocab-queue-dock-search-tools">
       <div className="vocab-queue-search-action-row">
@@ -3131,79 +3319,52 @@ export default function VocabularyReview({
   ) : null;
 
   const recommendationSettingsControlsNode = (
-    <>
+    <div className="vocab-recommend-settings-stack">
       {queueDockControlsActive ? null : semanticSearchControlsNode}
 
-      {typeof onQueueLimitsChange === 'function' ? (
-        <div className="vocab-queue-limit-card" aria-label="队列上限设置">
-          <label className="vocab-queue-limit-field">
-            <span>随机队列上限</span>
-            <input
-              className="vocab-queue-limit-input"
-              type="number"
-              min="1"
-              max={MAX_QUEUE_LIMIT}
-              step="1"
-              inputMode="numeric"
-              value={randomQueueLimit}
-              onChange={(event) => {
-                const nextLimit = normalizeQueueLimit(event.target.value, randomQueueLimit);
-                if (typeof onQueueLimitsChange === 'function') {
-                  onQueueLimitsChange((current) => ({
-                    ...(current || {}),
-                    randomQueueLimit: nextLimit,
-                  }));
-                }
-              }}
-            />
-          </label>
-          <label className="vocab-queue-limit-field">
-            <span>预处理上限</span>
-            <input
-              className="vocab-queue-limit-input"
-              type="number"
-              min="1"
-              max={MAX_QUEUE_LIMIT}
-              step="1"
-              inputMode="numeric"
-              value={preprocessLimit}
-              onChange={(event) => {
-                const nextLimit = normalizeQueueLimit(event.target.value, preprocessLimit);
-                if (typeof onQueueLimitsChange === 'function') {
-                  onQueueLimitsChange((current) => ({
-                    ...(current || {}),
-                    preprocessLimit: nextLimit,
-                  }));
-                }
-              }}
-            />
-          </label>
+      <section className="vocab-recommend-settings-section">
+        <div className="vocab-recommend-settings-section-head">
+          <strong>容量</strong>
+          <span>{randomQueueLimit} random / {preprocessLimit} init</span>
         </div>
-      ) : null}
+        {queueLimitControlsNode}
+      </section>
 
-      <label className="vocab-review-floating-field vocab-recommend-scope-field">
-        推荐范围
-        <select
-          className="vocab-review-select"
-          value={recommendScope}
-          onChange={(event) => applySelectedCategory(
-            event.target.value === ALL_RECOMMEND_SCOPE ? ALL_CATEGORIES_VALUE : event.target.value,
-          )}
-        >
-          {recommendScopeOptions.map((option) => (
-            <option key={option.value} value={option.value}>{option.label}</option>
-          ))}
-        </select>
-      </label>
+      <section className="vocab-recommend-settings-section">
+        <div className="vocab-recommend-settings-section-head">
+          <strong>范围</strong>
+          <span>{formatCategoryChoiceLabel(recommendScope === ALL_RECOMMEND_SCOPE ? ALL_CATEGORIES_VALUE : recommendScope)}</span>
+        </div>
+        <label className="vocab-review-floating-field vocab-recommend-scope-field">
+          <span className="vocab-review-field-label">推荐范围</span>
+          <select
+            className="vocab-review-select"
+            value={recommendScope}
+            onChange={(event) => applySelectedCategory(
+              event.target.value === ALL_RECOMMEND_SCOPE ? ALL_CATEGORIES_VALUE : event.target.value,
+            )}
+          >
+            {recommendScopeOptions.map((option) => (
+              <option key={option.value} value={option.value}>{option.label}</option>
+            ))}
+          </select>
+        </label>
+      </section>
 
-      <RecommendationHybridTuner
-        preferences={recommendPreferences}
-        point={recommendationTrianglePoint}
-        fineTuneOpen={recommendFineTuneOpen}
-        onChange={handleRecommendPreferencesChange}
-        onPointChange={setRecommendationTrianglePoint}
-        onFineTuneOpenChange={setRecommendFineTuneOpen}
-      />
+      <section className="vocab-recommend-settings-section">
+        <div className="vocab-recommend-settings-section-head">
+          <strong>策略</strong>
+          <span>{recommendPreferenceDirty ? '未保存' : '已同步'}</span>
+        </div>
+        <RecommendationHybridTuner
+          preferences={recommendPreferences}
+          point={recommendationTrianglePoint}
+          fineTuneOpen={recommendFineTuneOpen}
+          onChange={handleRecommendPreferencesChange}
+          onPointChange={setRecommendationTrianglePoint}
+          onFineTuneOpenChange={setRecommendFineTuneOpen}
+        />
+      </section>
 
       <div className="vocab-recommend-panel-actions">
         <button
@@ -3229,7 +3390,7 @@ export default function VocabularyReview({
           {savingRecommendPreferences ? '保存中' : '保存到后台'}
         </button>
       </div>
-    </>
+    </div>
   );
 
   const queueDockControlsNode = movePrimaryControlsToQueueDock
@@ -3413,7 +3574,7 @@ export default function VocabularyReview({
             onClick={() => void refreshVocabularyPool({ refreshCategories: true, resetQueue: true })}
             disabled={loadingRecommendationQueue || !String(selectedCategory || '').trim()}
             aria-label="刷新推荐队列"
-            title="刷新推荐队列"
+            data-tooltip="刷新推荐队列"
           >
             <UiIcon name="refresh" size={13} />
           </button>
@@ -3555,7 +3716,7 @@ export default function VocabularyReview({
           onClick={() => handleRelationGraphFullComponentChange(!relationGraphFullComponent)}
           aria-pressed={relationGraphFullComponent}
           aria-label={relationGraphModeTitle}
-          title={relationGraphModeTitle}
+          data-tooltip={relationGraphModeTitle}
         >
           <span className="vocab-review-relation-graph-switch" aria-hidden="true">
             <span className="vocab-review-relation-graph-switch-thumb" />
@@ -3591,7 +3752,7 @@ export default function VocabularyReview({
           onClick={toggleDefinitionsMask}
           aria-pressed={definitionsMasked}
           aria-label={definitionMaskActionLabel}
-          title={definitionMaskActionLabel}
+          data-tooltip={definitionMaskActionLabel}
         >
           <UiIcon name={definitionsMasked ? 'lock' : 'unlock'} size={13} />
           <span>{definitionsMasked ? '显示' : '遮蔽'}</span>
@@ -3788,7 +3949,8 @@ export default function VocabularyReview({
                       <button
                         className="vocab-review-audio-button"
                         onClick={() => playAudio(example.text, 2)}
-                        title="朗读完整例句"
+                        aria-label="朗读完整例句"
+                        data-tooltip="朗读完整例句"
                         style={{ cursor: 'pointer', flexShrink: 0, color: 'var(--ms-text)' }}
                       >
                         <UiIcon name="volume" size={16} />
@@ -3874,7 +4036,7 @@ export default function VocabularyReview({
                 onClick={toggleDefinitionsMask}
                 aria-pressed={definitionsMasked}
                 aria-label={definitionMaskActionLabel}
-                title={definitionMaskActionLabel}
+                data-tooltip={definitionMaskActionLabel}
               >
                 <UiIcon name={definitionsMasked ? 'lock' : 'unlock'} size={13} />
                 <span>{definitionsMasked ? '显示' : '遮蔽'}</span>
@@ -3930,7 +4092,8 @@ export default function VocabularyReview({
                     <button
                       className="vocab-review-audio-button"
                       onClick={() => playAudio(example.text, 2)}
-                      title="朗读完整例句"
+                      aria-label="朗读完整例句"
+                      data-tooltip="朗读完整例句"
                       style={{ cursor: 'pointer', flexShrink: 0, color: 'var(--ms-text)' }}
                     >
                       <UiIcon name="volume" size={16} />
@@ -4115,10 +4278,12 @@ export default function VocabularyReview({
                   : `生词本 (${visibleEntries.length}${normalizedWordQuery ? ` / ${filteredEntries.length}` : ''})`}
               </strong>
               <button
+                type="button"
                 className="vocab-review-icon-button"
                 onClick={() => void refreshVocabularyPool({ refreshCategories: true, resetQueue: true })}
                 disabled={!String(selectedCategory || '').trim()}
-                title="刷新词池"
+                aria-label="刷新词池"
+                data-tooltip="刷新词池"
                 style={{ cursor: String(selectedCategory || '').trim() ? 'pointer' : 'not-allowed', opacity: String(selectedCategory || '').trim() ? 1 : 0.4 }}
               >
                 <UiIcon name="refresh" size={14} />
@@ -4196,7 +4361,7 @@ export default function VocabularyReview({
               onClick={() => setMobileFiltersOpen((open) => !open)}
               aria-label={`打开${mobileToolsTitle}`}
               aria-expanded={mobileFiltersOpen}
-              title={mobileToolsTitle}
+              data-tooltip={mobileToolsTitle}
             >
               <UiIcon name={randomSelectionMode ? 'tune' : 'list'} size={17} />
             </button>
@@ -4300,26 +4465,30 @@ export default function VocabularyReview({
             {randomSelectionMode ? (
               <div className="vocab-review-sidebar-meta-actions">
                 <button
+                  type="button"
                   className="vocab-review-refresh-button"
                   onClick={() => void refreshVocabularyPool({ refreshCategories: true, resetQueue: true })}
                   disabled={loadingRecommendationQueue || !String(selectedCategory || '').trim()}
                   style={{ background: 'none', border: 'none', cursor: String(selectedCategory || '').trim() ? 'pointer' : 'not-allowed', color: 'var(--ms-text)', fontSize: '12px', opacity: String(selectedCategory || '').trim() ? 1 : 0.4 }}
                   aria-label="刷新推荐队列"
+                  data-tooltip="刷新推荐队列"
                 >
                   刷新
                 </button>
                 <button
+                  type="button"
                   className="vocab-review-refresh-button"
                   onClick={() => setRecommendSettingsOpen((open) => !open)}
                   style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ms-text)', fontSize: '12px' }}
                   aria-label="打开队列设置"
                   aria-expanded={recommendSettingsOpen}
+                  data-tooltip="打开队列设置"
                 >
                   设置
                 </button>
               </div>
             ) : (
-              <button className="vocab-review-refresh-button" onClick={() => void refreshVocabularyPool({ refreshCategories: true, resetQueue: true })} disabled={!String(selectedCategory || '').trim()} style={{ background: 'none', border: 'none', cursor: String(selectedCategory || '').trim() ? 'pointer' : 'not-allowed', color: 'var(--ms-text)', fontSize: '12px', opacity: String(selectedCategory || '').trim() ? 1 : 0.4 }}>刷新</button>
+              <button type="button" className="vocab-review-refresh-button" onClick={() => void refreshVocabularyPool({ refreshCategories: true, resetQueue: true })} disabled={!String(selectedCategory || '').trim()} aria-label="刷新词池" data-tooltip="刷新词池" style={{ background: 'none', border: 'none', cursor: String(selectedCategory || '').trim() ? 'pointer' : 'not-allowed', color: 'var(--ms-text)', fontSize: '12px', opacity: String(selectedCategory || '').trim() ? 1 : 0.4 }}>刷新</button>
             )}
           </div>
 

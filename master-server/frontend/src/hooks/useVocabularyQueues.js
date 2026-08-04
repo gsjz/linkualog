@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 const STORAGE_KEY = 'linkualog:vocabulary-queues:v1';
-const STORAGE_VERSION = 2;
+const STORAGE_VERSION = 3;
 const QUEUE_NAMES = ['random', 'manual', 'todo', 'preprocess'];
 const NAV_QUEUE_NAMES = ['random', 'manual', 'todo'];
 
@@ -53,6 +53,35 @@ const dedupeItems = (items) => {
   return [...map.values()];
 };
 
+const normalizeIdList = (items) => (
+  [...new Set((Array.isArray(items) ? items : [])
+    .map((item) => String(item || '').trim())
+    .filter(Boolean))]
+);
+
+const pickQueueEntry = (queue, cursor = 0, options = {}) => {
+  const items = Array.isArray(queue) ? queue.filter(Boolean) : [];
+  if (!items.length) return null;
+
+  const excluded = new Set(normalizeIdList(options?.excludeIds));
+  const afterId = String(options?.afterId || '').trim();
+  if (afterId) {
+    const afterIndex = items.findIndex((item) => item.id === afterId);
+    if (afterIndex >= 0) {
+      for (let offset = 1; offset <= items.length; offset += 1) {
+        const candidate = items[(afterIndex + offset) % items.length];
+        if (candidate && !excluded.has(candidate.id)) return candidate;
+      }
+      return null;
+    }
+  }
+
+  const visibleItems = items.filter((item) => !excluded.has(item.id));
+  if (!visibleItems.length) return null;
+  const index = Math.min(Math.max(0, Number(cursor || 0)), visibleItems.length - 1);
+  return visibleItems[index] || null;
+};
+
 const defaultState = () => ({
   activeQueue: 'random',
   nextQueue: 'random',
@@ -69,6 +98,17 @@ const defaultState = () => ({
     random: 0,
     manual: 0,
     todo: 0,
+  },
+  skipped: {
+    random: [],
+    manual: [],
+    todo: [],
+  },
+  syncKey: {
+    random: '',
+    manual: '',
+    todo: '',
+    preprocess: '',
   },
 });
 
@@ -98,6 +138,21 @@ const readStoredState = () => {
         manual: Math.max(0, Number(raw?.cursor?.manual || 0)),
         todo: Math.max(0, Number(raw?.cursor?.todo || 0)),
       },
+      skipped: Number(raw.version || 0) >= STORAGE_VERSION
+        ? {
+            random: normalizeIdList(raw?.skipped?.random),
+            manual: normalizeIdList(raw?.skipped?.manual),
+            todo: normalizeIdList(raw?.skipped?.todo),
+          }
+        : base.skipped,
+      syncKey: Number(raw.version || 0) >= STORAGE_VERSION
+        ? {
+            random: String(raw?.syncKey?.random || ''),
+            manual: String(raw?.syncKey?.manual || ''),
+            todo: String(raw?.syncKey?.todo || ''),
+            preprocess: '',
+          }
+        : base.syncKey,
     };
   } catch {
     return defaultState();
@@ -118,6 +173,12 @@ const persistState = (state) => {
       todo: state.queues.todo,
     },
     cursor: state.cursor,
+    skipped: state.skipped,
+    syncKey: {
+      random: state.syncKey.random,
+      manual: state.syncKey.manual,
+      todo: state.syncKey.todo,
+    },
   };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
 };
@@ -167,23 +228,73 @@ export function useVocabularyQueues() {
     setState((current) => ({ ...current, mobileSheet: sheet }));
   }, []);
 
-  const syncQueue = useCallback((queueName, items, source = queueName) => {
+  const syncQueue = useCallback((queueName, items, source = queueName, options = {}) => {
     if (!QUEUE_NAMES.includes(queueName)) return;
     const normalizedItems = dedupeItems((Array.isArray(items) ? items : [])
       .map((item) => ({ ...item, source })));
     setState((current) => ({
       ...current,
-      queues: {
-        ...current.queues,
-        [queueName]: normalizedItems,
-      },
-      cursor: current.cursor[queueName] !== undefined
-        ? {
-            ...current.cursor,
-            [queueName]: Math.min(current.cursor[queueName] || 0, Math.max(0, normalizedItems.length - 1)),
-          }
-        : current.cursor,
+      ...(() => {
+        const nextSyncKey = String(options?.syncKey || '');
+        const syncKeyChanged = nextSyncKey !== String(current.syncKey?.[queueName] || '');
+        const validIds = new Set(normalizedItems.map((item) => item.id));
+        const skippedIds = syncKeyChanged
+          ? []
+          : normalizeIdList(current.skipped?.[queueName]).filter((id) => validIds.has(id));
+        const skippedSet = new Set(skippedIds);
+        const visibleItems = normalizedItems.filter((item) => !skippedSet.has(item.id));
+        return {
+          queues: {
+            ...current.queues,
+            [queueName]: visibleItems,
+          },
+          cursor: current.cursor[queueName] !== undefined
+            ? {
+                ...current.cursor,
+                [queueName]: Math.min(current.cursor[queueName] || 0, Math.max(0, visibleItems.length - 1)),
+              }
+            : current.cursor,
+          skipped: {
+            ...current.skipped,
+            [queueName]: skippedIds,
+          },
+          syncKey: {
+            ...current.syncKey,
+            [queueName]: nextSyncKey,
+          },
+        };
+      })(),
     }));
+  }, []);
+
+  const skipQueueItem = useCallback((queueName, itemId) => {
+    if (!NAV_QUEUE_NAMES.includes(queueName)) return;
+    const targetId = String(itemId || '').trim();
+    if (!targetId) return;
+    setState((current) => {
+      const queue = current.queues[queueName] || [];
+      const index = queue.findIndex((item) => item.id === targetId);
+      const nextQueue = queue.filter((item) => item.id !== targetId);
+      const currentCursor = current.cursor[queueName] || 0;
+      const nextCursor = index >= 0 && index < currentCursor
+        ? Math.max(0, currentCursor - 1)
+        : Math.min(currentCursor, Math.max(0, nextQueue.length - 1));
+      return {
+        ...current,
+        queues: {
+          ...current.queues,
+          [queueName]: nextQueue,
+        },
+        cursor: {
+          ...current.cursor,
+          [queueName]: nextCursor,
+        },
+        skipped: {
+          ...current.skipped,
+          [queueName]: normalizeIdList([...(current.skipped?.[queueName] || []), targetId]),
+        },
+      };
+    });
   }, []);
 
   const addToTodo = useCallback((items) => {
@@ -206,6 +317,10 @@ export function useVocabularyQueues() {
         queues: {
           ...current.queues,
           todo: [...existing.values()],
+        },
+        skipped: {
+          ...current.skipped,
+          todo: normalizeIdList(current.skipped?.todo).filter((id) => !normalizedItems.some((item) => item.id === id)),
         },
       };
     });
@@ -232,15 +347,13 @@ export function useVocabularyQueues() {
       ...current,
       queues: { ...current.queues, todo: [] },
       cursor: { ...current.cursor, todo: 0 },
+      skipped: { ...current.skipped, todo: [] },
     }));
   }, []);
 
-  const getNextEntry = useCallback((queueName = state.nextQueue) => {
+  const getNextEntry = useCallback((queueName = state.nextQueue, options = {}) => {
     if (!NAV_QUEUE_NAMES.includes(queueName)) return null;
-    const queue = state.queues[queueName] || [];
-    if (!queue.length) return null;
-    const index = Math.min(state.cursor[queueName] || 0, queue.length - 1);
-    return queue[index] || null;
+    return pickQueueEntry(state.queues[queueName] || [], state.cursor[queueName] || 0, options);
   }, [state.cursor, state.nextQueue, state.queues]);
 
   const advanceQueue = useCallback((queueName = state.nextQueue) => {
@@ -271,6 +384,7 @@ export function useVocabularyQueues() {
     resetDockPosition,
     setMobileSheet,
     syncQueue,
+    skipQueueItem,
     addToTodo,
     removeTodo,
     clearTodo,

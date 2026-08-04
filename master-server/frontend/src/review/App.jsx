@@ -68,6 +68,7 @@ const ENTRY_FILTER_OPTIONS = [
 ];
 
 const TOAST_EXIT_MS = 160;
+const EMPTY_FILE_REFINE_LLM = { entry: [], definitions: [], examples: [], global_notes: [] };
 
 function GlobalToastLayer({
   error = '',
@@ -250,6 +251,13 @@ function normalizeVocabularyListResult(res) {
     : (res?.files || []).map((item) => ({ file: item, word: filenameToWord(item), marked: false })))
     .map((item) => normalizeManualEntry(item))
     .filter((item) => item.file);
+}
+
+function countFileRefineSuggestions(result) {
+  const llm = result?.llm && typeof result.llm === 'object' ? result.llm : {};
+  return ['entry', 'definitions', 'examples'].reduce((sum, key) => (
+    sum + (Array.isArray(llm[key]) ? llm[key].length : 0)
+  ), 0);
 }
 
 function withEntryCategory(entries, category) {
@@ -812,7 +820,7 @@ function ExampleFocusPicker({
                     type="button"
                     className={`focus-token${active ? ' active' : ''}`}
                     onClick={() => onToggleFocusPosition(index, tokenIndex)}
-                    title={`token #${tokenIndex}`}
+                    data-tooltip={`token #${tokenIndex}`}
                   >
                     <span>{token}</span>
                     <span className="focus-token-index">{tokenIndex}</span>
@@ -1903,13 +1911,14 @@ function ConnectionPanel({
   const skippedCount = Array.isArray(relationSuggestMeta?.skipped)
     ? relationSuggestMeta.skipped.length
     : Number(relationSuggestMeta?.skipped || 0);
-  const draftActionsNode = (
-    <div className="connection-draft-actions">
+  const renderDraftActions = (className = 'connection-draft-actions') => (
+    <div className={className}>
       <button type="button" className="ghost" onClick={onReset} disabled={!dirty || saving}>重置草稿</button>
       <button type="button" className="primary" onClick={onSave} disabled={!dirty || saving}>{saving ? '保存中...' : '保存到 data'}</button>
     </div>
   );
-  const draftActionsPortal = draftActionsHost ? createPortal(draftActionsNode, draftActionsHost) : null;
+  const draftActionsNode = renderDraftActions();
+  const draftActionsPortal = draftActionsHost ? createPortal(renderDraftActions('connection-draft-actions is-header-actions'), draftActionsHost) : null;
 
   useEffect(() => {
     if (!draft) return;
@@ -2218,11 +2227,9 @@ function ConnectionPanel({
           </div>
         </section>
 
-        {draftActionsHost ? null : (
-          <div className="editor-footer">
-            {draftActionsNode}
-          </div>
-        )}
+        <div className="editor-footer">
+          {draftActionsNode}
+        </div>
       </div>
     </div>
   );
@@ -2340,15 +2347,15 @@ function OrganizePanel({
 
   const renderOrganizeActions = () => (
     <div className="organize-actions organize-actions-current">
-      <button className="primary organize-run-current" onClick={onRun} disabled={loading || !hasDraft} title={runLabel} aria-label={runLabel}>
+      <button className="primary organize-run-current" onClick={onRun} disabled={loading || !hasDraft} aria-label={runLabel} data-tooltip={runLabel}>
         <UiIcon name="search" size={15} />
         <span>{runLabel}</span>
       </button>
-      <button className="ghost" onClick={onApplyAllSuggestions} disabled={!hasDraft || !cleanData || totalAutoCount === 0} title="应用建议到草稿" aria-label="应用建议到草稿">
+      <button className="ghost" onClick={onApplyAllSuggestions} disabled={!hasDraft || !cleanData || totalAutoCount === 0} aria-label="应用建议到草稿" data-tooltip="应用建议到草稿">
         <UiIcon name="check" size={15} />
         <span>应用到草稿</span>
       </button>
-      <button className="ghost" onClick={onApplyAllAndSave} disabled={!hasDraft || !cleanData || totalAutoCount === 0 || savingDraft} title="应用建议并保存" aria-label="应用建议并保存">
+      <button className="ghost" onClick={onApplyAllAndSave} disabled={!hasDraft || !cleanData || totalAutoCount === 0 || savingDraft} aria-label="应用建议并保存" data-tooltip="应用建议并保存">
         <UiIcon name="save" size={15} />
         <span>{savingDraft ? '保存中' : '应用并保存'}</span>
       </button>
@@ -2667,7 +2674,7 @@ function ReviewPanel({ reviewData, loading, reviewDate, setReviewDate, onRefresh
   const renderReviewControls = () => (
     <div className="review-date-controls">
       <input type="date" value={reviewDate} onChange={(event) => setReviewDate(event.target.value)} />
-      <button className="ghost review-refresh-control" onClick={onRefresh} disabled={loading} title="刷新复习建议">
+      <button className="ghost review-refresh-control" onClick={onRefresh} disabled={loading} data-tooltip="刷新复习建议">
         <UiIcon name="refresh" size={15} />
         <span>{loading ? '刷新中' : '刷新'}</span>
       </button>
@@ -2723,24 +2730,24 @@ function ReviewPanel({ reviewData, loading, reviewDate, setReviewDate, onRefresh
             {hasRecordedReview ? (
               <div className="analysis-source">已按本次评分更新。</div>
             ) : null}
-            <div className="review-status-strip" title={current.message}>
+            <div className="review-status-strip" data-tooltip={current.message}>
               <div
                 className={`review-status-item review-status-item-${current.status || 'unknown'}`}
-                title={`当前状态: ${current.message || formatReviewStatus(current.status)}`}
+                data-tooltip={`当前状态: ${current.message || formatReviewStatus(current.status)}`}
               >
                 <span className="review-status-icon"><UiIcon name="clock" size={15} /></span>
                 <span className="review-status-main">{formatReviewStatus(current.status)}</span>
                 <span className="review-status-sub">{formatDueDays(current.days_until_due)}</span>
               </div>
 
-              <div className="review-status-item" title={`预测下次复习: ${current.next_review_date || '--'}`}>
+              <div className="review-status-item" data-tooltip={`预测下次复习: ${current.next_review_date || '--'}`}>
                 <span className="review-status-icon"><UiIcon name="calendar" size={15} /></span>
                 <span className="review-status-main">{current.next_review_date}</span>
               </div>
 
               <div
                 className="review-status-item"
-                title={current.last_review ? `最近一次: ${current.last_review.date} / ${formatScoreSummary(current.last_review.score)} / 累计 ${current.review_count} 次` : '最近一次: 无记录'}
+                data-tooltip={current.last_review ? `最近一次: ${current.last_review.date} / ${formatScoreSummary(current.last_review.score)} / 累计 ${current.review_count} 次` : '最近一次: 无记录'}
               >
                 <span className="review-status-icon"><UiIcon name="history" size={15} /></span>
                 <span className="review-status-main">
@@ -3862,12 +3869,13 @@ export default function App({
     }
   };
 
-  const handleClean = useCallback(async () => {
+  const handleClean = useCallback(async (options = {}) => {
     if (!hasSelection) return;
 
     setLoadingClean(true);
     try {
       setError('');
+      const autoCacheOnly = Boolean(options?.cacheOnly);
       const analysisDraft = draftDirty && draft
         ? sanitizeCurrentDraft(draft, filename.replace(/\.json$/i, ''))
         : null;
@@ -3888,9 +3896,28 @@ export default function App({
         );
         if (cached?.cache?.status === 'hit') {
           setCleanData(cached);
-          showNotice('已加载预生成建议');
+          const suggestionCount = countFileRefineSuggestions(cached);
+          showNotice(suggestionCount ? `已加载预生成建议 ${suggestionCount} 条` : '已加载预生成建议');
           return;
         }
+        if (autoCacheOnly) {
+          setCleanData((current) => current || {
+            status: 'success',
+            category: apiCategory,
+            file: filename,
+            analyzed_from: 'file',
+            heuristic: cached?.heuristic || { suggestions: [] },
+            llm: cached?.llm && typeof cached.llm === 'object' ? cached.llm : EMPTY_FILE_REFINE_LLM,
+            llm_error: cached?.llm_error || null,
+            cache: cached?.cache || { status: 'miss', enabled: true },
+          });
+          if (cached?.cache?.status === 'miss') {
+            showNotice('预生成建议还在后台生成，完成后会自动加载');
+          }
+          return;
+        }
+      } else if (autoCacheOnly) {
+        return;
       }
       const job = await startFileRefineJob(
         apiCategory,
@@ -4040,13 +4067,14 @@ export default function App({
     showNotice('已将连边建议写入编辑草稿');
   };
 
-  const handleRunRelationSuggest = async () => {
+  const handleRunRelationSuggest = async (options = {}) => {
     if (!hasSelection || !draft) return;
     setLoadingRelationSuggest(true);
     setRelationSuggestError('');
     setRelationSuggestions([]);
     setRelationSuggestMeta(null);
     try {
+      const autoCacheOnly = Boolean(options?.cacheOnly);
       const hasCustomPrompt = Boolean(collapseWhitespace(relationSuggestPrompt));
       const payload = draftDirty
         ? sanitizeCurrentDraft(draft, filename.replace(/\.json$/i, ''))
@@ -4076,6 +4104,20 @@ export default function App({
           }
           return;
         }
+        if (autoCacheOnly) {
+          setRelationSuggestions([]);
+          setRelationSuggestMeta({
+            ...(cached?.meta || {}),
+            cache_status: cached?.cache?.status || 'miss',
+            cache: cached?.cache || null,
+          });
+          if (cached?.cache?.status === 'miss') {
+            showNotice('预生成连边建议还在后台生成，完成后会自动加载');
+          }
+          return;
+        }
+      } else if (autoCacheOnly) {
+        return;
       }
       const job = await startVocabRelationsSuggestJob(apiCategory, filename, payload, 12, {
         customPrompt: relationSuggestPrompt,
@@ -4134,7 +4176,7 @@ export default function App({
   };
 
   const runAutoRelationSuggest = useEffectEvent(() => {
-    void handleRunRelationSuggest();
+    void handleRunRelationSuggest({ cacheOnly: true });
   });
 
   const handleApplyLlmSuggestion = (kind, item) => {
@@ -4626,7 +4668,7 @@ export default function App({
     if (handledAutoRefineTokenRef.current === token) return;
     handledAutoRefineTokenRef.current = token;
 
-    void handleClean();
+    void handleClean({ cacheOnly: true });
   }, [draft, handleClean, hasSelection, launchRequest?.autoRefineToken, loadingClean, overlayMode]);
 
   useEffect(() => {

@@ -101,6 +101,7 @@ export default function VocabularyQueueDock({
   cursor,
   todoIds,
   currentEntryActions,
+  settingsOpen = false,
   onActiveQueueChange,
   onNextQueueChange,
   onCollapsedChange,
@@ -192,6 +193,7 @@ export default function VocabularyQueueDock({
     'vocab-queue-dock',
     isMobile ? 'is-mobile-sheet' : 'is-desktop-fixed',
     isMobile ? `is-${resolvedMobileSheet}` : '',
+    settingsOpen ? 'has-expanded-settings' : '',
   ].filter(Boolean).join(' ');
 
   return (
@@ -217,7 +219,7 @@ export default function VocabularyQueueDock({
               className="vocab-queue-sheet-toggle"
               onClick={toggleMobileSheet}
               aria-label={mobileExpanded ? '收起队列详情' : '展开队列详情'}
-              title={mobileExpanded ? '收起队列详情' : '展开队列详情'}
+              data-tooltip={mobileExpanded ? '收起队列详情' : '展开队列详情'}
             >
               <UiIcon name={mobileExpanded ? 'chevron-down' : 'list'} size={15} />
             </button>
@@ -249,7 +251,7 @@ export default function VocabularyQueueDock({
                 <div
                   className="vocab-queue-current-status"
                   aria-label={scoreStatusLabel}
-                  title={scoreStatusLabel}
+                  data-tooltip={scoreStatusLabel}
                 >
                   <span>最近</span>
                   <strong aria-hidden="true">{scoreStatusEmoji}</strong>
@@ -257,7 +259,7 @@ export default function VocabularyQueueDock({
                 <label
                   className="vocab-queue-auto-next-toggle"
                   aria-label="打分后下一个"
-                  title="打分保存成功后跳到下一个词条"
+                  data-tooltip="打分保存成功后跳到下一个词条"
                 >
                   <input
                     type="checkbox"
@@ -280,7 +282,7 @@ export default function VocabularyQueueDock({
                   onClick={() => { void handleScoreClick(score); }}
                   disabled={!hasCurrentEntry || entryBusy || actions.savingScore}
                   aria-label={`${score}: ${SCORE_SHORT_LABELS[score]}`}
-                  title={`${score}: ${SCORE_SHORT_LABELS[score]}`}
+                  data-tooltip={`${score}: ${SCORE_SHORT_LABELS[score]}`}
                 >
                   <strong className="vocab-queue-score-emoji" aria-hidden="true">{SCORE_EMOJIS[score]}</strong>
                 </button>
@@ -293,7 +295,7 @@ export default function VocabularyQueueDock({
                 onClick={() => actions.onToggleMarked?.()}
                 disabled={!hasCurrentEntry || entryBusy || actions.savingMarked}
                 aria-label={actions.marked ? '已标记' : '标记'}
-                title={actions.marked ? '已标记' : '标记'}
+                data-tooltip={actions.marked ? '已标记' : '标记'}
               >
                 <UiIcon name="star" size={14} />
                 <span>{actions.savingMarked ? '保存中' : (actions.marked ? '已标记' : '标记')}</span>
@@ -304,7 +306,7 @@ export default function VocabularyQueueDock({
                 onClick={() => actions.onDelete?.()}
                 disabled={!hasCurrentEntry || entryBusy || actions.savingMarked}
                 aria-label="删除"
-                title="删除"
+                data-tooltip="删除"
               >
                 <UiIcon name="trash" size={14} />
                 <span>删除</span>
@@ -315,7 +317,7 @@ export default function VocabularyQueueDock({
                 onClick={onNextEntry}
                 disabled={!canNavigate}
                 aria-label="下一个"
-                title="下一个"
+                data-tooltip="下一个"
               >
                 <UiIcon name="shuffle" size={14} />
                 <span>下一个</span>
@@ -326,7 +328,7 @@ export default function VocabularyQueueDock({
                   className="vocab-queue-current-action vocab-queue-mobile-sheet-toggle"
                   onClick={toggleMobileSheet}
                   aria-label="展开队列详情"
-                  title="展开队列详情"
+                  data-tooltip="展开队列详情"
                 >
                   <UiIcon name="list" size={14} />
                 </button>
@@ -356,7 +358,7 @@ export default function VocabularyQueueDock({
                     role="tab"
                     aria-selected={active}
                     aria-label={tabTitle}
-                    title={tabTitle}
+                    data-tooltip={tabTitle}
                   >
                     <UiIcon name={tab.icon} size={14} />
                   </button>
@@ -367,7 +369,7 @@ export default function VocabularyQueueDock({
               type="button"
               className="vocab-queue-control-button vocab-queue-prefetch-button"
               aria-label={prefetchBlockedByPreprocessQueue ? 'init 队列只展示预处理状态' : '预生成当前范围内的整理和连接建议'}
-              title={prefetchBlockedByPreprocessQueue ? 'init 队列只展示预处理状态，切回随机/顺序/todo 后再预生成' : prefetchTitle}
+              data-tooltip={prefetchBlockedByPreprocessQueue ? 'init 队列只展示预处理状态，切回随机/顺序/todo 后再预生成' : prefetchTitle}
               onClick={() => {
                 if (prefetchBlockedByPreprocessQueue) return;
                 onPrefetchVisible?.();
@@ -425,7 +427,7 @@ export default function VocabularyQueueDock({
                     type="button"
                     className="vocab-queue-item-main"
                     onClick={() => handleSelectQueueEntry(item)}
-                    title={`${item.category} / ${item.file}`}
+                    data-tooltip={`${item.category} / ${item.file}`}
                   >
                     <span className="vocab-queue-word">{item.word || item.file}</span>
                     <span className="vocab-queue-meta">
@@ -439,7 +441,7 @@ export default function VocabularyQueueDock({
                       className="vocab-queue-icon-button"
                       onClick={() => onRemoveTodo(item.id)}
                       aria-label="从处理队列移除"
-                      title="移除"
+                      data-tooltip="移除"
                     >
                       <UiIcon name="trash" size={14} />
                     </button>
@@ -450,7 +452,7 @@ export default function VocabularyQueueDock({
                       onClick={() => onAddToTodo([item])}
                       disabled={inTodo}
                       aria-label={inTodo ? '已在处理队列' : '加入处理队列'}
-                      title={inTodo ? '已在处理队列' : '加入处理队列'}
+                      data-tooltip={inTodo ? '已在处理队列' : '加入处理队列'}
                     >
                       <UiIcon name={inTodo ? 'check' : 'plus'} size={14} />
                     </button>

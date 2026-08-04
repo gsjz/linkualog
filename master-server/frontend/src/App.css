@@ -8851,6 +8851,22 @@
   scrollbar-width: thin;
 }
 
+.vocab-queue-dock.has-expanded-settings {
+  grid-template-rows: auto auto auto auto auto auto;
+  align-content: start;
+}
+
+.vocab-queue-dock.has-expanded-settings .vocab-queue-control-panel {
+  max-height: none;
+  overflow: visible;
+}
+
+.vocab-queue-dock.has-expanded-settings .vocab-queue-list {
+  min-height: 0;
+  overflow: visible;
+  padding-right: 0;
+}
+
 .vocab-queue-control-button {
   display: inline-flex;
   align-items: center;
@@ -8910,25 +8926,74 @@
 .vocab-queue-dock-review-tools .vocab-review-recommend-panel.is-queue-inline {
   position: static !important;
   display: grid !important;
-  gap: 10px !important;
+  gap: 0 !important;
   width: 100% !important;
-  max-height: min(46vh, 420px) !important;
+  max-height: none !important;
   min-height: 0;
-  padding: 10px !important;
+  padding: 0 !important;
   border: 1px solid rgba(148, 163, 184, 0.42) !important;
   border-radius: 8px !important;
   background: #fff !important;
   box-shadow: none !important;
-  overflow: auto !important;
+  overflow: visible !important;
   pointer-events: auto !important;
+}
+
+.vocab-queue-dock-review-tools .vocab-recommend-settings-stack {
+  display: grid;
+  gap: 0;
+  min-width: 0;
+}
+
+.vocab-queue-dock-review-tools .vocab-recommend-settings-section {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 10px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.24);
+}
+
+.vocab-queue-dock-review-tools .vocab-recommend-settings-section:last-of-type {
+  border-bottom: 0;
+}
+
+.vocab-queue-dock-review-tools .vocab-recommend-settings-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.vocab-queue-dock-review-tools .vocab-recommend-settings-section-head strong {
+  color: var(--ms-text);
+  font-size: 12px;
+  font-weight: 820;
+  line-height: 1.15;
+}
+
+.vocab-queue-dock-review-tools .vocab-recommend-settings-section-head span {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ms-text-muted);
+  font-size: 11px;
+  font-weight: 720;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .vocab-queue-dock-review-tools .vocab-review-recommend-panel.is-queue-inline .vocab-queue-limit-card {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 
 .vocab-queue-dock-review-tools .vocab-review-recommend-panel.is-queue-inline .vocab-recommend-hybrid-card {
-  padding: 9px;
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 
 .vocab-queue-dock-review-tools .vocab-review-recommend-panel.is-queue-inline .vocab-recommend-preset-grid {
@@ -8942,6 +9007,8 @@
 
 .vocab-queue-dock-review-tools .vocab-review-recommend-panel.is-queue-inline .vocab-recommend-panel-actions {
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding: 10px;
+  border-top: 1px solid rgba(148, 163, 184, 0.24);
 }
 
 .vocab-queue-dock-review-tools .vocab-review-recommend-panel.is-queue-inline .vocab-recommend-panel-actions > button {
@@ -9441,7 +9508,7 @@
 .vocab-editor-layer {
   position: fixed;
   inset: 0;
-  z-index: 1200;
+  z-index: 100100;
 }
 
 .vocab-editor-backdrop {
@@ -9469,6 +9536,14 @@
   background: #f7f7f7;
   overflow: hidden;
   box-shadow: 0 18px 48px rgba(17, 17, 17, 0.16);
+}
+
+@media (max-width: 1180px) {
+  .vocab-editor-panel {
+    top: max(58px, calc(10px + env(safe-area-inset-top)));
+    bottom: max(10px, env(safe-area-inset-bottom));
+    width: min(920px, calc(100vw - 20px));
+  }
 }
 
 .vocab-editor-panel-body {
@@ -9527,12 +9602,35 @@
 
 .vocab-editor-panel-action-host {
   display: flex;
+  flex: 1 1 auto;
   justify-content: flex-end;
   min-width: 0;
 }
 
 .vocab-editor-panel-action-host:empty {
   display: none;
+}
+
+.vocab-editor-panel-action-host .connection-draft-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: nowrap;
+  gap: 6px;
+  min-width: 0;
+}
+
+.vocab-editor-panel-action-host .connection-draft-actions button {
+  min-height: 32px;
+  padding: 0 10px;
+  border-radius: 7px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.vocab-editor-panel-close {
+  flex: 0 0 auto;
+  box-shadow: none;
 }
 
 .vocab-workspace-panel {
@@ -11321,8 +11419,9 @@
   }
 
   .vocab-queue-dock.is-mobile-sheet .vocab-review-recommend-panel.is-queue-inline {
-    max-height: min(40vh, 360px) !important;
+    max-height: none !important;
     padding: 8px !important;
+    overflow: visible !important;
   }
 
   .vocab-queue-dock.is-mobile-sheet .vocab-review-recommend-panel.is-queue-inline .vocab-recommend-preset-grid {
@@ -11394,6 +11493,12 @@
     min-height: 0 !important;
     overflow: hidden !important;
     touch-action: auto !important;
+  }
+
+  .vocab-queue-dock.is-desktop-fixed.has-expanded-settings {
+    grid-template-rows: auto auto auto auto auto auto !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
   }
 
   .vocab-queue-dock.is-desktop-fixed .vocab-queue-dock-head {
@@ -11491,6 +11596,23 @@
 
   .vocab-queue-dock.is-mobile-sheet.is-expanded .vocab-queue-list {
     min-height: 74px;
+  }
+
+  .vocab-queue-dock.is-mobile-sheet.is-expanded.has-expanded-settings {
+    grid-template-rows: auto auto auto auto auto auto !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+  }
+
+  .vocab-queue-dock.is-mobile-sheet.has-expanded-settings .vocab-queue-control-panel {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .vocab-queue-dock.is-mobile-sheet.has-expanded-settings .vocab-queue-list {
+    min-height: 0 !important;
+    overflow: visible !important;
+    padding-right: 0 !important;
   }
 
   .vocab-queue-sheet-backdrop {

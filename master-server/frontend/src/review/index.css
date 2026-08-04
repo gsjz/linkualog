@@ -2144,10 +2144,21 @@
   min-width: 0;
 }
 
+.connection-draft-actions.is-header-actions {
+  flex-wrap: nowrap;
+  gap: 6px;
+}
+
 .connection-draft-actions button {
   min-height: 34px;
   padding: 0 12px;
   white-space: nowrap;
+}
+
+.connection-draft-actions.is-header-actions button {
+  min-height: 32px;
+  padding: 0 10px;
+  font-size: 12px;
 }
 
 .editor-footer .connection-draft-actions {
