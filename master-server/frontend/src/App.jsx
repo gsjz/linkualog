@@ -4,6 +4,7 @@ import ConfigForm from './components/ConfigForm';
 import VocabularyWorkspace from './components/VocabularyWorkspace';
 import VisualizationDashboard from './components/VisualizationDashboard';
 import ExperimentalFeatures from './components/ExperimentalFeatures';
+import HoverTooltip from './components/HoverTooltip';
 import UiIcon from './components/UiIcon';
 import { getVocabularyCategories } from './api/client';
 import './App.css';
@@ -482,7 +483,7 @@ function App() {
                 className={`master-icon-button master-fullscreen-button${isFullscreen ? ' is-active' : ''}`}
                 aria-label={fullscreenAriaLabel}
                 aria-pressed={isFullscreen}
-                title={fullscreenAriaLabel}
+                data-tooltip={fullscreenAriaLabel}
               >
                 <UiIcon name={fullscreenIconName} size={18} />
               </button>
@@ -557,7 +558,7 @@ function App() {
               aria-pressed={isFullscreen}
               aria-label={fullscreenAriaLabel}
               className={`master-secondary-button master-fullscreen-button${isFullscreen ? ' is-active' : ''}`}
-              title={fullscreenAriaLabel}
+              data-tooltip={fullscreenAriaLabel}
             >
               <UiIcon name={fullscreenIconName} size={17} />
               <span>{fullscreenLabel}</span>
@@ -640,6 +641,7 @@ function App() {
         </div>
       </main>
 
+      <HoverTooltip />
     </div>
   );
 }

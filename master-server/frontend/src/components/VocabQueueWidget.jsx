@@ -326,7 +326,7 @@ export default function VocabQueueWidget({
            <span>词库</span>
            {pendingCount > 0 ? <span className="queue-fab-count">{pendingCount}</span> : null}
          </div>
-         <label className="queue-category-picker" style={{ minWidth: 0, display: 'inline-flex', alignItems: 'center', gap: '6px' }} title="加词保存目录">
+         <label className="queue-category-picker" style={{ minWidth: 0, display: 'inline-flex', alignItems: 'center', gap: '6px' }} data-tooltip="加词保存目录">
            <UiIcon name="folder" size={15} />
            <select
              className="queue-category-select"
@@ -435,7 +435,7 @@ export default function VocabQueueWidget({
                 onClick={() => setMContextLocked((locked) => !locked)}
                 aria-label={mContextLocked ? '取消锁定语境' : '锁定语境'}
                 aria-pressed={mContextLocked}
-                title={mContextLocked ? '取消锁定语境' : '锁定语境'}
+                data-tooltip={mContextLocked ? '取消锁定语境' : '锁定语境'}
               >
                 <UiIcon name={mContextLocked ? 'lock' : 'unlock'} size={13} />
               </button>
@@ -451,7 +451,7 @@ export default function VocabQueueWidget({
                 onClick={() => setMSourceLocked((locked) => !locked)}
                 aria-label={mSourceLocked ? '取消锁定来源' : '锁定来源'}
                 aria-pressed={mSourceLocked}
-                title={mSourceLocked ? '取消锁定来源' : '锁定来源'}
+                data-tooltip={mSourceLocked ? '取消锁定来源' : '锁定来源'}
               >
                 <UiIcon name={mSourceLocked ? 'lock' : 'unlock'} size={13} />
               </button>
@@ -495,7 +495,7 @@ export default function VocabQueueWidget({
         className="queue-fab"
         onMouseDown={handleMouseDown}
         onClick={handleButtonClick}
-        title="按住即可拖动面板位置"
+        data-tooltip="按住即可拖动面板位置"
         style={{ padding: '12px 20px', background: '#111111', color: '#fff', border: 'none', borderRadius: '6px', boxShadow: 'none', cursor: isDragging ? 'grabbing' : 'grab', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600', userSelect: 'none' }}
       >
         <UiIcon name="book" size={16} />

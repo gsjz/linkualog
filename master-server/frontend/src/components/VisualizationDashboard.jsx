@@ -252,8 +252,8 @@ function EntryList({ title, entries = [], emptyText, onOpenVocabularyEntry = nul
                       fileKey: entry.file,
                     })}
                     disabled={!canOpen}
-                    title={`跳转到 ${entry.category} / ${entry.file}`}
                     aria-label={`跳转到 ${entry.word}`}
+                    data-tooltip={`跳转到 ${entry.category} / ${entry.file}`}
                   >
                     <UiIcon name="external-link" size={15} />
                   </button>
@@ -1666,8 +1666,8 @@ export function RelationGraphPanel({
                 className="visual-graph-refresh-button"
                 onClick={onRefreshGraph}
                 disabled={graphRefreshing}
-                title="随机换一批关系块"
                 aria-label="随机换一批关系块"
+                data-tooltip="随机换一批关系块"
               >
                 <UiIcon name="shuffle" size={15} />
                 <span>{graphRefreshing ? '换取中' : '换一批'}</span>
@@ -1709,8 +1709,8 @@ export function RelationGraphPanel({
                 className="visual-graph-refresh-button"
                 onClick={onRefreshGraph}
                 disabled={graphRefreshing}
-                title="随机换一批关系块"
                 aria-label="随机换一批关系块"
+                data-tooltip="随机换一批关系块"
               >
                 <UiIcon name="shuffle" size={15} />
                 <span>{graphRefreshing ? '换取中' : '换一批'}</span>
@@ -1801,8 +1801,8 @@ export function RelationGraphPanel({
               className="visual-graph-refresh-button"
               onClick={onRefreshGraph}
               disabled={graphRefreshing}
-              title="随机换一批关系块"
               aria-label="随机换一批关系块"
+              data-tooltip="随机换一批关系块"
             >
               <UiIcon name="shuffle" size={15} />
               <span>{graphRefreshing ? '换取中' : '换一批'}</span>
@@ -1909,8 +1909,8 @@ export function RelationGraphPanel({
               className="visual-graph-zoom-button"
               onClick={() => handleViewportZoomButton(1 / GRAPH_ZOOM_STEP)}
               disabled={viewportTransform.scale <= GRAPH_MIN_ZOOM + 0.01}
-              title="缩小"
               aria-label="缩小关系图"
+              data-tooltip="缩小"
             >
               <UiIcon name="zoom-out" size={14} />
             </button>
@@ -1918,8 +1918,8 @@ export function RelationGraphPanel({
               type="button"
               className="visual-graph-zoom-reset"
               onClick={resetViewportTransform}
-              title="重置缩放"
               aria-label={`重置关系图缩放，当前 ${zoomLevel}`}
+              data-tooltip="重置缩放"
             >
               <UiIcon name="refresh" size={13} />
               <span>{zoomLevel}</span>
@@ -1929,8 +1929,8 @@ export function RelationGraphPanel({
               className={`visual-graph-zoom-button visual-graph-center-button${graphCenteredPulse ? ' is-pulsing' : ''}`}
               onClick={centerGraphOnCentroid}
               disabled={!layoutNodes.length}
-              title="将关系块重心移到画布中心"
               aria-label="将关系块重心移到画布中心"
+              data-tooltip="将关系块重心移到画布中心"
             >
               <UiIcon name="center" size={14} />
             </button>
@@ -1939,8 +1939,8 @@ export function RelationGraphPanel({
               className="visual-graph-zoom-button"
               onClick={() => handleViewportZoomButton(GRAPH_ZOOM_STEP)}
               disabled={viewportTransform.scale >= GRAPH_MAX_ZOOM - 0.01}
-              title="放大"
               aria-label="放大关系图"
+              data-tooltip="放大"
             >
               <UiIcon name="zoom-in" size={14} />
             </button>

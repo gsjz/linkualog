@@ -427,6 +427,31 @@
   background: var(--ms-surface-muted);
 }
 
+.app-hover-tooltip {
+  position: fixed;
+  left: var(--tooltip-x);
+  top: var(--tooltip-y);
+  z-index: 200000;
+  max-width: var(--tooltip-max-width);
+  padding: 6px 8px;
+  border: 1px solid rgba(15, 23, 42, 0.16);
+  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.94);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 720;
+  line-height: 1.35;
+  pointer-events: none;
+  text-align: center;
+  transform: translate(-50%, -100%);
+  white-space: normal;
+  box-shadow: 0 10px 24px rgba(17, 17, 17, 0.18);
+}
+
+.app-hover-tooltip.is-bottom {
+  transform: translate(-50%, 0);
+}
+
 .experiment-preset strong {
   min-width: 0;
   overflow: hidden;

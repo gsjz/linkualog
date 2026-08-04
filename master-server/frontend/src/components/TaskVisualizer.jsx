@@ -851,7 +851,7 @@ const ImageOverlayPreview = ({
           {activeSourceRegion && (
             <div className="task-image-region-layer" style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
               <div
-                title="局部识别来源区域"
+                data-tooltip="局部识别来源区域"
                 style={{
                   position: 'absolute',
                   left: `${activeSourceRegion.left * 100}%`,
@@ -878,7 +878,7 @@ const ImageOverlayPreview = ({
                 return (
                   <div
                     key={mark.id}
-                    title={mark.context || mark.word}
+                    data-tooltip={mark.context || mark.word}
                     onClick={(e) => {
                       e.stopPropagation();
                       if (onSelectMark) onSelectMark(mark.id, true);
@@ -926,7 +926,7 @@ const ImageOverlayPreview = ({
           {drawRegion && (
             <div className="task-image-draft-region-layer" style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
               <div
-                title={regionSelectionMode ? '正在标记局部识别区域' : '待识别局部区域'}
+                data-tooltip={regionSelectionMode ? '正在标记局部识别区域' : '待识别局部区域'}
                 style={{
                   position: 'absolute',
                   left: `${drawRegion.left * 100}%`,
@@ -967,7 +967,7 @@ const ImageOverlayPreview = ({
                 className={`task-image-mark-chip${isSelected ? ' is-selected' : ''}`}
                 onClick={() => onSelectMark && onSelectMark(mark.id, true)}
                 style={{ maxWidth: '100%', border: '1px solid', borderColor: isSelected ? 'var(--ms-text)' : 'var(--ms-border)', background: isSelected ? 'var(--ms-surface-muted)' : 'var(--ms-surface-muted)', color: isSelected ? 'var(--ms-text)' : 'var(--ms-text)', borderRadius: '4px', padding: '3px 10px', fontSize: '12px', cursor: 'pointer', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}
-                title={mark.context || mark.word}
+                data-tooltip={mark.context || mark.word}
               >
                 {mark.word}
               </button>
@@ -1265,7 +1265,7 @@ const SimilarVocabularyMatches = ({
           {matches.map((item, index) => (
             <div
               key={`${item.word}-${index}`}
-              title={item.exact ? `${item.word}（完全匹配）` : `${item.word}（相似度 ${Math.round(item.score * 100)}%）`}
+              data-tooltip={item.exact ? `${item.word}（完全匹配）` : `${item.word}（相似度 ${Math.round(item.score * 100)}%）`}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -1332,8 +1332,8 @@ const SimilarVocabularyMatches = ({
                   ));
                 }}
                 disabled={!onOpenVocabularyEntry}
-                title={`查看 ${item.word} 的操作卡片`}
                 aria-label={`查看 ${item.word} 的操作卡片`}
+                data-tooltip={`查看 ${item.word} 的操作卡片`}
                 style={{
                   width: '28px',
                   height: '28px',
@@ -1558,7 +1558,7 @@ const ExperimentalMarkView = ({
                       if (onAddVocabularyCategoryChange) onAddVocabularyCategoryChange(e.target.value);
                     }}
                     aria-label="加词保存目录"
-                    title="加词保存目录"
+                    data-tooltip="加词保存目录"
                     style={{ height: '28px', maxWidth: '180px', padding: '0 8px', border: '1px solid var(--ms-border)', borderRadius: '4px', background: '#fff', color: normalizedAddVocabularyCategory ? 'var(--ms-text)' : 'var(--ms-text-faint)', fontSize: '12px' }}
                   >
                     <option value="">选择目录</option>
@@ -2445,7 +2445,7 @@ export default function TaskVisualizer({
       disabled={isTaskDetailPending}
       aria-label={`打开加词工具，保存目录 ${addVocabularyCategoryLabel}`}
       aria-expanded={vocabQueueOpen}
-      title={`加词 · ${addVocabularyCategoryLabel}`}
+      data-tooltip={`加词 · ${addVocabularyCategoryLabel}`}
     >
       <UiIcon name="book" size={17} />
       {queueBadgeCount > 0 ? <span className="task-icon-badge">{queueBadgeCount}</span> : null}
@@ -2619,7 +2619,7 @@ export default function TaskVisualizer({
                   className="task-secondary-button task-name-recommend-button task-icon-text-button"
                   onClick={handleRecommendTaskName}
                   disabled={isTaskDetailPending || isRecommendingExistingTaskName || isSavingTaskName}
-                  title="根据当前任务名和已有词条来源推荐任务名"
+                  data-tooltip="根据当前任务名和已有词条来源推荐任务名"
                 >
                   <UiIcon name="star" size={15} />
                   <span>{isRecommendingExistingTaskName ? '推荐中' : '推荐'}</span>
@@ -2716,7 +2716,7 @@ export default function TaskVisualizer({
                         <span className="task-status-chip task-status-chip-state" style={{ color: pageTone.color, fontWeight: 600 }}>状态: {item.status === 'completed' ? '解析成功' : item.status === 'failed' ? '解析失败' : '处理中...'}</span>
                         {pageMarks.length > 0 && <span className="task-status-chip" style={{ color: 'var(--ms-text)', background: 'var(--ms-surface-muted)', padding: '2px 8px', borderRadius: '4px' }}>坐标 {pageMarks.length} 个</span>}
                         {savingPages[idx] && <span className="task-status-chip task-status-chip-success" style={{ color: 'var(--ms-success)', background: 'var(--ms-success-soft)', padding: '2px 8px', borderRadius: '4px' }}>保存中…</span>}
-                        {item.error && <span className="task-status-chip task-status-chip-error" style={{ color: 'var(--ms-danger)', background: 'var(--ms-danger-soft)', padding: '2px 8px', borderRadius: '4px', maxWidth: '320px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={item.error}>原因: {item.error}</span>}
+                        {item.error && <span className="task-status-chip task-status-chip-error" style={{ color: 'var(--ms-danger)', background: 'var(--ms-danger-soft)', padding: '2px 8px', borderRadius: '4px', maxWidth: '320px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} data-tooltip={item.error}>原因: {item.error}</span>}
                       </div>
                       <div className="task-page-action-row" style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                         <button
@@ -2724,7 +2724,7 @@ export default function TaskVisualizer({
                           className={`task-secondary-button task-icon-text-button${regionModeActive ? ' is-active' : ''}`}
                           onClick={() => handleToggleRegionMode(idx)}
                           disabled={isTaskDetailPending || item.status === 'processing' || isRecognizingRegion}
-                          title="在左侧图片上拖拽矩形，专门识别该局部区域"
+                          data-tooltip="在左侧图片上拖拽矩形，专门识别该局部区域"
                           style={{ padding: '4px 10px', border: '1px solid #e4e4e7', borderRadius: '4px', background: regionModeActive ? 'var(--ms-surface-muted)' : '#fff', fontSize: '12px', cursor: (isTaskDetailPending || item.status === 'processing' || isRecognizingRegion) ? 'not-allowed' : 'pointer', color: '#09090b', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                         >
                           <UiIcon name="target" size={14} />
@@ -2735,7 +2735,7 @@ export default function TaskVisualizer({
                           className="task-secondary-button"
                           onClick={() => handleRecognizeRegion(idx)}
                           disabled={isTaskDetailPending || !canRecognizeRegion || isRecognizingRegion}
-                          title={activeRegion ? `识别选区 (${activeRegion.left.toFixed(3)}, ${activeRegion.top.toFixed(3)})` : '先拖出局部识别矩形'}
+                          data-tooltip={activeRegion ? `识别选区 (${activeRegion.left.toFixed(3)}, ${activeRegion.top.toFixed(3)})` : '先拖出局部识别矩形'}
                           style={{ padding: '4px 10px', border: '1px solid #e4e4e7', borderRadius: '4px', background: '#fff', fontSize: '12px', cursor: (isTaskDetailPending || !canRecognizeRegion || isRecognizingRegion) ? 'not-allowed' : 'pointer', color: (isTaskDetailPending || !canRecognizeRegion || isRecognizingRegion) ? '#a1a1aa' : '#09090b' }}
                         >
                           {isRecognizingRegion ? '识别中...' : '识别选区'}
@@ -2910,8 +2910,8 @@ export default function TaskVisualizer({
           className="task-sidebar-toggle"
           type="button"
           onClick={() => setIsRightPanelCollapsed((prev) => !prev)}
-          title={isRightPanelCollapsed ? '展开侧栏' : '收起侧栏'}
           aria-label={isRightPanelCollapsed ? '展开侧栏' : '收起侧栏'}
+          data-tooltip={isRightPanelCollapsed ? '展开侧栏' : '收起侧栏'}
           style={{ width: '30px', minWidth: '30px', flexShrink: 0, border: 'none', borderLeft: '1px solid #e4e4e7', background: '#f8fafc', cursor: 'pointer', color: '#52525b', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '10px 4px' }}
         >
           <span style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
