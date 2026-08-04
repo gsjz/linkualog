@@ -353,10 +353,12 @@ export const submitReviewScore = async (category, filename, score, reviewDate) =
   return handleResponse(res);
 };
 
-export const fetchRecommendedWord = async (category = '', excludeKeys = [], limit = 5, preferences = {}, markFilter = 'all') => {
+export const fetchRecommendedWord = async (category = '', excludeKeys = [], limit = 5, preferences = {}, markFilter = 'all', options = {}) => {
   const normalizedMarkFilter = ['marked', 'unmarked', 'needs_processing'].includes(String(markFilter || '').trim())
     ? String(markFilter || '').trim()
     : 'all';
+  const randomize = Boolean(options?.randomize);
+  const seed = String(options?.seed || '').trim();
   const res = await fetch(`${BACKEND_URL}/api/review/recommend`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -365,6 +367,7 @@ export const fetchRecommendedWord = async (category = '', excludeKeys = [], limi
       exclude_keys: Array.isArray(excludeKeys) ? excludeKeys : [],
       limit,
       mark_filter: normalizedMarkFilter,
+      ...(randomize ? { randomize: true, seed } : {}),
       ...(preferences || {}),
     }),
   });

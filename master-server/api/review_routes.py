@@ -1,4 +1,5 @@
 import logging
+import math
 import os
 import re
 from collections import Counter, defaultdict, deque
@@ -212,6 +213,8 @@ class ReviewRecommendRequest(BaseModel):
     exclude_keys: list[str] = []
     limit: int = 5
     mark_filter: str | None = None
+    randomize: bool = False
+    seed: str | None = None
     due_weight: float | None = None
     created_weight: float | None = None
     score_weight: float | None = None
@@ -1113,6 +1116,30 @@ def _build_review_candidate_score(advice: dict, created_at: str, today: date, pr
             "has_review": last_score is not None,
         },
     }
+
+
+def _weighted_recommendation_sample(candidates: list[dict], limit: int, seed: str | None = None) -> list[dict]:
+    if limit <= 0 or not candidates:
+        return []
+
+    rng = Random(str(seed or os.urandom(8).hex()))
+    weights = [max(0.0, float(item.get("priority_score", 0.0))) for item in candidates]
+    max_weight = max(weights, default=0.0)
+    if max_weight <= 0:
+        shuffled = list(candidates)
+        rng.shuffle(shuffled)
+        return shuffled[:limit]
+
+    floor_weight = max(max_weight * 0.01, 0.001)
+    ranked = []
+    for index, item in enumerate(candidates):
+        weight = max(float(item.get("priority_score", 0.0)), floor_weight)
+        uniform = max(rng.random(), 1e-12)
+        random_rank = -math.log(uniform) / weight
+        ranked.append((random_rank, index, item))
+
+    ranked.sort(key=lambda record: (record[0], record[1]))
+    return [item for _, _, item in ranked[:limit]]
 
 
 def _build_recommendation_preferences_from_values(
@@ -5443,7 +5470,7 @@ def review_suggest(req: ReviewSuggestRequest):
 @router.post("/api/review/recommend")
 def review_recommend(req: ReviewRecommendRequest):
     try:
-        limit = min(max(int(req.limit or 5), 1), 20)
+        limit = min(max(int(req.limit or 5), 1), 50)
         preferences = _normalize_recommendation_preferences(req)
         mark_filter = _normalize_recommendation_mark_filter(req.mark_filter)
         excluded = {str(item or "").strip() for item in (req.exclude_keys or []) if str(item or "").strip()}
@@ -5525,7 +5552,11 @@ def review_recommend(req: ReviewRecommendRequest):
                 item.get("file", ""),
             )
         )
-        ranked = candidates[:limit]
+        ranked = (
+            _weighted_recommendation_sample(candidates, limit, req.seed)
+            if req.randomize
+            else candidates[:limit]
+        )
 
         return {
             "status": "success",
@@ -5539,6 +5570,8 @@ def review_recommend(req: ReviewRecommendRequest):
                 "candidate_count": len(candidates),
                 "excluded_count": len(excluded),
                 "mark_filter": mark_filter,
+                "randomize": bool(req.randomize),
+                "seed": str(req.seed or "") if req.randomize else "",
                 "skipped": skipped,
                 "generated_at": format_review_date(today),
                 "preferences": preferences,
