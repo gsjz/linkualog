@@ -64,6 +64,7 @@ const TIMELINE_RANGE_OPTIONS = [
   { value: 'workday', label: '工作时段', start_minutes: 7 * 60 },
   { value: 'fullday', label: '全天', start_minutes: 0 },
 ]
+const TEXT_INPUT_TYPES = new Set(['', 'email', 'password', 'search', 'tel', 'text', 'url'])
 
 const monthDayFormatter = new Intl.DateTimeFormat('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' })
 const monthLabelFormatter = new Intl.DateTimeFormat('zh-CN', { year: 'numeric', month: 'long' })
@@ -107,6 +108,28 @@ const resolveWrappedDurationMinutes = (startMinutes, endMinutes, fallback = 60) 
   if (start === end) return Math.max(1, Math.min(Number(fallback) || 60, DAY_MINUTES - 1))
   if (end > start) return end - start
   return DAY_MINUTES - start + end
+}
+
+const keepTextInputRightEdgeVisible = (target) => {
+  if (!(target instanceof HTMLInputElement)) return
+  const type = String(target.type || '').toLowerCase()
+  if (!TEXT_INPUT_TYPES.has(type)) return
+
+  let caretAtEnd = false
+  try {
+    const valueLength = String(target.value || '').length
+    caretAtEnd = target.selectionStart === valueLength && target.selectionEnd === valueLength
+  } catch {
+    caretAtEnd = false
+  }
+  if (!caretAtEnd) return
+
+  const syncScroll = () => {
+    if (!document.contains(target)) return
+    target.scrollLeft = target.scrollWidth
+  }
+  syncScroll()
+  window.requestAnimationFrame?.(syncScroll)
 }
 
 const isInteractiveTextEntryTarget = (target) => {
@@ -1922,7 +1945,10 @@ function App() {
   const isCardDetailVisible = Boolean(selectedCard && isCardDetailOpen)
 
   return (
-    <div className={`knt-app${isEmbedded ? ' is-embedded' : ''}`}>
+    <div
+      className={`knt-app${isEmbedded ? ' is-embedded' : ''}`}
+      onInputCapture={(event) => keepTextInputRightEdgeVisible(event.target)}
+    >
       {!isEmbedded ? (
         <header className="knt-topbar">
           <div className="knt-topbar-left">

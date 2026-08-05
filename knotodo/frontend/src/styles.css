@@ -478,6 +478,7 @@ button {
   display: grid;
   gap: 6px;
   width: 100%;
+  min-width: 0;
 }
 
 .knt-card-list {
@@ -597,6 +598,7 @@ button {
 .knt-lane-new-card {
   display: grid;
   gap: 6px;
+  min-width: 0;
 }
 
 .tone-teal {
@@ -1308,6 +1310,16 @@ body.knt-resizing-timeline * {
 .knt-checklist-add {
   display: flex;
   gap: 6px;
+  min-width: 0;
+}
+
+.knt-checklist-add input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.knt-checklist-add .knt-btn {
+  flex: 0 0 auto;
 }
 
 .knt-checklist-items {
@@ -1487,8 +1499,8 @@ body.knt-resizing-timeline * {
   }
 
   .knt-lane--new {
-    flex-basis: 136px;
-    max-width: 136px;
+    flex-basis: 180px;
+    max-width: 180px;
   }
 
   .knt-lane--new input,
@@ -1505,8 +1517,8 @@ body.knt-resizing-timeline * {
   }
 
   .knt-lane--new {
-    flex-basis: 118px;
-    max-width: 118px;
+    flex-basis: 168px;
+    max-width: 168px;
   }
 
   .knt-lane--new input,
