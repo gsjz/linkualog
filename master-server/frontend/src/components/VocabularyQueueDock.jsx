@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import UiIcon from './UiIcon.jsx';
 import { QUEUE_LABELS } from '../hooks/useVocabularyQueues.js';
@@ -120,6 +120,13 @@ export default function VocabularyQueueDock({
   onPrefetchVisible,
 }) {
   const dockRef = useRef(null);
+  const queueListRef = useRef(null);
+  const queueScrollTopRef = useRef({});
+  const previousActiveQueueRef = useRef(activeQueue);
+  const previousQueueListVisibleRef = useRef(false);
+  const lastCurrentEntryIdRef = useRef(null);
+  const pendingRevealEntryIdRef = useRef('');
+  const revealNextCurrentEntryRef = useRef(false);
   const [scoreAutoNext, setScoreAutoNext] = useState(() => {
     if (typeof window === 'undefined') return true;
     return window.localStorage.getItem(SCORE_AUTO_NEXT_STORAGE_KEY) !== 'false';
@@ -147,17 +154,60 @@ export default function VocabularyQueueDock({
   const scoreStatusEmoji = actions.savingScore ? '⏳' : latestReviewEmoji(actions);
   const resolvedMobileSheet = mobileSheet === 'expanded' ? 'expanded' : 'compact';
   const mobileExpanded = isMobile && resolvedMobileSheet === 'expanded';
+  const queueListVisible = !isMobile || mobileExpanded;
 
   useEffect(() => {
     if (collapsed) onCollapsedChange?.(false);
   }, [collapsed, onCollapsedChange]);
 
+  const rememberQueueScroll = useCallback(() => {
+    const node = queueListRef.current;
+    if (!node) return;
+    queueScrollTopRef.current[activeQueue] = node.scrollTop;
+  }, [activeQueue]);
+
+  const restoreQueueScroll = useCallback(() => {
+    const node = queueListRef.current;
+    if (!node) return;
+    const savedTop = Number(queueScrollTopRef.current[activeQueue] || 0);
+    const maxTop = Math.max(0, node.scrollHeight - node.clientHeight);
+    node.scrollTop = Math.max(0, Math.min(savedTop, maxTop));
+  }, [activeQueue]);
+
+  useLayoutEffect(() => {
+    const queueChanged = previousActiveQueueRef.current !== activeQueue;
+    const becameVisible = !previousQueueListVisibleRef.current && queueListVisible;
+    previousActiveQueueRef.current = activeQueue;
+    previousQueueListVisibleRef.current = queueListVisible;
+    if (!queueListVisible || (!queueChanged && !becameVisible)) return undefined;
+
+    restoreQueueScroll();
+    const frame = typeof window !== 'undefined' ? window.requestAnimationFrame?.(restoreQueueScroll) : null;
+    return () => {
+      if (frame) window.cancelAnimationFrame?.(frame);
+    };
+  }, [activeQueue, queueListVisible, restoreQueueScroll]);
+
   useEffect(() => {
-    if ((isMobile && !mobileExpanded) || !activeQueueHasCurrentEntry || !currentEntryId) return;
-    const node = dockRef.current;
+    if (lastCurrentEntryIdRef.current === null) {
+      lastCurrentEntryIdRef.current = currentEntryId || '';
+      return;
+    }
+    if (!currentEntryId) {
+      lastCurrentEntryIdRef.current = '';
+      return;
+    }
+    if (lastCurrentEntryIdRef.current === currentEntryId) return;
+    lastCurrentEntryIdRef.current = currentEntryId;
+    const shouldReveal = revealNextCurrentEntryRef.current || pendingRevealEntryIdRef.current === currentEntryId;
+    revealNextCurrentEntryRef.current = false;
+    pendingRevealEntryIdRef.current = '';
+    if (!shouldReveal || !queueListVisible || !activeQueueHasCurrentEntry) return;
+    const node = queueListRef.current;
     const itemNode = node?.querySelector?.(`[data-queue-entry-id="${escapeSelectorValue(currentEntryId)}"]`);
     itemNode?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
-  }, [activeQueue, activeQueueHasCurrentEntry, currentEntryId, currentQueue.length, isMobile, mobileExpanded]);
+    queueScrollTopRef.current[activeQueue] = node?.scrollTop || 0;
+  }, [activeQueue, activeQueueHasCurrentEntry, currentEntryId, queueListVisible]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -175,6 +225,7 @@ export default function VocabularyQueueDock({
   };
 
   const handleSelectQueueEntry = (item) => {
+    pendingRevealEntryIdRef.current = String(item?.id || '').trim();
     onSelectEntry?.(item);
     closeMobileSheet();
   };
@@ -185,6 +236,7 @@ export default function VocabularyQueueDock({
     const saved = await Promise.resolve(actions.onSubmitScore?.(score, { autoAdvance: false }));
     if (saved === false) return;
     if (scoreAutoNext && canNavigate) {
+      revealNextCurrentEntryRef.current = true;
       onNextEntry?.();
     }
   };
@@ -315,6 +367,9 @@ export default function VocabularyQueueDock({
                 type="button"
                 className="vocab-queue-current-action is-primary"
                 onClick={onNextEntry}
+                onPointerDown={() => {
+                  revealNextCurrentEntryRef.current = true;
+                }}
                 disabled={!canNavigate}
                 aria-label="下一个"
                 data-tooltip="下一个"
@@ -353,6 +408,7 @@ export default function VocabularyQueueDock({
                     type="button"
                     className={`vocab-queue-tab${active ? ' is-active' : ''}${studyMode === tab.key ? ' is-study-mode' : ''}${currentSource ? ' is-current-source' : ''}`}
                     onClick={() => {
+                      rememberQueueScroll();
                       onActiveQueueChange(tab.key);
                     }}
                     role="tab"
@@ -411,7 +467,12 @@ export default function VocabularyQueueDock({
             ) : null}
           </div>
 
-          <div className="vocab-queue-list" role="list">
+          <div
+            ref={queueListRef}
+            className="vocab-queue-list"
+            role="list"
+            onScroll={rememberQueueScroll}
+          >
             {currentQueue.length ? currentQueue.map((item, index) => {
               const activeCursor = activeQueue !== 'preprocess' && index === currentCursor;
               const currentEntry = activeQueueHasCurrentEntry && item.id === currentEntryId;
