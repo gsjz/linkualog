@@ -2,7 +2,7 @@ export const DEFAULTS = {
   theme_color: '#000000',
   done_color: '#e8f5e9',
   error_color: '#ffebee',
-  api_timeout: '15',
+  api_timeout: '60',
   api_url: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
   api_model: 'qwen3.5-flash',
   api_ctxSize: '2',

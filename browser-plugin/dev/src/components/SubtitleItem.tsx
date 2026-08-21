@@ -319,7 +319,7 @@ const SubtitleItem: React.FC<SubtitleItemProps> = ({ data, index, allSubs, isAct
     const apiModel = ConfigService.get('api_model').trim();
     const systemPrompt = ConfigService.get('api_prompt');
     const ctxSize = parseInt(ConfigService.get('api_ctxSize') as string, 10);
-    const timeout = parseInt(ConfigService.get('api_timeout') as string, 10) || 15;
+    const timeout = parseInt(ConfigService.get('api_timeout') as string, 10) || 60;
 
     if (!apiKey) {
       setIsError(true); 

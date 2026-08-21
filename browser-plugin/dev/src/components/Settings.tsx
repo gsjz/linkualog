@@ -276,7 +276,7 @@ const Settings: React.FC<SettingsProps> = ({ adapter, onClose }) => {
               </div>
               <div className="setting-col">
                 <label>API 超时时间 (秒)</label>
-                <input type="number" name="timeout" value={cfg.timeout} onChange={handleChange} min="5" max="120" />
+                <input type="number" name="timeout" value={cfg.timeout} onChange={handleChange} min="5" max="300" />
               </div>
               <div className="setting-col">
                 <label>提示词 (Prompt)</label>

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Linkual Log
 // @namespace    npm/vite-plugin-monkey
-// @version      0.0.46
+// @version      0.0.47
 // @author       Sergio Gao
 // @icon         https://vitejs.dev/logo.svg
 // @downloadURL  https://raw.githubusercontent.com/gsjz/linkualog/main/browser-plugin/user/linkualog.user.js
@@ -12718,7 +12718,7 @@
     theme_color: "#000000",
     done_color: "#e8f5e9",
     error_color: "#ffebee",
-    api_timeout: "15",
+    api_timeout: "60",
     api_url: "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
     api_model: "qwen3.5-flash",
     api_ctxSize: "2",
@@ -13205,7 +13205,7 @@
       const apiModel = ConfigService.get("api_model").trim();
       const systemPrompt = ConfigService.get("api_prompt");
       const ctxSize = parseInt(ConfigService.get("api_ctxSize"), 10);
-      const timeout = parseInt(ConfigService.get("api_timeout"), 10) || 15;
+      const timeout = parseInt(ConfigService.get("api_timeout"), 10) || 60;
       if (!apiKey) {
         setIsError(true);
         setAiContent("请在设置中填入 API Key！");
@@ -13611,7 +13611,7 @@ ${targetLanguage.trim() || "简体中文"}`;
           ] }),
           /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-col", children: [
             /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "API 超时时间 (秒)" }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("input", { type: "number", name: "timeout", value: cfg.timeout, onChange: handleChange, min: "5", max: "120" })
+            /* @__PURE__ */ jsxRuntimeExports.jsx("input", { type: "number", name: "timeout", value: cfg.timeout, onChange: handleChange, min: "5", max: "300" })
           ] }),
           /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-col", children: [
             /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "提示词 (Prompt)" }),
@@ -14892,7 +14892,7 @@ ${getTargetLanguage()}`;
       const apiKey = ConfigService.get("api_key").trim();
       const apiUrl = ConfigService.get("api_url").trim();
       const apiModel = ConfigService.get("api_model").trim();
-      const timeout = parseInt(ConfigService.get("api_timeout"), 10) || 30;
+      const timeout = parseInt(ConfigService.get("api_timeout"), 10) || 60;
       const targetLanguage = getTargetLanguage();
       const promptTemplate = ConfigService.get("web_translation_prompt").trim();
       if (!apiKey) {
@@ -14999,7 +14999,7 @@ ${paragraph.text}`,
       allRunIdRef.current = runId;
       setIsTranslatingAll(true);
       healthyResponsesRef.current = 0;
-      const timeout = parseInt(ConfigService.get("api_timeout"), 10) || 30;
+      const timeout = parseInt(ConfigService.get("api_timeout"), 10) || 60;
       const queue = paragraphs.filter((paragraph) => {
         var _a;
         return ((_a = translationsRef.current[paragraph.id]) == null ? void 0 : _a.status) !== "done";

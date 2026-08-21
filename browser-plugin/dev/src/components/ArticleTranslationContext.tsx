@@ -169,7 +169,7 @@ export const ArticleTranslationProvider: React.FC<React.PropsWithChildren<{ enab
     const apiKey = ConfigService.get('api_key').trim();
     const apiUrl = ConfigService.get('api_url').trim();
     const apiModel = ConfigService.get('api_model').trim();
-    const timeout = parseInt(ConfigService.get('api_timeout') as string, 10) || 30;
+    const timeout = parseInt(ConfigService.get('api_timeout') as string, 10) || 60;
     const targetLanguage = getTargetLanguage();
     const promptTemplate = ConfigService.get('web_translation_prompt').trim();
 
@@ -290,7 +290,7 @@ export const ArticleTranslationProvider: React.FC<React.PropsWithChildren<{ enab
     setIsTranslatingAll(true);
     healthyResponsesRef.current = 0;
 
-    const timeout = parseInt(ConfigService.get('api_timeout') as string, 10) || 30;
+    const timeout = parseInt(ConfigService.get('api_timeout') as string, 10) || 60;
     const queue = paragraphs.filter((paragraph) => translationsRef.current[paragraph.id]?.status !== 'done');
 
     await new Promise<void>((resolve) => {
