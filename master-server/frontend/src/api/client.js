@@ -337,8 +337,26 @@ export const searchVocabulary = async (query, options = {}) => {
   return handleResponse(res);
 };
 
-export const submitReviewScore = async (category, filename, score, reviewDate) => {
+export const extractVocabularyCandidates = async (text, options = {}) => {
+  const res = await fetch(`${BACKEND_URL}/api/vocabulary/context/extract`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      text,
+      prompt: options?.prompt || '',
+      previous_candidates: Array.isArray(options?.previousCandidates)
+        ? options.previousCandidates
+        : (Array.isArray(options?.previous_candidates) ? options.previous_candidates : []),
+      limit: options?.limit ?? 8,
+    }),
+  });
+  return handleResponse(res);
+};
+
+export const submitReviewScore = async (category, filename, score, reviewDate, options = {}) => {
   const finalCategory = requireVocabularyCategory(category);
+  const hasSuppressionScore = Object.prototype.hasOwnProperty.call(options || {}, 'suppressionScore')
+    || Object.prototype.hasOwnProperty.call(options || {}, 'suppression_score');
   const res = await fetch(`${BACKEND_URL}/api/review/suggest`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -347,6 +365,7 @@ export const submitReviewScore = async (category, filename, score, reviewDate) =
       filename,
       score,
       review_date: reviewDate,
+      ...(hasSuppressionScore ? { suppression_score: options.suppressionScore ?? options.suppression_score } : {}),
       auto_save: true,
     }),
   });

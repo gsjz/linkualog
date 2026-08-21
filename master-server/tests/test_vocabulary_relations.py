@@ -1,4 +1,5 @@
 import unittest
+import json
 from datetime import date, timedelta
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -7,7 +8,7 @@ from unittest.mock import patch
 import core.review_vocabulary as review_vocabulary
 from core import refine_cache
 from core.review_analysis_jobs import reset_analysis_jobs_for_tests, wait_for_analysis_job
-from core.vocabulary_redirects import reset_redirects_for_tests
+from core.vocabulary_redirects import prune_resolved_redirects, reset_redirects_for_tests
 from core.vocabulary_preprocess_queue import (
     active_preprocess_entry,
     get_preprocess_queue,
@@ -740,7 +741,7 @@ class VocabularyRelationTests(unittest.TestCase):
         self.assertEqual(miss["suggestions"], [])
         self.assertEqual(miss["meta"]["candidate_count"], 0)
 
-    def test_relation_suggest_redirects_merged_target_and_keeps_original_target(self):
+    def test_merge_cleans_redirect_and_stale_relation_target_cache_when_references_are_rewritten(self):
         write_vocab(
             self.root,
             "daily",
@@ -828,12 +829,11 @@ class VocabularyRelationTests(unittest.TestCase):
             )
 
         mocked_select.assert_not_called()
-        self.assertEqual(result["suggestions"][0]["target"]["file"], "new-target.json")
-        self.assertEqual(result["suggestions"][0]["original_target"]["file"], "old-target.json")
-        self.assertEqual(result["suggestions"][0]["validation"]["status"], "redirected")
-        self.assertTrue(result["suggestions"][0]["validation"]["applicable"])
+        self.assertEqual(result["cache"]["status"], "miss")
+        self.assertEqual(result["suggestions"], [])
+        self.assertFalse((self.root / ".vocabulary_redirects.json").exists())
 
-    def test_relation_cache_marks_old_source_suggestion_stale_after_merge(self):
+    def test_merge_cleans_redirect_and_stale_relation_source_cache(self):
         amplified_payload = {
             "word": "amplified",
             "createdAt": "2026-05-17",
@@ -908,19 +908,121 @@ class VocabularyRelationTests(unittest.TestCase):
             )
         )
 
-        stale = suggest_vocab_relations(
-            RelationSuggestRequest(
-                category="daily",
-                filename="amplified.json",
-                limit=8,
-                cache_only=True,
+        with self.assertRaises(Exception) as ctx:
+            suggest_vocab_relations(
+                RelationSuggestRequest(
+                    category="daily",
+                    filename="amplified.json",
+                    limit=8,
+                    cache_only=True,
+                )
+            )
+
+        self.assertIn("404", str(ctx.exception))
+        self.assertFalse((self.root / ".vocabulary_redirects.json").exists())
+        self.assertIsNone(
+            refine_cache.load_latest_relation_cache_for_entry("daily", "amplified.json")
+        )
+
+    def test_redirect_prune_keeps_live_relation_reference_then_removes_after_cleanup(self):
+        write_vocab(
+            self.root,
+            "daily",
+            "source.json",
+            {
+                "word": "source",
+                "createdAt": "2026-05-17",
+                "reviews": [],
+                "definitions": ["源词条"],
+                "examples": [],
+                "relations": [
+                    {
+                        "type": "related",
+                        "target": {"category": "daily", "file": "old-target.json", "word": "old target"},
+                    }
+                ],
+            },
+        )
+        write_vocab(
+            self.root,
+            "daily",
+            "old-target.json",
+            {
+                "word": "old target",
+                "createdAt": "2026-05-18",
+                "reviews": [],
+                "definitions": ["旧目标"],
+                "examples": [],
+            },
+        )
+        write_vocab(
+            self.root,
+            "daily",
+            "new-target.json",
+            {
+                "word": "new target",
+                "createdAt": "2026-05-19",
+                "reviews": [],
+                "definitions": ["新目标"],
+                "examples": [],
+            },
+        )
+
+        manual_merge_vocab(
+            ManualVocabMergeRequest(
+                source_category="daily",
+                source_filename="old-target.json",
+                target_category="daily",
+                target_word="new target",
+                target_filename="new-target.json",
+                delete_source=True,
+                create_target_if_missing=False,
             )
         )
 
-        self.assertEqual(stale["cache"]["status"], "hit")
-        self.assertEqual(stale["suggestions"][0]["validation"]["status"], "stale_source")
-        self.assertFalse(stale["suggestions"][0]["validation"]["applicable"])
-        self.assertIn("源词条已合并", stale["suggestions"][0]["validation"]["message"])
+        self.assertFalse((self.root / ".vocabulary_redirects.json").exists())
+
+        redirect_path = self.root / ".vocabulary_redirects.json"
+        redirect_path.write_text(
+            json.dumps(
+                {
+                    "redirects": {
+                        "daily/old-target.json": {
+                            "status": "merged",
+                            "from": {"category": "daily", "file": "old-target.json", "word": "old target"},
+                            "to": {"category": "daily", "file": "new-target.json", "word": "new target"},
+                            "reason": "test",
+                            "created_at": "2026-05-20T00:00:00+00:00",
+                        }
+                    }
+                },
+                ensure_ascii=False,
+            ),
+            encoding="utf-8",
+        )
+        source_payload = review_vocabulary.load_vocab_file(str(self.root / "daily" / "source.json"))
+        source_payload["relations"] = [
+            {
+                "type": "related",
+                "target": {"category": "daily", "file": "old-target.json", "word": "old target"},
+            }
+        ]
+        review_vocabulary.save_vocab_file(str(self.root / "daily" / "source.json"), source_payload)
+
+        kept = prune_resolved_redirects({"daily/old-target.json"})
+        self.assertEqual(kept["removed_count"], 0)
+        self.assertTrue(redirect_path.exists())
+
+        source_payload["relations"] = [
+            {
+                "type": "related",
+                "target": {"category": "daily", "file": "new-target.json", "word": "new target"},
+            }
+        ]
+        review_vocabulary.save_vocab_file(str(self.root / "daily" / "source.json"), source_payload)
+        removed = prune_resolved_redirects({"daily/old-target.json"})
+        self.assertEqual(removed["removed_count"], 1)
+        self.assertFalse(redirect_path.exists())
 
     def test_relation_prefetch_job_writes_and_reuses_cache(self):
         write_vocab(

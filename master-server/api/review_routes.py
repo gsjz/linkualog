@@ -19,6 +19,7 @@ from core.refine_cache import (
     build_relation_suggest_analysis_payload,
     build_relation_suggest_cache_key,
     delete_refine_cache_for_entry,
+    delete_relation_suggest_caches_referencing_entry,
     has_relation_suggest_cache_for_entry,
     load_latest_relation_cache_for_entry,
     load_refine_cache,
@@ -26,6 +27,7 @@ from core.refine_cache import (
     save_refine_cache,
 )
 from core.vocabulary_redirects import (
+    prune_resolved_redirects,
     resolve_redirect,
     save_redirect,
 )
@@ -70,6 +72,7 @@ from services.review_llm import (
     select_vocab_relation_candidates_with_llm,
     search_vocabulary_with_llm,
     suggest_entry_quality_with_rules,
+    extract_context_vocabulary_candidates_with_llm,
     suggest_file_cleaning_with_llm,
     suggest_folder_merge_with_llm,
     suggest_missing_definitions_with_llm,
@@ -206,6 +209,7 @@ class ReviewSuggestRequest(BaseModel):
     score: int | None = None
     review_date: str | None = None
     auto_save: bool = True
+    suppression_score: int | None = None
 
 
 class ReviewRecommendRequest(BaseModel):
@@ -246,6 +250,13 @@ class VocabularySearchRequest(BaseModel):
     limit: int = 24
     include_all_categories: bool = False
     use_llm: bool = False
+
+
+class VocabularyContextExtractRequest(BaseModel):
+    text: str
+    prompt: str | None = None
+    previous_candidates: list[dict] = []
+    limit: int = 8
 
 
 class MergeApplyRequest(BaseModel):
@@ -628,8 +639,36 @@ def _rewrite_all_relation_targets(old_ref: dict, new_ref: dict) -> int:
             if not changed:
                 continue
             save_vocab_file(path, next_payload)
+            delete_refine_cache_for_entry(category_name, file_name)
             updated += 1
     return updated
+
+
+def _record_deleted_entry_redirect_and_cleanup(
+    *,
+    source_category: str,
+    source_filename: str,
+    source_word: str,
+    target_category: str,
+    target_filename: str,
+    target_word: str,
+    reason: str,
+) -> dict:
+    redirect = save_redirect(
+        source_category=source_category,
+        source_filename=source_filename,
+        source_word=source_word,
+        target_category=target_category,
+        target_filename=target_filename,
+        target_word=target_word,
+        reason=reason,
+    )
+    delete_relation_suggest_caches_referencing_entry(source_category, source_filename)
+    delete_relation_suggest_caches_referencing_entry(target_category, target_filename)
+    prune_result = prune_resolved_redirects({_entry_ref_id(_build_entry_ref(source_category, source_filename, source_word))})
+    if isinstance(redirect, dict):
+        redirect["cleanup"] = prune_result
+    return redirect
 
 
 def _find_incoming_relations(target_ref: dict) -> list[dict]:
@@ -1070,7 +1109,69 @@ def _review_score_priority_component(advice: dict, order: str) -> tuple[float, i
     return round(component, 3), last_score
 
 
-def _build_review_candidate_score(advice: dict, created_at: str, today: date, preferences: dict) -> dict:
+def _normalize_review_suppression(value) -> int:
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        return 0
+    return min(max(parsed, 0), 5)
+
+
+_REVIEW_SUPPRESSION_DECAY_STEP_DAYS = 14
+
+
+def _normalize_review_suppression_payload(value, today: date | None = None) -> dict | None:
+    today = today or date.today()
+    if isinstance(value, dict):
+        score = _normalize_review_suppression(value.get("score"))
+        updated_at = str(value.get("updated_at") or value.get("updatedAt") or "").strip()
+    else:
+        score = _normalize_review_suppression(value)
+        updated_at = ""
+
+    if score <= 0:
+        return None
+
+    effective_score = score
+    age_days = None
+    if updated_at:
+        try:
+            age_days = max(0, (today - parse_review_date(updated_at)).days)
+            effective_score = max(0, score - age_days // _REVIEW_SUPPRESSION_DECAY_STEP_DAYS)
+        except Exception:
+            age_days = None
+
+    result = {
+        "score": score,
+        "effective_score": effective_score,
+    }
+    if updated_at:
+        result["updated_at"] = updated_at
+    if age_days is not None:
+        result["age_days"] = age_days
+        result["decay_step_days"] = _REVIEW_SUPPRESSION_DECAY_STEP_DAYS
+    return result
+
+
+def _entry_review_suppression(payload: dict, today: date | None = None) -> dict | None:
+    if not isinstance(payload, dict):
+        return None
+    raw = (
+        payload.get("review_suppression")
+        if isinstance(payload.get("review_suppression"), dict)
+        else payload.get("reviewSuppression")
+    )
+    return _normalize_review_suppression_payload(raw, today=today)
+
+
+def _review_suppression_multiplier(score: int) -> float:
+    normalized = _normalize_review_suppression(score)
+    if normalized <= 0:
+        return 1.0
+    return round(max(0.04, 1.0 - normalized * 0.19), 3)
+
+
+def _build_review_candidate_score(advice: dict, created_at: str, today: date, preferences: dict, suppression_score: int = 0) -> dict:
     due_component = round(_due_priority_component(advice), 3)
     created_component, created_age_days = _created_priority_component(
         created_at,
@@ -1091,11 +1192,17 @@ def _build_review_candidate_score(advice: dict, created_at: str, today: date, pr
         "created": round(created_component * created_weight, 3),
         "score": round(score_component * score_weight, 3),
     }
-    priority_score = round(sum(weighted.values()), 3)
+    suppression = _normalize_review_suppression(suppression_score)
+    suppression_multiplier = _review_suppression_multiplier(suppression)
+    base_priority_score = round(sum(weighted.values()), 3)
+    priority_score = round(base_priority_score * suppression_multiplier, 3)
 
     return {
         "priority_score": priority_score,
         "score_breakdown": {
+            "base_priority_score": base_priority_score,
+            "suppression_score": suppression,
+            "suppression_multiplier": suppression_multiplier,
             "components": {
                 "due": due_component,
                 "created": created_component,
@@ -3675,11 +3782,13 @@ def review_visualization(
                 advice = build_review_advice(reviews, today=today)
                 status = str(advice.get("status") or "unknown")
                 created_at = _safe_created_at(payload.get("createdAt"))
+                review_suppression = _entry_review_suppression(payload, today=today)
                 score_result = _build_review_candidate_score(
                     advice,
                     created_at,
                     today,
                     recommendation_preferences,
+                    (review_suppression or {}).get("effective_score", 0),
                 )
                 feature_flags = _entry_example_feature_flags(payload)
                 marked = bool(payload.get("marked", False))
@@ -3728,6 +3837,7 @@ def review_visualization(
                     "days_until_due": advice.get("days_until_due"),
                     "priority_score": score_result["priority_score"],
                     "score_breakdown": score_result["score_breakdown"],
+                    "review_suppression": review_suppression,
                     "feature_flags": feature_flags,
                     "reviewed_today": reviewed_today,
                 }
@@ -3751,6 +3861,7 @@ def review_visualization(
                     "days_until_due": advice.get("days_until_due"),
                     "review_priority_score": score_result["priority_score"],
                     "review_score_breakdown": score_result["score_breakdown"],
+                    "review_suppression": review_suppression,
                 }
                 graph_word_index[_normalize_text_key(word)].append(node_id)
 
@@ -4516,6 +4627,28 @@ def search_vocabulary(req: VocabularySearchRequest):
         raise HTTPException(status_code=500, detail=str(exc))
 
 
+@router.post("/api/vocabulary/context/extract")
+def extract_vocabulary_from_context(req: VocabularyContextExtractRequest):
+    try:
+        limit = min(max(int(req.limit or 8), 1), 20)
+        result = extract_context_vocabulary_candidates_with_llm(
+            req.text,
+            user_prompt=req.prompt or "",
+            previous_candidates=req.previous_candidates,
+            limit=limit,
+        )
+        return {
+            "status": "success",
+            "candidates": result.get("candidates", []),
+            "notes": result.get("notes", []),
+            "raw": result.get("raw", {}),
+        }
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
 @router.post("/api/vocabulary/delete")
 def delete_vocab(req: VocabDeleteRequest):
     try:
@@ -4687,7 +4820,7 @@ def rename_vocab(req: VocabRenameRequest):
                 if not same_target:
                     try:
                         os.remove(source_path)
-                        save_redirect(
+                        _record_deleted_entry_redirect_and_cleanup(
                             source_category=category,
                             source_filename=source_file,
                             source_word=source_word,
@@ -4940,7 +5073,6 @@ def refine_folder(req: FolderRefineRequest):
     except Exception as exc:
         raise HTTPException(status_code=400, detail=str(exc))
 
-
 @router.post("/api/refine/merge/apply")
 def apply_merge(req: MergeApplyRequest):
     try:
@@ -5003,7 +5135,7 @@ def apply_merge(req: MergeApplyRequest):
                 if req.delete_source:
                     try:
                         os.remove(source_path)
-                        save_redirect(
+                        _record_deleted_entry_redirect_and_cleanup(
                             source_category=category,
                             source_filename=os.path.basename(source_path),
                             source_word=str(source_payload.get("word") or os.path.splitext(os.path.basename(source_path))[0]).strip(),
@@ -5125,7 +5257,7 @@ def manual_merge_vocab(req: ManualVocabMergeRequest):
                     try:
                         os.remove(source_path)
                         source_deleted = True
-                        save_redirect(
+                        _record_deleted_entry_redirect_and_cleanup(
                             source_category=source_category,
                             source_filename=source_file,
                             source_word=source_word,
@@ -5433,6 +5565,7 @@ def review_suggest(req: ReviewSuggestRequest):
         before = build_review_advice(reviews)
         recorded_review = None
         after = before
+        suppression_updated = False
 
         if req.score is not None:
             score = clamp_score(req.score)
@@ -5440,14 +5573,28 @@ def review_suggest(req: ReviewSuggestRequest):
             updated_reviews = append_or_replace_today_review(reviews, score, review_day)
 
             payload["reviews"] = updated_reviews
-            if req.auto_save:
-                save_vocab_file(path, payload)
 
             recorded_review = {
                 "date": format_review_date(review_day),
                 "score": score,
             }
             after = build_review_advice(updated_reviews)
+
+        if req.suppression_score is not None:
+            suppression = _normalize_review_suppression(req.suppression_score)
+            if suppression:
+                review_suppression = payload.get("review_suppression")
+                if not isinstance(review_suppression, dict):
+                    review_suppression = {}
+                review_suppression["score"] = suppression
+                review_suppression["updated_at"] = format_review_date(date.today())
+                payload["review_suppression"] = review_suppression
+            else:
+                payload.pop("review_suppression", None)
+            suppression_updated = True
+
+        if req.auto_save and (req.score is not None or suppression_updated):
+            save_vocab_file(path, payload)
 
         return {
             "status": "success",
@@ -5457,7 +5604,8 @@ def review_suggest(req: ReviewSuggestRequest):
             "before": before,
             "recorded_review": recorded_review,
             "after": after,
-            "auto_saved": bool(req.score is not None and req.auto_save),
+            "review_suppression": _entry_review_suppression(payload),
+            "auto_saved": bool((req.score is not None or suppression_updated) and req.auto_save),
         }
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
@@ -5520,7 +5668,14 @@ def review_recommend(req: ReviewRecommendRequest):
                 reviews = payload.get("reviews") if isinstance(payload.get("reviews"), list) else []
                 advice = build_review_advice(reviews, today=today)
                 created_at = _safe_created_at(payload.get("createdAt"))
-                score_result = _build_review_candidate_score(advice, created_at, today, preferences)
+                review_suppression = _entry_review_suppression(payload, today=today)
+                score_result = _build_review_candidate_score(
+                    advice,
+                    created_at,
+                    today,
+                    preferences,
+                    (review_suppression or {}).get("effective_score", 0),
+                )
 
                 candidates.append(
                     {
@@ -5534,6 +5689,7 @@ def review_recommend(req: ReviewRecommendRequest):
                         "relation_cached": relation_cached,
                         "relationCached": relation_cached,
                         "created_at": created_at,
+                        "review_suppression": review_suppression,
                         "priority_score": score_result["priority_score"],
                         "score_breakdown": score_result["score_breakdown"],
                         "reason": _build_recommendation_reason(

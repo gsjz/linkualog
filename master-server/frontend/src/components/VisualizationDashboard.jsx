@@ -43,12 +43,24 @@ const GRAPH_PREVIEW_LABEL_LIMIT = 4;
 const GRAPH_PREVIEW_DENSE_LABEL_LIMIT = 3;
 const GRAPH_PREVIEW_DOT_LIMIT = 26;
 const GRAPH_PREVIEW_EDGE_LIMIT = 24;
+const GRAPH_SPACING_STORAGE_KEY = 'visualDashboardRelationGraphSpacing';
+const GRAPH_SPACING_DEFAULT = 0.72;
+const GRAPH_SPACING_MIN = 0.45;
+const GRAPH_SPACING_MAX = 1.25;
 
 const formatNumber = (value) => new Intl.NumberFormat('zh-CN').format(Number(value) || 0);
 
 const percent = (value) => `${Math.round((Number(value) || 0) * 100)}%`;
 
 const getMaxCount = (items) => Math.max(1, ...items.map((item) => Number(item?.count) || 0));
+
+const normalizeGraphSpacing = (value) => {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return GRAPH_SPACING_DEFAULT;
+  return Math.round(clamp(parsed, GRAPH_SPACING_MIN, GRAPH_SPACING_MAX) * 100) / 100;
+};
+
+const getStoredGraphSpacing = () => normalizeGraphSpacing(localStorage.getItem(GRAPH_SPACING_STORAGE_KEY));
 
 function DonutChart({ items = [], colors = {}, label = '' }) {
   const total = items.reduce((sum, item) => sum + (Number(item?.count) || 0), 0);
@@ -555,31 +567,32 @@ function estimateGraphHeight(summaries, width, compactMode = false) {
   return Math.max(420, total);
 }
 
-function estimateMergedGraphWorldDimensions(summaries, nodes, edges, viewportWidth, viewportHeight) {
+function estimateMergedGraphWorldDimensions(summaries, nodes, edges, viewportWidth, viewportHeight, graphSpacing = 1) {
   const nodeCount = Math.max(1, Array.isArray(nodes) ? nodes.length : 0);
   const edgeCount = Math.max(1, Array.isArray(edges) ? edges.length : 0);
   const componentCount = Math.max(1, Array.isArray(summaries) ? summaries.length : 0);
+  const spacingScale = Number.isFinite(Number(graphSpacing)) ? normalizeGraphSpacing(graphSpacing) : 1;
   const compact = viewportWidth <= 640;
   const medium = viewportWidth <= 980;
-  const widthMultiplier = compact ? 1.9 : medium ? 1.58 : 1.3;
-  const heightMultiplier = compact ? 2.05 : medium ? 1.7 : 1.38;
-  const nodeSpreadWidth = Math.sqrt(nodeCount) * (compact ? 165 : 198);
-  const nodeSpreadHeight = Math.sqrt(nodeCount) * (compact ? 150 : 170);
-  const componentSpreadWidth = Math.sqrt(componentCount) * (compact ? 110 : 132);
-  const componentSpreadHeight = componentCount * (compact ? 80 : 66);
-  const edgeSpread = Math.sqrt(edgeCount) * (compact ? 32 : 36);
+  const widthMultiplier = (compact ? 1.9 : medium ? 1.58 : 1.3) * spacingScale;
+  const heightMultiplier = (compact ? 2.05 : medium ? 1.7 : 1.38) * spacingScale;
+  const nodeSpreadWidth = Math.sqrt(nodeCount) * (compact ? 165 : 198) * spacingScale;
+  const nodeSpreadHeight = Math.sqrt(nodeCount) * (compact ? 150 : 170) * spacingScale;
+  const componentSpreadWidth = Math.sqrt(componentCount) * (compact ? 110 : 132) * spacingScale;
+  const componentSpreadHeight = componentCount * (compact ? 80 : 66) * spacingScale;
+  const edgeSpread = Math.sqrt(edgeCount) * (compact ? 32 : 36) * spacingScale;
 
   return {
     width: Math.round(Math.max(
       viewportWidth,
       viewportWidth * widthMultiplier,
-      compact ? 780 : 980,
+      (compact ? 780 : 980) * spacingScale,
       nodeSpreadWidth + componentSpreadWidth + edgeSpread,
     )),
     height: Math.round(Math.max(
       viewportHeight,
       viewportHeight * heightMultiplier,
-      compact ? 900 : 720,
+      (compact ? 900 : 720) * spacingScale,
       nodeSpreadHeight + componentSpreadHeight + edgeSpread,
     )),
   };
@@ -804,6 +817,7 @@ function stepForceLayout(nodes, edges, anchors, zones, dimensions, alpha, option
   const { width, height } = dimensions;
   const mergeComponentsInGraph = Boolean(options.mergeComponentsInGraph);
   const compactViewport = Boolean(options.compactViewport);
+  const graphSpacing = Number.isFinite(Number(options.graphSpacing)) ? normalizeGraphSpacing(options.graphSpacing) : 1;
   const nodeById = new Map(nodes.map((node) => [node.id, node]));
 
   edges.forEach((edge) => {
@@ -815,9 +829,9 @@ function stepForceLayout(nodes, edges, anchors, zones, dimensions, alpha, option
     const distance = Math.max(1, Math.hypot(dx, dy));
     const desired = mergeComponentsInGraph
       ? (edge.scope === 'cross_category'
-          ? (compactViewport ? 152 : 136)
-          : (compactViewport ? 118 : 104))
-      : (edge.scope === 'cross_category' ? 112 : 88);
+          ? (compactViewport ? 152 : 136) * graphSpacing
+          : (compactViewport ? 118 : 104) * graphSpacing)
+      : (edge.scope === 'cross_category' ? 112 : 88) * graphSpacing;
     const force = (distance - desired) * (mergeComponentsInGraph ? 0.024 : 0.028) * alpha;
     const fx = (dx / distance) * force;
     const fy = (dy / distance) * force;
@@ -843,11 +857,11 @@ function stepForceLayout(nodes, edges, anchors, zones, dimensions, alpha, option
         distance = Math.max(1, Math.hypot(dx, dy));
       }
       const minDistance = mergeComponentsInGraph
-        ? (left.boxWidth + right.boxWidth) * (compactViewport ? 0.5 : 0.44) + (compactViewport ? 22 : 16)
-        : (left.boxWidth + right.boxWidth) * 0.34 + 10;
+        ? (left.boxWidth + right.boxWidth) * (compactViewport ? 0.5 : 0.44) + (compactViewport ? 22 : 16) * graphSpacing
+        : (left.boxWidth + right.boxWidth) * 0.34 + 10 * graphSpacing;
       const chargeBase = mergeComponentsInGraph
-        ? (sameComponent ? 5600 : 4400)
-        : (sameComponent ? 3900 : 3000);
+        ? (sameComponent ? 5600 : 4400) * graphSpacing
+        : (sameComponent ? 3900 : 3000) * graphSpacing;
       const chargeCap = mergeComponentsInGraph
         ? (sameComponent ? 5.8 : 4.8)
         : (sameComponent ? 4.6 : 3.4);
@@ -867,7 +881,7 @@ function stepForceLayout(nodes, edges, anchors, zones, dimensions, alpha, option
 
   nodes.forEach((node) => {
     const anchor = anchors.get(node.componentId) || { x: width / 2, y: height / 2 };
-    const anchorStrength = mergeComponentsInGraph ? (compactViewport ? 0.0068 : 0.0056) : 0.0038;
+    const anchorStrength = (mergeComponentsInGraph ? (compactViewport ? 0.0068 : 0.0056) : 0.0038) / Math.sqrt(graphSpacing);
     node.vx += (anchor.x - node.x) * anchorStrength * alpha;
     node.vy += (anchor.y - node.y) * anchorStrength * alpha;
     node.vx *= 0.93;
@@ -1023,6 +1037,8 @@ export function RelationGraphPanel({
   deckMode = false,
   fitContainerHeight = false,
   mergeComponentsInGraph = false,
+  graphSpacing = 1,
+  headerControls = null,
   onRefreshGraph = null,
   graphRefreshing = false,
 }) {
@@ -1031,6 +1047,7 @@ export function RelationGraphPanel({
   ), [graph?.components]);
   const canOpen = typeof onOpenVocabularyEntry === 'function';
   const model = useMemo(() => buildRelationGraphModel(components), [components]);
+  const normalizedGraphSpacing = useMemo(() => normalizeGraphSpacing(graphSpacing), [graphSpacing]);
   const nodeById = useMemo(() => new Map(model.nodes.map((node) => [node.id, node])), [model.nodes]);
   const [selectedNodeId, setSelectedNodeId] = useState('');
   const [canvasWidth, setCanvasWidth] = useState(760);
@@ -1087,8 +1104,9 @@ export function RelationGraphPanel({
       model.edges,
       viewportDimensions.width,
       viewportDimensions.height,
+      normalizedGraphSpacing,
     );
-  }, [mergeComponentsInGraph, model.edges, model.nodes, model.summaries, viewportDimensions.height, viewportDimensions.width]);
+  }, [mergeComponentsInGraph, model.edges, model.nodes, model.summaries, normalizedGraphSpacing, viewportDimensions.height, viewportDimensions.width]);
 
   const selectedNode = selectedNodeId ? nodeById.get(selectedNodeId) : null;
   const selectedEdges = selectedNode
@@ -1175,12 +1193,12 @@ export function RelationGraphPanel({
       zonesRef.current,
       dimensionsRef.current,
       alphaRef.current,
-      { mergeComponentsInGraph, compactViewport: viewportDimensionsRef.current.width <= 640 },
+      { mergeComponentsInGraph, compactViewport: viewportDimensionsRef.current.width <= 640, graphSpacing: normalizedGraphSpacing },
     );
     alphaRef.current = dragging ? Math.max(alphaRef.current * 0.97, 0.32) : alphaRef.current * 0.965;
     setLayoutNodes(snapshotLayoutNodes(nodes));
     frameRef.current = window.requestAnimationFrame(tick);
-  }, [mergeComponentsInGraph]);
+  }, [mergeComponentsInGraph, normalizedGraphSpacing]);
 
   const ensureSimulation = useCallback(() => {
     if (!frameRef.current) {
@@ -1463,7 +1481,7 @@ export function RelationGraphPanel({
       mergeComponentsInGraph,
       getGraphCenterPoint(simNodes, anchors, { width, height }),
     ));
-  }, [applyViewportTransform, ensureSimulation, layoutDimensions.height, layoutDimensions.width, mergeComponentsInGraph, model.edges, model.key, model.nodes, model.summaries, viewportDimensions]);
+  }, [applyViewportTransform, ensureSimulation, layoutDimensions.height, layoutDimensions.width, mergeComponentsInGraph, model.edges, model.key, model.nodes, model.summaries, normalizedGraphSpacing, viewportDimensions]);
 
   useEffect(() => {
     graphPointersRef.current.clear();
@@ -1473,7 +1491,7 @@ export function RelationGraphPanel({
     dragRef.current = null;
     setGraphPanning(false);
     applyViewportTransform(getInitialViewportTransform());
-  }, [applyViewportTransform, getInitialViewportTransform, mergeComponentsInGraph, model.key, viewportDimensions]);
+  }, [applyViewportTransform, getInitialViewportTransform, mergeComponentsInGraph, model.key, normalizedGraphSpacing, viewportDimensions]);
 
   useEffect(() => () => {
     if (frameRef.current) {
@@ -1660,6 +1678,7 @@ export function RelationGraphPanel({
             <p>{emptyDescription}</p>
           </div>
           <div className="visual-graph-header-actions">
+            {headerControls}
             {canRefreshGraph ? (
               <button
                 type="button"
@@ -1703,6 +1722,7 @@ export function RelationGraphPanel({
               ))}
               <span><i className="cross-category" />跨目录虚线</span>
             </div>
+            {headerControls}
             {canRefreshGraph ? (
               <button
                 type="button"
@@ -1795,6 +1815,7 @@ export function RelationGraphPanel({
             ))}
             <span><i className="cross-category" />跨目录虚线</span>
           </div>
+          {headerControls}
           {canRefreshGraph ? (
             <button
               type="button"
@@ -1999,6 +2020,7 @@ export function RelationGraphPanel({
 export default function VisualizationDashboard({ categories = [], defaultCategory = '', onOpenVocabularyEntry = null }) {
   const [selectedCategory, setSelectedCategory] = useState(String(defaultCategory || '').trim());
   const [graphRequest, setGraphRequest] = useState({ random: false, seed: '' });
+  const [graphSpacing, setGraphSpacing] = useState(getStoredGraphSpacing);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -2042,6 +2064,12 @@ export default function VisualizationDashboard({ categories = [], defaultCategor
       random: true,
       seed: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
     });
+  }, []);
+
+  const handleGraphSpacingChange = useCallback((event) => {
+    const nextSpacing = normalizeGraphSpacing(event.target.value);
+    setGraphSpacing(nextSpacing);
+    localStorage.setItem(GRAPH_SPACING_STORAGE_KEY, String(nextSpacing));
   }, []);
 
   const fromDataCategories = Array.isArray(data?.categories) ? data.categories : [];
@@ -2107,8 +2135,24 @@ export default function VisualizationDashboard({ categories = [], defaultCategor
             className="visual-dashboard-relation-graph"
             fitContainerHeight
             mergeComponentsInGraph
+            graphSpacing={graphSpacing}
             onRefreshGraph={handleRefreshGraph}
             graphRefreshing={graphRefreshing}
+            headerControls={(
+              <label className="visual-graph-spacing-control">
+                <span>间距</span>
+                <input
+                  type="range"
+                  min={GRAPH_SPACING_MIN}
+                  max={GRAPH_SPACING_MAX}
+                  step="0.05"
+                  value={graphSpacing}
+                  onChange={handleGraphSpacingChange}
+                  aria-label="推荐关系图节点间距"
+                />
+                <em>{Math.round(graphSpacing * 100)}%</em>
+              </label>
+            )}
           />
 
           <div className="visual-grid visual-grid-main">

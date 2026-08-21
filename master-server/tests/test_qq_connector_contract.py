@@ -934,6 +934,112 @@ class QQConnectorContractTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result["meta"]["candidate_count"], 1)
         self.assertEqual(result["meta"]["mark_filter"], "needs_processing")
 
+    def test_review_suppression_lowers_recent_recommendation_priority(self):
+        category_dir = self.vocab_dir / "daily"
+        category_dir.mkdir(parents=True, exist_ok=True)
+        today = date.today()
+
+        review_vocabulary.save_vocab_file(
+            str(category_dir / "aaa-suppressed.json"),
+            {
+                "word": "aaa-suppressed",
+                "createdAt": today.isoformat(),
+                "reviews": [],
+                "definitions": [],
+                "examples": [],
+            },
+        )
+        review_vocabulary.save_vocab_file(
+            str(category_dir / "zzz-plain.json"),
+            {
+                "word": "zzz-plain",
+                "createdAt": today.isoformat(),
+                "reviews": [],
+                "definitions": [],
+                "examples": [],
+            },
+        )
+
+        suppress_result = review_routes.review_suggest(
+            review_routes.ReviewSuggestRequest(
+                category="daily",
+                filename="aaa-suppressed.json",
+                suppression_score=5,
+            )
+        )
+        self.assertEqual(suppress_result["review_suppression"]["score"], 5)
+        self.assertEqual(suppress_result["review_suppression"]["effective_score"], 5)
+
+        result = review_routes.review_recommend(
+            review_routes.ReviewRecommendRequest(
+                category="daily",
+                limit=2,
+                due_weight=0,
+                created_weight=1,
+                score_weight=0,
+                created_order="recent",
+            )
+        )
+
+        self.assertEqual(result["recommended"]["word"], "zzz-plain")
+        suppressed = result["alternatives"][0]
+        self.assertEqual(suppressed["word"], "aaa-suppressed")
+        self.assertEqual(suppressed["review_suppression"]["score"], 5)
+        self.assertEqual(suppressed["review_suppression"]["effective_score"], 5)
+        self.assertLess(suppressed["priority_score"], result["recommended"]["priority_score"])
+        self.assertEqual(suppressed["score_breakdown"]["suppression_score"], 5)
+
+        clear_result = review_routes.review_suggest(
+            review_routes.ReviewSuggestRequest(
+                category="daily",
+                filename="aaa-suppressed.json",
+                suppression_score=0,
+            )
+        )
+        self.assertIsNone(clear_result["review_suppression"])
+        saved = review_vocabulary.load_vocab_file(str(category_dir / "aaa-suppressed.json"))
+        self.assertNotIn("review_suppression", saved)
+
+    def test_context_extract_endpoint_uses_llm_helper_without_real_request(self):
+        expected_candidates = [
+            {
+                "word": "salient",
+                "context": "The salient point was buried in the chat log.",
+                "definition_hint": "显著的；突出的",
+                "reason": "高价值学术词",
+                "source": "chat",
+                "confidence": 0.91,
+            }
+        ]
+
+        with patch.object(
+            review_routes,
+            "extract_context_vocabulary_candidates_with_llm",
+            return_value={
+                "candidates": expected_candidates,
+                "notes": ["mocked"],
+                "raw": {"ok": True},
+            },
+        ) as mocked_extract:
+            result = review_routes.extract_vocabulary_from_context(
+                review_routes.VocabularyContextExtractRequest(
+                    text="Messy chat: The salient point was buried in the chat log.",
+                    prompt="偏学术词",
+                    previous_candidates=[{"word": "trivial", "context": "old"}],
+                    limit=99,
+                )
+            )
+
+        self.assertEqual(result["status"], "success")
+        self.assertEqual(result["candidates"], expected_candidates)
+        self.assertEqual(result["notes"], ["mocked"])
+        mocked_extract.assert_called_once_with(
+            "Messy chat: The salient point was buried in the chat log.",
+            user_prompt="偏学术词",
+            previous_candidates=[{"word": "trivial", "context": "old"}],
+            limit=20,
+        )
+
     def test_refine_file_uses_cached_llm_for_unchanged_file(self):
         category_dir = self.vocab_dir / "daily"
         category_dir.mkdir(parents=True, exist_ok=True)

@@ -277,6 +277,16 @@ export default function VocabularyWorkspace({
     setAutoLlmLaunchToken(autoLlmOnOpen ? buildAutoLlmLaunchToken() : '');
     setEditorSurface(surface);
   };
+
+  const handleAutoLlmOnOpenChange = useCallback((enabled) => {
+    const nextEnabled = Boolean(enabled);
+    setAutoLlmOnOpen(nextEnabled);
+    localStorage.setItem(AUTO_LLM_STORAGE_KEY, nextEnabled ? '1' : '0');
+    window.dispatchEvent(new Event('config-updated'));
+    if (nextEnabled && editorSurface && hasSelection) {
+      setAutoLlmLaunchToken(buildAutoLlmLaunchToken());
+    }
+  }, [editorSurface, hasSelection]);
   const markRefineCached = useCallback((category, files) => {
     const normalizedCategory = String(category || '').trim();
     const fileSet = new Set((Array.isArray(files) ? files : [])
@@ -613,6 +623,7 @@ export default function VocabularyWorkspace({
 
   useEffect(() => {
     if (!editorSurface || !selectedVisibleEntryKey) return;
+    if (!autoLlmOnOpen) return;
     if (editorSurface === 'editor' && selectedVisibleEntry?.refineCached) {
       if (overlayReadyAutoLoadRef.current.editor === selectedVisibleEntryKey) return;
       overlayReadyAutoLoadRef.current.editor = selectedVisibleEntryKey;
@@ -624,7 +635,7 @@ export default function VocabularyWorkspace({
       overlayReadyAutoLoadRef.current.connection = selectedVisibleEntryKey;
       setAutoLlmLaunchToken(buildAutoLlmLaunchToken());
     }
-  }, [editorSurface, selectedVisibleEntry?.refineCached, selectedVisibleEntry?.relationCached, selectedVisibleEntryKey]);
+  }, [autoLlmOnOpen, editorSurface, selectedVisibleEntry?.refineCached, selectedVisibleEntry?.relationCached, selectedVisibleEntryKey]);
 
   useEffect(() => {
     overlayReadyAutoLoadRef.current = { editor: '', connection: '' };
@@ -704,6 +715,17 @@ export default function VocabularyWorkspace({
             </div>
           </div>
           <div className="vocab-editor-panel-actions">
+            <label className={`vocab-editor-auto-llm-toggle${autoLlmOnOpen ? ' is-active' : ''}`}>
+              <input
+                type="checkbox"
+                checked={autoLlmOnOpen}
+                onChange={(event) => handleAutoLlmOnOpenChange(event.target.checked)}
+              />
+              <span className="vocab-editor-auto-llm-switch" aria-hidden="true">
+                <span />
+              </span>
+              <strong>自动 LLM</strong>
+            </label>
             {editorSurface === 'connection' ? (
               <div className="vocab-editor-panel-action-host" ref={handleEditorHeaderActionsHostRef} />
             ) : null}

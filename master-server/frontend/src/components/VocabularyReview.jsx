@@ -201,6 +201,7 @@ const buildLaunchRequestKey = (request) => {
     String(request?.focus || '').trim(),
     String(request?.queueSource || request?.sourceQueue || '').trim(),
     String(request?.autoRefineToken || '').trim(),
+    String(request?.autoRelationSuggestToken || '').trim(),
   ].join('\u0001');
 };
 
@@ -2012,6 +2013,8 @@ export default function VocabularyReview({
 
   const selectedEntry = entries.find((item) => item.id === selectedEntryId)
     || (selectedEntrySnapshot?.id === selectedEntryId ? selectedEntrySnapshot : null);
+  const currentSuppressionScore = Number(detailData?.review_suppression?.score || detailData?.reviewSuppression?.score || 0) || 0;
+  const currentSuppressed = currentSuppressionScore > 0;
   const graphFocusEntry = detailLoading
     ? (detailEntry || resolveEntryCandidate(detailData?.word, selectedCategory, entries))
     : selectedEntry;
@@ -2532,6 +2535,34 @@ export default function VocabularyReview({
     return saved;
   }, [detailCategory, detailData, detailEntry, detailLoading, entries, handleRecommendationNext, resolveEntryCandidate, resolveEntryCategory, selectedCategory, selectedEntry, visibleEntries]);
 
+  const handleToggleReviewSuppression = useCallback(async () => {
+    const currentEntry = detailEntry || selectedEntry || resolveEntryCandidate(detailData?.word, selectedCategory, entries);
+    const currentEntryCategory = detailCategory || resolveEntryCategory(currentEntry, selectedCategory);
+    if (detailLoading || !detailData || !currentEntry?.file || !currentEntryCategory) return false;
+
+    const currentScore = Number(detailData?.review_suppression?.score || detailData?.reviewSuppression?.score || 0) || 0;
+    const nextScore = currentScore > 0 ? 0 : 5;
+    setSavingReviewScore(true);
+    try {
+      await submitReviewScore(currentEntryCategory, currentEntry.file, null, getTodayLocalDateString(), {
+        suppressionScore: nextScore,
+      });
+      const res = await getVocabularyDetail(currentEntry.key || currentEntry.file || currentEntry.word, currentEntryCategory);
+      if (res?.data) {
+        setDetailData(res.data);
+        setDetailEntry(currentEntry);
+      }
+      invalidateRecommendationQueue({ loading: true });
+      return true;
+    } catch (error) {
+      console.error('更新词条抑制失败', error);
+      alert('更新词条抑制失败');
+      return false;
+    } finally {
+      setSavingReviewScore(false);
+    }
+  }, [detailCategory, detailData, detailEntry, detailLoading, entries, invalidateRecommendationQueue, resolveEntryCandidate, resolveEntryCategory, selectedCategory, selectedEntry]);
+
   useEffect(() => {
     if (!mobileSimple || !randomSelectionMode || !recommendPreferenceHydrated) return;
     if (loadingRecommendation) return;
@@ -2900,6 +2931,18 @@ export default function VocabularyReview({
           >
             <UiIcon name="trash" size={14} />
             <span>删除</span>
+          </button>
+        ) : null}
+        {detailData ? (
+          <button
+            type="button"
+            className={`vocab-review-mark-button vocab-review-suppress-button${currentSuppressed ? ' is-active' : ''}`}
+            onClick={() => void handleToggleReviewSuppression()}
+            disabled={detailLoading || savingReviewScore}
+            data-tooltip={currentSuppressed ? '取消近期抑制' : '近期尽量不推荐这个词'}
+          >
+            <UiIcon name={currentSuppressed ? 'check' : 'filter'} size={14} />
+            <span>{savingReviewScore ? '保存中' : (currentSuppressed ? '已抑制' : '无关')}</span>
           </button>
         ) : null}
         <button

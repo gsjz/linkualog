@@ -2070,7 +2070,7 @@ body.is-raft-theme-body #root {
 
   .master-shell.is-raft-theme .visual-dashboard-relation-graph .visual-graph-header-actions {
     display: grid !important;
-    grid-template-columns: minmax(0, 1fr) auto !important;
+    grid-template-columns: minmax(0, 1fr) auto auto !important;
     align-items: center !important;
     justify-content: stretch !important;
     gap: 8px !important;
@@ -2096,6 +2096,16 @@ body.is-raft-theme-body #root {
     flex: 0 0 auto !important;
   }
 
+  .master-shell.is-raft-theme .visual-dashboard-relation-graph .visual-graph-spacing-control {
+    grid-template-columns: auto minmax(84px, 1fr) 42px !important;
+    width: min(100%, 220px) !important;
+  }
+
+  .master-shell.is-raft-theme .visual-dashboard-relation-graph .visual-graph-spacing-control input[type="range"] {
+    width: 100% !important;
+    min-width: 84px !important;
+  }
+
   .master-shell.is-raft-theme .visual-dashboard-relation-graph .visual-graph-canvas,
   .master-shell.is-raft-theme .visual-dashboard-relation-graph .visual-force-graph {
     min-height: 460px !important;
@@ -2104,7 +2114,8 @@ body.is-raft-theme-body #root {
 
   @media (max-width: 360px) {
     .master-shell.is-raft-theme .visual-toolbar-main,
-    .master-shell.is-raft-theme .visual-controls {
+    .master-shell.is-raft-theme .visual-controls,
+    .master-shell.is-raft-theme .visual-dashboard-relation-graph .visual-graph-header-actions {
       grid-template-columns: 1fr !important;
     }
 

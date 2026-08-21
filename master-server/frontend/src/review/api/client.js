@@ -372,8 +372,10 @@ export const getReviewAdvice = async (category, filename) => {
   });
 };
 
-export const submitReviewScore = async (category, filename, score, reviewDate) => {
+export const submitReviewScore = async (category, filename, score, reviewDate, options = {}) => {
   const finalCategory = requireCategory(category);
+  const hasSuppressionScore = Object.prototype.hasOwnProperty.call(options || {}, 'suppressionScore')
+    || Object.prototype.hasOwnProperty.call(options || {}, 'suppression_score');
   return requestJson('/api/review/suggest', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -382,6 +384,7 @@ export const submitReviewScore = async (category, filename, score, reviewDate) =
       filename,
       score,
       review_date: reviewDate,
+      ...(hasSuppressionScore ? { suppression_score: options.suppressionScore ?? options.suppression_score } : {}),
       auto_save: true,
     }),
   });

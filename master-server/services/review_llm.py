@@ -882,6 +882,118 @@ def search_vocabulary_with_llm(query: str, candidates: list[dict], limit: int = 
     }
 
 
+def _normalize_context_candidate(raw_item) -> dict | None:
+    if not isinstance(raw_item, dict):
+        return None
+    word = _safe_string(
+        raw_item.get("word")
+        or raw_item.get("target_word")
+        or raw_item.get("vocab")
+        or raw_item.get("term")
+    )
+    if not word:
+        return None
+    context = _safe_string(
+        raw_item.get("context")
+        or raw_item.get("sentence")
+        or raw_item.get("example")
+        or raw_item.get("quote")
+    )
+    reason = _safe_string(raw_item.get("reason") or raw_item.get("value") or raw_item.get("why"))
+    definition_hint = _safe_string(
+        raw_item.get("definition_hint")
+        or raw_item.get("meaning")
+        or raw_item.get("definition")
+        or raw_item.get("hint")
+    )
+    source = _safe_string(raw_item.get("source") or raw_item.get("speaker") or raw_item.get("turn"))
+    confidence = _normalize_optional_confidence(raw_item.get("confidence") or raw_item.get("score"))
+    candidate = {
+        "word": word,
+        "context": context,
+        "reason": reason,
+        "definition_hint": definition_hint,
+        "source": source,
+        "confidence": confidence if confidence is not None else 0.7,
+    }
+    return candidate
+
+
+def extract_context_vocabulary_candidates_with_llm(
+    text: str,
+    *,
+    user_prompt: str = "",
+    previous_candidates: list[dict] | None = None,
+    limit: int = 8,
+) -> dict:
+    normalized_text = _clip_text(_safe_string(text), 12000)
+    normalized_prompt = _normalize_custom_prompt(user_prompt, limit=1600)
+    normalized_limit = max(1, min(int(limit or 8), 20))
+    previous = []
+    for item in previous_candidates if isinstance(previous_candidates, list) else []:
+        candidate = _normalize_context_candidate(item)
+        if candidate:
+            previous.append(candidate)
+
+    if not normalized_text:
+        return {"candidates": [], "notes": ["输入为空"]}
+
+    prompt = (
+        "你是 Linkualog 的英文学习词条候选提取器。请只输出 JSON，不要输出 markdown。"
+        "任务：从用户给的混乱输入中提取高价值英文单词或短语候选，以及能直接作为生词本例句的语境。"
+        "输入可能是用户和 LLM 的聊天记录、论文讨论、代码解释或笔记。"
+        "优先选择：语境中真正有学习价值、不是过于基础、能从上下文看出具体含义、值得复习的英文词或短语。"
+        "避免选择：人名、产品名、纯代码标识符、孤立缩写、过于基础的词、中文词、没有上下文支撑的词。"
+        "context 必须尽量摘取原文中的完整句子或相邻短段，不要编造。"
+        "如果用户补充了偏好，优先按偏好继续找新候选；不要重复 previous_candidates 已经给出的 word/context。"
+        '输出结构：{"candidates":[{"word":"...","context":"...","definition_hint":"中文语境义提示","reason":"中文理由","source":"可选来源","confidence":0.82}],"notes":["..."]}'
+        f"最多返回 {normalized_limit} 个候选。\n"
+        f"用户补充偏好: {normalized_prompt or '无'}\n"
+        f"previous_candidates: {json.dumps(previous[:30], ensure_ascii=False, separators=(',', ':'))}\n"
+        f"input_text: {json.dumps(normalized_text, ensure_ascii=False)}"
+    )
+    result = _call_llm_json(
+        prompt,
+        max_tokens=max(900, min(3200, 520 + normalized_limit * 180)),
+        temperature=0.1,
+        request_tag="vocab_context_extract",
+    )
+    raw_candidates = []
+    raw_notes = []
+    if isinstance(result, dict):
+        raw_candidates = result.get("candidates") or result.get("words") or result.get("items") or []
+        raw_notes = result.get("notes")
+    elif isinstance(result, list):
+        raw_candidates = result
+
+    candidates = []
+    seen = set()
+    previous_keys = {
+        (
+            _safe_string(item.get("word")).lower(),
+            _safe_string(item.get("context")).lower(),
+        )
+        for item in previous
+    }
+    for raw_item in raw_candidates if isinstance(raw_candidates, list) else []:
+        candidate = _normalize_context_candidate(raw_item)
+        if not candidate:
+            continue
+        key = (candidate["word"].lower(), candidate["context"].lower())
+        if key in seen or key in previous_keys:
+            continue
+        seen.add(key)
+        candidates.append(candidate)
+        if len(candidates) >= normalized_limit:
+            break
+
+    return {
+        "candidates": candidates,
+        "notes": _normalize_text_list(raw_notes),
+        "raw": result if isinstance(result, dict) else {},
+    }
+
+
 def _first_non_empty_text(*values) -> str:
     for value in values:
         text = _safe_string(value)

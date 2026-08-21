@@ -39,6 +39,12 @@ def _normalize_filename(value: str) -> str:
     return filename if filename.endswith(".json") else f"{filename}.json"
 
 
+def _entry_id(category: str, filename: str) -> str:
+    normalized_category = _normalize_category(category)
+    normalized_filename = _normalize_filename(filename)
+    return f"{normalized_category}/{normalized_filename}" if normalized_category and normalized_filename else ""
+
+
 def _compact_extra_value(value):
     if isinstance(value, dict):
         compact = {
@@ -376,6 +382,88 @@ def delete_refine_cache_for_entry(category: str, filename: str, kinds: set[str] 
                 deleted += 1
             except FileNotFoundError:
                 pass
+    return deleted
+
+
+def _cache_value_ref_ids(value, default_category: str = "") -> set[str]:
+    found: set[str] = set()
+
+    if isinstance(value, str):
+        raw = value.strip()
+        if not raw:
+            return found
+        if "/" in raw:
+            category_part, file_part = raw.rsplit("/", 1)
+            current_id = _entry_id(category_part or default_category, file_part)
+            if current_id:
+                found.add(current_id)
+        elif raw.endswith(".json"):
+            current_id = _entry_id(default_category, raw)
+            if current_id:
+                found.add(current_id)
+        return found
+
+    if isinstance(value, list):
+        for item in value:
+            found.update(_cache_value_ref_ids(item, default_category))
+        return found
+
+    if not isinstance(value, dict):
+        return found
+
+    category = _normalize_category(
+        value.get("category")
+        or value.get("target_category")
+        or value.get("targetCategory")
+        or value.get("source_category")
+        or value.get("sourceCategory")
+        or default_category
+    )
+    filename = _normalize_filename(
+        value.get("file")
+        or value.get("filename")
+        or value.get("target_file")
+        or value.get("targetFile")
+        or value.get("source_file")
+        or value.get("sourceFile")
+        or ""
+    )
+    current_id = _entry_id(category, filename)
+    if current_id:
+        found.add(current_id)
+
+    nested_default_category = category or default_category
+    for item in value.values():
+        found.update(_cache_value_ref_ids(item, nested_default_category))
+    return found
+
+
+def delete_relation_suggest_caches_referencing_entry(category: str, filename: str) -> int:
+    target_id = _entry_id(category, filename)
+    if not target_id:
+        return 0
+
+    deleted = 0
+    root = _cache_root()
+    for path in root.glob("*.json"):
+        try:
+            with FileLock(f"{path}.lock", timeout=1):
+                data = json.loads(path.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        if not isinstance(data, dict):
+            continue
+        meta = data.get("meta") if isinstance(data.get("meta"), dict) else {}
+        if meta.get("kind") != "relation_suggest_llm":
+            continue
+        meta_id = _entry_id(str(meta.get("category") or ""), str(meta.get("filename") or ""))
+        if meta_id != target_id and target_id not in _cache_value_ref_ids(data, str(meta.get("category") or "")):
+            continue
+        try:
+            path.unlink()
+            deleted += 1
+        except FileNotFoundError:
+            pass
     return deleted
 
 

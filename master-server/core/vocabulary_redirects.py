@@ -13,6 +13,16 @@ import core.review_vocabulary as review_vocabulary
 
 MAX_REDIRECT_DEPTH = 12
 REDIRECTS_FILENAME = ".vocabulary_redirects.json"
+_RELATION_KEYS = (
+    "relations",
+    "graphEdges",
+    "graph_edges",
+    "edges",
+    "links",
+    "related",
+    "seeAlso",
+    "see_also",
+)
 
 
 def _now_iso() -> str:
@@ -49,10 +59,121 @@ def _read_index_locked(path: Path) -> dict:
     return {"redirects": redirects}
 
 
+def _write_index_locked(path: Path, data: dict) -> None:
+    redirects = data.get("redirects") if isinstance(data.get("redirects"), dict) else {}
+    if redirects:
+        path.write_text(json.dumps({"redirects": redirects}, ensure_ascii=False, indent=2), encoding="utf-8")
+        return
+    try:
+        path.unlink()
+    except FileNotFoundError:
+        pass
+
+
+def _value_relation_ref_ids(value, default_category: str = "") -> set[str]:
+    found: set[str] = set()
+    if isinstance(value, str):
+        raw = value.strip()
+        if not raw:
+            return found
+        if "/" in raw:
+            category_part, file_part = raw.rsplit("/", 1)
+            current_id = entry_id(category_part or default_category, file_part)
+            if current_id:
+                found.add(current_id)
+        elif raw.endswith(".json"):
+            current_id = entry_id(default_category, raw)
+            if current_id:
+                found.add(current_id)
+        return found
+
+    if isinstance(value, list):
+        for item in value:
+            found.update(_value_relation_ref_ids(item, default_category))
+        return found
+
+    if not isinstance(value, dict):
+        return found
+
+    category = str(
+        value.get("category")
+        or value.get("target_category")
+        or value.get("targetCategory")
+        or default_category
+    ).strip()
+    filename = _normalize_filename(
+        value.get("file")
+        or value.get("filename")
+        or value.get("target_file")
+        or value.get("targetFile")
+        or ""
+    )
+    current_id = entry_id(category, filename)
+    if current_id:
+        found.add(current_id)
+
+    nested_default_category = category or default_category
+    for item in value.values():
+        found.update(_value_relation_ref_ids(item, nested_default_category))
+    return found
+
+
+def _payload_references_entry(payload: dict, default_category: str, target_id: str) -> bool:
+    if not isinstance(payload, dict) or not target_id:
+        return False
+    for key in _RELATION_KEYS:
+        if key not in payload:
+            continue
+        if target_id in _value_relation_ref_ids(payload.get(key), default_category):
+            return True
+    return False
+
+
+def _redirect_source_is_referenced(source_id: str) -> bool:
+    if not source_id:
+        return False
+    for category_name in review_vocabulary.list_categories():
+        try:
+            files = review_vocabulary.list_vocab_files(category_name)
+        except Exception:
+            continue
+        for path in files:
+            try:
+                payload = review_vocabulary.load_vocab_file(path)
+            except Exception:
+                continue
+            if _payload_references_entry(payload, category_name, source_id):
+                return True
+    return False
+
+
 def load_redirects() -> dict:
     path = _redirects_path()
     with FileLock(f"{path}.lock", timeout=5):
         return _read_index_locked(path)
+
+
+def prune_resolved_redirects(source_ids: set[str] | None = None) -> dict:
+    path = _redirects_path()
+    with FileLock(f"{path}.lock", timeout=5):
+        data = _read_index_locked(path)
+        redirects = data["redirects"]
+        scoped_source_ids = {str(item or "").strip() for item in source_ids or set() if str(item or "").strip()}
+        removed: list[str] = []
+        for source_id in list(redirects.keys()):
+            if scoped_source_ids and source_id not in scoped_source_ids:
+                continue
+            if _redirect_source_is_referenced(source_id):
+                continue
+            redirects.pop(source_id, None)
+            removed.append(source_id)
+        if removed:
+            _write_index_locked(path, data)
+        return {
+            "removed": removed,
+            "removed_count": len(removed),
+            "remaining_count": len(redirects),
+        }
 
 
 def save_redirect(
@@ -90,8 +211,8 @@ def save_redirect(
             "created_at": _now_iso(),
         }
         redirects[source_id] = record
-        path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
-        return record
+        _write_index_locked(path, data)
+    return record
 
 
 def resolve_redirect(category: str, filename: str) -> dict:

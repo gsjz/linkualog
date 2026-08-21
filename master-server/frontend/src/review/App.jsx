@@ -4176,7 +4176,7 @@ export default function App({
   };
 
   const runAutoRelationSuggest = useEffectEvent(() => {
-    void handleRunRelationSuggest({ cacheOnly: true });
+    void handleRunRelationSuggest();
   });
 
   const handleApplyLlmSuggestion = (kind, item) => {
@@ -4429,6 +4429,7 @@ export default function App({
           file: savedFilename,
           target_file: savedFilename,
           data: res.data || payload,
+          closeEditor: overlayMode,
           keepSelection: true,
         });
       }
@@ -4607,6 +4608,29 @@ export default function App({
     }
   };
 
+  const handleToggleReviewSuppression = async () => {
+    if (!hasSelection || !detail) return;
+
+    const currentScore = Number(detail?.review_suppression?.score || detail?.reviewSuppression?.score || 0) || 0;
+    const nextScore = currentScore > 0 ? 0 : 5;
+    setLoadingReview(true);
+    try {
+      setError('');
+      const reviewRes = await submitReviewScore(apiCategory, filename, null, reviewDate, {
+        suppressionScore: nextScore,
+      });
+      setReviewData(reviewRes);
+
+      const detailRes = await fetchVocabDetail(apiCategory, filename);
+      hydrateDetailAndDraft(detailRes.data || null);
+      showNotice(nextScore > 0 ? '已近期抑制当前词条' : '已取消近期抑制');
+    } catch (err) {
+      showError(err.message);
+    } finally {
+      setLoadingReview(false);
+    }
+  };
+
   const handleSpeakWord = (lang, label) => {
     const word = collapseWhitespace(activeWord);
     if (!word) return;
@@ -4668,7 +4692,7 @@ export default function App({
     if (handledAutoRefineTokenRef.current === token) return;
     handledAutoRefineTokenRef.current = token;
 
-    void handleClean({ cacheOnly: true });
+    void handleClean();
   }, [draft, handleClean, hasSelection, launchRequest?.autoRefineToken, loadingClean, overlayMode]);
 
   useEffect(() => {
@@ -4721,6 +4745,10 @@ export default function App({
         {compact ? <UiIcon name="dictionary-link" size={15} /> : null}
         <span>有道词典</span>
       </button>
+      <button type="button" className={Number(detail?.review_suppression?.score || 0) > 0 ? 'primary' : 'ghost'} onClick={handleToggleReviewSuppression} disabled={!hasSelection || loadingReview}>
+        {compact ? <UiIcon name="filter" size={15} /> : null}
+        <span>{Number(detail?.review_suppression?.score || 0) > 0 ? '已抑制' : '无关紧要'}</span>
+      </button>
       {ttsVoiceLabel ? (
         <button type="button" className="ghost" onClick={handleStopSpeech}>
           {compact ? <UiIcon name="close" size={15} /> : null}
@@ -4754,7 +4782,7 @@ export default function App({
           {draft ? <span className={`badge ${draftDirty ? 'medium' : 'high'}`}>{draftDirty ? 'draft' : 'synced'}</span> : null}
           <button type="button" className="danger" onClick={handleDeleteDraft} disabled={deletingDraft || savingDraft || !hasSelection}>{deletingDraft ? '删除中...' : '删除词条'}</button>
           <button type="button" className="ghost" onClick={handleDraftReset} disabled={!draftDirty || savingDraft || deletingDraft}>重置草稿</button>
-          <button type="button" className="primary" onClick={() => handleDraftSave({ closeEditor: false })} disabled={!draftDirty || savingDraft || deletingDraft}>{savingDraft ? '保存中...' : '保存到 data'}</button>
+          <button type="button" className="primary" onClick={() => handleDraftSave({ closeEditor: overlayMode })} disabled={!draftDirty || savingDraft || deletingDraft}>{savingDraft ? '保存中...' : '保存到 data'}</button>
         </div>
       </div>
       <EditorPanel
