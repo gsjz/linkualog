@@ -9,6 +9,10 @@
     {
       "date": "2026-05-29",
       "score": 4
+    },
+    {
+      "date": "2026-08-05",
+      "score": 2
     }
   ],
   "definitions": [
@@ -34,5 +38,47 @@
   ],
   "mergedFrom": [
     "reclaiming"
+  ],
+  "relations": [
+    {
+      "type": "same_scene",
+      "target": {
+        "category": "daily",
+        "file": "coup.json",
+        "word": "coup"
+      },
+      "reason": "当前词条例句是流亡前领导人试图 reclaim power（重新夺回权力），而 coup 指通过政变夺取政权；两者都属于政治权力争夺/夺权场景，且 coup 常可能是 reclaim power 的手段。",
+      "source": "llm"
+    },
+    {
+      "type": "same_scene",
+      "target": {
+        "category": "daily",
+        "file": "overthrow.json",
+        "word": "overthrow"
+      },
+      "reason": "reclaim 在例句中表示重新夺回权力；overthrow 表示推翻政府或领导人。两者都围绕政权更替、权力控制的转移，语义场景高度相关，但不是简单同义词。",
+      "source": "llm"
+    },
+    {
+      "type": "same_scene",
+      "target": {
+        "category": "daily",
+        "file": "exile.json",
+        "word": "exile"
+      },
+      "reason": "当前例句中的 Manuel Bonilla 是 exiled former leader（被流放的前领导人），随后试图 reclaiming power（重新夺回权力）；“流亡/放逐”和“重新夺权”在政治复辟叙事中紧密相连。",
+      "source": "llm"
+    },
+    {
+      "type": "related",
+      "target": {
+        "category": "daily",
+        "file": "retrieve.json",
+        "word": "retrieve"
+      },
+      "reason": "reclaim 和 retrieve 都可涉及“取回/重新获得”某物，但 retrieve 更偏“找回、取回、带回”，例句中是 retrieve scriptures；reclaim 更强调恢复原本拥有的权利、土地或控制权，适合作为易混相关词互相跳转。",
+      "source": "llm"
+    }
   ]
 }

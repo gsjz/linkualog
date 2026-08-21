@@ -1,7 +1,12 @@
 {
   "word": "boast",
   "createdAt": "2026-06-12",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-08-09",
+      "score": 2
+    }
+  ],
   "definitions": [
     "吹嘘，夸耀；自夸地说"
   ],
@@ -20,6 +25,18 @@
         "url": "https://www.youtube.com/watch?v=A-oxDZ3AO74",
         "timestamp": 55
       }
+    }
+  ],
+  "relations": [
+    {
+      "type": "antonym",
+      "target": {
+        "category": "daily",
+        "file": "downplay.json",
+        "word": "downplay"
+      },
+      "reason": "boast 表示夸耀、强调自己的优点或成就；downplay 表示淡化、轻描淡写某事，尤其在谈到成就、能力或问题严重性时，二者构成有学习价值的语义对比。",
+      "source": "llm"
     }
   ]
 }

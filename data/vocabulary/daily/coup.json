@@ -33,5 +33,17 @@
   ],
   "mergedFrom": [
     "coups"
+  ],
+  "relations": [
+    {
+      "type": "same_scene",
+      "target": {
+        "category": "daily",
+        "file": "reclaim.json",
+        "word": "reclaim"
+      },
+      "reason": "当前词条例句是流亡前领导人试图 reclaim power（重新夺回权力），而 coup 指通过政变夺取政权；两者都属于政治权力争夺/夺权场景，且 coup 常可能是 reclaim power 的手段。",
+      "source": "llm"
+    }
   ]
 }

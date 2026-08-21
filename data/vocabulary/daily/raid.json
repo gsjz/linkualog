@@ -78,5 +78,17 @@
         "在例句中 being raided 表示“正遭到（游牧部落）袭击/劫掠”"
       ]
     }
+  ],
+  "relations": [
+    {
+      "type": "same_scene",
+      "target": {
+        "category": "daily",
+        "file": "tactical.json",
+        "word": "tactical"
+      },
+      "reason": "tactical 常用于军事、警务或战术射击游戏语境，表示“战术上的”；raid 表示“突袭、袭击”，也是同一类军事/行动场景中的具体行动，二者在 tactical raid、tactical shooter 中的突袭行动等语境里有学习跳转价值。",
+      "source": "llm"
+    }
   ]
 }

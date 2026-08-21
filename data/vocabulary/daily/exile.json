@@ -37,5 +37,17 @@
   ],
   "mergedFrom": [
     "exiled"
+  ],
+  "relations": [
+    {
+      "type": "same_scene",
+      "target": {
+        "category": "daily",
+        "file": "reclaim.json",
+        "word": "reclaim"
+      },
+      "reason": "当前例句中的 Manuel Bonilla 是 exiled former leader（被流放的前领导人），随后试图 reclaiming power（重新夺回权力）；“流亡/放逐”和“重新夺权”在政治复辟叙事中紧密相连。",
+      "source": "llm"
+    }
   ]
 }

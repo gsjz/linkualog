@@ -56,5 +56,17 @@
       ],
       "missing_points": []
     }
+  ],
+  "relations": [
+    {
+      "type": "related",
+      "target": {
+        "category": "cet",
+        "file": "credential.json",
+        "word": "credential"
+      },
+      "reason": "credential 指通过经历、资格或成就形成的“资历/资格”，aptitude 指个人具备的“天赋/能力倾向”；两者都用于评价一个人是否适合某种角色或任务，但一个偏正式资质，一个偏内在能力，适合互相跳转区分。",
+      "source": "llm"
+    }
   ]
 }

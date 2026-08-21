@@ -13,6 +13,10 @@
     {
       "date": "2026-06-01",
       "score": 4
+    },
+    {
+      "date": "2026-08-08",
+      "score": 4
     }
   ],
   "definitions": [
@@ -61,6 +65,16 @@
         "word": "longitudinal"
       },
       "source": "manual"
+    },
+    {
+      "type": "related",
+      "target": {
+        "category": "daily",
+        "file": "immortality.json",
+        "word": "immortality"
+      },
+      "reason": "longevity 表示“长寿、持久性”，与 immortality 的“永生、不朽”同属生命或存在持续时间的语义范围；区别在于 longevity 是很长但有限，immortality 是无限。",
+      "source": "llm"
     }
   ]
 }

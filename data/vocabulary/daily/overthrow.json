@@ -30,5 +30,17 @@
         "timestamp": 271
       }
     }
+  ],
+  "relations": [
+    {
+      "type": "same_scene",
+      "target": {
+        "category": "daily",
+        "file": "reclaim.json",
+        "word": "reclaim"
+      },
+      "reason": "reclaim 在例句中表示重新夺回权力；overthrow 表示推翻政府或领导人。两者都围绕政权更替、权力控制的转移，语义场景高度相关，但不是简单同义词。",
+      "source": "llm"
+    }
   ]
 }

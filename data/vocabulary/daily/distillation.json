@@ -19,5 +19,17 @@
         "timestamp": 201
       }
     }
+  ],
+  "relations": [
+    {
+      "type": "related",
+      "target": {
+        "category": "ielts",
+        "file": "desalination.json",
+        "word": "desalination"
+      },
+      "reason": "desalination 可通过蒸馏等工艺去除海水盐分，distillation 是相关的分离/净化过程，具有明确的技术关联和学习价值。",
+      "source": "llm"
+    }
   ]
 }

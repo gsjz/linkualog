@@ -5,6 +5,10 @@
     {
       "date": "2026-06-22",
       "score": 1
+    },
+    {
+      "date": "2026-08-08",
+      "score": 1
     }
   ],
   "definitions": [
@@ -21,6 +25,18 @@
         "text": "CET6 23 12 2 听力",
         "url": ""
       }
+    }
+  ],
+  "relations": [
+    {
+      "type": "antonym",
+      "target": {
+        "category": "daily",
+        "file": "immortality.json",
+        "word": "immortality"
+      },
+      "reason": "immortality 表示“不朽、永生”，与 mortality 在更基本词义上“必死性、死亡状态”相对；虽然候选词条当前例句侧重“死亡率”，但两词在学习上是典型对照词。",
+      "source": "llm"
     }
   ]
 }

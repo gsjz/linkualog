@@ -23,5 +23,17 @@
       }
     }
   ],
-  "marked": false
+  "marked": false,
+  "relations": [
+    {
+      "type": "same_scene",
+      "target": {
+        "category": "ielts",
+        "file": "desalination.json",
+        "word": "desalination"
+      },
+      "reason": "desalination 是应对缺水问题的供水技术，drought 表示干旱这一水资源短缺场景；二者常在气候变化、淡水供应和水危机语境中共同出现，适合互相跳转。",
+      "source": "llm"
+    }
+  ]
 }

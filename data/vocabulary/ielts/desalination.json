@@ -13,6 +13,10 @@
     {
       "date": "2026-05-06",
       "score": 3
+    },
+    {
+      "date": "2026-08-05",
+      "score": 1
     }
   ],
   "definitions": [
@@ -29,6 +33,38 @@
         "text": "剑桥 5 3 阅读2",
         "url": ""
       }
+    }
+  ],
+  "relations": [
+    {
+      "type": "same_scene",
+      "target": {
+        "category": "ielts",
+        "file": "drought.json",
+        "word": "drought"
+      },
+      "reason": "desalination 是应对缺水问题的供水技术，drought 表示干旱这一水资源短缺场景；二者常在气候变化、淡水供应和水危机语境中共同出现，适合互相跳转。",
+      "source": "llm"
+    },
+    {
+      "type": "related",
+      "target": {
+        "category": "daily",
+        "file": "distillation.json",
+        "word": "distillation"
+      },
+      "reason": "desalination 可通过蒸馏等工艺去除海水盐分，distillation 是相关的分离/净化过程，具有明确的技术关联和学习价值。",
+      "source": "llm"
+    },
+    {
+      "type": "same_scene",
+      "target": {
+        "category": "ielts",
+        "file": "irrigation.json",
+        "word": "irrigation"
+      },
+      "reason": "desalination 产生淡水，irrigation 是农业用水方式；在水资源管理、农业供水和干旱地区用水方案中语义关联明显。",
+      "source": "llm"
     }
   ]
 }

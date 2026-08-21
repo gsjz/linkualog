@@ -19,5 +19,17 @@
         "timestamp": 163
       }
     }
+  ],
+  "relations": [
+    {
+      "type": "related",
+      "target": {
+        "category": "daily",
+        "file": "reclaim.json",
+        "word": "reclaim"
+      },
+      "reason": "reclaim 和 retrieve 都可涉及“取回/重新获得”某物，但 retrieve 更偏“找回、取回、带回”，例句中是 retrieve scriptures；reclaim 更强调恢复原本拥有的权利、土地或控制权，适合作为易混相关词互相跳转。",
+      "source": "llm"
+    }
   ]
 }

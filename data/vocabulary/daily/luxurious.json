@@ -1,12 +1,19 @@
 {
   "word": "luxurious",
   "createdAt": "2026-06-12",
-  "reviews": [],
-  "definitions": [],
+  "reviews": [
+    {
+      "date": "2026-08-08",
+      "score": 4
+    }
+  ],
+  "definitions": [
+    "奢华的；豪华的；非常舒适或昂贵的"
+  ],
   "examples": [
     {
-      "text": "His determination renewed, Sun Wukong Kong returned to Tripitaka to apologize, but quickly spotted the luxurious shirt and cap. They fit the Monkey King perfectly— prompting Tripitaka to recite the spell out of curiosity.",
-      "explanation": "",
+      "text": "His determination renewed, Sun Wukong returned to Tripitaka to apologize, but quickly spotted the luxurious shirt and cap. They fit the Monkey King perfectly— prompting Tripitaka to recite the spell out of curiosity.",
+      "explanation": "这里 luxurious 修饰 shirt and cap，表示这件衬衫和帽子看起来很华丽、昂贵或奢华。",
       "focusWords": [
         "luxurious"
       ],

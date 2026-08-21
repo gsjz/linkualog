@@ -46,6 +46,16 @@
       },
       "reason": "两者都涉及公开表态或支持：pledged 强调“郑重承诺/许诺”，endorsed 强调“认可/背书”。虽然不构成同义词，但在“支持某人、某事或某项目”的语义网络中有学习价值，适合互相跳转区分“承诺支持”和“公开背书”。",
       "source": "llm"
+    },
+    {
+      "type": "same_scene",
+      "target": {
+        "category": "cet",
+        "file": "credential.json",
+        "word": "credential"
+      },
+      "reason": "credential 常用于说明某人具备可信的资格或资历，endorse 表示“认可、背书”；二者都出现在建立可信度、专业认可或权威支持的语境中，但不是同义词。",
+      "source": "llm"
     }
   ]
 }

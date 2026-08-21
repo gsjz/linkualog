@@ -1,7 +1,12 @@
 {
   "word": "almighty",
   "createdAt": "2026-06-12",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-08-14",
+      "score": 2
+    }
+  ],
   "definitions": [
     "全能的；有无上权力的；力量极强的"
   ],

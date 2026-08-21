@@ -26,5 +26,17 @@
         "url": ""
       }
     }
+  ],
+  "relations": [
+    {
+      "type": "same_scene",
+      "target": {
+        "category": "ielts",
+        "file": "desalination.json",
+        "word": "desalination"
+      },
+      "reason": "desalination 产生淡水，irrigation 是农业用水方式；在水资源管理、农业供水和干旱地区用水方案中语义关联明显。",
+      "source": "llm"
+    }
   ]
 }

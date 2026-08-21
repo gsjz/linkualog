@@ -1,12 +1,19 @@
 {
   "word": "ring",
   "createdAt": "2026-06-12",
-  "reviews": [],
-  "definitions": [],
+  "reviews": [
+    {
+      "date": "2026-08-09",
+      "score": 2
+    }
+  ],
+  "definitions": [
+    "（说法、名称等）听起来的感觉；给人的印象（常用于 have a ... ring to it）"
+  ],
   "examples": [
     {
       "text": "As well as being on trend, and with a much better ring to it than synthetic leather, the vegan label does carry an important extra distinction.",
-      "explanation": "",
+      "explanation": "这里的 ring 不是“戒指”或“铃声”，而是指一个说法或标签“听起来的感觉”。a much better ring to it 表示“听起来好得多、更顺耳”。",
       "focusWords": [
         "ring"
       ],

@@ -70,6 +70,16 @@
       },
       "reason": "amplify 表示把影响、问题、声音等“放大、增强、加剧”，而 downplay 表示“淡化、轻描淡写、弱化严重性”，在表达对问题或影响的处理方式时语义相反。",
       "source": "llm"
+    },
+    {
+      "type": "antonym",
+      "target": {
+        "category": "daily",
+        "file": "boast.json",
+        "word": "boast"
+      },
+      "reason": "boast 表示夸耀、强调自己的优点或成就；downplay 表示淡化、轻描淡写某事，尤其在谈到成就、能力或问题严重性时，二者构成有学习价值的语义对比。",
+      "source": "llm"
     }
   ]
 }

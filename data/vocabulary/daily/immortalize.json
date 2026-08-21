@@ -1,0 +1,37 @@
+{
+  "word": "immortalize",
+  "createdAt": "2026-06-15",
+  "reviews": [],
+  "definitions": [
+    "使永存；使不朽；把……永远记录下来"
+  ],
+  "examples": [
+    {
+      "text": "power. Clearly, this trailer depicts the story of Ocarina of Time being retold as a legend immortalized on this ornate tapestry. This is interesting because it not only means that this narration is",
+      "explanation": "这里的 immortalized 指“被永远地记录、描绘或纪念”。整句意思是：这部预告片把《时之笛》的故事讲成了一个被镌刻在华丽挂毯上的传奇。",
+      "focusWords": [
+        "immortalize"
+      ],
+      "source": {
+        "text": "Ocarina of Time Remake Trailer Analysis",
+        "url": "https://www.youtube.com/watch?v=OgO9-cYv8yM"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=OgO9-cYv8yM",
+        "timestamp": 92
+      }
+    }
+  ],
+  "relations": [
+    {
+      "type": "related",
+      "target": {
+        "category": "daily",
+        "file": "immortality.json",
+        "word": "immortality"
+      },
+      "reason": "immortalized 表示“被使之不朽、被永久铭记”，是 immortality 的动词化/形容词化相关概念，常用于 figurative immortality（名声或故事的不朽），有明确语义跳转价值。",
+      "source": "llm"
+    }
+  ]
+}

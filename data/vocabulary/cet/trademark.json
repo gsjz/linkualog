@@ -1,12 +1,19 @@
 {
   "word": "trademark",
   "createdAt": "2026-06-12",
-  "reviews": [],
-  "definitions": [],
+  "reviews": [
+    {
+      "date": "2026-08-05",
+      "score": 2
+    }
+  ],
+  "definitions": [
+    "商标；注册标志；用于识别某产品、组织或服务的标识（trademark）"
+  ],
   "examples": [
     {
       "text": "The Animal Free Product Society says they’ve seen a boom in products registered with the vegan trademark.",
-      "explanation": "",
+      "explanation": "句意：动物自由产品协会表示，注册使用素食商标的产品数量大幅增加。这里 trademark 指用于表明或认证产品身份的“商标、标志”。",
       "focusWords": [
         "trademark"
       ],

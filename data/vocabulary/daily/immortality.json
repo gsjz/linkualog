@@ -1,12 +1,19 @@
 {
   "word": "immortality",
   "createdAt": "2026-06-12",
-  "reviews": [],
-  "definitions": [],
+  "reviews": [
+    {
+      "date": "2026-08-08",
+      "score": 1
+    }
+  ],
+  "definitions": [
+    "不朽；永生；长生不死"
+  ],
   "examples": [
     {
       "text": "After wreaking havoc across the heavens, pilfering a potion of immortality, and defeating the strongest warriors in the Jade Emperor’s court, the Monkey King had finally been captured in a white-hot prison cell.",
-      "explanation": "",
+      "explanation": "句中 immortality 指“永生、长生不死”。a potion of immortality 就是“能让人长生不死的药水”。",
       "focusWords": [
         "immortality"
       ],
@@ -18,6 +25,38 @@
         "url": "https://www.youtube.com/watch?v=A-oxDZ3AO74",
         "timestamp": 9
       }
+    }
+  ],
+  "relations": [
+    {
+      "type": "related",
+      "target": {
+        "category": "cet",
+        "file": "longevity.json",
+        "word": "longevity"
+      },
+      "reason": "longevity 表示“长寿、持久性”，与 immortality 的“永生、不朽”同属生命或存在持续时间的语义范围；区别在于 longevity 是很长但有限，immortality 是无限。",
+      "source": "llm"
+    },
+    {
+      "type": "antonym",
+      "target": {
+        "category": "cet",
+        "file": "mortality.json",
+        "word": "mortality"
+      },
+      "reason": "immortality 表示“不朽、永生”，与 mortality 在更基本词义上“必死性、死亡状态”相对；虽然候选词条当前例句侧重“死亡率”，但两词在学习上是典型对照词。",
+      "source": "llm"
+    },
+    {
+      "type": "related",
+      "target": {
+        "category": "daily",
+        "file": "immortalize.json",
+        "word": "immortalize"
+      },
+      "reason": "immortalized 表示“被使之不朽、被永久铭记”，是 immortality 的动词化/形容词化相关概念，常用于 figurative immortality（名声或故事的不朽），有明确语义跳转价值。",
+      "source": "llm"
     }
   ]
 }
