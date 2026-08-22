@@ -55,6 +55,15 @@ export const resetConfig = async () => {
   return handleResponse(res);
 };
 
+export const testLlmConfig = async (payload) => {
+  const res = await fetch(`${BACKEND_URL}/api/config/llm-test`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload || {}),
+  });
+  return handleResponse(res);
+};
+
 export const uploadImage = async (formData) => {
   const res = await fetch(`${BACKEND_URL}/api/upload_image`, { method: 'POST', body: formData });
   return handleResponse(res);

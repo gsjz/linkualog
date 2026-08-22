@@ -796,12 +796,95 @@
   box-shadow: inset 4px 0 0 rgba(15, 118, 110, 0.16);
 }
 
+.config-test-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.config-test-result {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--ms-border);
+  border-radius: 6px;
+  background: var(--ms-surface-muted);
+  color: var(--ms-text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.config-test-result.is-success {
+  border-color: rgba(22, 163, 74, 0.35);
+  background: rgba(22, 163, 74, 0.08);
+}
+
+.config-test-result.is-error {
+  border-color: rgba(220, 38, 38, 0.35);
+  background: rgba(220, 38, 38, 0.08);
+}
+
+.config-test-result-title {
+  color: var(--ms-text);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.config-test-result-grid {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 6px 10px;
+  margin: 0;
+}
+
+.config-test-result-grid dt {
+  color: var(--ms-text);
+  font-weight: 700;
+}
+
+.config-test-result-grid dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.config-test-result code {
+  padding: 2px 4px;
+  border-radius: 4px;
+  background: rgba(15, 23, 42, 0.06);
+  color: var(--ms-text);
+}
+
+.config-test-error,
+.config-test-warnings {
+  color: var(--ms-danger);
+  font-weight: 650;
+}
+
+.config-test-excerpt {
+  max-height: 120px;
+  margin: 0;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 11px;
+}
+
 .config-actions {
   display: flex;
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
   justify-content: flex-end;
+}
+
+.config-actions button {
+  min-height: 38px;
+  height: auto;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
 .config-status {

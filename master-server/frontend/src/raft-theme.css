@@ -667,6 +667,7 @@ body.is-raft-theme-body #root {
 }
 
 .config-info-box,
+.config-test-result,
 .visual-empty,
 .vocab-review .vocab-review-empty,
 .task-history-empty,
@@ -690,6 +691,20 @@ body.is-raft-theme-body #root {
 .task-error-box {
   color: var(--ms-danger) !important;
   background: var(--ms-danger-soft) !important;
+}
+
+.config-test-error,
+.config-test-warnings {
+  color: var(--ms-danger) !important;
+}
+
+.config-test-result.is-success {
+  border-color: var(--ms-success) !important;
+  background: rgba(22, 163, 74, 0.08) !important;
+}
+
+.config-test-result.is-error {
+  border-color: var(--ms-danger) !important;
 }
 
 .master-shell.is-raft-theme input,

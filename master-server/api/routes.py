@@ -21,6 +21,10 @@ from services.llm import (
     process_context_analysis,
     recommend_task_name,
 )
+from services.llm_diagnostics import (
+    run_llm_config_connectivity_test,
+    run_llm_config_minimal_test,
+)
 from core.review_vocabulary import list_categories as list_vocab_categories
 from core.refine_cache import (
     delete_refine_cache_for_entry,
@@ -41,6 +45,15 @@ from core.vocabulary import (
 router = APIRouter()
 
 _FOCUS_TOKEN_RE = re.compile(r"\s+|[\w]+|[^\w\s]", flags=re.UNICODE)
+
+
+class LlmConfigTestRequest(BaseModel):
+    test_type: str = "connectivity"
+    provider: str | None = None
+    model: str | None = None
+    api_key: str | None = None
+    review_llm_timeout_seconds: float | None = None
+    review_llm_connectivity_timeout_seconds: float | None = None
 
 
 def _coerce_int(value):
@@ -299,6 +312,19 @@ def reset_config():
     public["experimental_coordinates_enabled"] = True
     public["experimentalCoordinatesEnabled"] = True
     return {"status": "success", "message": "配置已同步为默认设置", "data": public}
+
+
+@router.post("/api/config/llm-test")
+def test_llm_config(req: LlmConfigTestRequest):
+    payload = req.model_dump() if hasattr(req, "model_dump") else req.dict()
+    test_type = str(req.test_type or "").strip().lower()
+    if test_type == "connectivity":
+        result = run_llm_config_connectivity_test(payload)
+    elif test_type == "minimal":
+        result = run_llm_config_minimal_test(payload)
+    else:
+        raise HTTPException(status_code=400, detail="未知的 LLM 配置测试类型")
+    return {"status": "success", "data": result}
 
 
 def process_task_background(task_id: str):
