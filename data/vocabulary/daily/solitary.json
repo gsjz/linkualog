@@ -2,11 +2,13 @@
   "word": "solitary",
   "createdAt": "2026-06-12",
   "reviews": [],
-  "definitions": [],
+  "definitions": [
+    "孤独的；独自的；单独存在的（alone, single）"
+  ],
   "examples": [
     {
       "text": "At the very edge of this kingdom, there lay a small forest. Within it, an ancient solitary tree quietly watched over the inhabitants of the forest.",
-      "explanation": "",
+      "explanation": "这里的 “solitary tree” 指一棵单独生长、孤零零存在的树；solitary 用来形容某人或某物独自存在、没有同伴。",
       "focusWords": [
         "solitary"
       ],
