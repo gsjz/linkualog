@@ -12,7 +12,7 @@ import './raft-theme.css';
 
 const COMPACT_LAYOUT_MEDIA_QUERY = '(max-width: 1180px)';
 const DESKTOP_MINIMAL_MODE_KEY = 'linkualogDesktopMinimalMode';
-const VALID_TABS = new Set(['tasks', 'vocabulary', 'visualization', 'todo', 'experiments']);
+const VALID_TABS = new Set(['tasks', 'extract', 'vocabulary', 'visualization', 'todo', 'experiments']);
 const DEFAULT_TAB = 'visualization';
 const MOBILE_TOOLS_PANEL_ID = 'master-mobile-tools-panel';
 const RAFT_THEME_BODY_CLASS = 'is-raft-theme-body';
@@ -442,13 +442,23 @@ function App() {
             </button>
             <button
               onClick={() => handleTabChange('tasks')}
-              aria-label="打开上传文件"
+              aria-label="打开 OCR 任务"
               className={`master-tab${currentTab === 'tasks' ? ' active' : ''}`}
             >
               <span className="master-tab-icon">
-                <UiIcon name="upload" size={17} />
+                <UiIcon name="scan-text" size={17} />
               </span>
-              <span className="master-tab-label">{usesCompactLayout ? '上传' : '上传中心'}</span>
+              <span className="master-tab-label">{usesCompactLayout ? 'OCR' : 'OCR 任务'}</span>
+            </button>
+            <button
+              onClick={() => handleTabChange('extract')}
+              aria-label="打开文本提取"
+              className={`master-tab master-tab-prominent${currentTab === 'extract' ? ' active' : ''}`}
+            >
+              <span className="master-tab-icon">
+                <UiIcon name="message-square" size={17} />
+              </span>
+              <span className="master-tab-label">{usesCompactLayout ? '提取' : '文本提取'}</span>
             </button>
             <button
               type="button"
@@ -467,7 +477,7 @@ function App() {
               className={`master-tab${currentTab === 'experiments' ? ' active' : ''}`}
             >
               <span className="master-tab-icon">
-                <UiIcon name="tune" size={17} />
+                <UiIcon name="flask" size={17} />
               </span>
               <span className="master-tab-label">{usesCompactLayout ? '实验' : '实验性功能'}</span>
             </button>
@@ -591,13 +601,17 @@ function App() {
       <main className="app-main">
         <div className="task-container-wrapper">
           <div
-            className={`master-pane${currentTab === 'tasks' ? ' is-active' : ''}`}
-            aria-hidden={currentTab !== 'tasks'}
+            className={`master-pane${currentTab === 'tasks' || currentTab === 'extract' ? ' is-active' : ''}`}
+            aria-hidden={currentTab !== 'tasks' && currentTab !== 'extract'}
           >
             <TaskVisualizer
               onOpenVocabularyEntry={handleOpenVocabularyEntry}
-              simpleCreateOnly={usesCompactLayout}
-              isActive={currentTab === 'tasks'}
+              simpleCreateOnly={usesCompactLayout || currentTab === 'extract'}
+              isActive={currentTab === 'tasks' || currentTab === 'extract'}
+              forcedCreateTaskKind={currentTab === 'extract' ? 'context' : ''}
+              showCreateKindSwitch={currentTab !== 'extract'}
+              createPageTitle={currentTab === 'extract' ? '文本提取' : '新建任务'}
+              createPageSubtitle={currentTab === 'extract' ? '粘贴聊天或笔记，让 LLM 提取候选词和语境' : ''}
               categories={categories}
               addVocabularyCategory={addVocabularyCategory}
               onAddVocabularyCategoryChange={handleAddVocabularyCategoryChange}

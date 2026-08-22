@@ -686,7 +686,7 @@ export default function VocabularyWorkspace({
       <SurfaceLaunchButton
         surface="connection"
         label="连接"
-        icon="external-link"
+        icon="network"
         disabled={!hasSelection}
         onOpen={openWorkspaceSurface}
         active={editorSurface === 'connection'}

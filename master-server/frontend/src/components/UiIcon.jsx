@@ -1,4 +1,5 @@
 export default function UiIcon({ name, size = 18 }) {
+  // Several paths are simplified or adjusted from Lucide icons (ISC license).
   const commonProps = {
     width: size,
     height: size,
@@ -11,6 +12,165 @@ export default function UiIcon({ name, size = 18 }) {
     'aria-hidden': 'true',
     focusable: 'false',
   };
+
+  if (name === 'close') {
+    return (
+      <svg {...commonProps}>
+        <path d="M18 6 6 18" />
+        <path d="m6 6 12 12" />
+      </svg>
+    );
+  }
+
+  if (name === 'plus') {
+    return (
+      <svg {...commonProps}>
+        <path d="M12 5v14" />
+        <path d="M5 12h14" />
+      </svg>
+    );
+  }
+
+  if (name === 'minus') {
+    return (
+      <svg {...commonProps}>
+        <path d="M5 12h14" />
+      </svg>
+    );
+  }
+
+  if (name === 'sparkles') {
+    return (
+      <svg {...commonProps}>
+        <path d="m12 3 1.4 4.1L17.5 8.5l-4.1 1.4L12 14l-1.4-4.1-4.1-1.4 4.1-1.4z" />
+        <path d="M5 14.5 5.8 17l2.7.8-2.7.8L5 21l-.8-2.4-2.7-.8 2.7-.8z" />
+        <path d="M18.5 14 19 16l2 .5-2 .5-.5 2-.5-2-2-.5 2-.5z" />
+      </svg>
+    );
+  }
+
+  if (name === 'scan-text') {
+    return (
+      <svg {...commonProps}>
+        <path d="M7 4H5.5A1.5 1.5 0 0 0 4 5.5V7" />
+        <path d="M17 4h1.5A1.5 1.5 0 0 1 20 5.5V7" />
+        <path d="M7 20H5.5A1.5 1.5 0 0 1 4 18.5V17" />
+        <path d="M17 20h1.5a1.5 1.5 0 0 0 1.5-1.5V17" />
+        <path d="M8 9h8" />
+        <path d="M8 12.5h7" />
+        <path d="M8 16h5" />
+      </svg>
+    );
+  }
+
+  if (name === 'text-select') {
+    return (
+      <svg {...commonProps}>
+        <path d="M6 4h12" />
+        <path d="M12 4v16" />
+        <path d="M9 20h6" />
+        <rect x="4" y="8" width="16" height="8" rx="1.5" />
+      </svg>
+    );
+  }
+
+  if (name === 'message-square') {
+    return (
+      <svg {...commonProps}>
+        <path d="M5.5 5h13A1.5 1.5 0 0 1 20 6.5v8a1.5 1.5 0 0 1-1.5 1.5H10l-5 4v-4.5A1.5 1.5 0 0 1 3.5 14V6.5A1.5 1.5 0 0 1 5.5 5z" />
+        <path d="M8 9h8" />
+        <path d="M8 12h5" />
+      </svg>
+    );
+  }
+
+  if (name === 'notebook') {
+    return (
+      <svg {...commonProps}>
+        <path d="M7 4h10a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" />
+        <path d="M9 4v16" />
+        <path d="M12 8h4" />
+        <path d="M12 12h4" />
+      </svg>
+    );
+  }
+
+  if (name === 'clipboard-list') {
+    return (
+      <svg {...commonProps}>
+        <path d="M9 4h6l1 2h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h2z" />
+        <path d="M9 4v3h6V4" />
+        <path d="M9 12h6" />
+        <path d="M9 16h5" />
+        <path d="M7 12h.01" />
+        <path d="M7 16h.01" />
+      </svg>
+    );
+  }
+
+  if (name === 'network') {
+    return (
+      <svg {...commonProps}>
+        <circle cx="6" cy="7" r="2.5" />
+        <circle cx="18" cy="7" r="2.5" />
+        <circle cx="12" cy="17" r="2.5" />
+        <path d="m8.1 8.3 2.8 6.4" />
+        <path d="m15.9 8.3-2.8 6.4" />
+        <path d="M8.5 7h7" />
+      </svg>
+    );
+  }
+
+  if (name === 'link') {
+    return (
+      <svg {...commonProps}>
+        <path d="M9.5 14.5 14.5 9.5" />
+        <path d="M7.8 11.2 6.4 12.6a3.5 3.5 0 0 0 5 5l1.4-1.4" />
+        <path d="m11.2 7.8 1.4-1.4a3.5 3.5 0 0 1 5 5l-1.4 1.4" />
+      </svg>
+    );
+  }
+
+  if (name === 'brain') {
+    return (
+      <svg {...commonProps}>
+        <path d="M8.5 5.2A3 3 0 0 0 5.8 9a3.2 3.2 0 0 0-.2 5.7 3 3 0 0 0 4.9 3.1V5.8a3.2 3.2 0 0 0-2-.6z" />
+        <path d="M15.5 5.2A3 3 0 0 1 18.2 9a3.2 3.2 0 0 1 .2 5.7 3 3 0 0 1-4.9 3.1V5.8a3.2 3.2 0 0 1 2-.6z" />
+        <path d="M8 10h2.5" />
+        <path d="M13.5 10H16" />
+        <path d="M7.5 14.5h3" />
+        <path d="M13.5 14.5h3" />
+      </svg>
+    );
+  }
+
+  if (name === 'database') {
+    return (
+      <svg {...commonProps}>
+        <ellipse cx="12" cy="5.5" rx="7" ry="2.8" />
+        <path d="M5 5.5v6c0 1.6 3.1 2.8 7 2.8s7-1.2 7-2.8v-6" />
+        <path d="M5 11.5v6c0 1.6 3.1 2.8 7 2.8s7-1.2 7-2.8v-6" />
+      </svg>
+    );
+  }
+
+  if (name === 'bolt') {
+    return (
+      <svg {...commonProps}>
+        <path d="M13 3 5.5 13h6L10.8 21 18.5 10h-6z" />
+      </svg>
+    );
+  }
+
+  if (name === 'flask') {
+    return (
+      <svg {...commonProps}>
+        <path d="M9 3.5h6" />
+        <path d="M10 3.5v5.2l-4.5 8A2.6 2.6 0 0 0 7.8 20.5h8.4a2.6 2.6 0 0 0 2.3-3.8l-4.5-8V3.5" />
+        <path d="M8 15h8" />
+      </svg>
+    );
+  }
 
   if (name === 'upload') {
     return (

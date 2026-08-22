@@ -23,9 +23,9 @@ const SCORE_EMOJIS = {
 
 const TABS = [
   { key: 'random', icon: 'shuffle', label: '随机' },
-  { key: 'manual', icon: 'list', label: '顺序' },
-  { key: 'todo', icon: 'check', label: 'todo' },
-  { key: 'preprocess', icon: 'wand', label: 'init' },
+  { key: 'manual', icon: 'book', label: '顺序' },
+  { key: 'todo', icon: 'clipboard-list', label: 'todo' },
+  { key: 'preprocess', icon: 'sparkles', label: 'init' },
 ];
 
 const NAV_QUEUES = new Set(['random', 'manual', 'todo']);
@@ -432,7 +432,7 @@ export default function VocabularyQueueDock({
               }}
               disabled={prefetchDisabled || prefetchBlockedByPreprocessQueue}
             >
-              <UiIcon name="wand" size={14} />
+              <UiIcon name="sparkles" size={14} />
               <span>{prefetchLabel}</span>
             </button>
           </div>

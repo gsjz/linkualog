@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import UiIcon from './UiIcon';
-import VocabQueueWidget from './VocabQueueWidget';
+import VocabQueueWidget, { PREFILL_VOCAB_MANUAL_EVENT } from './VocabQueueWidget';
+import VocabularyContextExtractPanel from './VocabularyContextExtractPanel.jsx';
 import {
   uploadResource,
   recommendTaskName,
@@ -1582,6 +1583,10 @@ export default function TaskVisualizer({
   onOpenVocabularyEntry = null,
   simpleCreateOnly = false,
   isActive = true,
+  forcedCreateTaskKind = '',
+  showCreateKindSwitch = true,
+  createPageTitle = '新建任务',
+  createPageSubtitle = '',
   categories = [],
   addVocabularyCategory = '',
   onAddVocabularyCategoryChange = null,
@@ -1590,6 +1595,7 @@ export default function TaskVisualizer({
   const [createToolsOpen, setCreateToolsOpen] = useState(false);
   const [createMetaOpen, setCreateMetaOpen] = useState(false);
   const [uploadBatchOpen, setUploadBatchOpen] = useState(false);
+  const [createTaskKind, setCreateTaskKind] = useState('ocr');
   const [vocabQueueOpen, setVocabQueueOpen] = useState(false);
   const [vocabQueueStats, setVocabQueueStats] = useState({ total: 0, pending: 0, failed: 0 });
   const [taskToolsOpen, setTaskToolsOpen] = useState(false);
@@ -2361,7 +2367,11 @@ export default function TaskVisualizer({
   const normalizedEditingTaskName = (editingTaskName || '').trim() || '资源解析任务';
   const isTaskNameDirty = normalizedCurrentTaskName !== normalizedEditingTaskName;
   const progressPct = taskData?.total ? ((taskData.completed / taskData.total) * 100) : 0;
-  const currentPageMode = simpleCreateOnly ? 'create' : pageMode;
+  const normalizedForcedCreateTaskKind = ['ocr', 'context'].includes(forcedCreateTaskKind)
+    ? forcedCreateTaskKind
+    : '';
+  const currentCreateTaskKind = normalizedForcedCreateTaskKind || createTaskKind;
+  const currentPageMode = simpleCreateOnly || normalizedForcedCreateTaskKind ? 'create' : pageMode;
   const canTuneBrowseView = currentPageMode === 'browse' && Boolean(taskData) && !isTaskDetailPending;
   const taskProgressColor = taskData?.status === 'paused'
     ? 'var(--ms-danger)'
@@ -2369,6 +2379,8 @@ export default function TaskVisualizer({
       ? 'var(--ms-success)'
       : 'var(--ms-text)';
   const createTaskDisabled = isUploading || !stagedFiles.length;
+  const createTaskIsOcr = currentCreateTaskKind !== 'context';
+  const resolvedCreatePageSubtitle = createPageSubtitle || (createTaskIsOcr ? '上传后确认创建' : '粘贴文本后提取候选');
   const allUploadsSelected = stagedFiles.length > 0 && selectedUploadIds.length === stagedFiles.length;
   const normalizedAddVocabularyCategory = String(addVocabularyCategory || '').trim();
   const addVocabularyCategoryLabel = normalizedAddVocabularyCategory ? formatCategoryLabel(normalizedAddVocabularyCategory) : '未选目录';
@@ -2429,6 +2441,70 @@ export default function TaskVisualizer({
       </label>
     </div>
   );
+  const handleContextCandidateManual = useCallback((candidate) => {
+    window.dispatchEvent(new CustomEvent(PREFILL_VOCAB_MANUAL_EVENT, {
+      detail: {
+        candidate,
+        category: addVocabularyCategory,
+      },
+    }));
+    setVocabQueueOpen(true);
+    setCreateToolsOpen(false);
+    setCreateMetaOpen(false);
+    setUploadBatchOpen(false);
+    return true;
+  }, [addVocabularyCategory]);
+  const handleContextCandidateEnqueue = useCallback((candidate) => {
+    const category = String(addVocabularyCategory || '').trim();
+    if (!category) return false;
+    const word = String(candidate?.word || '').trim();
+    if (!word) return '候选缺少词条。';
+    window.dispatchEvent(new CustomEvent('add-vocab-task', {
+      detail: {
+        word,
+        context: String(candidate?.context || '').trim(),
+        source: String(candidate?.source || '混乱输入提取').trim(),
+        fetchLlm: true,
+        focusPositions: [],
+        intentionalBlank: !String(candidate?.context || '').trim(),
+        category,
+      },
+    }));
+    setVocabQueueOpen(true);
+    setCreateToolsOpen(false);
+    setCreateMetaOpen(false);
+    setUploadBatchOpen(false);
+    return true;
+  }, [addVocabularyCategory]);
+  const renderCreateKindSwitch = () => (
+    <div className="task-create-kind-switch" role="tablist" aria-label="新建任务类型">
+      <button
+        type="button"
+        className={`task-create-kind-button${currentCreateTaskKind === 'ocr' ? ' is-active' : ''}`}
+        onClick={() => setCreateTaskKind('ocr')}
+        role="tab"
+        aria-selected={currentCreateTaskKind === 'ocr'}
+      >
+        <UiIcon name="scan-text" size={16} />
+        <span>OCR 上传</span>
+      </button>
+      <button
+        type="button"
+        className={`task-create-kind-button${currentCreateTaskKind === 'context' ? ' is-active' : ''}`}
+        onClick={() => {
+          setCreateTaskKind('context');
+          setCreateToolsOpen(false);
+          setCreateMetaOpen(false);
+          setUploadBatchOpen(false);
+        }}
+        role="tab"
+        aria-selected={currentCreateTaskKind === 'context'}
+      >
+        <UiIcon name="message-square" size={16} />
+        <span>文本提取</span>
+      </button>
+    </div>
+  );
   const handleToggleVocabQueue = () => {
     if (isTaskDetailPending) return;
     setVocabQueueOpen((open) => !open);
@@ -2457,48 +2533,56 @@ export default function TaskVisualizer({
       <div className="task-main" style={{ height: '100%', minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column', background: '#fff', overflow: 'hidden', paddingRight: simpleCreateOnly ? 0 : (isRightPanelCollapsed ? '52px' : '344px') }}>
         {currentPageMode === 'create' ? (
           <div className="task-page-body" style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '20px' }}>
-            <div className="task-create-shell" style={{ maxWidth: '980px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div className={`task-create-shell${createTaskIsOcr ? ' is-ocr-task' : ' is-context-task'}`} style={{ maxWidth: '980px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div className="task-create-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                 <div>
-                  <div className="task-create-title" style={{ fontSize: '18px', color: 'var(--ms-text)', fontWeight: 600 }}>新建任务</div>
-                  <div className="task-create-subtitle" style={{ fontSize: '12px', color: 'var(--ms-text-muted)', marginTop: '2px' }}>上传后确认创建</div>
+                  <div className="task-create-title" style={{ fontSize: '18px', color: 'var(--ms-text)', fontWeight: 600 }}>{createPageTitle}</div>
+                  <div className="task-create-subtitle" style={{ fontSize: '12px', color: 'var(--ms-text-muted)', marginTop: '2px' }}>{resolvedCreatePageSubtitle}</div>
                 </div>
                 <div className="task-create-mobile-actions">
-                  <button
-                    type="button"
-                    className={`task-icon-button${createToolsOpen ? ' is-active' : ''}`}
-                    onClick={() => {
-                      setCreateToolsOpen((open) => !open);
-                      setCreateMetaOpen(false);
-                      setUploadBatchOpen(false);
-                      setVocabQueueOpen(false);
-                    }}
-                    aria-label="打开上传入口"
-                    aria-expanded={createToolsOpen}
-                  >
-                    <UiIcon name="upload" size={17} />
-                  </button>
-                  <button
-                    type="button"
-                    className={`task-icon-button${createMetaOpen ? ' is-active' : ''}`}
-                    onClick={() => {
-                      setCreateMetaOpen((open) => !open);
-                      setCreateToolsOpen(false);
-                      setUploadBatchOpen(false);
-                      setVocabQueueOpen(false);
-                    }}
-                    aria-label="调整任务参数"
-                    aria-expanded={createMetaOpen}
-                  >
-                    <UiIcon name="sliders" size={17} />
-                  </button>
+                  {createTaskIsOcr ? (
+                    <>
+                      <button
+                        type="button"
+                        className={`task-icon-button${createToolsOpen ? ' is-active' : ''}`}
+                        onClick={() => {
+                          setCreateToolsOpen((open) => !open);
+                          setCreateMetaOpen(false);
+                          setUploadBatchOpen(false);
+                          setVocabQueueOpen(false);
+                        }}
+                        aria-label="打开上传入口"
+                        aria-expanded={createToolsOpen}
+                      >
+                        <UiIcon name="upload" size={17} />
+                      </button>
+                      <button
+                        type="button"
+                        className={`task-icon-button${createMetaOpen ? ' is-active' : ''}`}
+                        onClick={() => {
+                          setCreateMetaOpen((open) => !open);
+                          setCreateToolsOpen(false);
+                          setUploadBatchOpen(false);
+                          setVocabQueueOpen(false);
+                        }}
+                        aria-label="调整任务参数"
+                        aria-expanded={createMetaOpen}
+                      >
+                        <UiIcon name="sliders" size={17} />
+                      </button>
+                    </>
+                  ) : null}
                   {renderVocabQueueButton()}
                 </div>
                 <div className="task-create-header-actions">
                   {renderVocabQueueButton()}
-                  <button className="task-primary-button task-create-submit-inline" onClick={handleCreateTask} disabled={createTaskDisabled} style={{ padding: '8px 16px', border: '1px solid transparent', borderRadius: '6px', fontSize: '13px', cursor: createTaskDisabled ? 'not-allowed' : 'pointer', background: createTaskDisabled ? 'var(--ms-surface-inset)' : '#111111', color: createTaskDisabled ? 'var(--ms-text-faint)' : '#fff' }}>{isUploading ? '处理中...' : '确认并创建任务'}</button>
+                  {createTaskIsOcr ? (
+                    <button className="task-primary-button task-create-submit-inline" onClick={handleCreateTask} disabled={createTaskDisabled} style={{ padding: '8px 16px', border: '1px solid transparent', borderRadius: '6px', fontSize: '13px', cursor: createTaskDisabled ? 'not-allowed' : 'pointer', background: createTaskDisabled ? 'var(--ms-surface-inset)' : '#111111', color: createTaskDisabled ? 'var(--ms-text-faint)' : '#fff' }}>{isUploading ? '处理中...' : '确认并创建任务'}</button>
+                  ) : null}
                 </div>
               </div>
+
+              {showCreateKindSwitch ? renderCreateKindSwitch() : null}
 
               {(createToolsOpen || createMetaOpen || uploadBatchOpen) ? (
                 <div className="task-floating-layer" role="presentation">
@@ -2529,77 +2613,110 @@ export default function TaskVisualizer({
                 </div>
               ) : null}
 
-              <div className="task-create-controls" style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', padding: '12px', border: '1px solid var(--ms-border)', borderRadius: '6px', background: 'rgba(255, 255, 255, 0.9)' }}>
-                {renderCreateMetaControls()}
+              {createTaskIsOcr ? (
+                <>
+                  <div className="task-create-controls" style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', padding: '12px', border: '1px solid var(--ms-border)', borderRadius: '6px', background: 'rgba(255, 255, 255, 0.9)' }}>
+                    {renderCreateMetaControls()}
 
-                <div className="task-upload-dropzone">
-                  <div className="task-upload-dropzone-copy">
-                    <div className="task-upload-dropzone-title">上传图片或 PDF</div>
-                  </div>
-                  {renderCreateFileControls()}
-                </div>
-              </div>
-
-              <div className="task-upload-toolbar" style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', padding: '10px 12px', border: '1px solid #e4e4e7', borderRadius: '6px', background: '#fafafa' }}>
-                <label className="task-upload-toolbar-selection" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--ms-text)' }}>
-                  <input type="checkbox" checked={allUploadsSelected} onChange={toggleSelectAllUploads} />
-                  全选
-                </label>
-                <div className="task-upload-toolbar-actions">
-                  <button className="task-secondary-button" onClick={removeSelectedUploads} disabled={!selectedUploadIds.length} style={{ padding: '4px 10px', border: '1px solid #e4e4e7', borderRadius: '4px', background: '#fff', fontSize: '12px', cursor: selectedUploadIds.length ? 'pointer' : 'not-allowed', color: selectedUploadIds.length ? '#09090b' : '#a1a1aa' }}>删除选中</button>
-                  <button className="task-secondary-button" onClick={clearAllStagedFiles} disabled={!stagedFiles.length} style={{ padding: '4px 10px', border: '1px solid var(--ms-border)', borderRadius: '4px', background: '#fff', fontSize: '12px', cursor: stagedFiles.length ? 'pointer' : 'not-allowed', color: stagedFiles.length ? 'var(--ms-text)' : 'var(--ms-border)' }}>全部删除</button>
-                </div>
-                <button
-                  type="button"
-                  className={`task-icon-button task-upload-mobile-batch${uploadBatchOpen ? ' is-active' : ''}`}
-                  onClick={() => {
-                    setUploadBatchOpen((open) => !open);
-                    setCreateToolsOpen(false);
-                    setCreateMetaOpen(false);
-                    setVocabQueueOpen(false);
-                  }}
-                  aria-label="打开批量整理"
-                  aria-expanded={uploadBatchOpen}
-                >
-                  <UiIcon name="sliders" size={16} />
-                </button>
-                <span className="task-upload-count" style={{ marginLeft: 'auto', fontSize: '12px', color: '#71717a' }}>已上传 {stagedFiles.length} 个文件</span>
-              </div>
-
-              <div className="task-upload-list" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {stagedFiles.length === 0 && <div className="task-empty-state" style={{ color: '#a1a1aa', textAlign: 'center', padding: '28px 0' }}>待上传</div>}
-                {stagedFiles.map((item, index) => {
-                  const selected = selectedUploadIds.includes(item.id);
-                  return (
-                    <div key={item.id} className={`task-upload-item${selected ? ' is-selected' : ''}`} style={{ border: '1px solid #e4e4e7', borderRadius: '6px', padding: '10px', display: 'flex', gap: '12px', alignItems: 'center', background: selected ? 'var(--ms-surface-muted)' : '#fff' }}>
-                      <input type="checkbox" checked={selected} onChange={() => toggleSelectUpload(item.id)} />
-                      <div className="task-upload-preview" style={{ width: '84px', height: '64px', border: '1px solid #e4e4e7', borderRadius: '6px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fafafa', flexShrink: 0 }}>
-                        {item.previewUrl
-                          ? <img src={item.previewUrl} alt={item.file.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                          : <span className="task-upload-preview-label" style={{ fontSize: '11px', color: '#71717a' }}>PDF</span>}
+                    <div className="task-upload-dropzone">
+                      <div className="task-upload-dropzone-copy">
+                        <div className="task-upload-dropzone-title">上传图片或 PDF</div>
                       </div>
-                      <div className="task-upload-meta" style={{ minWidth: 0, flex: 1 }}>
-                        <div className="task-upload-name" style={{ fontSize: '13px', color: '#09090b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{index + 1}. {item.file.name}</div>
-                        <div className="task-upload-size" style={{ fontSize: '11px', color: '#71717a' }}>{Math.round(item.file.size / 1024)} KB</div>
-                      </div>
-                      <div className="task-upload-actions" style={{ display: 'flex', gap: '6px' }}>
-                        <button className="task-secondary-button" onClick={() => moveStagedFile(index, -1)} disabled={index === 0} style={{ padding: '4px 8px', border: '1px solid #e4e4e7', borderRadius: '4px', background: '#fff', fontSize: '12px', cursor: index === 0 ? 'not-allowed' : 'pointer', color: index === 0 ? '#a1a1aa' : '#09090b' }}>上移</button>
-                        <button className="task-secondary-button" onClick={() => moveStagedFile(index, 1)} disabled={index === stagedFiles.length - 1} style={{ padding: '4px 8px', border: '1px solid #e4e4e7', borderRadius: '4px', background: '#fff', fontSize: '12px', cursor: index === stagedFiles.length - 1 ? 'not-allowed' : 'pointer', color: index === stagedFiles.length - 1 ? '#a1a1aa' : '#09090b' }}>下移</button>
-                        <button className="task-secondary-button task-danger-button" onClick={() => removeOneStagedFile(item.id)} style={{ padding: '4px 8px', border: '1px solid var(--ms-border)', borderRadius: '4px', background: '#fff', fontSize: '12px', cursor: 'pointer', color: 'var(--ms-text)' }}>删除</button>
-                      </div>
+                      {renderCreateFileControls()}
                     </div>
-                  );
-                })}
-              </div>
+                  </div>
 
-              <div className="task-create-sticky-bar">
-                <div className="task-create-sticky-meta">
-                  {stagedFiles.length ? `准备创建 ${stagedFiles.length} 个文件` : '先选择文件，再创建任务'}
+                  <div className="task-upload-toolbar" style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', padding: '10px 12px', border: '1px solid #e4e4e7', borderRadius: '6px', background: '#fafafa' }}>
+                    <label className="task-upload-toolbar-selection" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--ms-text)' }}>
+                      <input type="checkbox" checked={allUploadsSelected} onChange={toggleSelectAllUploads} />
+                      全选
+                    </label>
+                    <div className="task-upload-toolbar-actions">
+                      <button className="task-secondary-button" onClick={removeSelectedUploads} disabled={!selectedUploadIds.length} style={{ padding: '4px 10px', border: '1px solid #e4e4e7', borderRadius: '4px', background: '#fff', fontSize: '12px', cursor: selectedUploadIds.length ? 'pointer' : 'not-allowed', color: selectedUploadIds.length ? '#09090b' : '#a1a1aa' }}>删除选中</button>
+                      <button className="task-secondary-button" onClick={clearAllStagedFiles} disabled={!stagedFiles.length} style={{ padding: '4px 10px', border: '1px solid var(--ms-border)', borderRadius: '4px', background: '#fff', fontSize: '12px', cursor: stagedFiles.length ? 'pointer' : 'not-allowed', color: stagedFiles.length ? 'var(--ms-text)' : 'var(--ms-border)' }}>全部删除</button>
+                    </div>
+                    <button
+                      type="button"
+                      className={`task-icon-button task-upload-mobile-batch${uploadBatchOpen ? ' is-active' : ''}`}
+                      onClick={() => {
+                        setUploadBatchOpen((open) => !open);
+                        setCreateToolsOpen(false);
+                        setCreateMetaOpen(false);
+                        setVocabQueueOpen(false);
+                      }}
+                      aria-label="打开批量整理"
+                      aria-expanded={uploadBatchOpen}
+                    >
+                      <UiIcon name="sliders" size={16} />
+                    </button>
+                    <span className="task-upload-count" style={{ marginLeft: 'auto', fontSize: '12px', color: '#71717a' }}>已上传 {stagedFiles.length} 个文件</span>
+                  </div>
+
+                  <div className="task-upload-list" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {stagedFiles.length === 0 && <div className="task-empty-state" style={{ color: '#a1a1aa', textAlign: 'center', padding: '28px 0' }}>待上传</div>}
+                    {stagedFiles.map((item, index) => {
+                      const selected = selectedUploadIds.includes(item.id);
+                      return (
+                        <div key={item.id} className={`task-upload-item${selected ? ' is-selected' : ''}`} style={{ border: '1px solid #e4e4e7', borderRadius: '6px', padding: '10px', display: 'flex', gap: '12px', alignItems: 'center', background: selected ? 'var(--ms-surface-muted)' : '#fff' }}>
+                          <input type="checkbox" checked={selected} onChange={() => toggleSelectUpload(item.id)} />
+                          <div className="task-upload-preview" style={{ width: '84px', height: '64px', border: '1px solid #e4e4e7', borderRadius: '6px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fafafa', flexShrink: 0 }}>
+                            {item.previewUrl
+                              ? <img src={item.previewUrl} alt={item.file.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              : <span className="task-upload-preview-label" style={{ fontSize: '11px', color: '#71717a' }}>PDF</span>}
+                          </div>
+                          <div className="task-upload-meta" style={{ minWidth: 0, flex: 1 }}>
+                            <div className="task-upload-name" style={{ fontSize: '13px', color: '#09090b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{index + 1}. {item.file.name}</div>
+                            <div className="task-upload-size" style={{ fontSize: '11px', color: '#71717a' }}>{Math.round(item.file.size / 1024)} KB</div>
+                          </div>
+                          <div className="task-upload-actions" style={{ display: 'flex', gap: '6px' }}>
+                            <button className="task-secondary-button" onClick={() => moveStagedFile(index, -1)} disabled={index === 0} style={{ padding: '4px 8px', border: '1px solid #e4e4e7', borderRadius: '4px', background: '#fff', fontSize: '12px', cursor: index === 0 ? 'not-allowed' : 'pointer', color: index === 0 ? '#a1a1aa' : '#09090b' }}>上移</button>
+                            <button className="task-secondary-button" onClick={() => moveStagedFile(index, 1)} disabled={index === stagedFiles.length - 1} style={{ padding: '4px 8px', border: '1px solid #e4e4e7', borderRadius: '4px', background: '#fff', fontSize: '12px', cursor: index === stagedFiles.length - 1 ? 'not-allowed' : 'pointer', color: index === stagedFiles.length - 1 ? '#a1a1aa' : '#09090b' }}>下移</button>
+                            <button className="task-secondary-button task-danger-button" onClick={() => removeOneStagedFile(item.id)} style={{ padding: '4px 8px', border: '1px solid var(--ms-border)', borderRadius: '4px', background: '#fff', fontSize: '12px', cursor: 'pointer', color: 'var(--ms-text)' }}>删除</button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div className="task-create-sticky-bar">
+                    <div className="task-create-sticky-meta">
+                      {stagedFiles.length ? `准备创建 ${stagedFiles.length} 个文件` : '先选择文件，再创建任务'}
+                    </div>
+                    <button className="task-primary-button task-create-submit" onClick={handleCreateTask} disabled={createTaskDisabled}>
+                      {isUploading ? '处理中...' : '确认并创建任务'}
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="vocab-queue task-context-extract-task">
+                  <div className="task-context-extract-head">
+                    <div>
+                      <div className="task-context-extract-title">从聊天或笔记提取词条</div>
+                      <div className="task-context-extract-caption">候选可以直接进入词库队列，保存目录使用当前加词目录：{addVocabularyCategoryLabel}</div>
+                    </div>
+                    <label className="task-context-extract-category" data-tooltip="加词保存目录">
+                      <UiIcon name="folder" size={15} />
+                      <select
+                        value={addVocabularyCategory}
+                        onChange={(event) => onAddVocabularyCategoryChange?.(event.target.value)}
+                        aria-label="加词保存目录"
+                      >
+                        <option value="">选择目录</option>
+                        {categories.map((category) => (
+                          <option key={category} value={category}>{formatCategoryLabel(category)}</option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                  <VocabularyContextExtractPanel
+                    className="task-context-extract-panel"
+                    onUseCandidate={handleContextCandidateManual}
+                    onEnqueueCandidate={handleContextCandidateEnqueue}
+                    useLabel="录入"
+                    enqueueLabel="加入队列"
+                  />
                 </div>
-                <button className="task-primary-button task-create-submit" onClick={handleCreateTask} disabled={createTaskDisabled}>
-                  {isUploading ? '处理中...' : '确认并创建任务'}
-                </button>
-              </div>
+              )}
             </div>
           </div>
         ) : taskData ? (
@@ -2833,8 +2950,8 @@ export default function TaskVisualizer({
               </div>
               <div className="task-empty-state-copy" style={{ fontSize: '14px', lineHeight: 1.6, color: 'var(--ms-text-muted)' }}>
                 {historyTasks.length
-                  ? '可以从右侧历史列表继续查看，也可以直接切换到“新建任务”上传图片或 PDF。'
-                  : '当前还没有历史任务。直接上传图片或 PDF，确认后就能开始解析。'}
+                  ? '可以从右侧历史列表继续查看，也可以切换到“新建任务”处理图片/PDF OCR 或文本提取。'
+                  : '当前还没有历史任务。可以上传图片/PDF 做 OCR，也可以粘贴聊天或笔记提取候选词。'}
               </div>
               <button className="task-primary-button task-empty-state-action" type="button" onClick={() => setPageMode('create')}>
                 立即新建任务
