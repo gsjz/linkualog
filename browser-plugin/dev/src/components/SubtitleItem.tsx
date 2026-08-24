@@ -16,6 +16,7 @@ interface SubtitleItemProps {
 const MAX_SELECTION_LENGTH = 50;
 const SELECTION_BOX_MARGIN = 12;
 const TOUCH_SELECTION_RECENCY_MS = 3000;
+const SUBTITLE_AUTO_SCROLL_PAUSE_MS = 1800;
 
 const normalizeSelectedText = (value: string) => value.replace(/\s+/g, ' ').trim();
 
@@ -63,6 +64,14 @@ const hasCoarsePointer = () => (
   typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches
 );
 
+let subtitleAutoScrollPausedUntil = 0;
+
+const pauseSubtitleAutoScroll = (ms = SUBTITLE_AUTO_SCROLL_PAUSE_MS) => {
+  subtitleAutoScrollPausedUntil = Math.max(subtitleAutoScrollPausedUntil, Date.now() + ms);
+};
+
+const isSubtitleAutoScrollPaused = () => Date.now() < subtitleAutoScrollPausedUntil;
+
 const SubtitleItem: React.FC<SubtitleItemProps> = ({ data, index, allSubs, isActive, adapter }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -89,7 +98,7 @@ const SubtitleItem: React.FC<SubtitleItemProps> = ({ data, index, allSubs, isAct
   }, []);
 
   useEffect(() => {
-    if (isActive && itemRef.current) {
+    if (isActive && itemRef.current && !isSubtitleAutoScrollPaused()) {
       itemRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   }, [isActive]);
@@ -138,6 +147,7 @@ const SubtitleItem: React.FC<SubtitleItemProps> = ({ data, index, allSubs, isAct
     if (rect) {
       const position = getSelectionBoxPosition(rect, text);
       const placement = shouldDockSelectionBox() ? 'dock' : 'floating';
+      pauseSubtitleAutoScroll();
       setSelectionBox({
         text,
         top: position.top,
@@ -161,6 +171,7 @@ const SubtitleItem: React.FC<SubtitleItemProps> = ({ data, index, allSubs, isAct
   }, [refreshSelectionBox]);
 
   const handleSelectionPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    pauseSubtitleAutoScroll();
     rememberSelectionInput(e.pointerType === 'touch' ? 'touch' : e.pointerType === 'pen' ? 'pen' : 'mouse');
   };
 
@@ -171,6 +182,7 @@ const SubtitleItem: React.FC<SubtitleItemProps> = ({ data, index, allSubs, isAct
   };
 
   const handleSelectionMouseDown = () => {
+    pauseSubtitleAutoScroll();
     rememberSelectionInput('mouse');
   };
 
@@ -181,6 +193,7 @@ const SubtitleItem: React.FC<SubtitleItemProps> = ({ data, index, allSubs, isAct
   };
 
   const handleSelectionTouchStart = () => {
+    pauseSubtitleAutoScroll();
     rememberSelectionInput('touch');
   };
 

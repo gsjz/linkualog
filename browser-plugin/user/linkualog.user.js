@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Linkual Log
 // @namespace    npm/vite-plugin-monkey
-// @version      0.0.47
+// @version      0.0.48
 // @author       Sergio Gao
 // @icon         https://vitejs.dev/logo.svg
 // @downloadURL  https://raw.githubusercontent.com/gsjz/linkualog/main/browser-plugin/user/linkualog.user.js
@@ -12960,6 +12960,7 @@
   const MAX_SELECTION_LENGTH = 50;
   const SELECTION_BOX_MARGIN = 12;
   const TOUCH_SELECTION_RECENCY_MS = 3e3;
+  const SUBTITLE_AUTO_SCROLL_PAUSE_MS = 1800;
   const normalizeSelectedText = (value) => value.replace(/\s+/g, " ").trim();
   const isNodeInside = (node, container) => {
     if (!node || !container) return false;
@@ -12992,6 +12993,11 @@
     return { top, left };
   };
   const hasCoarsePointer = () => typeof window.matchMedia === "function" && window.matchMedia("(pointer: coarse)").matches;
+  let subtitleAutoScrollPausedUntil = 0;
+  const pauseSubtitleAutoScroll = (ms = SUBTITLE_AUTO_SCROLL_PAUSE_MS) => {
+    subtitleAutoScrollPausedUntil = Math.max(subtitleAutoScrollPausedUntil, Date.now() + ms);
+  };
+  const isSubtitleAutoScrollPaused = () => Date.now() < subtitleAutoScrollPausedUntil;
   const SubtitleItem = ({ data, index: index2, allSubs, isActive, adapter }) => {
     const [isExpanded, setIsExpanded] = reactExports.useState(false);
     const [isGenerating, setIsGenerating] = reactExports.useState(false);
@@ -13014,7 +13020,7 @@
       };
     }, []);
     reactExports.useEffect(() => {
-      if (isActive && itemRef.current) {
+      if (isActive && itemRef.current && !isSubtitleAutoScrollPaused()) {
         itemRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
       }
     }, [isActive]);
@@ -13051,6 +13057,7 @@
       if (rect) {
         const position = getSelectionBoxPosition(rect, text2);
         const placement = shouldDockSelectionBox() ? "dock" : "floating";
+        pauseSubtitleAutoScroll();
         setSelectionBox({
           text: text2,
           top: position.top,
@@ -13071,6 +13078,7 @@
       }, delay);
     }, [refreshSelectionBox]);
     const handleSelectionPointerDown = (e) => {
+      pauseSubtitleAutoScroll();
       rememberSelectionInput(e.pointerType === "touch" ? "touch" : e.pointerType === "pen" ? "pen" : "mouse");
     };
     const handleSelectionPointerUp = (e) => {
@@ -13079,6 +13087,7 @@
       scheduleSelectionRefresh(e.pointerType === "touch" ? 180 : 0);
     };
     const handleSelectionMouseDown = () => {
+      pauseSubtitleAutoScroll();
       rememberSelectionInput("mouse");
     };
     const handleSelectionMouseUp = (e) => {
@@ -13087,6 +13096,7 @@
       scheduleSelectionRefresh(0);
     };
     const handleSelectionTouchStart = () => {
+      pauseSubtitleAutoScroll();
       rememberSelectionInput("touch");
     };
     const handleSelectionTouchEnd = (e) => {
