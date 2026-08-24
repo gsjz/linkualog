@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Linkual Log
 // @namespace    npm/vite-plugin-monkey
-// @version      0.0.49
+// @version      0.0.50
 // @author       Sergio Gao
 // @icon         https://vitejs.dev/logo.svg
 // @downloadURL  https://raw.githubusercontent.com/gsjz/linkualog/main/browser-plugin/user/linkualog.user.js
@@ -12993,6 +12993,34 @@
     return { top, left };
   };
   const hasCoarsePointer = () => typeof window.matchMedia === "function" && window.matchMedia("(pointer: coarse)").matches;
+  const staticRangeToRange = (staticRange) => {
+    const range = document.createRange();
+    range.setStart(staticRange.startContainer, staticRange.startOffset);
+    range.setEnd(staticRange.endContainer, staticRange.endOffset);
+    return range;
+  };
+  const getSubtitleSelection = (textContainer) => {
+    if (!textContainer) return null;
+    const selection = typeof document.getSelection === "function" ? document.getSelection() : window.getSelection();
+    if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
+      return null;
+    }
+    const range = selection.getRangeAt(0);
+    const root2 = textContainer.getRootNode();
+    if (root2 instanceof ShadowRoot) {
+      const composedRanges = typeof selection.getComposedRanges === "function" ? selection.getComposedRanges({ shadowRoots: [root2] }) : [];
+      if (composedRanges.length > 0) {
+        const text22 = normalizeSelectedText(selection.toString() ?? "");
+        if (text22 && text22.length <= MAX_SELECTION_LENGTH && isNodeInside(selection.anchorNode, textContainer) && isNodeInside(selection.focusNode, textContainer)) {
+          return { selection, range: staticRangeToRange(composedRanges[0]), text: text22 };
+        }
+      }
+    }
+    const text2 = normalizeSelectedText(selection.toString() ?? "");
+    if (!text2 || text2.length > MAX_SELECTION_LENGTH) return null;
+    if (!isNodeInside(selection.anchorNode, textContainer) || !isNodeInside(selection.focusNode, textContainer)) return null;
+    return { selection, range, text: text2 };
+  };
   let subtitleAutoScrollPausedUntil = 0;
   let subtitleSelectionGestureActive = false;
   const pauseSubtitleAutoScroll = (ms = SUBTITLE_AUTO_SCROLL_PAUSE_MS) => {
@@ -13055,24 +13083,18 @@
     }, []);
     const shouldDockSelectionBox = reactExports.useCallback(() => lastSelectionInputRef.current === "touch" || Date.now() - lastTouchSelectionAtRef.current < TOUCH_SELECTION_RECENCY_MS || hasCoarsePointer(), []);
     const refreshSelectionBox = reactExports.useCallback(() => {
-      const selection = window.getSelection();
-      const text2 = normalizeSelectedText((selection == null ? void 0 : selection.toString()) ?? "");
-      if (!selection || selection.rangeCount === 0 || !text2 || text2.length > MAX_SELECTION_LENGTH) {
+      const subtitleSelection = getSubtitleSelection(textRef.current);
+      if (!subtitleSelection) {
         setSelectionBox(null);
         return;
       }
-      if (!isNodeInside(selection.anchorNode, textRef.current) || !isNodeInside(selection.focusNode, textRef.current)) {
-        setSelectionBox(null);
-        return;
-      }
-      const range = selection.getRangeAt(0);
-      const rect = getVisibleRangeRect$1(range);
+      const rect = getVisibleRangeRect$1(subtitleSelection.range);
       if (rect) {
-        const position = getSelectionBoxPosition(rect, text2);
+        const position = getSelectionBoxPosition(rect, subtitleSelection.text);
         const placement = shouldDockSelectionBox() ? "dock" : "floating";
         lockSubtitleSelectionGesture();
         setSelectionBox({
-          text: text2,
+          text: subtitleSelection.text,
           top: position.top,
           left: position.left,
           placement

@@ -64,6 +64,46 @@ const hasCoarsePointer = () => (
   typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches
 );
 
+const staticRangeToRange = (staticRange: StaticRange) => {
+  const range = document.createRange();
+  range.setStart(staticRange.startContainer, staticRange.startOffset);
+  range.setEnd(staticRange.endContainer, staticRange.endOffset);
+  return range;
+};
+
+const getSubtitleSelection = (textContainer: HTMLElement | null) => {
+  if (!textContainer) return null;
+
+  const selection = typeof document.getSelection === 'function'
+    ? document.getSelection()
+    : window.getSelection();
+
+  if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
+    return null;
+  }
+
+  const range = selection.getRangeAt(0);
+  const root = textContainer.getRootNode();
+
+  if (root instanceof ShadowRoot) {
+    const composedRanges = typeof selection.getComposedRanges === 'function'
+      ? selection.getComposedRanges({ shadowRoots: [root] })
+      : [];
+    if (composedRanges.length > 0) {
+      const text = normalizeSelectedText(selection.toString() ?? '');
+      if (text && text.length <= MAX_SELECTION_LENGTH && isNodeInside(selection.anchorNode, textContainer) && isNodeInside(selection.focusNode, textContainer)) {
+        return { selection, range: staticRangeToRange(composedRanges[0]), text };
+      }
+    }
+  }
+
+  const text = normalizeSelectedText(selection.toString() ?? '');
+  if (!text || text.length > MAX_SELECTION_LENGTH) return null;
+  if (!isNodeInside(selection.anchorNode, textContainer) || !isNodeInside(selection.focusNode, textContainer)) return null;
+
+  return { selection, range, text };
+};
+
 let subtitleAutoScrollPausedUntil = 0;
 let subtitleSelectionGestureActive = false;
 
@@ -147,27 +187,19 @@ const SubtitleItem: React.FC<SubtitleItemProps> = ({ data, index, allSubs, isAct
   ), []);
 
   const refreshSelectionBox = useCallback(() => {
-    const selection = window.getSelection();
-    const text = normalizeSelectedText(selection?.toString() ?? '');
-
-    if (!selection || selection.rangeCount === 0 || !text || text.length > MAX_SELECTION_LENGTH) {
+    const subtitleSelection = getSubtitleSelection(textRef.current);
+    if (!subtitleSelection) {
       setSelectionBox(null);
       return;
     }
 
-    if (!isNodeInside(selection.anchorNode, textRef.current) || !isNodeInside(selection.focusNode, textRef.current)) {
-      setSelectionBox(null);
-      return;
-    }
-
-    const range = selection.getRangeAt(0);
-    const rect = getVisibleRangeRect(range);
+    const rect = getVisibleRangeRect(subtitleSelection.range);
     if (rect) {
-      const position = getSelectionBoxPosition(rect, text);
+      const position = getSelectionBoxPosition(rect, subtitleSelection.text);
       const placement = shouldDockSelectionBox() ? 'dock' : 'floating';
       lockSubtitleSelectionGesture();
       setSelectionBox({
-        text,
+        text: subtitleSelection.text,
         top: position.top,
         left: position.left,
         placement
