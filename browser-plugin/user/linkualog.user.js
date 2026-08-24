@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Linkual Log
 // @namespace    npm/vite-plugin-monkey
-// @version      0.0.48
+// @version      0.0.49
 // @author       Sergio Gao
 // @icon         https://vitejs.dev/logo.svg
 // @downloadURL  https://raw.githubusercontent.com/gsjz/linkualog/main/browser-plugin/user/linkualog.user.js
@@ -12960,7 +12960,7 @@
   const MAX_SELECTION_LENGTH = 50;
   const SELECTION_BOX_MARGIN = 12;
   const TOUCH_SELECTION_RECENCY_MS = 3e3;
-  const SUBTITLE_AUTO_SCROLL_PAUSE_MS = 1800;
+  const SUBTITLE_AUTO_SCROLL_PAUSE_MS = 5e3;
   const normalizeSelectedText = (value) => value.replace(/\s+/g, " ").trim();
   const isNodeInside = (node, container) => {
     if (!node || !container) return false;
@@ -12994,10 +12994,18 @@
   };
   const hasCoarsePointer = () => typeof window.matchMedia === "function" && window.matchMedia("(pointer: coarse)").matches;
   let subtitleAutoScrollPausedUntil = 0;
+  let subtitleSelectionGestureActive = false;
   const pauseSubtitleAutoScroll = (ms = SUBTITLE_AUTO_SCROLL_PAUSE_MS) => {
     subtitleAutoScrollPausedUntil = Math.max(subtitleAutoScrollPausedUntil, Date.now() + ms);
   };
-  const isSubtitleAutoScrollPaused = () => Date.now() < subtitleAutoScrollPausedUntil;
+  const lockSubtitleSelectionGesture = (ms = SUBTITLE_AUTO_SCROLL_PAUSE_MS) => {
+    subtitleSelectionGestureActive = true;
+    pauseSubtitleAutoScroll(ms);
+  };
+  const clearSubtitleSelectionGesture = () => {
+    subtitleSelectionGestureActive = false;
+  };
+  const isSubtitleAutoScrollPaused = () => subtitleSelectionGestureActive || Date.now() < subtitleAutoScrollPausedUntil;
   const SubtitleItem = ({ data, index: index2, allSubs, isActive, adapter }) => {
     const [isExpanded, setIsExpanded] = reactExports.useState(false);
     const [isGenerating, setIsGenerating] = reactExports.useState(false);
@@ -13024,6 +13032,11 @@
         itemRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
       }
     }, [isActive]);
+    reactExports.useEffect(() => {
+      return () => {
+        clearSubtitleSelectionGesture();
+      };
+    }, []);
     const handlePlay = (e) => {
       e.stopPropagation();
       adapter.seekTo(data.start);
@@ -13057,7 +13070,7 @@
       if (rect) {
         const position = getSelectionBoxPosition(rect, text2);
         const placement = shouldDockSelectionBox() ? "dock" : "floating";
-        pauseSubtitleAutoScroll();
+        lockSubtitleSelectionGesture();
         setSelectionBox({
           text: text2,
           top: position.top,
@@ -13078,7 +13091,7 @@
       }, delay);
     }, [refreshSelectionBox]);
     const handleSelectionPointerDown = (e) => {
-      pauseSubtitleAutoScroll();
+      lockSubtitleSelectionGesture();
       rememberSelectionInput(e.pointerType === "touch" ? "touch" : e.pointerType === "pen" ? "pen" : "mouse");
     };
     const handleSelectionPointerUp = (e) => {
@@ -13087,7 +13100,7 @@
       scheduleSelectionRefresh(e.pointerType === "touch" ? 180 : 0);
     };
     const handleSelectionMouseDown = () => {
-      pauseSubtitleAutoScroll();
+      lockSubtitleSelectionGesture();
       rememberSelectionInput("mouse");
     };
     const handleSelectionMouseUp = (e) => {
@@ -13096,7 +13109,7 @@
       scheduleSelectionRefresh(0);
     };
     const handleSelectionTouchStart = () => {
-      pauseSubtitleAutoScroll();
+      lockSubtitleSelectionGesture();
       rememberSelectionInput("touch");
     };
     const handleSelectionTouchEnd = (e) => {
@@ -13116,8 +13129,10 @@
     }, [scheduleSelectionRefresh]);
     reactExports.useEffect(() => {
       const closeBox = (event) => {
-        const target = event.target;
-        if (target instanceof Element && target.closest(".linkual-selection-add")) return;
+        const path2 = typeof event.composedPath === "function" ? event.composedPath() : [];
+        if (path2.some((node) => node instanceof Element && node.classList.contains("linkual-selection-add"))) return;
+        if (path2.some((node) => node instanceof Element && node.classList.contains("text-content"))) return;
+        clearSubtitleSelectionGesture();
         setSelectionBox(null);
       };
       const closeOnEscape = (event) => {
@@ -13134,6 +13149,7 @@
         window.removeEventListener("mousedown", closeBox, true);
         window.removeEventListener("scroll", closeBox, true);
         window.removeEventListener("keydown", closeOnEscape);
+        clearSubtitleSelectionGesture();
       };
     }, []);
     const handleAddVocab = (e, word) => {

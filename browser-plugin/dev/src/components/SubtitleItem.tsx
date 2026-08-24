@@ -16,7 +16,7 @@ interface SubtitleItemProps {
 const MAX_SELECTION_LENGTH = 50;
 const SELECTION_BOX_MARGIN = 12;
 const TOUCH_SELECTION_RECENCY_MS = 3000;
-const SUBTITLE_AUTO_SCROLL_PAUSE_MS = 1800;
+const SUBTITLE_AUTO_SCROLL_PAUSE_MS = 5000;
 
 const normalizeSelectedText = (value: string) => value.replace(/\s+/g, ' ').trim();
 
@@ -65,12 +65,24 @@ const hasCoarsePointer = () => (
 );
 
 let subtitleAutoScrollPausedUntil = 0;
+let subtitleSelectionGestureActive = false;
 
 const pauseSubtitleAutoScroll = (ms = SUBTITLE_AUTO_SCROLL_PAUSE_MS) => {
   subtitleAutoScrollPausedUntil = Math.max(subtitleAutoScrollPausedUntil, Date.now() + ms);
 };
 
-const isSubtitleAutoScrollPaused = () => Date.now() < subtitleAutoScrollPausedUntil;
+const lockSubtitleSelectionGesture = (ms = SUBTITLE_AUTO_SCROLL_PAUSE_MS) => {
+  subtitleSelectionGestureActive = true;
+  pauseSubtitleAutoScroll(ms);
+};
+
+const clearSubtitleSelectionGesture = () => {
+  subtitleSelectionGestureActive = false;
+};
+
+const isSubtitleAutoScrollPaused = () => (
+  subtitleSelectionGestureActive || Date.now() < subtitleAutoScrollPausedUntil
+);
 
 const SubtitleItem: React.FC<SubtitleItemProps> = ({ data, index, allSubs, isActive, adapter }) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -102,6 +114,12 @@ const SubtitleItem: React.FC<SubtitleItemProps> = ({ data, index, allSubs, isAct
       itemRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   }, [isActive]);
+
+  useEffect(() => {
+    return () => {
+      clearSubtitleSelectionGesture();
+    };
+  }, []);
 
   const handlePlay = (e: React.MouseEvent) => { 
     e.stopPropagation(); 
@@ -147,7 +165,7 @@ const SubtitleItem: React.FC<SubtitleItemProps> = ({ data, index, allSubs, isAct
     if (rect) {
       const position = getSelectionBoxPosition(rect, text);
       const placement = shouldDockSelectionBox() ? 'dock' : 'floating';
-      pauseSubtitleAutoScroll();
+      lockSubtitleSelectionGesture();
       setSelectionBox({
         text,
         top: position.top,
@@ -171,7 +189,7 @@ const SubtitleItem: React.FC<SubtitleItemProps> = ({ data, index, allSubs, isAct
   }, [refreshSelectionBox]);
 
   const handleSelectionPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    pauseSubtitleAutoScroll();
+    lockSubtitleSelectionGesture();
     rememberSelectionInput(e.pointerType === 'touch' ? 'touch' : e.pointerType === 'pen' ? 'pen' : 'mouse');
   };
 
@@ -182,7 +200,7 @@ const SubtitleItem: React.FC<SubtitleItemProps> = ({ data, index, allSubs, isAct
   };
 
   const handleSelectionMouseDown = () => {
-    pauseSubtitleAutoScroll();
+    lockSubtitleSelectionGesture();
     rememberSelectionInput('mouse');
   };
 
@@ -193,7 +211,7 @@ const SubtitleItem: React.FC<SubtitleItemProps> = ({ data, index, allSubs, isAct
   };
 
   const handleSelectionTouchStart = () => {
-    pauseSubtitleAutoScroll();
+    lockSubtitleSelectionGesture();
     rememberSelectionInput('touch');
   };
 
@@ -217,8 +235,10 @@ const SubtitleItem: React.FC<SubtitleItemProps> = ({ data, index, allSubs, isAct
 
   useEffect(() => {
     const closeBox = (event: Event) => {
-      const target = event.target;
-      if (target instanceof Element && target.closest('.linkual-selection-add')) return;
+      const path = typeof event.composedPath === 'function' ? event.composedPath() : [];
+      if (path.some((node) => node instanceof Element && node.classList.contains('linkual-selection-add'))) return;
+      if (path.some((node) => node instanceof Element && node.classList.contains('text-content'))) return;
+      clearSubtitleSelectionGesture();
       setSelectionBox(null);
     };
 
@@ -238,6 +258,7 @@ const SubtitleItem: React.FC<SubtitleItemProps> = ({ data, index, allSubs, isAct
       window.removeEventListener('mousedown', closeBox, true);
       window.removeEventListener('scroll', closeBox, true);
       window.removeEventListener('keydown', closeOnEscape);
+      clearSubtitleSelectionGesture();
     };
   }, []);
 
