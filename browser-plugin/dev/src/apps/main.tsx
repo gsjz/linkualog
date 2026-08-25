@@ -13,6 +13,25 @@ let navigationRefreshTimer: number | null = null;
 
 const LINKUAL_NAVIGATION_EVENT = 'linkual_navigation';
 const LINKUAL_ROOT_ID = 'linkual-root';
+const LINKUAL_ROOT_RECOVER_EVENT = 'linkual_root_recover';
+const LINKUAL_CUSTOM_FULLSCREEN_CLASS = 'linkual-custom-fullscreen';
+const LINKUAL_MOBILE_FULLSCREEN_FALLBACK_CLASS = 'linkual-mobile-fullscreen-fallback';
+
+type BrowserFullscreenDocument = Document & {
+  webkitFullscreenElement?: Element | null;
+  mozFullScreenElement?: Element | null;
+  msFullscreenElement?: Element | null;
+  webkitExitFullscreen?: () => Promise<void> | void;
+  mozCancelFullScreen?: () => Promise<void> | void;
+  msExitFullscreen?: () => Promise<void> | void;
+};
+
+const FULLSCREEN_CHANGE_EVENTS = [
+  'fullscreenchange',
+  'webkitfullscreenchange',
+  'mozfullscreenchange',
+  'MSFullscreenChange',
+] as const;
 
 function isYouTubeHost() {
   return /(^|\.)youtube(?:-nocookie)?\.com$/i.test(window.location.hostname);
@@ -55,8 +74,30 @@ function isolateRoot(app: HTMLElement) {
   app.style.contain = 'style';
 }
 
+function getBrowserFullscreenElement() {
+  const doc = document as BrowserFullscreenDocument;
+  return document.fullscreenElement ||
+    doc.webkitFullscreenElement ||
+    doc.mozFullScreenElement ||
+    doc.msFullscreenElement ||
+    null;
+}
+
+function exitBrowserFullscreen() {
+  const doc = document as BrowserFullscreenDocument;
+
+  if (document.exitFullscreen) return document.exitFullscreen();
+  if (doc.webkitExitFullscreen) return doc.webkitExitFullscreen();
+  if (doc.mozCancelFullScreen) return doc.mozCancelFullScreen();
+  if (doc.msExitFullscreen) return doc.msExitFullscreen();
+}
+
+function isPromiseLike(value: unknown): value is Promise<void> {
+  return Boolean(value && typeof (value as Promise<void>).then === 'function');
+}
+
 function getRootHost() {
-  const fullscreenElement = document.fullscreenElement;
+  const fullscreenElement = getBrowserFullscreenElement();
   if (fullscreenElement instanceof HTMLElement && fullscreenElement.isConnected) {
     return fullscreenElement;
   }
@@ -69,6 +110,25 @@ function attachRootToActiveHost(app: HTMLElement) {
   if (host && app.parentElement !== host) {
     host.append(app);
   }
+}
+
+function recoverLinkualRoot() {
+  if (!document.body) return;
+
+  const app = document.getElementById(LINKUAL_ROOT_ID);
+  if (!app) {
+    mountApp();
+    return;
+  }
+
+  attachRootToActiveHost(app);
+  isolateRoot(app);
+}
+
+function scheduleRootRecover() {
+  recoverLinkualRoot();
+  window.setTimeout(recoverLinkualRoot, 80);
+  window.setTimeout(recoverLinkualRoot, 250);
 }
 
 function getShadowMount(app: HTMLElement) {
@@ -118,6 +178,47 @@ function dispatchNavigationRefresh() {
   window.dispatchEvent(new Event(LINKUAL_NAVIGATION_EVENT));
   window.dispatchEvent(new Event('linkual_custom_layout_refresh'));
   window.dispatchEvent(new Event('resize'));
+}
+
+function clearCustomFullscreenState() {
+  const root = document.documentElement;
+  const hadCustomFullscreen = root.classList.contains(LINKUAL_CUSTOM_FULLSCREEN_CLASS) ||
+    root.classList.contains(LINKUAL_MOBILE_FULLSCREEN_FALLBACK_CLASS);
+
+  root.classList.remove(LINKUAL_CUSTOM_FULLSCREEN_CLASS);
+  root.classList.remove(LINKUAL_MOBILE_FULLSCREEN_FALLBACK_CLASS);
+  scheduleRootRecover();
+
+  if (!hadCustomFullscreen) return;
+
+  window.dispatchEvent(new Event('linkual_custom_fullscreen_changed'));
+  window.dispatchEvent(new Event('linkual_custom_layout_refresh'));
+  window.dispatchEvent(new Event('resize'));
+}
+
+function handleFullscreenHostChange() {
+  if (!getBrowserFullscreenElement() && document.documentElement.classList.contains(LINKUAL_CUSTOM_FULLSCREEN_CLASS)) {
+    clearCustomFullscreenState();
+    return;
+  }
+
+  scheduleRootRecover();
+}
+
+function handleGlobalEscape(event: KeyboardEvent) {
+  if (event.key !== 'Escape' || !document.documentElement.classList.contains(LINKUAL_CUSTOM_FULLSCREEN_CLASS)) return;
+
+  event.preventDefault();
+  event.stopPropagation();
+  const browserFullscreenElement = getBrowserFullscreenElement();
+  clearCustomFullscreenState();
+
+  if (browserFullscreenElement) {
+    const browserFullscreenAction = exitBrowserFullscreen();
+    if (isPromiseLike(browserFullscreenAction)) {
+      browserFullscreenAction.catch((error) => console.warn('[Linkual] 浏览器全屏退出失败', error));
+    }
+  }
 }
 
 function scheduleNavigationRefresh() {
@@ -182,10 +283,14 @@ if (!isGeminiHost()) {
     }
   }
 
-  document.addEventListener('fullscreenchange', () => {
-    const app = document.getElementById(LINKUAL_ROOT_ID);
-    if (app) attachRootToActiveHost(app);
+  FULLSCREEN_CHANGE_EVENTS.forEach((eventName) => {
+    document.addEventListener(eventName, handleFullscreenHostChange, true);
   });
+  window.addEventListener('keydown', handleGlobalEscape, true);
+  window.addEventListener('keyup', handleGlobalEscape, true);
+  document.addEventListener('keydown', handleGlobalEscape, true);
+  document.addEventListener('keyup', handleGlobalEscape, true);
+  window.addEventListener(LINKUAL_ROOT_RECOVER_EVENT, scheduleRootRecover);
 
   if (shouldHookNavigation() || isArticleTranslationSupportedPage()) {
     const observer = new MutationObserver(() => {

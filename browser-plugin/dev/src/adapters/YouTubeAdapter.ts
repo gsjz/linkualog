@@ -9,6 +9,28 @@ import {
 
 declare const unsafeWindow: any;
 
+type BrowserFullscreenDocument = Document & {
+  webkitFullscreenElement?: Element | null;
+  mozFullScreenElement?: Element | null;
+  msFullscreenElement?: Element | null;
+};
+
+const FULLSCREEN_CHANGE_EVENTS = [
+  'fullscreenchange',
+  'webkitfullscreenchange',
+  'mozfullscreenchange',
+  'MSFullscreenChange',
+] as const;
+
+function getBrowserFullscreenElement() {
+  const doc = document as BrowserFullscreenDocument;
+  return document.fullscreenElement ||
+    doc.webkitFullscreenElement ||
+    doc.mozFullScreenElement ||
+    doc.msFullscreenElement ||
+    null;
+}
+
 export class YouTubeAdapter implements IVideoAdapter {
   platformName = 'YouTube';
   private cachedSubs: Subtitle[] = [];
@@ -78,6 +100,19 @@ export class YouTubeAdapter implements IVideoAdapter {
     return document.getElementById('movie_player') || document.querySelector('.html5-video-player');
   }
 
+  private callPlayerMethod(methodName: string) {
+    const player = this.getPlayerEl() as any;
+    if (!player || typeof player[methodName] !== 'function') return false;
+
+    try {
+      player[methodName]();
+      return true;
+    } catch (error) {
+      console.warn(`[Linkual] YouTube player method failed: ${methodName}`, error);
+      return false;
+    }
+  }
+
   private requestCurrentCaptions(delay = 0) {
     if (!this.match(window.location.href)) return;
     const vid = this.getCurrentVideoId();
@@ -105,28 +140,18 @@ export class YouTubeAdapter implements IVideoAdapter {
   }
 
   private setCaptionsState(state: 'on' | 'off') {
-    const script = document.createElement('script');
-    script.textContent = `
-      try {
-        const player = document.getElementById('movie_player') || document.querySelector('.html5-video-player');
-        if (player) {
-          if ('${state}' === 'on' && typeof player.toggleSubtitlesOn === 'function') {
-            player.toggleSubtitlesOn();
-          } else if ('${state}' === 'off' && typeof player.toggleSubtitlesOff === 'function') {
-            player.toggleSubtitlesOff();
-          }
-        }
-      } catch(e) { console.error('[Linkual] API 调用失败', e); }
-    `;
-    document.body.appendChild(script);
-    script.remove();
+    this.callPlayerMethod(state === 'on' ? 'toggleSubtitlesOn' : 'toggleSubtitlesOff');
 
     setTimeout(() => {
-      const ccButton = document.querySelector('.ytp-subtitles-button') as HTMLButtonElement | null;
-      if (ccButton) {
-        const isCurrentlyOn = ccButton.getAttribute('aria-pressed') === 'true';
-        if (state === 'on' && !isCurrentlyOn) ccButton.click();
-        else if (state === 'off' && isCurrentlyOn) ccButton.click();
+      try {
+        const ccButton = document.querySelector('.ytp-subtitles-button') as HTMLButtonElement | null;
+        if (ccButton) {
+          const isCurrentlyOn = ccButton.getAttribute('aria-pressed') === 'true';
+          if (state === 'on' && !isCurrentlyOn) ccButton.click();
+          else if (state === 'off' && isCurrentlyOn) ccButton.click();
+        }
+      } catch (error) {
+        console.warn('[Linkual] YouTube caption button toggle failed', error);
       }
     }, 150);
   }
@@ -255,15 +280,19 @@ export class YouTubeAdapter implements IVideoAdapter {
   }
 
   private initFullscreenHook() {
-    document.addEventListener('fullscreenchange', () => {
+    const handleFullscreenChange = () => {
       const root = document.getElementById('linkual-root');
       if (!root) return;
-      const fsElement = document.fullscreenElement;
+      const fsElement = getBrowserFullscreenElement();
       if (fsElement && (fsElement.classList.contains('html5-video-player') || fsElement.tagName === 'YTD-WATCH-FLEXY')) {
         fsElement.appendChild(root);
       } else if (!fsElement) {
         document.body.appendChild(root);
       }
+    };
+
+    FULLSCREEN_CHANGE_EVENTS.forEach((eventName) => {
+      document.addEventListener(eventName, handleFullscreenChange);
     });
   }
 
@@ -321,6 +350,21 @@ export class YouTubeAdapter implements IVideoAdapter {
         background: #000 !important;
         z-index: 2147483000 !important;
       }
+      html.linkual-custom-fullscreen ytd-watch-flexy,
+      html.linkual-custom-fullscreen #columns,
+      html.linkual-custom-fullscreen #primary,
+      html.linkual-custom-fullscreen #primary-inner {
+        display: block !important;
+        position: static !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 100% !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        transform: none !important;
+        background: #000 !important;
+      }
       html.linkual-custom-fullscreen #masthead-container,
       html.linkual-custom-fullscreen ytd-miniplayer,
       html.linkual-custom-fullscreen ytd-guide-renderer,
@@ -334,20 +378,17 @@ export class YouTubeAdapter implements IVideoAdapter {
       html.linkual-custom-fullscreen ytd-live-chat-frame {
         display: none !important;
       }
-      html.linkual-custom-fullscreen ytd-watch-flexy,
-      html.linkual-custom-fullscreen #columns,
-      html.linkual-custom-fullscreen #primary,
-      html.linkual-custom-fullscreen #primary-inner,
       html.linkual-custom-fullscreen #player,
       html.linkual-custom-fullscreen #player-container,
+      html.linkual-custom-fullscreen #player-container-inner,
       html.linkual-custom-fullscreen #player-container-outer,
       html.linkual-custom-fullscreen #player-theater-container,
       html.linkual-custom-fullscreen #player-full-bleed-container,
       html.linkual-custom-fullscreen #full-bleed-container,
       html.linkual-custom-fullscreen ytd-player,
       html.linkual-custom-fullscreen .html5-video-player {
-        position: fixed !important;
-        inset: 0 auto auto 0 !important;
+        position: absolute !important;
+        inset: 0 !important;
         width: calc(100vw - var(--linkual-sidebar-width, 0px)) !important;
         max-width: calc(100vw - var(--linkual-sidebar-width, 0px)) !important;
         height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px)) !important;
@@ -357,6 +398,7 @@ export class YouTubeAdapter implements IVideoAdapter {
         padding: 0 !important;
         transform: none !important;
         background: #000 !important;
+        overflow: hidden !important;
       }
       html.linkual-custom-fullscreen .html5-video-player .ytp-chrome-top,
       html.linkual-custom-fullscreen .html5-video-player .ytp-chrome-bottom,
@@ -389,6 +431,11 @@ export class YouTubeAdapter implements IVideoAdapter {
         top: 0 !important;
         margin: 0 !important;
         object-fit: contain !important;
+      }
+      html.linkual-custom-fullscreen .html5-video-player video {
+        position: absolute !important;
+        inset: 0 !important;
+        transform: none !important;
       }
     `;
 

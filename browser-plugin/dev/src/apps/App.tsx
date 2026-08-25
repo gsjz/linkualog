@@ -222,12 +222,16 @@ const App: React.FC<AppProps> = ({ adapter }) => {
       if (inVideo || !document.documentElement.classList.contains('linkual-custom-fullscreen')) return;
 
       document.documentElement.classList.remove('linkual-custom-fullscreen');
-      adapter.setCustomFullscreen?.(false);
+      try {
+        adapter.setCustomFullscreen?.(false);
+      } catch (error) {
+        console.warn('[Linkual] 自定义全屏状态清理失败', error);
+      }
       window.dispatchEvent(new Event('linkual_custom_fullscreen_changed'));
       window.dispatchEvent(new Event('linkual_custom_layout_refresh'));
       window.dispatchEvent(new Event('resize'));
 
-      if (getBrowserFullscreenElement() === document.documentElement) {
+      if (getBrowserFullscreenElement()) {
         const browserFullscreenAction = exitBrowserFullscreen();
         if (isPromiseLike(browserFullscreenAction)) {
           browserFullscreenAction.catch((error) => console.warn('[Linkual] 浏览器全屏退出失败', error));
