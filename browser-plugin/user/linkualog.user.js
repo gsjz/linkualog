@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Linkual Log
 // @namespace    npm/vite-plugin-monkey
-// @version      0.0.51
+// @version      0.0.53
 // @author       Sergio Gao
 // @icon         https://vitejs.dev/logo.svg
 // @downloadURL  https://raw.githubusercontent.com/gsjz/linkualog/main/browser-plugin/user/linkualog.user.js
@@ -12467,6 +12467,440 @@
     jsxRuntime.exports = reactJsxRuntime_production;
   }
   var jsxRuntimeExports = jsxRuntime.exports;
+  /**
+   * @license lucide-react v1.34.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   */
+  const mergeClasses = (...classes) => classes.filter((className, index2, array) => {
+    return Boolean(className) && className.trim() !== "" && array.indexOf(className) === index2;
+  }).join(" ").trim();
+  /**
+   * @license lucide-react v1.34.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   */
+  const toKebabCase = (string) => string.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
+  /**
+   * @license lucide-react v1.34.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   */
+  const toCamelCase = (string) => string.replace(
+    /^([A-Z])|[\s-_]+(\w)/g,
+    (match, p1, p2) => p2 ? p2.toUpperCase() : p1.toLowerCase()
+  );
+  /**
+   * @license lucide-react v1.34.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   */
+  const toPascalCase = (string) => {
+    const camelCase = toCamelCase(string);
+    return camelCase.charAt(0).toUpperCase() + camelCase.slice(1);
+  };
+  /**
+   * @license lucide-react v1.34.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   */
+  var defaultAttributes = {
+    xmlns: "http://www.w3.org/2000/svg",
+    width: 24,
+    height: 24,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 2,
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  };
+  /**
+   * @license lucide-react v1.34.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   */
+  const hasA11yProp = (props) => {
+    for (const prop in props) {
+      if (prop.startsWith("aria-") || prop === "role" || prop === "title") {
+        return true;
+      }
+    }
+    return false;
+  };
+  const LucideContext = reactExports.createContext({});
+  const useLucideContext = () => reactExports.useContext(LucideContext);
+  const Icon = reactExports.forwardRef(
+    ({ color, size, strokeWidth, absoluteStrokeWidth, className = "", children, iconNode, ...rest }, ref) => {
+      const {
+        size: contextSize = 24,
+        strokeWidth: contextStrokeWidth = 2,
+        absoluteStrokeWidth: contextAbsoluteStrokeWidth = false,
+        color: contextColor = "currentColor",
+        className: contextClass = ""
+      } = useLucideContext() ?? {};
+      const calculatedStrokeWidth = absoluteStrokeWidth ?? contextAbsoluteStrokeWidth ? Number(strokeWidth ?? contextStrokeWidth) * 24 / Number(size ?? contextSize) : strokeWidth ?? contextStrokeWidth;
+      return reactExports.createElement(
+        "svg",
+        {
+          ref,
+          ...defaultAttributes,
+          width: size ?? contextSize ?? defaultAttributes.width,
+          height: size ?? contextSize ?? defaultAttributes.height,
+          stroke: color ?? contextColor,
+          strokeWidth: calculatedStrokeWidth,
+          className: mergeClasses("lucide", contextClass, className),
+          ...!children && !hasA11yProp(rest) && { "aria-hidden": "true" },
+          ...rest
+        },
+        [
+          ...iconNode.map(([tag, attrs]) => reactExports.createElement(tag, attrs)),
+          ...Array.isArray(children) ? children : [children]
+        ]
+      );
+    }
+  );
+  /**
+   * @license lucide-react v1.34.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   */
+  const createLucideIcon = (iconName, iconNode) => {
+    const Component2 = reactExports.forwardRef(
+      ({ className, ...props }, ref) => reactExports.createElement(Icon, {
+        ref,
+        iconNode,
+        className: mergeClasses(
+          `lucide-${toKebabCase(toPascalCase(iconName))}`,
+          `lucide-${iconName}`,
+          className
+        ),
+        ...props
+      })
+    );
+    Component2.displayName = toPascalCase(iconName);
+    return Component2;
+  };
+  /**
+   * @license lucide-react v1.34.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   */
+  const __iconNode$l = [
+    [
+      "path",
+      {
+        d: "M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z",
+        key: "3c2336"
+      }
+    ],
+    ["line", { x1: "12", x2: "12", y1: "8", y2: "16", key: "10p56q" }],
+    ["line", { x1: "8", x2: "16", y1: "12", y2: "12", key: "1jonct" }]
+  ];
+  const BadgePlus = createLucideIcon("badge-plus", __iconNode$l);
+  /**
+   * @license lucide-react v1.34.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   */
+  const __iconNode$k = [["path", { d: "m6 9 6 6 6-6", key: "qrunsl" }]];
+  const ChevronDown = createLucideIcon("chevron-down", __iconNode$k);
+  /**
+   * @license lucide-react v1.34.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   */
+  const __iconNode$j = [["path", { d: "m15 18-6-6 6-6", key: "1wnfg3" }]];
+  const ChevronLeft = createLucideIcon("chevron-left", __iconNode$j);
+  /**
+   * @license lucide-react v1.34.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   */
+  const __iconNode$i = [
+    [
+      "path",
+      {
+        d: "M9 9.003a1 1 0 0 1 1.517-.859l4.997 2.997a1 1 0 0 1 0 1.718l-4.997 2.997A1 1 0 0 1 9 14.996z",
+        key: "kmsa83"
+      }
+    ],
+    ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }]
+  ];
+  const CirclePlay = createLucideIcon("circle-play", __iconNode$i);
+  /**
+   * @license lucide-react v1.34.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   */
+  const __iconNode$h = [
+    ["circle", { cx: "9", cy: "12", r: "1", key: "1vctgf" }],
+    ["circle", { cx: "9", cy: "5", r: "1", key: "hp0tcf" }],
+    ["circle", { cx: "9", cy: "19", r: "1", key: "fkjjf6" }],
+    ["circle", { cx: "15", cy: "12", r: "1", key: "1tmaij" }],
+    ["circle", { cx: "15", cy: "5", r: "1", key: "19l28e" }],
+    ["circle", { cx: "15", cy: "19", r: "1", key: "f4zoj3" }]
+  ];
+  const GripVertical = createLucideIcon("grip-vertical", __iconNode$h);
+  /**
+   * @license lucide-react v1.34.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   */
+  const __iconNode$g = [
+    ["path", { d: "m5 8 6 6", key: "1wu5hv" }],
+    ["path", { d: "m4 14 6-6 2-3", key: "1k1g8d" }],
+    ["path", { d: "M2 5h12", key: "or177f" }],
+    ["path", { d: "M7 2h1", key: "1t2jsx" }],
+    ["path", { d: "m22 22-5-10-5 10", key: "don7ne" }],
+    ["path", { d: "M14 18h6", key: "1m8k6r" }]
+  ];
+  const Languages = createLucideIcon("languages", __iconNode$g);
+  /**
+   * @license lucide-react v1.34.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   */
+  const __iconNode$f = [
+    ["path", { d: "M13 5h8", key: "a7qcls" }],
+    ["path", { d: "M13 12h8", key: "h98zly" }],
+    ["path", { d: "M13 19h8", key: "c3s6r1" }],
+    ["path", { d: "m3 17 2 2 4-4", key: "1jhpwq" }],
+    ["path", { d: "m3 7 2 2 4-4", key: "1obspn" }]
+  ];
+  const ListChecks = createLucideIcon("list-checks", __iconNode$f);
+  /**
+   * @license lucide-react v1.34.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   */
+  const __iconNode$e = [
+    [
+      "path",
+      {
+        d: "M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0",
+        key: "1r0f0z"
+      }
+    ],
+    ["circle", { cx: "12", cy: "10", r: "3", key: "ilqhr7" }]
+  ];
+  const MapPin = createLucideIcon("map-pin", __iconNode$e);
+  /**
+   * @license lucide-react v1.34.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   */
+  const __iconNode$d = [
+    ["path", { d: "M15 3h6v6", key: "1q9fwt" }],
+    ["path", { d: "m21 3-7 7", key: "1l2asr" }],
+    ["path", { d: "m3 21 7-7", key: "tjx5ai" }],
+    ["path", { d: "M9 21H3v-6", key: "wtvkvv" }]
+  ];
+  const Maximize2 = createLucideIcon("maximize-2", __iconNode$d);
+  /**
+   * @license lucide-react v1.34.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   */
+  const __iconNode$c = [
+    ["path", { d: "m14 10 7-7", key: "oa77jy" }],
+    ["path", { d: "M20 10h-6V4", key: "mjg0md" }],
+    ["path", { d: "m3 21 7-7", key: "tjx5ai" }],
+    ["path", { d: "M4 14h6v6", key: "rmj7iw" }]
+  ];
+  const Minimize2 = createLucideIcon("minimize-2", __iconNode$c);
+  /**
+   * @license lucide-react v1.34.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   */
+  const __iconNode$b = [
+    [
+      "path",
+      {
+        d: "M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z",
+        key: "e79jfc"
+      }
+    ],
+    ["circle", { cx: "13.5", cy: "6.5", r: ".5", fill: "currentColor", key: "1okk4w" }],
+    ["circle", { cx: "17.5", cy: "10.5", r: ".5", fill: "currentColor", key: "f64h9f" }],
+    ["circle", { cx: "6.5", cy: "12.5", r: ".5", fill: "currentColor", key: "qy21gx" }],
+    ["circle", { cx: "8.5", cy: "7.5", r: ".5", fill: "currentColor", key: "fotxhn" }]
+  ];
+  const Palette = createLucideIcon("palette", __iconNode$b);
+  /**
+   * @license lucide-react v1.34.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   */
+  const __iconNode$a = [
+    ["rect", { width: "18", height: "18", x: "3", y: "3", rx: "2", key: "afitv7" }],
+    ["path", { d: "M3 9h18", key: "1pudct" }],
+    ["path", { d: "m9 16 3-3 3 3", key: "1idcnm" }]
+  ];
+  const PanelTopClose = createLucideIcon("panel-top-close", __iconNode$a);
+  /**
+   * @license lucide-react v1.34.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   */
+  const __iconNode$9 = [
+    ["rect", { width: "18", height: "18", x: "3", y: "3", rx: "2", key: "afitv7" }],
+    ["path", { d: "M3 9h18", key: "1pudct" }],
+    ["path", { d: "m15 14-3 3-3-3", key: "g215vf" }]
+  ];
+  const PanelTopOpen = createLucideIcon("panel-top-open", __iconNode$9);
+  /**
+   * @license lucide-react v1.34.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   */
+  const __iconNode$8 = [
+    ["rect", { x: "14", y: "3", width: "5", height: "18", rx: "1", key: "kaeet6" }],
+    ["rect", { x: "5", y: "3", width: "5", height: "18", rx: "1", key: "1wsw3u" }]
+  ];
+  const Pause = createLucideIcon("pause", __iconNode$8);
+  /**
+   * @license lucide-react v1.34.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   */
+  const __iconNode$7 = [
+    [
+      "path",
+      {
+        d: "M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z",
+        key: "10ikf1"
+      }
+    ]
+  ];
+  const Play = createLucideIcon("play", __iconNode$7);
+  /**
+   * @license lucide-react v1.34.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   */
+  const __iconNode$6 = [
+    [
+      "path",
+      { d: "M6.3 20.3a2.4 2.4 0 0 0 3.4 0L12 18l-6-6-2.3 2.3a2.4 2.4 0 0 0 0 3.4Z", key: "goz73y" }
+    ],
+    ["path", { d: "m2 22 3-3", key: "19mgm9" }],
+    ["path", { d: "M7.5 13.5 10 11", key: "7xgeeb" }],
+    ["path", { d: "M10.5 16.5 13 14", key: "10btkg" }],
+    ["path", { d: "m18 3-4 4h6l-4 4", key: "16psg9" }]
+  ];
+  const PlugZap = createLucideIcon("plug-zap", __iconNode$6);
+  /**
+   * @license lucide-react v1.34.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   */
+  const __iconNode$5 = [
+    ["path", { d: "M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8", key: "1357e3" }],
+    ["path", { d: "M3 3v5h5", key: "1xhq8a" }]
+  ];
+  const RotateCcw = createLucideIcon("rotate-ccw", __iconNode$5);
+  /**
+   * @license lucide-react v1.34.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   */
+  const __iconNode$4 = [
+    ["path", { d: "M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8", key: "1p45f6" }],
+    ["path", { d: "M21 3v5h-5", key: "1q7to0" }]
+  ];
+  const RotateCw = createLucideIcon("rotate-cw", __iconNode$4);
+  /**
+   * @license lucide-react v1.34.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   */
+  const __iconNode$3 = [
+    [
+      "path",
+      {
+        d: "M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915",
+        key: "1i5ecw"
+      }
+    ],
+    ["circle", { cx: "12", cy: "12", r: "3", key: "1v7zrd" }]
+  ];
+  const Settings$2 = createLucideIcon("settings", __iconNode$3);
+  /**
+   * @license lucide-react v1.34.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   */
+  const __iconNode$2 = [
+    ["path", { d: "M10 5H3", key: "1qgfaw" }],
+    ["path", { d: "M12 19H3", key: "yhmn1j" }],
+    ["path", { d: "M14 3v4", key: "1sua03" }],
+    ["path", { d: "M16 17v4", key: "1q0r14" }],
+    ["path", { d: "M21 12h-9", key: "1o4lsq" }],
+    ["path", { d: "M21 19h-5", key: "1rlt1p" }],
+    ["path", { d: "M21 5h-7", key: "1oszz2" }],
+    ["path", { d: "M8 10v4", key: "tgpxqk" }],
+    ["path", { d: "M8 12H3", key: "a7s4jb" }]
+  ];
+  const SlidersHorizontal = createLucideIcon("sliders-horizontal", __iconNode$2);
+  /**
+   * @license lucide-react v1.34.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   */
+  const __iconNode$1 = [
+    [
+      "path",
+      {
+        d: "M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z",
+        key: "1s2grr"
+      }
+    ],
+    ["path", { d: "M20 2v4", key: "1rf3ol" }],
+    ["path", { d: "M22 4h-4", key: "gwowj6" }],
+    ["circle", { cx: "4", cy: "20", r: "2", key: "6kqj1y" }]
+  ];
+  const Sparkles = createLucideIcon("sparkles", __iconNode$1);
+  /**
+   * @license lucide-react v1.34.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   */
+  const __iconNode = [
+    ["path", { d: "M18 6 6 18", key: "1bl5f8" }],
+    ["path", { d: "m6 6 12 12", key: "d8bk6v" }]
+  ];
+  const X = createLucideIcon("x", __iconNode);
   function useVideoSync(subs, adapter) {
     const [activeIndex, setActiveIndex] = reactExports.useState(-1);
     const activeIndexRef = reactExports.useRef(-1);
@@ -13373,7 +13807,7 @@ ${contextBlock}`,
             left: selectionBox.left
           } : void 0,
           children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "+" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(BadgePlus, { className: "linkual-selection-add-icon", size: 16, strokeWidth: 2.2 }),
             /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "linkual-selection-add-text", children: [
               '"',
               selectionBox.text,
@@ -13383,15 +13817,20 @@ ${contextBlock}`,
         }
       ),
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: ctrlClass, children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "tag-btn tag-play", onClick: handlePlay, title: "点击跳转并播放", children: [
-          "▶ ",
-          Math.floor(data.start / 60),
-          ":",
-          Math.floor(data.start % 60).toString().padStart(2, "0")
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("button", { type: "button", className: "tag-btn tag-play", onClick: handlePlay, title: "点击跳转并播放", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx(Play, { className: "linkual-subtitle-icon", size: 12, strokeWidth: 2.4 }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
+            Math.floor(data.start / 60),
+            ":",
+            Math.floor(data.start % 60).toString().padStart(2, "0")
+          ] })
         ] }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "tag-btn tag-pin", onClick: handlePin, title: "定位到此处并暂停", children: "📌" }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "btn-parse", onClick: handleParse, children: isGenerating ? "解析中" : aiContent ? "重新解析" : "解析" }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "btn-chevron", onClick: handleToggle, children: isExpanded ? "▼" : "◀" })
+        /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", className: "tag-btn tag-pin", onClick: handlePin, title: "定位到此处并暂停", "aria-label": "定位到此处并暂停", children: /* @__PURE__ */ jsxRuntimeExports.jsx(MapPin, { className: "linkual-subtitle-icon", size: 13, strokeWidth: 2.3 }) }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("button", { type: "button", className: "btn-parse", onClick: handleParse, children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx(Sparkles, { className: "linkual-subtitle-icon", size: 13, strokeWidth: 2.2 }),
+          isGenerating ? "解析中" : aiContent ? "重新解析" : "解析"
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", className: "btn-chevron", onClick: handleToggle, title: isExpanded ? "收起解析" : "展开解析", "aria-label": isExpanded ? "收起解析" : "展开解析", children: isExpanded ? /* @__PURE__ */ jsxRuntimeExports.jsx(ChevronDown, { className: "linkual-subtitle-icon", size: 15, strokeWidth: 2.3 }) : /* @__PURE__ */ jsxRuntimeExports.jsx(ChevronLeft, { className: "linkual-subtitle-icon", size: 15, strokeWidth: 2.3 }) })
       ] }),
       /* @__PURE__ */ jsxRuntimeExports.jsx(
         "div",
@@ -13645,12 +14084,21 @@ ${targetLanguage.trim() || "简体中文"}`;
     return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "modal", onMouseDown: handleBackdropMouseDown, children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "modal-box", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "modal-header", children: [
         /* @__PURE__ */ jsxRuntimeExports.jsx("h3", { children: "全局设置" }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "close-btn", onClick: onClose, title: "关闭", children: "×" })
+        /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", className: "close-btn", onClick: onClose, title: "关闭", "aria-label": "关闭", children: /* @__PURE__ */ jsxRuntimeExports.jsx(X, { size: 18, strokeWidth: 2.3 }) })
       ] }),
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "tabs", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: `tab ${activeTab === "api" ? "active" : ""}`, onClick: () => setActiveTab("api"), children: "🔌 API 设置" }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: `tab ${activeTab === "params" ? "active" : ""}`, onClick: () => setActiveTab("params"), children: "⚙️ 参数调整" }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: `tab ${activeTab === "ui" ? "active" : ""}`, onClick: () => setActiveTab("ui"), children: "🎨 界面设置" })
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: `tab ${activeTab === "api" ? "active" : ""}`, onClick: () => setActiveTab("api"), children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx(PlugZap, { size: 15, strokeWidth: 2.2 }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "API 设置" })
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: `tab ${activeTab === "params" ? "active" : ""}`, onClick: () => setActiveTab("params"), children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx(SlidersHorizontal, { size: 15, strokeWidth: 2.2 }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "参数调整" })
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: `tab ${activeTab === "ui" ? "active" : ""}`, onClick: () => setActiveTab("ui"), children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx(Palette, { size: 15, strokeWidth: 2.2 }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "界面设置" })
+        ] })
       ] }),
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "tab-content", children: [
         activeTab === "api" && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "tab-pane fade-in", children: [
@@ -14092,8 +14540,10 @@ JSON 格式：
             {
               type: "button",
               onClick: () => setIsOpen(false),
-              style: { border: "none", background: "#eee", color: "#333", cursor: "pointer", fontSize: "13px", fontWeight: "bold", borderRadius: "4px", padding: "4px 8px" },
-              children: "x"
+              style: { border: "none", background: "#eee", color: "#333", cursor: "pointer", borderRadius: "4px", width: "28px", height: "28px", display: "inline-flex", alignItems: "center", justifyContent: "center", padding: 0 },
+              "aria-label": "关闭队列",
+              title: "关闭队列",
+              children: /* @__PURE__ */ jsxRuntimeExports.jsx(X, { size: 15, strokeWidth: 2.3 })
             }
           )
         ] }),
@@ -14125,7 +14575,10 @@ JSON 格式：
           ] }),
           /* @__PURE__ */ jsxRuntimeExports.jsx("div", { style: { fontSize: "12px", color: "#666", marginBottom: "8px", paddingBottom: "8px", borderBottom: "1px dashed #eee" }, children: t.context }),
           /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { fontSize: "11px", color: "#e53935", marginBottom: "8px", display: "flex", justifyContent: "space-between" }, children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: t.youtube ? `▶ YouTube 捕获: ${t.youtube.timestamp}s` : "本地字幕记录" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { style: { display: "inline-flex", alignItems: "center", gap: "4px" }, children: [
+              t.youtube && /* @__PURE__ */ jsxRuntimeExports.jsx(CirclePlay, { size: 12, strokeWidth: 2.2 }),
+              t.youtube ? `YouTube 捕获: ${t.youtube.timestamp}s` : "本地字幕记录"
+            ] }),
             /* @__PURE__ */ jsxRuntimeExports.jsx("span", { style: { color: "#888", fontStyle: "italic", maxWidth: "150px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: t.source })
           ] }),
           /* @__PURE__ */ jsxRuntimeExports.jsx(LlmResultPreview, { result: t.llmResult }),
@@ -14165,18 +14618,11 @@ JSON 格式：
     ] }) });
   };
   const DRAG_THRESHOLD = 5;
-  const FULLSCREEN_SETTLE_DELAY = 120;
   const SEEK_STEP_SECONDS = 5;
+  const LINKUAL_CUSTOM_FULLSCREEN_CLASS = "linkual-custom-fullscreen";
   function getBrowserFullscreenElement$1() {
     const doc = document;
     return document.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement || doc.msFullscreenElement || null;
-  }
-  function requestBrowserFullscreen() {
-    const target = document.documentElement;
-    if (target.requestFullscreen) return target.requestFullscreen();
-    if (target.webkitRequestFullscreen) return target.webkitRequestFullscreen();
-    if (target.mozRequestFullScreen) return target.mozRequestFullScreen();
-    if (target.msRequestFullscreen) return target.msRequestFullscreen();
   }
   function exitBrowserFullscreen$1() {
     const doc = document;
@@ -14231,7 +14677,7 @@ JSON 格式：
     return createPosition(ratioX * maxLeft, ratioY * maxTop, element);
   }
   const MobileFullscreenButton = ({ adapter }) => {
-    const [fullscreen, setFullscreen] = reactExports.useState(() => document.documentElement.classList.contains("linkual-custom-fullscreen"));
+    const [fullscreen, setFullscreen] = reactExports.useState(() => document.documentElement.classList.contains(LINKUAL_CUSTOM_FULLSCREEN_CLASS));
     const [position, setPosition] = reactExports.useState(null);
     const [dragging, setDragging] = reactExports.useState(false);
     const [currentTime, setCurrentTime] = reactExports.useState(0);
@@ -14239,7 +14685,7 @@ JSON 格式：
     const [paused, setPaused] = reactExports.useState(true);
     const buttonRef = reactExports.useRef(null);
     const progressRef = reactExports.useRef(null);
-    const fullscreenRequestPendingRef = reactExports.useRef(false);
+    const browserFullscreenWasActiveRef = reactExports.useRef(Boolean(getBrowserFullscreenElement$1()));
     const dragRef = reactExports.useRef({
       pointerId: -1,
       offsetX: 0,
@@ -14248,39 +14694,57 @@ JSON 格式：
       startY: 0,
       moved: false
     });
-    const applyCustomFullscreenState = (enabled) => {
+    const applyCustomFullscreenState = reactExports.useCallback((enabled) => {
       var _a;
-      document.documentElement.classList.toggle("linkual-custom-fullscreen", enabled);
+      browserFullscreenWasActiveRef.current = enabled && Boolean(getBrowserFullscreenElement$1());
+      document.documentElement.classList.toggle(LINKUAL_CUSTOM_FULLSCREEN_CLASS, enabled);
       (_a = adapter.setCustomFullscreen) == null ? void 0 : _a.call(adapter, enabled);
       setFullscreen(enabled);
       emitCustomLayoutChange();
-    };
+    }, [adapter]);
+    const clearCustomFullscreenState = reactExports.useCallback(() => {
+      var _a;
+      const hadCustomFullscreen = document.documentElement.classList.contains(LINKUAL_CUSTOM_FULLSCREEN_CLASS);
+      browserFullscreenWasActiveRef.current = false;
+      if (!hadCustomFullscreen) {
+        setFullscreen(false);
+        return;
+      }
+      document.documentElement.classList.remove(LINKUAL_CUSTOM_FULLSCREEN_CLASS);
+      (_a = adapter.setCustomFullscreen) == null ? void 0 : _a.call(adapter, false);
+      setFullscreen(false);
+      emitCustomLayoutChange();
+    }, [adapter]);
     reactExports.useEffect(() => {
       const syncFullscreenState = () => {
-        var _a;
-        const customFullscreen = document.documentElement.classList.contains("linkual-custom-fullscreen");
-        if (customFullscreen && !getBrowserFullscreenElement$1() && !fullscreenRequestPendingRef.current) {
-          document.documentElement.classList.remove("linkual-custom-fullscreen");
-          (_a = adapter.setCustomFullscreen) == null ? void 0 : _a.call(adapter, false);
-          emitCustomLayoutChange();
-          setFullscreen(false);
+        setFullscreen(document.documentElement.classList.contains(LINKUAL_CUSTOM_FULLSCREEN_CLASS));
+      };
+      const clearStaleCustomFullscreen = () => {
+        const browserFullscreenElement = getBrowserFullscreenElement$1();
+        if (browserFullscreenElement) {
+          browserFullscreenWasActiveRef.current = true;
           return;
         }
-        setFullscreen(customFullscreen);
+        if (browserFullscreenWasActiveRef.current && document.documentElement.classList.contains(LINKUAL_CUSTOM_FULLSCREEN_CLASS)) {
+          clearCustomFullscreenState();
+          return;
+        }
+        browserFullscreenWasActiveRef.current = false;
+        syncFullscreenState();
       };
       window.addEventListener("linkual_custom_fullscreen_changed", syncFullscreenState);
-      document.addEventListener("fullscreenchange", syncFullscreenState);
-      document.addEventListener("webkitfullscreenchange", syncFullscreenState);
-      document.addEventListener("mozfullscreenchange", syncFullscreenState);
-      document.addEventListener("MSFullscreenChange", syncFullscreenState);
+      document.addEventListener("fullscreenchange", clearStaleCustomFullscreen);
+      document.addEventListener("webkitfullscreenchange", clearStaleCustomFullscreen);
+      document.addEventListener("mozfullscreenchange", clearStaleCustomFullscreen);
+      document.addEventListener("MSFullscreenChange", clearStaleCustomFullscreen);
       return () => {
         window.removeEventListener("linkual_custom_fullscreen_changed", syncFullscreenState);
-        document.removeEventListener("fullscreenchange", syncFullscreenState);
-        document.removeEventListener("webkitfullscreenchange", syncFullscreenState);
-        document.removeEventListener("mozfullscreenchange", syncFullscreenState);
-        document.removeEventListener("MSFullscreenChange", syncFullscreenState);
+        document.removeEventListener("fullscreenchange", clearStaleCustomFullscreen);
+        document.removeEventListener("webkitfullscreenchange", clearStaleCustomFullscreen);
+        document.removeEventListener("mozfullscreenchange", clearStaleCustomFullscreen);
+        document.removeEventListener("MSFullscreenChange", clearStaleCustomFullscreen);
       };
-    }, [adapter]);
+    }, [clearCustomFullscreenState]);
     reactExports.useEffect(() => {
       var _a;
       (_a = adapter.setCustomFullscreen) == null ? void 0 : _a.call(adapter, fullscreen);
@@ -14289,10 +14753,10 @@ JSON 格式：
     }, [adapter, fullscreen]);
     reactExports.useEffect(() => () => {
       var _a;
-      const hadCustomFullscreen = document.documentElement.classList.contains("linkual-custom-fullscreen");
-      fullscreenRequestPendingRef.current = false;
+      const hadCustomFullscreen = document.documentElement.classList.contains(LINKUAL_CUSTOM_FULLSCREEN_CLASS);
+      browserFullscreenWasActiveRef.current = false;
       if (!hadCustomFullscreen) return;
-      document.documentElement.classList.remove("linkual-custom-fullscreen");
+      document.documentElement.classList.remove(LINKUAL_CUSTOM_FULLSCREEN_CLASS);
       (_a = adapter.setCustomFullscreen) == null ? void 0 : _a.call(adapter, false);
       emitCustomLayoutChange();
       if (getBrowserFullscreenElement$1() === document.documentElement) {
@@ -14369,13 +14833,13 @@ JSON 格式：
       }
       setDragging(false);
     };
-    const exitCustomFullscreen = () => {
-      applyCustomFullscreenState(false);
-      const browserFullscreenAction = getBrowserFullscreenElement$1() ? exitBrowserFullscreen$1() : void 0;
+    const exitCustomFullscreen = reactExports.useCallback(() => {
+      clearCustomFullscreenState();
+      const browserFullscreenAction = getBrowserFullscreenElement$1() === document.documentElement ? exitBrowserFullscreen$1() : void 0;
       if (isPromiseLike$1(browserFullscreenAction)) {
         browserFullscreenAction.catch((error) => console.warn("[Linkual] 浏览器全屏切换失败", error));
       }
-    };
+    }, [clearCustomFullscreenState]);
     const handleClick = (event) => {
       if (dragRef.current.moved) {
         event.preventDefault();
@@ -14384,25 +14848,8 @@ JSON 格式：
         return;
       }
       const nextFullscreen = !fullscreen;
-      fullscreenRequestPendingRef.current = nextFullscreen;
-      applyCustomFullscreenState(nextFullscreen);
       if (nextFullscreen) {
-        const browserFullscreenAction = requestBrowserFullscreen();
-        const finishPending = () => {
-          window.setTimeout(() => {
-            fullscreenRequestPendingRef.current = false;
-            emitCustomLayoutChange();
-          }, FULLSCREEN_SETTLE_DELAY);
-        };
-        if (isPromiseLike$1(browserFullscreenAction)) {
-          browserFullscreenAction.then(finishPending).catch((error) => {
-            console.warn("[Linkual] 浏览器全屏切换失败", error);
-            fullscreenRequestPendingRef.current = false;
-            applyCustomFullscreenState(false);
-          });
-        } else {
-          finishPending();
-        }
+        applyCustomFullscreenState(true);
         return;
       }
       exitCustomFullscreen();
@@ -14451,7 +14898,7 @@ JSON 格式：
       };
       window.addEventListener("keydown", handleKeyDown, true);
       return () => window.removeEventListener("keydown", handleKeyDown, true);
-    }, [adapter, duration, fullscreen, paused]);
+    }, [adapter, duration, exitCustomFullscreen, fullscreen, paused]);
     const style2 = position ? {
       left: position.left,
       top: position.top,
@@ -14460,7 +14907,7 @@ JSON 格式：
     } : {};
     const progressPercent = duration > 0 ? Math.max(0, Math.min(100, currentTime / duration * 100)) : 0;
     return /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
-      !fullscreen && /* @__PURE__ */ jsxRuntimeExports.jsx(
+      !fullscreen && /* @__PURE__ */ jsxRuntimeExports.jsxs(
         "button",
         {
           ref: buttonRef,
@@ -14472,7 +14919,10 @@ JSON 格式：
           onPointerUp: handlePointerUp,
           onPointerCancel: handlePointerUp,
           onClick: handleClick,
-          children: "进入全屏"
+          children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx(Maximize2, { className: "linkual-mobile-fullscreen-icon", size: 15, strokeWidth: 2.2 }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "进入全屏" })
+          ]
         }
       ),
       fullscreen && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-player-controls", children: [
@@ -14499,10 +14949,22 @@ JSON 格式：
           /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "linkual-player-time", children: formatTime(duration) })
         ] }),
         /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-player-button-row", children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", className: "linkual-player-btn", onClick: () => seekBy(-SEEK_STEP_SECONDS), title: "后退 5 秒", children: "-5" }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", className: "linkual-player-btn primary", onClick: togglePlayback, title: paused ? "播放" : "暂停", children: paused ? "播放" : "暂停" }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", className: "linkual-player-btn", onClick: () => seekBy(SEEK_STEP_SECONDS), title: "前进 5 秒", children: "+5" }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", className: "linkual-player-btn", onClick: exitCustomFullscreen, title: "退出全屏", children: "退出" })
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("button", { type: "button", className: "linkual-player-btn", onClick: () => seekBy(-SEEK_STEP_SECONDS), title: "后退 5 秒", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx(RotateCcw, { className: "linkual-player-btn-icon", size: 15, strokeWidth: 2.2 }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "5s" })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("button", { type: "button", className: "linkual-player-btn primary", onClick: togglePlayback, title: paused ? "播放" : "暂停", children: [
+            paused ? /* @__PURE__ */ jsxRuntimeExports.jsx(Play, { className: "linkual-player-btn-icon", size: 15, strokeWidth: 2.2 }) : /* @__PURE__ */ jsxRuntimeExports.jsx(Pause, { className: "linkual-player-btn-icon", size: 15, strokeWidth: 2.2 }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: paused ? "播放" : "暂停" })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("button", { type: "button", className: "linkual-player-btn", onClick: () => seekBy(SEEK_STEP_SECONDS), title: "前进 5 秒", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx(RotateCw, { className: "linkual-player-btn-icon", size: 15, strokeWidth: 2.2 }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "5s" })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("button", { type: "button", className: "linkual-player-btn", onClick: exitCustomFullscreen, title: "退出全屏", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx(Minimize2, { className: "linkual-player-btn-icon", size: 15, strokeWidth: 2.2 }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "退出" })
+          ] })
         ] })
       ] })
     ] });
@@ -15193,9 +15655,11 @@ ${paragraph.text}`,
     return Number.isFinite(rawHeight) && rawHeight > 0 ? rawHeight : getDefaultExpandedHeight();
   };
   const syncVisualViewportHeightProperty = () => {
+    const viewportHeight = `${getVisualViewportHeight()}px`;
+    document.documentElement.style.setProperty("--linkual-visual-viewport-height", viewportHeight);
     const root2 = document.getElementById("linkual-root");
     if (!root2) return;
-    root2.style.setProperty("--linkual-visual-viewport-height", `${getVisualViewportHeight()}px`);
+    root2.style.setProperty("--linkual-visual-viewport-height", viewportHeight);
   };
   const getMaxWidgetHeight = () => Math.max(
     COLLAPSED_WIDGET_HEIGHT,
@@ -15283,36 +15747,17 @@ ${paragraph.text}`,
     }
   };
   const ActionIcon = ({ name }) => {
-    const paths = {
-      add: /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M4 7.5h5l2 2h9v8.5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z" }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M12 12v5" }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M9.5 14.5h5" })
-      ] }),
-      queue: /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M8 6h12" }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M8 12h12" }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M8 18h12" }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M4 6h.01" }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M4 12h.01" }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M4 18h.01" })
-      ] }),
-      settings: /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx("circle", { cx: "12", cy: "12", r: "3" }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M19.4 15a1.7 1.7 0 0 0 .34 1.88l.04.04a2 2 0 1 1-2.83 2.83l-.04-.04a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.07a1.7 1.7 0 0 0-1.03-1.56 1.7 1.7 0 0 0-1.88.34l-.04.04a2 2 0 1 1-2.83-2.83l.04-.04A1.7 1.7 0 0 0 4.6 15 1.7 1.7 0 0 0 3 14H3a2 2 0 1 1 0-4h.07A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.88l-.04-.04a2 2 0 1 1 2.83-2.83l.04.04A1.7 1.7 0 0 0 9 4.6 1.7 1.7 0 0 0 10 3V3a2 2 0 1 1 4 0v.07A1.7 1.7 0 0 0 15 4.6a1.7 1.7 0 0 0 1.88-.34l.04-.04a2 2 0 1 1 2.83 2.83l-.04.04A1.7 1.7 0 0 0 19.4 9c.17.62.7 1 1.6 1H21a2 2 0 1 1 0 4h-.07a1.7 1.7 0 0 0-1.53 1Z" })
-      ] }),
-      expand: /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "m6 15 6-6 6 6" }),
-      collapse: /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "m6 9 6 6 6-6" }),
-      translate: /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M4 5h8" }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M8 3v2" }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M10.5 5c-.8 3.2-2.6 5.6-5.5 7" }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M5 8c1.1 1.8 2.5 3.1 4.3 4" }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M13 19l4-9 4 9" }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M14.4 16h5.2" })
-      ] })
+    const icons = {
+      add: BadgePlus,
+      queue: ListChecks,
+      settings: Settings$2,
+      expand: PanelTopOpen,
+      collapse: PanelTopClose,
+      translate: Languages,
+      clear: X
     };
-    return /* @__PURE__ */ jsxRuntimeExports.jsx("svg", { className: "linkual-universal-button-icon", viewBox: "0 0 24 24", "aria-hidden": "true", children: paths[name] });
+    const Icon2 = icons[name];
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(Icon2, { className: "linkual-universal-button-icon", "aria-hidden": "true", strokeWidth: 2.2 });
   };
   const normalizeText = (value) => value.replace(/\s+/g, " ").trim();
   const getSourceTitle = () => {
@@ -15908,7 +16353,7 @@ ${paragraph.text}`,
           },
           title: "Linkual",
           children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "linkual-universal-bubble-grip", "aria-hidden": "true", children: "⋮⋮" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(GripVertical, { className: "linkual-universal-bubble-grip", size: 15, strokeWidth: 2.1, "aria-hidden": "true" }),
             articleTranslation.isPageSupported && /* @__PURE__ */ jsxRuntimeExports.jsx(
               "button",
               {
@@ -15956,7 +16401,7 @@ ${paragraph.text}`,
           ...getExpandedWindowStyle(expandedAnchor)
         },
         children: [
-          selection && /* @__PURE__ */ jsxRuntimeExports.jsx(
+          selection && /* @__PURE__ */ jsxRuntimeExports.jsxs(
             "button",
             {
               type: "button",
@@ -15969,14 +16414,17 @@ ${paragraph.text}`,
                 left: selection.left,
                 "--linkual-theme": themeColor
               },
-              children: "填入"
+              children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx(ActionIcon, { name: "add" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "填入" })
+              ]
             }
           ),
           /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-universal-top", children: [
             /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "linkual-universal-selection", children: selection ? /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
               /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "linkual-universal-selection-label", children: "已选" }),
               /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "linkual-universal-selection-text", children: selection.text }),
-              /* @__PURE__ */ jsxRuntimeExports.jsx(
+              /* @__PURE__ */ jsxRuntimeExports.jsxs(
                 "button",
                 {
                   type: "button",
@@ -15984,7 +16432,10 @@ ${paragraph.text}`,
                   onMouseDown: (event) => event.preventDefault(),
                   onPointerDown: (event) => event.preventDefault(),
                   onClick: handleAddSelection,
-                  children: "填入"
+                  children: [
+                    /* @__PURE__ */ jsxRuntimeExports.jsx(ActionIcon, { name: "add" }),
+                    "填入"
+                  ]
                 }
               )
             ] }) : /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "linkual-universal-muted", children: "未选中文本" }) }),
@@ -16073,7 +16524,7 @@ ${paragraph.text}`,
                 }
               )
             ] }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", className: "linkual-universal-clear", onClick: handleClear, disabled: !hasPayload && !context, children: "x" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", className: "linkual-universal-clear", onClick: handleClear, disabled: !hasPayload && !context, children: /* @__PURE__ */ jsxRuntimeExports.jsx(ActionIcon, { name: "clear" }) }),
             /* @__PURE__ */ jsxRuntimeExports.jsxs("button", { type: "button", className: "linkual-universal-send", onClick: handleAddToQueue, disabled: !canSend, title: "加入队列", "aria-label": "加入队列", children: [
               /* @__PURE__ */ jsxRuntimeExports.jsx(ActionIcon, { name: "add" }),
               /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "linkual-universal-button-text", children: "加入队列" })
@@ -30806,7 +31257,7 @@ ${paragraph.text}`,
             adapter.platformName,
             "]"
           ] }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { children: /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "settings-icon", onClick: () => setIsSettingsOpen(true), title: "全局设置", children: "⚙️" }) })
+          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { children: /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", className: "settings-icon", onClick: () => setIsSettingsOpen(true), title: "全局设置", "aria-label": "全局设置", children: /* @__PURE__ */ jsxRuntimeExports.jsx(Settings$2, { size: 17, strokeWidth: 2.2 }) }) })
         ] }),
         /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "list", ref: listRef, onScroll: handleListScroll, children: subs.length === 0 ? /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "empty-tip", children: "等待字幕数据..." }) : /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
           visibleSubs.map((sub2, index2) => /* @__PURE__ */ jsxRuntimeExports.jsx(SubtitleItem, { data: sub2, index: index2, allSubs: subs, isActive: index2 === activeIndex, adapter }, index2)),
@@ -31918,9 +32369,20 @@ ${paragraph.text}`,
       html.linkual-custom-fullscreen .html5-video-player .ytp-cards-teaser,
       html.linkual-custom-fullscreen .html5-video-player .ytp-ce-element,
       html.linkual-custom-fullscreen .html5-video-player .ytp-iv-player-content,
-      html.linkual-custom-fullscreen .html5-video-player .ytp-player-content,
       html.linkual-custom-fullscreen .html5-video-player .ytp-caption-window-container {
         display: none !important;
+      }
+      html.linkual-custom-fullscreen .html5-video-container,
+      html.linkual-custom-fullscreen .html5-video-player video {
+        display: block !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        z-index: 2147483002 !important;
+      }
+      html.linkual-custom-fullscreen .html5-video-container {
+        position: absolute !important;
+        inset: 0 !important;
+        background: #000 !important;
       }
       html.linkual-custom-fullscreen .html5-video-container,
       html.linkual-custom-fullscreen .html5-video-player video {
@@ -32178,8 +32640,23 @@ ${paragraph.text}`,
 }
 
 #linkual-root .settings-icon {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #fff;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   user-select: none;
+  transition: background 0.2s;
+}
+
+#linkual-root .settings-icon:hover {
+  background: rgba(255,255,255,0.16);
 }
 
 #linkual-root .linkual-mobile-fullscreen {
@@ -32204,10 +32681,20 @@ ${paragraph.text}`,
   touch-action: none;
   -webkit-tap-highlight-color: transparent;
   pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
 
 #linkual-root .linkual-mobile-fullscreen.is-dragging {
   cursor: grabbing;
+}
+
+#linkual-root .linkual-mobile-fullscreen-icon,
+#linkual-root .linkual-player-btn-icon {
+  flex: 0 0 auto;
+  pointer-events: none;
 }
 
 html.linkual-mobile-fullscreen-fallback,
@@ -32342,6 +32829,10 @@ html.linkual-mobile-fullscreen-fallback {
   color: #fff;
   cursor: pointer;
   font: 700 12px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
 }
 
 #linkual-root .linkual-player-btn.primary {
@@ -32654,9 +33145,14 @@ html.linkual-mobile-fullscreen-fallback {
 #linkual-root .tag-btn {
   font-size: 11px;
   padding: 3px 8px;
+  border: 0;
   border-radius: 12px;
+  font-family: inherit;
+  line-height: 1.2;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  gap: 4px;
   cursor: pointer;
   transition: 0.2s;
   user-select: none;
@@ -32675,6 +33171,9 @@ html.linkual-mobile-fullscreen-fallback {
 #linkual-root .tag-pin {
   background: #e3f2fd;
   color: #1976d2;
+  width: 24px;
+  height: 24px;
+  padding: 0;
 }
 
 #linkual-root .tag-pin:hover {
@@ -32688,6 +33187,7 @@ html.linkual-mobile-fullscreen-fallback {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 4px;
   font-size: 11px;
   color: #aaa;
   background: transparent;
@@ -32718,6 +33218,10 @@ html.linkual-mobile-fullscreen-fallback {
   transition: 0.2s;
   user-select: none;
   color: #666;
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  padding: 0;
 }
 
 #linkual-root .btn-chevron:hover {
@@ -32734,6 +33238,11 @@ html.linkual-mobile-fullscreen-fallback {
   user-select: text;
   overflow-wrap: anywhere;
   -webkit-touch-callout: default;
+}
+
+#linkual-root .linkual-subtitle-icon {
+  flex: 0 0 auto;
+  pointer-events: none;
 }
 
 #linkual-root .linkual-selection-add {
@@ -32777,6 +33286,11 @@ html.linkual-mobile-fullscreen-fallback {
 #linkual-root .linkual-selection-add-text {
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+#linkual-root .linkual-selection-add-icon {
+  flex: 0 0 auto;
+  pointer-events: none;
 }
 
 #linkual-root .ai-box {
@@ -33024,6 +33538,13 @@ html.linkual-mobile-fullscreen-fallback {
   color: #fff;
 }
 
+#linkual-root .linkual-universal-add-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
 #linkual-root .linkual-universal-icon-btn {
   background: #f1f1f1;
   color: #333;
@@ -33077,6 +33598,9 @@ html.linkual-mobile-fullscreen-fallback {
   padding: 0;
   background: #f3f3f3;
   color: #555;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 #linkual-root .linkual-universal-form {
@@ -33239,23 +33763,10 @@ html.linkual-mobile-fullscreen-fallback {
 }
 
 #linkual-root .linkual-universal-bubble-grip {
-  position: relative;
-  flex: 0 0 7px;
-  width: 7px;
-  height: 22px;
-  color: transparent;
-  font-size: 0;
-  letter-spacing: 0;
-  line-height: 1;
-  opacity: 0.62;
-}
-
-#linkual-root .linkual-universal-bubble-grip::before {
-  content: '';
-  position: absolute;
-  inset: 2px 1px;
-  border-left: 1px solid rgba(255, 255, 255, 0.72);
-  border-right: 1px solid rgba(255, 255, 255, 0.48);
+  flex: 0 0 auto;
+  color: rgba(255, 255, 255, 0.72);
+  opacity: 0.76;
+  pointer-events: none;
 }
 
 #linkual-root .linkual-universal-bubble-translate {
@@ -33304,6 +33815,12 @@ html.linkual-mobile-fullscreen-fallback {
   height: 17px;
 }
 
+#linkual-root .linkual-universal-clear .linkual-universal-button-icon,
+#linkual-root .linkual-universal-floating-add .linkual-universal-button-icon,
+#linkual-root .linkual-universal-add-btn .linkual-universal-button-icon {
+  display: block;
+}
+
 #linkual-root .linkual-universal-window-toggle .linkual-universal-button-text {
   display: none;
 }
@@ -33324,6 +33841,10 @@ html.linkual-mobile-fullscreen-fallback {
   font-weight: 800;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
 }
 
 #linkual-root .linkual-vocab-queue-panel-wrap {
@@ -33728,7 +34249,7 @@ html.linkual-mobile-fullscreen-fallback {
   }
 }
 `;
-  const settingsCss = '#linkual-root .modal {\n  position: fixed;\n  top: 0;\n  left: 0;\n  width: 100%;\n  height: 100%;\n  background: rgba(0, 0, 0, 0.5);\n  display: flex;\n  justify-content: center;\n  align-items: center;\n  z-index: 2147483647;\n  backdrop-filter: blur(2px);\n  pointer-events: auto;\n}\n\n#linkual-root .modal-box {\n  background: #fff;\n  border-radius: 12px;\n  width: 380px;\n  max-height: 85vh;\n  display: flex;\n  flex-direction: column;\n  overflow: hidden;\n  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);\n  animation: linkualSlideIn 0.2s ease-out;\n}\n\n@keyframes linkualSlideIn {\n  from { transform: translateY(20px); opacity: 0; }\n  to { transform: translateY(0); opacity: 1; }\n}\n\n#linkual-root .modal-header {\n  padding: 16px 20px;\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n  border-bottom: 1px solid #eee;\n}\n\n#linkual-root .modal-header h3 {\n  margin: 0;\n  font-size: 16px;\n  color: #333;\n}\n\n#linkual-root .close-btn {\n  font-size: 24px;\n  line-height: 1;\n  color: #999;\n  cursor: pointer;\n  transition: color 0.2s;\n}\n\n#linkual-root .close-btn:hover {\n  color: #333;\n}\n\n/* Tab 样式 */\n#linkual-root .tabs {\n  display: flex;\n  background: #fafafa;\n  border-bottom: 1px solid #eee;\n}\n\n#linkual-root .tab {\n  flex: 1;\n  text-align: center;\n  padding: 12px 0;\n  font-size: 14px;\n  color: #666;\n  cursor: pointer;\n  border-bottom: 2px solid transparent;\n  transition: all 0.2s;\n  user-select: none;\n}\n\n#linkual-root .tab:hover {\n  color: #333;\n  background: rgba(0,0,0,0.02);\n}\n\n#linkual-root .tab.active {\n  color: var(--linkual-theme, #6a1b9a);\n  font-weight: bold;\n  border-bottom: 2px solid var(--linkual-theme, #6a1b9a);\n  background: #fff;\n}\n\n#linkual-root .tab-content {\n  padding: 20px;\n  overflow-y: auto;\n  flex: 1;\n}\n\n#linkual-root .fade-in {\n  animation: linkualFadeIn 0.3s ease;\n}\n\n@keyframes linkualFadeIn {\n  from { opacity: 0; }\n  to { opacity: 1; }\n}\n\n#linkual-root .setting-row {\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n  margin-bottom: 16px;\n}\n#linkual-root .setting-row label { font-size: 13px; font-weight: bold; flex: 1; color: #444; }\n#linkual-root .setting-row input[type="color"] {\n  width: 50px;\n  height: 32px;\n  padding: 0;\n  cursor: pointer;\n  border: 1px solid #ddd;\n  border-radius: 4px;\n}\n\n#linkual-root .setting-col { margin-bottom: 16px; }\n#linkual-root .setting-col label {\n  font-size: 13px;\n  font-weight: bold;\n  display: block;\n  margin-bottom: 6px;\n  color: #444;\n}\n#linkual-root .setting-col input,\n#linkual-root .setting-col textarea,\n#linkual-root .setting-col select {\n  width: 100%;\n  padding: 10px;\n  border: 1px solid #ddd;\n  border-radius: 6px;\n  box-sizing: border-box;\n  font-family: inherit;\n  font-size: 13px;\n  transition: border-color 0.2s;\n}\n#linkual-root .setting-col input:focus,\n#linkual-root .setting-col textarea:focus,\n#linkual-root .setting-col select:focus {\n  outline: none;\n  border-color: var(--linkual-theme, #6a1b9a);\n}\n#linkual-root .setting-col textarea {\n  resize: vertical;\n  min-height: 80px;\n  line-height: 1.5;\n}\n\n#linkual-root .url-prefix-row {\n  display: flex;\n  align-items: stretch;\n}\n\n#linkual-root .url-prefix-row input {\n  border-radius: 0;\n  min-width: 0;\n}\n\n#linkual-root .url-protocol-select {\n  width: auto !important;\n  flex: 0 0 78px;\n  border-right: 0 !important;\n  border-radius: 6px 0 0 6px !important;\n  background: #f7f7f7;\n  color: #555;\n}\n\n#linkual-root .url-path-select {\n  width: auto !important;\n  flex: 0 0 138px;\n  border-left: 0 !important;\n  border-radius: 0 6px 6px 0 !important;\n  background: #f7f7f7;\n  color: #555;\n  font-size: 12px !important;\n  padding-left: 8px !important;\n  padding-right: 8px !important;\n}\n\n#linkual-root .url-fixed-prefix,\n#linkual-root .url-fixed-suffix {\n  display: inline-flex;\n  align-items: center;\n  padding: 0 10px;\n  border: 1px solid #ddd;\n  background: #f7f7f7;\n  color: #666;\n  font-size: 12px;\n  white-space: nowrap;\n}\n\n#linkual-root .url-fixed-prefix {\n  border-right: 0;\n  border-radius: 6px 0 0 6px;\n}\n\n#linkual-root .url-fixed-suffix {\n  border-left: 0;\n  border-radius: 0 6px 6px 0;\n}\n\n#linkual-root .url-prefix-row:focus-within .url-fixed-prefix {\n  border-color: var(--linkual-theme, #6a1b9a);\n  border-right: 0;\n}\n\n#linkual-root .url-prefix-row:focus-within .url-protocol-select {\n  border-color: var(--linkual-theme, #6a1b9a);\n  border-right: 0;\n}\n\n#linkual-root .url-prefix-row:focus-within .url-path-select {\n  border-color: var(--linkual-theme, #6a1b9a);\n  border-left: 0;\n}\n\n#linkual-root .url-prefix-row:focus-within .url-fixed-suffix {\n  border-color: var(--linkual-theme, #6a1b9a);\n  border-left: 0;\n}\n\n#linkual-root .setting-help {\n  margin-top: 6px;\n  color: #888;\n  font-size: 12px;\n  line-height: 1.4;\n}\n\n#linkual-root .linkual-cache-manager-heading {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 8px;\n  margin-bottom: 6px;\n}\n\n#linkual-root .linkual-cache-manager-heading label {\n  margin-bottom: 0;\n}\n\n#linkual-root .linkual-cache-clear-btn,\n#linkual-root .linkual-cache-item button {\n  flex: 0 0 auto;\n  padding: 5px 8px;\n  border: 1px solid #ddd;\n  border-radius: 5px;\n  background: #fff;\n  color: #666;\n  cursor: pointer;\n  font: 12px/1.2 inherit;\n}\n\n#linkual-root .linkual-cache-clear-btn:hover,\n#linkual-root .linkual-cache-item button:hover {\n  border-color: #c62828;\n  color: #c62828;\n}\n\n#linkual-root .linkual-cache-list {\n  display: flex;\n  flex-direction: column;\n  gap: 6px;\n  max-height: 180px;\n  overflow-y: auto;\n}\n\n#linkual-root .linkual-cache-item {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 8px;\n  padding: 8px;\n  border: 1px solid #eee;\n  border-radius: 6px;\n  background: #fafafa;\n}\n\n#linkual-root .linkual-cache-item-main {\n  display: flex;\n  min-width: 0;\n  flex-direction: column;\n  gap: 3px;\n}\n\n#linkual-root .linkual-cache-item-main strong,\n#linkual-root .linkual-cache-item-main span {\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n\n#linkual-root .linkual-cache-item-main strong {\n  color: #444;\n  font-size: 12px;\n  font-weight: 600;\n}\n\n#linkual-root .linkual-cache-item-main span {\n  color: #888;\n  font-size: 11px;\n}\n\n#linkual-root .modal-footer {\n  padding: 16px 20px;\n  display: flex;\n  gap: 12px;\n  border-top: 1px solid #eee;\n  background: #fafafa;\n}\n\n#linkual-root .btn {\n  flex: 1;\n  padding: 10px;\n  border: none;\n  border-radius: 6px;\n  cursor: pointer;\n  font-weight: bold;\n  font-size: 14px;\n  transition: opacity 0.2s;\n}\n#linkual-root .btn:hover { opacity: 0.9; }\n#linkual-root .reset-btn { background: #e0e0e0; color: #555; }\n#linkual-root .save-btn { box-shadow: 0 2px 6px rgba(0,0,0,0.1); }\n';
+  const settingsCss = '#linkual-root .modal {\n  position: fixed;\n  top: 0;\n  left: 0;\n  width: 100%;\n  height: 100%;\n  background: rgba(0, 0, 0, 0.5);\n  display: flex;\n  justify-content: center;\n  align-items: center;\n  z-index: 2147483647;\n  backdrop-filter: blur(2px);\n  pointer-events: auto;\n}\n\n#linkual-root .modal-box {\n  background: #fff;\n  border-radius: 12px;\n  width: 380px;\n  max-height: 85vh;\n  display: flex;\n  flex-direction: column;\n  overflow: hidden;\n  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);\n  animation: linkualSlideIn 0.2s ease-out;\n}\n\n@keyframes linkualSlideIn {\n  from { transform: translateY(20px); opacity: 0; }\n  to { transform: translateY(0); opacity: 1; }\n}\n\n#linkual-root .modal-header {\n  padding: 16px 20px;\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n  border-bottom: 1px solid #eee;\n}\n\n#linkual-root .modal-header h3 {\n  margin: 0;\n  font-size: 16px;\n  color: #333;\n}\n\n#linkual-root .close-btn {\n  width: 30px;\n  height: 30px;\n  border: 0;\n  border-radius: 6px;\n  background: transparent;\n  color: #999;\n  cursor: pointer;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  padding: 0;\n  transition: color 0.2s, background 0.2s;\n}\n\n#linkual-root .close-btn:hover {\n  color: #333;\n  background: rgba(0,0,0,0.05);\n}\n\n/* Tab 样式 */\n#linkual-root .tabs {\n  display: flex;\n  background: #fafafa;\n  border-bottom: 1px solid #eee;\n}\n\n#linkual-root .tab {\n  flex: 1;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  gap: 6px;\n  padding: 12px 0;\n  font-size: 14px;\n  color: #666;\n  cursor: pointer;\n  border-bottom: 2px solid transparent;\n  transition: all 0.2s;\n  user-select: none;\n  min-width: 0;\n}\n\n#linkual-root .tab svg {\n  flex: 0 0 auto;\n}\n\n#linkual-root .tab:hover {\n  color: #333;\n  background: rgba(0,0,0,0.02);\n}\n\n#linkual-root .tab.active {\n  color: var(--linkual-theme, #6a1b9a);\n  font-weight: bold;\n  border-bottom: 2px solid var(--linkual-theme, #6a1b9a);\n  background: #fff;\n}\n\n#linkual-root .tab-content {\n  padding: 20px;\n  overflow-y: auto;\n  flex: 1;\n}\n\n#linkual-root .fade-in {\n  animation: linkualFadeIn 0.3s ease;\n}\n\n@keyframes linkualFadeIn {\n  from { opacity: 0; }\n  to { opacity: 1; }\n}\n\n#linkual-root .setting-row {\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n  margin-bottom: 16px;\n}\n#linkual-root .setting-row label { font-size: 13px; font-weight: bold; flex: 1; color: #444; }\n#linkual-root .setting-row input[type="color"] {\n  width: 50px;\n  height: 32px;\n  padding: 0;\n  cursor: pointer;\n  border: 1px solid #ddd;\n  border-radius: 4px;\n}\n\n#linkual-root .setting-col { margin-bottom: 16px; }\n#linkual-root .setting-col label {\n  font-size: 13px;\n  font-weight: bold;\n  display: block;\n  margin-bottom: 6px;\n  color: #444;\n}\n#linkual-root .setting-col input,\n#linkual-root .setting-col textarea,\n#linkual-root .setting-col select {\n  width: 100%;\n  padding: 10px;\n  border: 1px solid #ddd;\n  border-radius: 6px;\n  box-sizing: border-box;\n  font-family: inherit;\n  font-size: 13px;\n  transition: border-color 0.2s;\n}\n#linkual-root .setting-col input:focus,\n#linkual-root .setting-col textarea:focus,\n#linkual-root .setting-col select:focus {\n  outline: none;\n  border-color: var(--linkual-theme, #6a1b9a);\n}\n#linkual-root .setting-col textarea {\n  resize: vertical;\n  min-height: 80px;\n  line-height: 1.5;\n}\n\n#linkual-root .url-prefix-row {\n  display: flex;\n  align-items: stretch;\n}\n\n#linkual-root .url-prefix-row input {\n  border-radius: 0;\n  min-width: 0;\n}\n\n#linkual-root .url-protocol-select {\n  width: auto !important;\n  flex: 0 0 78px;\n  border-right: 0 !important;\n  border-radius: 6px 0 0 6px !important;\n  background: #f7f7f7;\n  color: #555;\n}\n\n#linkual-root .url-path-select {\n  width: auto !important;\n  flex: 0 0 138px;\n  border-left: 0 !important;\n  border-radius: 0 6px 6px 0 !important;\n  background: #f7f7f7;\n  color: #555;\n  font-size: 12px !important;\n  padding-left: 8px !important;\n  padding-right: 8px !important;\n}\n\n#linkual-root .url-fixed-prefix,\n#linkual-root .url-fixed-suffix {\n  display: inline-flex;\n  align-items: center;\n  padding: 0 10px;\n  border: 1px solid #ddd;\n  background: #f7f7f7;\n  color: #666;\n  font-size: 12px;\n  white-space: nowrap;\n}\n\n#linkual-root .url-fixed-prefix {\n  border-right: 0;\n  border-radius: 6px 0 0 6px;\n}\n\n#linkual-root .url-fixed-suffix {\n  border-left: 0;\n  border-radius: 0 6px 6px 0;\n}\n\n#linkual-root .url-prefix-row:focus-within .url-fixed-prefix {\n  border-color: var(--linkual-theme, #6a1b9a);\n  border-right: 0;\n}\n\n#linkual-root .url-prefix-row:focus-within .url-protocol-select {\n  border-color: var(--linkual-theme, #6a1b9a);\n  border-right: 0;\n}\n\n#linkual-root .url-prefix-row:focus-within .url-path-select {\n  border-color: var(--linkual-theme, #6a1b9a);\n  border-left: 0;\n}\n\n#linkual-root .url-prefix-row:focus-within .url-fixed-suffix {\n  border-color: var(--linkual-theme, #6a1b9a);\n  border-left: 0;\n}\n\n#linkual-root .setting-help {\n  margin-top: 6px;\n  color: #888;\n  font-size: 12px;\n  line-height: 1.4;\n}\n\n#linkual-root .linkual-cache-manager-heading {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 8px;\n  margin-bottom: 6px;\n}\n\n#linkual-root .linkual-cache-manager-heading label {\n  margin-bottom: 0;\n}\n\n#linkual-root .linkual-cache-clear-btn,\n#linkual-root .linkual-cache-item button {\n  flex: 0 0 auto;\n  padding: 5px 8px;\n  border: 1px solid #ddd;\n  border-radius: 5px;\n  background: #fff;\n  color: #666;\n  cursor: pointer;\n  font: 12px/1.2 inherit;\n}\n\n#linkual-root .linkual-cache-clear-btn:hover,\n#linkual-root .linkual-cache-item button:hover {\n  border-color: #c62828;\n  color: #c62828;\n}\n\n#linkual-root .linkual-cache-list {\n  display: flex;\n  flex-direction: column;\n  gap: 6px;\n  max-height: 180px;\n  overflow-y: auto;\n}\n\n#linkual-root .linkual-cache-item {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 8px;\n  padding: 8px;\n  border: 1px solid #eee;\n  border-radius: 6px;\n  background: #fafafa;\n}\n\n#linkual-root .linkual-cache-item-main {\n  display: flex;\n  min-width: 0;\n  flex-direction: column;\n  gap: 3px;\n}\n\n#linkual-root .linkual-cache-item-main strong,\n#linkual-root .linkual-cache-item-main span {\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n\n#linkual-root .linkual-cache-item-main strong {\n  color: #444;\n  font-size: 12px;\n  font-weight: 600;\n}\n\n#linkual-root .linkual-cache-item-main span {\n  color: #888;\n  font-size: 11px;\n}\n\n#linkual-root .modal-footer {\n  padding: 16px 20px;\n  display: flex;\n  gap: 12px;\n  border-top: 1px solid #eee;\n  background: #fafafa;\n}\n\n#linkual-root .btn {\n  flex: 1;\n  padding: 10px;\n  border: none;\n  border-radius: 6px;\n  cursor: pointer;\n  font-weight: bold;\n  font-size: 14px;\n  transition: opacity 0.2s;\n}\n#linkual-root .btn:hover { opacity: 0.9; }\n#linkual-root .reset-btn { background: #e0e0e0; color: #555; }\n#linkual-root .save-btn { box-shadow: 0 2px 6px rgba(0,0,0,0.1); }\n';
   const STYLE_ID = "linkual-app-style";
   function getExistingStyle(target) {
     return target.getElementById(STYLE_ID);
