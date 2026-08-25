@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Linkual Log
 // @namespace    npm/vite-plugin-monkey
-// @version      0.0.54
+// @version      0.0.55
 // @author       Sergio Gao
 // @icon         https://vitejs.dev/logo.svg
 // @downloadURL  https://raw.githubusercontent.com/gsjz/linkualog/main/browser-plugin/user/linkualog.user.js
@@ -12594,7 +12594,7 @@
    * This source code is licensed under the ISC license.
    * See the LICENSE file in the root directory of this source tree.
    */
-  const __iconNode$l = [
+  const __iconNode$m = [
     [
       "path",
       {
@@ -12605,30 +12605,30 @@
     ["line", { x1: "12", x2: "12", y1: "8", y2: "16", key: "10p56q" }],
     ["line", { x1: "8", x2: "16", y1: "12", y2: "12", key: "1jonct" }]
   ];
-  const BadgePlus = createLucideIcon("badge-plus", __iconNode$l);
+  const BadgePlus = createLucideIcon("badge-plus", __iconNode$m);
   /**
    * @license lucide-react v1.34.0 - ISC
    *
    * This source code is licensed under the ISC license.
    * See the LICENSE file in the root directory of this source tree.
    */
-  const __iconNode$k = [["path", { d: "m6 9 6 6 6-6", key: "qrunsl" }]];
-  const ChevronDown = createLucideIcon("chevron-down", __iconNode$k);
+  const __iconNode$l = [["path", { d: "m6 9 6 6 6-6", key: "qrunsl" }]];
+  const ChevronDown = createLucideIcon("chevron-down", __iconNode$l);
   /**
    * @license lucide-react v1.34.0 - ISC
    *
    * This source code is licensed under the ISC license.
    * See the LICENSE file in the root directory of this source tree.
    */
-  const __iconNode$j = [["path", { d: "m15 18-6-6 6-6", key: "1wnfg3" }]];
-  const ChevronLeft = createLucideIcon("chevron-left", __iconNode$j);
+  const __iconNode$k = [["path", { d: "m15 18-6-6 6-6", key: "1wnfg3" }]];
+  const ChevronLeft = createLucideIcon("chevron-left", __iconNode$k);
   /**
    * @license lucide-react v1.34.0 - ISC
    *
    * This source code is licensed under the ISC license.
    * See the LICENSE file in the root directory of this source tree.
    */
-  const __iconNode$i = [
+  const __iconNode$j = [
     [
       "path",
       {
@@ -12638,7 +12638,19 @@
     ],
     ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }]
   ];
-  const CirclePlay = createLucideIcon("circle-play", __iconNode$i);
+  const CirclePlay = createLucideIcon("circle-play", __iconNode$j);
+  /**
+   * @license lucide-react v1.34.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   */
+  const __iconNode$i = [
+    ["path", { d: "M12 15V3", key: "m9g1x1" }],
+    ["path", { d: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4", key: "ih7n3h" }],
+    ["path", { d: "m7 10 5 5 5-5", key: "brsn70" }]
+  ];
+  const Download = createLucideIcon("download", __iconNode$i);
   /**
    * @license lucide-react v1.34.0 - ISC
    *
@@ -13169,7 +13181,10 @@
     universal_bubble_side: "",
     universal_bubble_top_ratio: "",
     universal_bubble_left: "",
-    universal_bubble_top: ""
+    universal_bubble_top: "",
+    auto_update_check: "true",
+    update_last_checked_at: "",
+    update_ignored_version: ""
   };
   const ConfigService = {
     get(key) {
@@ -13933,6 +13948,98 @@ ${targetLanguage.trim() || "简体中文"}`;
     delete store.pages[key];
     writeStore(store);
   }
+  const LINKUAL_CURRENT_VERSION = "0.0.55";
+  const LINKUAL_UPDATE_URL = "https://raw.githubusercontent.com/gsjz/linkualog/main/browser-plugin/user/linkualog.user.js";
+  const LINKUAL_DOWNLOAD_URL = LINKUAL_UPDATE_URL;
+  const CHECK_INTERVAL_MS = 24 * 60 * 60 * 1e3;
+  const REQUEST_TIMEOUT_MS = 12e3;
+  function requestText(url) {
+    const requestUrl = `${url}?_=${Date.now()}`;
+    if (typeof _GM_xmlhttpRequest !== "undefined") {
+      return new Promise((resolve, reject) => {
+        _GM_xmlhttpRequest({
+          method: "GET",
+          url: requestUrl,
+          timeout: REQUEST_TIMEOUT_MS,
+          headers: {
+            Accept: "text/plain,*/*",
+            "Cache-Control": "no-cache"
+          },
+          onload: (response) => {
+            if (response.status < 200 || response.status >= 300) {
+              reject(new Error(`HTTP ${response.status}`));
+              return;
+            }
+            resolve(String(response.responseText || ""));
+          },
+          onerror: () => reject(new Error("更新检查请求失败")),
+          ontimeout: () => reject(new Error("更新检查请求超时")),
+          onabort: () => reject(new Error("更新检查请求已取消"))
+        });
+      });
+    }
+    return fetch(requestUrl, { cache: "no-store" }).then(async (response) => {
+      const text2 = await response.text();
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return text2;
+    });
+  }
+  function readUserscriptVersion(source) {
+    var _a, _b;
+    return ((_b = (_a = source.match(/^\s*\/\/\s*@version\s+(.+?)\s*$/m)) == null ? void 0 : _a[1]) == null ? void 0 : _b.trim()) || "";
+  }
+  function normalizeVersion(value) {
+    return value.trim().replace(/^v/i, "");
+  }
+  function compareVersions(left, right) {
+    const leftParts = normalizeVersion(left).split(/[.-]/);
+    const rightParts = normalizeVersion(right).split(/[.-]/);
+    const length = Math.max(leftParts.length, rightParts.length);
+    for (let index2 = 0; index2 < length; index2 += 1) {
+      const leftPart = leftParts[index2] || "0";
+      const rightPart = rightParts[index2] || "0";
+      const leftNumber = Number(leftPart);
+      const rightNumber = Number(rightPart);
+      if (Number.isFinite(leftNumber) && Number.isFinite(rightNumber)) {
+        if (leftNumber !== rightNumber) return leftNumber > rightNumber ? 1 : -1;
+        continue;
+      }
+      const stringCompare = leftPart.localeCompare(rightPart);
+      if (stringCompare !== 0) return stringCompare > 0 ? 1 : -1;
+    }
+    return 0;
+  }
+  function getLastCheckedAt() {
+    const parsed = Number.parseInt(ConfigService.get("update_last_checked_at"), 10);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  function markCheckedNow() {
+    ConfigService.set("update_last_checked_at", String(Date.now()));
+  }
+  function isAutoUpdateCheckEnabled() {
+    return ConfigService.get("auto_update_check") !== "false";
+  }
+  function shouldCheckForUpdates(force = false) {
+    if (!force && !isAutoUpdateCheckEnabled()) return false;
+    if (force) return true;
+    return Date.now() - getLastCheckedAt() >= CHECK_INTERVAL_MS;
+  }
+  async function checkForUpdates(options = {}) {
+    if (!shouldCheckForUpdates(Boolean(options.force))) return null;
+    markCheckedNow();
+    const source = await requestText(LINKUAL_UPDATE_URL);
+    const latestVersion = readUserscriptVersion(source);
+    if (!latestVersion || compareVersions(latestVersion, LINKUAL_CURRENT_VERSION) <= 0) return null;
+    if (ConfigService.get("update_ignored_version") === latestVersion) return null;
+    return {
+      currentVersion: LINKUAL_CURRENT_VERSION,
+      latestVersion,
+      downloadUrl: LINKUAL_DOWNLOAD_URL
+    };
+  }
+  function ignoreUpdateVersion(version2) {
+    ConfigService.set("update_ignored_version", version2);
+  }
   const API_BASE_PATH = "/v1";
   const API_CHAT_COMPLETIONS_PATH = "/chat/completions";
   const LAN_SYNC_API_PATH = "/api/vocabulary/add";
@@ -14002,6 +14109,7 @@ ${targetLanguage.trim() || "简体中文"}`;
       lanUrl: ConfigService.get("lan_sync_url"),
       lanAction: ConfigService.get("lan_action"),
       mobileFullscreenMode: ConfigService.get("mobile_fullscreen_mode"),
+      autoUpdateCheck: ConfigService.get("auto_update_check"),
       layout: getAdpCfg("layout_position"),
       sidebarWidth: getAdpCfg("sidebar_width"),
       sidebarHeight: getAdpCfg("sidebar_height")
@@ -14009,6 +14117,10 @@ ${targetLanguage.trim() || "简体中文"}`;
     const handleChange = (e) => {
       const { name, value } = e.target;
       setCfg((prev) => ({ ...prev, [name]: value }));
+    };
+    const handleCheckboxChange = (e) => {
+      const { name, checked } = e.target;
+      setCfg((prev) => ({ ...prev, [name]: checked ? "true" : "false" }));
     };
     const handleApiPrefixChange = (e) => {
       setCfg((prev) => ({ ...prev, url: buildApiUrl(e.target.value, getUrlProtocol(prev.url, "https"), getApiEndpointPath(prev.url)) }));
@@ -14052,6 +14164,7 @@ ${targetLanguage.trim() || "简体中文"}`;
       ConfigService.set("lan_sync_url", cfg.lanUrl.trim());
       ConfigService.set("lan_action", cfg.lanAction);
       ConfigService.set("mobile_fullscreen_mode", cfg.mobileFullscreenMode);
+      ConfigService.set("auto_update_check", cfg.autoUpdateCheck);
       ConfigService.set(`layout_position_${adapter.platformName}`, cfg.layout);
       ConfigService.set(`sidebar_width_${adapter.platformName}`, cfg.sidebarWidth);
       ConfigService.set(`sidebar_height_${adapter.platformName}`, cfg.sidebarHeight);
@@ -14222,6 +14335,25 @@ ${targetLanguage.trim() || "简体中文"}`;
               /* @__PURE__ */ jsxRuntimeExports.jsx("option", { value: "video", children: "只在视频页开启" }),
               /* @__PURE__ */ jsxRuntimeExports.jsx("option", { value: "always", children: "任意页面开启" })
             ] })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-row setting-row-toggle", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "自动检查插件更新" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "setting-help", children: "每天自动检查一次；发现新版本时在页面右上角弹出提示。" })
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "input",
+              {
+                type: "checkbox",
+                name: "autoUpdateCheck",
+                checked: cfg.autoUpdateCheck !== "false",
+                onChange: handleCheckboxChange
+              }
+            )
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-version-info", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "当前插件版本" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("code", { children: LINKUAL_CURRENT_VERSION })
           ] }),
           /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "setting-col", style: { marginTop: "15px" }, children: /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { style: { fontSize: "12px", color: "#1976d2", padding: "4px 8px", background: "#e3f2fd", borderRadius: "4px" }, children: [
             "当前网页 (",
@@ -31039,6 +31171,48 @@ ${paragraph.text}`,
       paragraph.id
     )) });
   };
+  const UpdateNotice = () => {
+    const [update, setUpdate] = reactExports.useState(null);
+    reactExports.useEffect(() => {
+      let cancelled = false;
+      checkForUpdates().then((result) => {
+        if (!cancelled && result) setUpdate(result);
+      }).catch((error) => {
+        console.warn("[Linkual] 自动检查更新失败", error);
+      });
+      return () => {
+        cancelled = true;
+      };
+    }, []);
+    if (!update) return null;
+    const openUpdate = () => {
+      const target = window.open(update.downloadUrl, "_blank", "noopener,noreferrer");
+      if (!target) window.location.href = update.downloadUrl;
+      setUpdate(null);
+    };
+    const ignoreVersion = () => {
+      ignoreUpdateVersion(update.latestVersion);
+      setUpdate(null);
+    };
+    return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-update-notice", role: "dialog", "aria-live": "polite", "aria-label": "插件更新可用", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", className: "linkual-update-close", onClick: () => setUpdate(null), title: "稍后提醒", "aria-label": "稍后提醒", children: /* @__PURE__ */ jsxRuntimeExports.jsx(X, { size: 15, strokeWidth: 2.3 }) }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "linkual-update-title", children: "发现新版本" }),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-update-body", children: [
+        "Linkual Log ",
+        update.latestVersion,
+        " 已可用，当前版本 ",
+        update.currentVersion,
+        "。"
+      ] }),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-update-actions", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("button", { type: "button", className: "linkual-update-primary", onClick: openUpdate, children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx(Download, { size: 15, strokeWidth: 2.2 }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "安装更新" })
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", className: "linkual-update-secondary", onClick: ignoreVersion, children: "忽略此版本" })
+      ] })
+    ] });
+  };
   const INITIAL_RENDER_LIMIT = 80;
   const RENDER_BATCH_SIZE = 80;
   const ACTIVE_RENDER_BUFFER = 20;
@@ -31331,6 +31505,7 @@ ${paragraph.text}`,
       ),
       /* @__PURE__ */ jsxRuntimeExports.jsx(ArticleTranslator, {}),
       showMobileFullscreenButton && /* @__PURE__ */ jsxRuntimeExports.jsx(MobileFullscreenButton, { adapter }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx(UpdateNotice, {}),
       /* @__PURE__ */ jsxRuntimeExports.jsx(VocabQueue, {}),
       isSettingsOpen && /* @__PURE__ */ jsxRuntimeExports.jsx(Settings$1, { adapter, onClose: () => setIsSettingsOpen(false) })
     ] }) });
@@ -33526,6 +33701,99 @@ html.linkual-mobile-fullscreen-fallback {
   bottom: calc(20px + var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom, 0px));
 }
 
+#linkual-root .linkual-update-notice {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 2147483647;
+  box-sizing: border-box;
+  width: min(340px, calc(100vw - 32px));
+  padding: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
+  background: #fff;
+  color: #222;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  pointer-events: auto;
+}
+
+#linkual-root .linkual-update-title {
+  padding-right: 28px;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+#linkual-root .linkual-update-body {
+  margin-top: 6px;
+  color: #555;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+#linkual-root .linkual-update-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #777;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#linkual-root .linkual-update-close:hover {
+  background: #f1f1f1;
+  color: #222;
+}
+
+#linkual-root .linkual-update-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+#linkual-root .linkual-update-primary,
+#linkual-root .linkual-update-secondary {
+  min-height: 32px;
+  border-radius: 6px;
+  cursor: pointer;
+  font: 700 12px/1.2 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+#linkual-root .linkual-update-primary {
+  flex: 1;
+  border: 0;
+  background: var(--linkual-theme, #000);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 12px;
+}
+
+#linkual-root .linkual-update-secondary {
+  flex: 0 0 auto;
+  border: 1px solid #ddd;
+  background: #fff;
+  color: #555;
+  padding: 0 10px;
+}
+
+#linkual-root .linkual-update-primary:hover,
+#linkual-root .linkual-update-secondary:hover {
+  filter: brightness(0.96);
+}
+
 #linkual-root .linkual-universal-top {
   flex: 0 1 390px;
   display: flex;
@@ -34334,7 +34602,7 @@ html.linkual-mobile-fullscreen-fallback {
   }
 }
 `;
-  const settingsCss = '#linkual-root .modal {\n  position: fixed;\n  top: 0;\n  left: 0;\n  width: 100%;\n  height: 100%;\n  background: rgba(0, 0, 0, 0.5);\n  display: flex;\n  justify-content: center;\n  align-items: center;\n  z-index: 2147483647;\n  backdrop-filter: blur(2px);\n  pointer-events: auto;\n}\n\n#linkual-root .modal-box {\n  background: #fff;\n  border-radius: 12px;\n  width: 380px;\n  max-height: 85vh;\n  display: flex;\n  flex-direction: column;\n  overflow: hidden;\n  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);\n  animation: linkualSlideIn 0.2s ease-out;\n}\n\n@keyframes linkualSlideIn {\n  from { transform: translateY(20px); opacity: 0; }\n  to { transform: translateY(0); opacity: 1; }\n}\n\n#linkual-root .modal-header {\n  padding: 16px 20px;\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n  border-bottom: 1px solid #eee;\n}\n\n#linkual-root .modal-header h3 {\n  margin: 0;\n  font-size: 16px;\n  color: #333;\n}\n\n#linkual-root .close-btn {\n  width: 30px;\n  height: 30px;\n  border: 0;\n  border-radius: 6px;\n  background: transparent;\n  color: #999;\n  cursor: pointer;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  padding: 0;\n  transition: color 0.2s, background 0.2s;\n}\n\n#linkual-root .close-btn:hover {\n  color: #333;\n  background: rgba(0,0,0,0.05);\n}\n\n/* Tab 样式 */\n#linkual-root .tabs {\n  display: flex;\n  background: #fafafa;\n  border-bottom: 1px solid #eee;\n}\n\n#linkual-root .tab {\n  flex: 1;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  gap: 6px;\n  padding: 12px 0;\n  font-size: 14px;\n  color: #666;\n  cursor: pointer;\n  border-bottom: 2px solid transparent;\n  transition: all 0.2s;\n  user-select: none;\n  min-width: 0;\n}\n\n#linkual-root .tab svg {\n  flex: 0 0 auto;\n}\n\n#linkual-root .tab:hover {\n  color: #333;\n  background: rgba(0,0,0,0.02);\n}\n\n#linkual-root .tab.active {\n  color: var(--linkual-theme, #6a1b9a);\n  font-weight: bold;\n  border-bottom: 2px solid var(--linkual-theme, #6a1b9a);\n  background: #fff;\n}\n\n#linkual-root .tab-content {\n  padding: 20px;\n  overflow-y: auto;\n  flex: 1;\n}\n\n#linkual-root .fade-in {\n  animation: linkualFadeIn 0.3s ease;\n}\n\n@keyframes linkualFadeIn {\n  from { opacity: 0; }\n  to { opacity: 1; }\n}\n\n#linkual-root .setting-row {\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n  margin-bottom: 16px;\n}\n#linkual-root .setting-row label { font-size: 13px; font-weight: bold; flex: 1; color: #444; }\n#linkual-root .setting-row input[type="color"] {\n  width: 50px;\n  height: 32px;\n  padding: 0;\n  cursor: pointer;\n  border: 1px solid #ddd;\n  border-radius: 4px;\n}\n\n#linkual-root .setting-col { margin-bottom: 16px; }\n#linkual-root .setting-col label {\n  font-size: 13px;\n  font-weight: bold;\n  display: block;\n  margin-bottom: 6px;\n  color: #444;\n}\n#linkual-root .setting-col input,\n#linkual-root .setting-col textarea,\n#linkual-root .setting-col select {\n  width: 100%;\n  padding: 10px;\n  border: 1px solid #ddd;\n  border-radius: 6px;\n  box-sizing: border-box;\n  font-family: inherit;\n  font-size: 13px;\n  transition: border-color 0.2s;\n}\n#linkual-root .setting-col input:focus,\n#linkual-root .setting-col textarea:focus,\n#linkual-root .setting-col select:focus {\n  outline: none;\n  border-color: var(--linkual-theme, #6a1b9a);\n}\n#linkual-root .setting-col textarea {\n  resize: vertical;\n  min-height: 80px;\n  line-height: 1.5;\n}\n\n#linkual-root .url-prefix-row {\n  display: flex;\n  align-items: stretch;\n}\n\n#linkual-root .url-prefix-row input {\n  border-radius: 0;\n  min-width: 0;\n}\n\n#linkual-root .url-protocol-select {\n  width: auto !important;\n  flex: 0 0 78px;\n  border-right: 0 !important;\n  border-radius: 6px 0 0 6px !important;\n  background: #f7f7f7;\n  color: #555;\n}\n\n#linkual-root .url-path-select {\n  width: auto !important;\n  flex: 0 0 138px;\n  border-left: 0 !important;\n  border-radius: 0 6px 6px 0 !important;\n  background: #f7f7f7;\n  color: #555;\n  font-size: 12px !important;\n  padding-left: 8px !important;\n  padding-right: 8px !important;\n}\n\n#linkual-root .url-fixed-prefix,\n#linkual-root .url-fixed-suffix {\n  display: inline-flex;\n  align-items: center;\n  padding: 0 10px;\n  border: 1px solid #ddd;\n  background: #f7f7f7;\n  color: #666;\n  font-size: 12px;\n  white-space: nowrap;\n}\n\n#linkual-root .url-fixed-prefix {\n  border-right: 0;\n  border-radius: 6px 0 0 6px;\n}\n\n#linkual-root .url-fixed-suffix {\n  border-left: 0;\n  border-radius: 0 6px 6px 0;\n}\n\n#linkual-root .url-prefix-row:focus-within .url-fixed-prefix {\n  border-color: var(--linkual-theme, #6a1b9a);\n  border-right: 0;\n}\n\n#linkual-root .url-prefix-row:focus-within .url-protocol-select {\n  border-color: var(--linkual-theme, #6a1b9a);\n  border-right: 0;\n}\n\n#linkual-root .url-prefix-row:focus-within .url-path-select {\n  border-color: var(--linkual-theme, #6a1b9a);\n  border-left: 0;\n}\n\n#linkual-root .url-prefix-row:focus-within .url-fixed-suffix {\n  border-color: var(--linkual-theme, #6a1b9a);\n  border-left: 0;\n}\n\n#linkual-root .setting-help {\n  margin-top: 6px;\n  color: #888;\n  font-size: 12px;\n  line-height: 1.4;\n}\n\n#linkual-root .linkual-cache-manager-heading {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 8px;\n  margin-bottom: 6px;\n}\n\n#linkual-root .linkual-cache-manager-heading label {\n  margin-bottom: 0;\n}\n\n#linkual-root .linkual-cache-clear-btn,\n#linkual-root .linkual-cache-item button {\n  flex: 0 0 auto;\n  padding: 5px 8px;\n  border: 1px solid #ddd;\n  border-radius: 5px;\n  background: #fff;\n  color: #666;\n  cursor: pointer;\n  font: 12px/1.2 inherit;\n}\n\n#linkual-root .linkual-cache-clear-btn:hover,\n#linkual-root .linkual-cache-item button:hover {\n  border-color: #c62828;\n  color: #c62828;\n}\n\n#linkual-root .linkual-cache-list {\n  display: flex;\n  flex-direction: column;\n  gap: 6px;\n  max-height: 180px;\n  overflow-y: auto;\n}\n\n#linkual-root .linkual-cache-item {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 8px;\n  padding: 8px;\n  border: 1px solid #eee;\n  border-radius: 6px;\n  background: #fafafa;\n}\n\n#linkual-root .linkual-cache-item-main {\n  display: flex;\n  min-width: 0;\n  flex-direction: column;\n  gap: 3px;\n}\n\n#linkual-root .linkual-cache-item-main strong,\n#linkual-root .linkual-cache-item-main span {\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n\n#linkual-root .linkual-cache-item-main strong {\n  color: #444;\n  font-size: 12px;\n  font-weight: 600;\n}\n\n#linkual-root .linkual-cache-item-main span {\n  color: #888;\n  font-size: 11px;\n}\n\n#linkual-root .modal-footer {\n  padding: 16px 20px;\n  display: flex;\n  gap: 12px;\n  border-top: 1px solid #eee;\n  background: #fafafa;\n}\n\n#linkual-root .btn {\n  flex: 1;\n  padding: 10px;\n  border: none;\n  border-radius: 6px;\n  cursor: pointer;\n  font-weight: bold;\n  font-size: 14px;\n  transition: opacity 0.2s;\n}\n#linkual-root .btn:hover { opacity: 0.9; }\n#linkual-root .reset-btn { background: #e0e0e0; color: #555; }\n#linkual-root .save-btn { box-shadow: 0 2px 6px rgba(0,0,0,0.1); }\n';
+  const settingsCss = '#linkual-root .modal {\n  position: fixed;\n  top: 0;\n  left: 0;\n  width: 100%;\n  height: 100%;\n  background: rgba(0, 0, 0, 0.5);\n  display: flex;\n  justify-content: center;\n  align-items: center;\n  z-index: 2147483647;\n  backdrop-filter: blur(2px);\n  pointer-events: auto;\n}\n\n#linkual-root .modal-box {\n  background: #fff;\n  border-radius: 12px;\n  width: 380px;\n  max-height: 85vh;\n  display: flex;\n  flex-direction: column;\n  overflow: hidden;\n  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);\n  animation: linkualSlideIn 0.2s ease-out;\n}\n\n@keyframes linkualSlideIn {\n  from { transform: translateY(20px); opacity: 0; }\n  to { transform: translateY(0); opacity: 1; }\n}\n\n#linkual-root .modal-header {\n  padding: 16px 20px;\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n  border-bottom: 1px solid #eee;\n}\n\n#linkual-root .modal-header h3 {\n  margin: 0;\n  font-size: 16px;\n  color: #333;\n}\n\n#linkual-root .close-btn {\n  width: 30px;\n  height: 30px;\n  border: 0;\n  border-radius: 6px;\n  background: transparent;\n  color: #999;\n  cursor: pointer;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  padding: 0;\n  transition: color 0.2s, background 0.2s;\n}\n\n#linkual-root .close-btn:hover {\n  color: #333;\n  background: rgba(0,0,0,0.05);\n}\n\n/* Tab 样式 */\n#linkual-root .tabs {\n  display: flex;\n  background: #fafafa;\n  border-bottom: 1px solid #eee;\n}\n\n#linkual-root .tab {\n  flex: 1;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  gap: 6px;\n  padding: 12px 0;\n  font-size: 14px;\n  color: #666;\n  cursor: pointer;\n  border-bottom: 2px solid transparent;\n  transition: all 0.2s;\n  user-select: none;\n  min-width: 0;\n}\n\n#linkual-root .tab svg {\n  flex: 0 0 auto;\n}\n\n#linkual-root .tab:hover {\n  color: #333;\n  background: rgba(0,0,0,0.02);\n}\n\n#linkual-root .tab.active {\n  color: var(--linkual-theme, #6a1b9a);\n  font-weight: bold;\n  border-bottom: 2px solid var(--linkual-theme, #6a1b9a);\n  background: #fff;\n}\n\n#linkual-root .tab-content {\n  padding: 20px;\n  overflow-y: auto;\n  flex: 1;\n}\n\n#linkual-root .fade-in {\n  animation: linkualFadeIn 0.3s ease;\n}\n\n@keyframes linkualFadeIn {\n  from { opacity: 0; }\n  to { opacity: 1; }\n}\n\n#linkual-root .setting-row {\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n  margin-bottom: 16px;\n  gap: 12px;\n}\n#linkual-root .setting-row label { font-size: 13px; font-weight: bold; flex: 1; color: #444; }\n#linkual-root .setting-row input[type="color"] {\n  width: 50px;\n  height: 32px;\n  padding: 0;\n  cursor: pointer;\n  border: 1px solid #ddd;\n  border-radius: 4px;\n}\n\n#linkual-root .setting-col { margin-bottom: 16px; }\n#linkual-root .setting-col label {\n  font-size: 13px;\n  font-weight: bold;\n  display: block;\n  margin-bottom: 6px;\n  color: #444;\n}\n#linkual-root .setting-col input,\n#linkual-root .setting-col textarea,\n#linkual-root .setting-col select {\n  width: 100%;\n  padding: 10px;\n  border: 1px solid #ddd;\n  border-radius: 6px;\n  box-sizing: border-box;\n  font-family: inherit;\n  font-size: 13px;\n  transition: border-color 0.2s;\n}\n#linkual-root .setting-col input:focus,\n#linkual-root .setting-col textarea:focus,\n#linkual-root .setting-col select:focus {\n  outline: none;\n  border-color: var(--linkual-theme, #6a1b9a);\n}\n#linkual-root .setting-col textarea {\n  resize: vertical;\n  min-height: 80px;\n  line-height: 1.5;\n}\n\n#linkual-root .url-prefix-row {\n  display: flex;\n  align-items: stretch;\n}\n\n#linkual-root .url-prefix-row input {\n  border-radius: 0;\n  min-width: 0;\n}\n\n#linkual-root .url-protocol-select {\n  width: auto !important;\n  flex: 0 0 78px;\n  border-right: 0 !important;\n  border-radius: 6px 0 0 6px !important;\n  background: #f7f7f7;\n  color: #555;\n}\n\n#linkual-root .url-path-select {\n  width: auto !important;\n  flex: 0 0 138px;\n  border-left: 0 !important;\n  border-radius: 0 6px 6px 0 !important;\n  background: #f7f7f7;\n  color: #555;\n  font-size: 12px !important;\n  padding-left: 8px !important;\n  padding-right: 8px !important;\n}\n\n#linkual-root .url-fixed-prefix,\n#linkual-root .url-fixed-suffix {\n  display: inline-flex;\n  align-items: center;\n  padding: 0 10px;\n  border: 1px solid #ddd;\n  background: #f7f7f7;\n  color: #666;\n  font-size: 12px;\n  white-space: nowrap;\n}\n\n#linkual-root .url-fixed-prefix {\n  border-right: 0;\n  border-radius: 6px 0 0 6px;\n}\n\n#linkual-root .url-fixed-suffix {\n  border-left: 0;\n  border-radius: 0 6px 6px 0;\n}\n\n#linkual-root .url-prefix-row:focus-within .url-fixed-prefix {\n  border-color: var(--linkual-theme, #6a1b9a);\n  border-right: 0;\n}\n\n#linkual-root .url-prefix-row:focus-within .url-protocol-select {\n  border-color: var(--linkual-theme, #6a1b9a);\n  border-right: 0;\n}\n\n#linkual-root .url-prefix-row:focus-within .url-path-select {\n  border-color: var(--linkual-theme, #6a1b9a);\n  border-left: 0;\n}\n\n#linkual-root .url-prefix-row:focus-within .url-fixed-suffix {\n  border-color: var(--linkual-theme, #6a1b9a);\n  border-left: 0;\n}\n\n#linkual-root .setting-help {\n  margin-top: 6px;\n  color: #888;\n  font-size: 12px;\n  line-height: 1.4;\n}\n\n#linkual-root .setting-row-toggle {\n  align-items: flex-start;\n  padding: 10px 0 2px;\n}\n\n#linkual-root .setting-row-toggle > div {\n  min-width: 0;\n  flex: 1;\n}\n\n#linkual-root .setting-row-toggle label {\n  display: block;\n  margin-bottom: 0;\n}\n\n#linkual-root .setting-row-toggle input[type="checkbox"] {\n  width: 18px;\n  height: 18px;\n  flex: 0 0 auto;\n  margin-top: 2px;\n  accent-color: var(--linkual-theme, #000);\n}\n\n#linkual-root .linkual-version-info {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 10px;\n  margin-bottom: 16px;\n  padding: 9px 10px;\n  border: 1px solid #eee;\n  border-radius: 6px;\n  background: #fafafa;\n  color: #666;\n  font-size: 12px;\n}\n\n#linkual-root .linkual-version-info code {\n  padding: 2px 6px;\n  border-radius: 5px;\n  background: #fff;\n  color: #222;\n  font: 700 12px/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;\n}\n\n#linkual-root .linkual-cache-manager-heading {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 8px;\n  margin-bottom: 6px;\n}\n\n#linkual-root .linkual-cache-manager-heading label {\n  margin-bottom: 0;\n}\n\n#linkual-root .linkual-cache-clear-btn,\n#linkual-root .linkual-cache-item button {\n  flex: 0 0 auto;\n  padding: 5px 8px;\n  border: 1px solid #ddd;\n  border-radius: 5px;\n  background: #fff;\n  color: #666;\n  cursor: pointer;\n  font: 12px/1.2 inherit;\n}\n\n#linkual-root .linkual-cache-clear-btn:hover,\n#linkual-root .linkual-cache-item button:hover {\n  border-color: #c62828;\n  color: #c62828;\n}\n\n#linkual-root .linkual-cache-list {\n  display: flex;\n  flex-direction: column;\n  gap: 6px;\n  max-height: 180px;\n  overflow-y: auto;\n}\n\n#linkual-root .linkual-cache-item {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 8px;\n  padding: 8px;\n  border: 1px solid #eee;\n  border-radius: 6px;\n  background: #fafafa;\n}\n\n#linkual-root .linkual-cache-item-main {\n  display: flex;\n  min-width: 0;\n  flex-direction: column;\n  gap: 3px;\n}\n\n#linkual-root .linkual-cache-item-main strong,\n#linkual-root .linkual-cache-item-main span {\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n\n#linkual-root .linkual-cache-item-main strong {\n  color: #444;\n  font-size: 12px;\n  font-weight: 600;\n}\n\n#linkual-root .linkual-cache-item-main span {\n  color: #888;\n  font-size: 11px;\n}\n\n#linkual-root .modal-footer {\n  padding: 16px 20px;\n  display: flex;\n  gap: 12px;\n  border-top: 1px solid #eee;\n  background: #fafafa;\n}\n\n#linkual-root .btn {\n  flex: 1;\n  padding: 10px;\n  border: none;\n  border-radius: 6px;\n  cursor: pointer;\n  font-weight: bold;\n  font-size: 14px;\n  transition: opacity 0.2s;\n}\n#linkual-root .btn:hover { opacity: 0.9; }\n#linkual-root .reset-btn { background: #e0e0e0; color: #555; }\n#linkual-root .save-btn { box-shadow: 0 2px 6px rgba(0,0,0,0.1); }\n';
   const STYLE_ID = "linkual-app-style";
   function getExistingStyle(target) {
     return target.getElementById(STYLE_ID);
