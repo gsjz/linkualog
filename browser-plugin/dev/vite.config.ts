@@ -2,14 +2,19 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import monkey from 'vite-plugin-monkey';
 
+const USER_SCRIPT_VERSION = '0.0.55';
+
 export default defineConfig({
+  define: {
+    __LINKUAL_VERSION__: JSON.stringify(USER_SCRIPT_VERSION),
+  },
   plugins: [
     react(),
     monkey({
       entry: 'src/apps/main.tsx',
       userscript: {
         name: 'Linkual Log',
-        version: '0.0.54',
+        version: USER_SCRIPT_VERSION,
         updateURL: 'https://raw.githubusercontent.com/gsjz/linkualog/main/browser-plugin/user/linkualog.user.js',
         downloadURL: 'https://raw.githubusercontent.com/gsjz/linkualog/main/browser-plugin/user/linkualog.user.js',
         author: 'Sergio Gao',

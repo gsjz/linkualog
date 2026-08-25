@@ -891,6 +891,99 @@ html.linkual-mobile-fullscreen-fallback {
   bottom: calc(20px + var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom, 0px));
 }
 
+#linkual-root .linkual-update-notice {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 2147483647;
+  box-sizing: border-box;
+  width: min(340px, calc(100vw - 32px));
+  padding: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
+  background: #fff;
+  color: #222;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  pointer-events: auto;
+}
+
+#linkual-root .linkual-update-title {
+  padding-right: 28px;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+#linkual-root .linkual-update-body {
+  margin-top: 6px;
+  color: #555;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+#linkual-root .linkual-update-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #777;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#linkual-root .linkual-update-close:hover {
+  background: #f1f1f1;
+  color: #222;
+}
+
+#linkual-root .linkual-update-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+#linkual-root .linkual-update-primary,
+#linkual-root .linkual-update-secondary {
+  min-height: 32px;
+  border-radius: 6px;
+  cursor: pointer;
+  font: 700 12px/1.2 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+#linkual-root .linkual-update-primary {
+  flex: 1;
+  border: 0;
+  background: var(--linkual-theme, #000);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 12px;
+}
+
+#linkual-root .linkual-update-secondary {
+  flex: 0 0 auto;
+  border: 1px solid #ddd;
+  background: #fff;
+  color: #555;
+  padding: 0 10px;
+}
+
+#linkual-root .linkual-update-primary:hover,
+#linkual-root .linkual-update-secondary:hover {
+  filter: brightness(0.96);
+}
+
 #linkual-root .linkual-universal-top {
   flex: 0 1 390px;
   display: flex;

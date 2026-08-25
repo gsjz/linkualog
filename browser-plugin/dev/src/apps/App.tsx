@@ -7,6 +7,7 @@ import VocabQueue from '../components/VocabQueue';
 import MobileFullscreenButton from '../components/MobileFullscreenButton';
 import UniversalVocabWidget from '../components/UniversalVocabWidget';
 import ArticleTranslator from '../components/ArticleTranslator';
+import UpdateNotice from '../components/UpdateNotice';
 import { ArticleTranslationProvider } from '../components/ArticleTranslationContext';
 import { isArticleTranslationSupportedPage } from '../services/articleTranslator';
 import { Subtitle } from '../types';
@@ -389,6 +390,7 @@ const App: React.FC<AppProps> = ({ adapter }) => {
       />
       <ArticleTranslator />
       {showMobileFullscreenButton && <MobileFullscreenButton adapter={adapter} />}
+      <UpdateNotice />
       <VocabQueue />
       {isSettingsOpen && <Settings adapter={adapter} onClose={() => setIsSettingsOpen(false)} />}
       </>

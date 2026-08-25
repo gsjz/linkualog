@@ -9,6 +9,7 @@ import {
   deleteArticleTranslationCache,
   listArticleTranslationCaches,
 } from '../services/articleTranslationCache';
+import { LINKUAL_CURRENT_VERSION } from '../services/updateChecker';
 
 // 接收 adapter 以识别当前所处的网站环境
 interface SettingsProps { adapter: IVideoAdapter; onClose: () => void; }
@@ -107,6 +108,7 @@ const Settings: React.FC<SettingsProps> = ({ adapter, onClose }) => {
     lanUrl: ConfigService.get('lan_sync_url') as string,
     lanAction: ConfigService.get('lan_action') as string,
     mobileFullscreenMode: ConfigService.get('mobile_fullscreen_mode') as string,
+    autoUpdateCheck: ConfigService.get('auto_update_check') as string,
     
     layout: getAdpCfg('layout_position') as string,
     sidebarWidth: getAdpCfg('sidebar_width') as string,
@@ -116,6 +118,11 @@ const Settings: React.FC<SettingsProps> = ({ adapter, onClose }) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setCfg(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, checked } = e.target;
+    setCfg(prev => ({ ...prev, [name]: checked ? 'true' : 'false' }));
   };
 
   const handleApiPrefixChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -165,6 +172,7 @@ const Settings: React.FC<SettingsProps> = ({ adapter, onClose }) => {
     ConfigService.set('lan_sync_url', cfg.lanUrl.trim());
     ConfigService.set('lan_action', cfg.lanAction);
     ConfigService.set('mobile_fullscreen_mode', cfg.mobileFullscreenMode);
+    ConfigService.set('auto_update_check', cfg.autoUpdateCheck);
     
     ConfigService.set(`layout_position_${adapter.platformName}` as any, cfg.layout);
     ConfigService.set(`sidebar_width_${adapter.platformName}` as any, cfg.sidebarWidth);
@@ -359,6 +367,24 @@ const Settings: React.FC<SettingsProps> = ({ adapter, onClose }) => {
                   <option value="video">只在视频页开启</option>
                   <option value="always">任意页面开启</option>
                 </select>
+              </div>
+
+              <div className="setting-row setting-row-toggle">
+                <div>
+                  <label>自动检查插件更新</label>
+                  <div className="setting-help">每天自动检查一次；发现新版本时在页面右上角弹出提示。</div>
+                </div>
+                <input
+                  type="checkbox"
+                  name="autoUpdateCheck"
+                  checked={cfg.autoUpdateCheck !== 'false'}
+                  onChange={handleCheckboxChange}
+                />
+              </div>
+
+              <div className="linkual-version-info">
+                <span>当前插件版本</span>
+                <code>{LINKUAL_CURRENT_VERSION}</code>
               </div>
               
               <div className="setting-col" style={{ marginTop: '15px' }}>
