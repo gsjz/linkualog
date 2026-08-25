@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Linkual Log
 // @namespace    npm/vite-plugin-monkey
-// @version      0.0.55
+// @version      0.0.56
 // @author       Sergio Gao
 // @icon         https://vitejs.dev/logo.svg
 // @downloadURL  https://raw.githubusercontent.com/gsjz/linkualog/main/browser-plugin/user/linkualog.user.js
@@ -12594,7 +12594,7 @@
    * This source code is licensed under the ISC license.
    * See the LICENSE file in the root directory of this source tree.
    */
-  const __iconNode$m = [
+  const __iconNode$o = [
     [
       "path",
       {
@@ -12605,30 +12605,30 @@
     ["line", { x1: "12", x2: "12", y1: "8", y2: "16", key: "10p56q" }],
     ["line", { x1: "8", x2: "16", y1: "12", y2: "12", key: "1jonct" }]
   ];
-  const BadgePlus = createLucideIcon("badge-plus", __iconNode$m);
+  const BadgePlus = createLucideIcon("badge-plus", __iconNode$o);
   /**
    * @license lucide-react v1.34.0 - ISC
    *
    * This source code is licensed under the ISC license.
    * See the LICENSE file in the root directory of this source tree.
    */
-  const __iconNode$l = [["path", { d: "m6 9 6 6 6-6", key: "qrunsl" }]];
-  const ChevronDown = createLucideIcon("chevron-down", __iconNode$l);
+  const __iconNode$n = [["path", { d: "m6 9 6 6 6-6", key: "qrunsl" }]];
+  const ChevronDown = createLucideIcon("chevron-down", __iconNode$n);
   /**
    * @license lucide-react v1.34.0 - ISC
    *
    * This source code is licensed under the ISC license.
    * See the LICENSE file in the root directory of this source tree.
    */
-  const __iconNode$k = [["path", { d: "m15 18-6-6 6-6", key: "1wnfg3" }]];
-  const ChevronLeft = createLucideIcon("chevron-left", __iconNode$k);
+  const __iconNode$m = [["path", { d: "m15 18-6-6 6-6", key: "1wnfg3" }]];
+  const ChevronLeft = createLucideIcon("chevron-left", __iconNode$m);
   /**
    * @license lucide-react v1.34.0 - ISC
    *
    * This source code is licensed under the ISC license.
    * See the LICENSE file in the root directory of this source tree.
    */
-  const __iconNode$j = [
+  const __iconNode$l = [
     [
       "path",
       {
@@ -12638,26 +12638,26 @@
     ],
     ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }]
   ];
-  const CirclePlay = createLucideIcon("circle-play", __iconNode$j);
+  const CirclePlay = createLucideIcon("circle-play", __iconNode$l);
   /**
    * @license lucide-react v1.34.0 - ISC
    *
    * This source code is licensed under the ISC license.
    * See the LICENSE file in the root directory of this source tree.
    */
-  const __iconNode$i = [
+  const __iconNode$k = [
     ["path", { d: "M12 15V3", key: "m9g1x1" }],
     ["path", { d: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4", key: "ih7n3h" }],
     ["path", { d: "m7 10 5 5 5-5", key: "brsn70" }]
   ];
-  const Download = createLucideIcon("download", __iconNode$i);
+  const Download = createLucideIcon("download", __iconNode$k);
   /**
    * @license lucide-react v1.34.0 - ISC
    *
    * This source code is licensed under the ISC license.
    * See the LICENSE file in the root directory of this source tree.
    */
-  const __iconNode$h = [
+  const __iconNode$j = [
     ["circle", { cx: "9", cy: "12", r: "1", key: "1vctgf" }],
     ["circle", { cx: "9", cy: "5", r: "1", key: "hp0tcf" }],
     ["circle", { cx: "9", cy: "19", r: "1", key: "fkjjf6" }],
@@ -12665,14 +12665,14 @@
     ["circle", { cx: "15", cy: "5", r: "1", key: "19l28e" }],
     ["circle", { cx: "15", cy: "19", r: "1", key: "f4zoj3" }]
   ];
-  const GripVertical = createLucideIcon("grip-vertical", __iconNode$h);
+  const GripVertical = createLucideIcon("grip-vertical", __iconNode$j);
   /**
    * @license lucide-react v1.34.0 - ISC
    *
    * This source code is licensed under the ISC license.
    * See the LICENSE file in the root directory of this source tree.
    */
-  const __iconNode$g = [
+  const __iconNode$i = [
     ["path", { d: "m5 8 6 6", key: "1wu5hv" }],
     ["path", { d: "m4 14 6-6 2-3", key: "1k1g8d" }],
     ["path", { d: "M2 5h12", key: "or177f" }],
@@ -12680,28 +12680,28 @@
     ["path", { d: "m22 22-5-10-5 10", key: "don7ne" }],
     ["path", { d: "M14 18h6", key: "1m8k6r" }]
   ];
-  const Languages = createLucideIcon("languages", __iconNode$g);
+  const Languages = createLucideIcon("languages", __iconNode$i);
   /**
    * @license lucide-react v1.34.0 - ISC
    *
    * This source code is licensed under the ISC license.
    * See the LICENSE file in the root directory of this source tree.
    */
-  const __iconNode$f = [
+  const __iconNode$h = [
     ["path", { d: "M13 5h8", key: "a7qcls" }],
     ["path", { d: "M13 12h8", key: "h98zly" }],
     ["path", { d: "M13 19h8", key: "c3s6r1" }],
     ["path", { d: "m3 17 2 2 4-4", key: "1jhpwq" }],
     ["path", { d: "m3 7 2 2 4-4", key: "1obspn" }]
   ];
-  const ListChecks = createLucideIcon("list-checks", __iconNode$f);
+  const ListChecks = createLucideIcon("list-checks", __iconNode$h);
   /**
    * @license lucide-react v1.34.0 - ISC
    *
    * This source code is licensed under the ISC license.
    * See the LICENSE file in the root directory of this source tree.
    */
-  const __iconNode$e = [
+  const __iconNode$g = [
     [
       "path",
       {
@@ -12711,7 +12711,33 @@
     ],
     ["circle", { cx: "12", cy: "10", r: "3", key: "ilqhr7" }]
   ];
-  const MapPin = createLucideIcon("map-pin", __iconNode$e);
+  const MapPin = createLucideIcon("map-pin", __iconNode$g);
+  /**
+   * @license lucide-react v1.34.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   */
+  const __iconNode$f = [
+    ["path", { d: "M15 3h6v6", key: "1q9fwt" }],
+    ["path", { d: "m21 3-7 7", key: "1l2asr" }],
+    ["path", { d: "m3 21 7-7", key: "tjx5ai" }],
+    ["path", { d: "M9 21H3v-6", key: "wtvkvv" }]
+  ];
+  const Maximize2 = createLucideIcon("maximize-2", __iconNode$f);
+  /**
+   * @license lucide-react v1.34.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   */
+  const __iconNode$e = [
+    ["path", { d: "m14 10 7-7", key: "oa77jy" }],
+    ["path", { d: "M20 10h-6V4", key: "mjg0md" }],
+    ["path", { d: "m3 21 7-7", key: "tjx5ai" }],
+    ["path", { d: "M4 14h6v6", key: "rmj7iw" }]
+  ];
+  const Minimize2 = createLucideIcon("minimize-2", __iconNode$e);
   /**
    * @license lucide-react v1.34.0 - ISC
    *
@@ -12719,32 +12745,6 @@
    * See the LICENSE file in the root directory of this source tree.
    */
   const __iconNode$d = [
-    ["path", { d: "M15 3h6v6", key: "1q9fwt" }],
-    ["path", { d: "m21 3-7 7", key: "1l2asr" }],
-    ["path", { d: "m3 21 7-7", key: "tjx5ai" }],
-    ["path", { d: "M9 21H3v-6", key: "wtvkvv" }]
-  ];
-  const Maximize2 = createLucideIcon("maximize-2", __iconNode$d);
-  /**
-   * @license lucide-react v1.34.0 - ISC
-   *
-   * This source code is licensed under the ISC license.
-   * See the LICENSE file in the root directory of this source tree.
-   */
-  const __iconNode$c = [
-    ["path", { d: "m14 10 7-7", key: "oa77jy" }],
-    ["path", { d: "M20 10h-6V4", key: "mjg0md" }],
-    ["path", { d: "m3 21 7-7", key: "tjx5ai" }],
-    ["path", { d: "M4 14h6v6", key: "rmj7iw" }]
-  ];
-  const Minimize2 = createLucideIcon("minimize-2", __iconNode$c);
-  /**
-   * @license lucide-react v1.34.0 - ISC
-   *
-   * This source code is licensed under the ISC license.
-   * See the LICENSE file in the root directory of this source tree.
-   */
-  const __iconNode$b = [
     [
       "path",
       {
@@ -12757,7 +12757,31 @@
     ["circle", { cx: "6.5", cy: "12.5", r: ".5", fill: "currentColor", key: "qy21gx" }],
     ["circle", { cx: "8.5", cy: "7.5", r: ".5", fill: "currentColor", key: "fotxhn" }]
   ];
-  const Palette = createLucideIcon("palette", __iconNode$b);
+  const Palette = createLucideIcon("palette", __iconNode$d);
+  /**
+   * @license lucide-react v1.34.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   */
+  const __iconNode$c = [
+    ["rect", { width: "18", height: "18", x: "3", y: "3", rx: "2", key: "afitv7" }],
+    ["path", { d: "M3 9h18", key: "1pudct" }],
+    ["path", { d: "m9 16 3-3 3 3", key: "1idcnm" }]
+  ];
+  const PanelTopClose = createLucideIcon("panel-top-close", __iconNode$c);
+  /**
+   * @license lucide-react v1.34.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   */
+  const __iconNode$b = [
+    ["rect", { width: "18", height: "18", x: "3", y: "3", rx: "2", key: "afitv7" }],
+    ["path", { d: "M3 9h18", key: "1pudct" }],
+    ["path", { d: "m15 14-3 3-3-3", key: "g215vf" }]
+  ];
+  const PanelTopOpen = createLucideIcon("panel-top-open", __iconNode$b);
   /**
    * @license lucide-react v1.34.0 - ISC
    *
@@ -12765,11 +12789,10 @@
    * See the LICENSE file in the root directory of this source tree.
    */
   const __iconNode$a = [
-    ["rect", { width: "18", height: "18", x: "3", y: "3", rx: "2", key: "afitv7" }],
-    ["path", { d: "M3 9h18", key: "1pudct" }],
-    ["path", { d: "m9 16 3-3 3 3", key: "1idcnm" }]
+    ["rect", { x: "14", y: "3", width: "5", height: "18", rx: "1", key: "kaeet6" }],
+    ["rect", { x: "5", y: "3", width: "5", height: "18", rx: "1", key: "1wsw3u" }]
   ];
-  const PanelTopClose = createLucideIcon("panel-top-close", __iconNode$a);
+  const Pause = createLucideIcon("pause", __iconNode$a);
   /**
    * @license lucide-react v1.34.0 - ISC
    *
@@ -12777,29 +12800,6 @@
    * See the LICENSE file in the root directory of this source tree.
    */
   const __iconNode$9 = [
-    ["rect", { width: "18", height: "18", x: "3", y: "3", rx: "2", key: "afitv7" }],
-    ["path", { d: "M3 9h18", key: "1pudct" }],
-    ["path", { d: "m15 14-3 3-3-3", key: "g215vf" }]
-  ];
-  const PanelTopOpen = createLucideIcon("panel-top-open", __iconNode$9);
-  /**
-   * @license lucide-react v1.34.0 - ISC
-   *
-   * This source code is licensed under the ISC license.
-   * See the LICENSE file in the root directory of this source tree.
-   */
-  const __iconNode$8 = [
-    ["rect", { x: "14", y: "3", width: "5", height: "18", rx: "1", key: "kaeet6" }],
-    ["rect", { x: "5", y: "3", width: "5", height: "18", rx: "1", key: "1wsw3u" }]
-  ];
-  const Pause = createLucideIcon("pause", __iconNode$8);
-  /**
-   * @license lucide-react v1.34.0 - ISC
-   *
-   * This source code is licensed under the ISC license.
-   * See the LICENSE file in the root directory of this source tree.
-   */
-  const __iconNode$7 = [
     [
       "path",
       {
@@ -12808,14 +12808,14 @@
       }
     ]
   ];
-  const Play = createLucideIcon("play", __iconNode$7);
+  const Play = createLucideIcon("play", __iconNode$9);
   /**
    * @license lucide-react v1.34.0 - ISC
    *
    * This source code is licensed under the ISC license.
    * See the LICENSE file in the root directory of this source tree.
    */
-  const __iconNode$6 = [
+  const __iconNode$8 = [
     [
       "path",
       { d: "M6.3 20.3a2.4 2.4 0 0 0 3.4 0L12 18l-6-6-2.3 2.3a2.4 2.4 0 0 0 0 3.4Z", key: "goz73y" }
@@ -12825,7 +12825,29 @@
     ["path", { d: "M10.5 16.5 13 14", key: "10btkg" }],
     ["path", { d: "m18 3-4 4h6l-4 4", key: "16psg9" }]
   ];
-  const PlugZap = createLucideIcon("plug-zap", __iconNode$6);
+  const PlugZap = createLucideIcon("plug-zap", __iconNode$8);
+  /**
+   * @license lucide-react v1.34.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   */
+  const __iconNode$7 = [
+    ["path", { d: "M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8", key: "1357e3" }],
+    ["path", { d: "M3 3v5h5", key: "1xhq8a" }]
+  ];
+  const RotateCcw = createLucideIcon("rotate-ccw", __iconNode$7);
+  /**
+   * @license lucide-react v1.34.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   */
+  const __iconNode$6 = [
+    ["path", { d: "M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8", key: "1p45f6" }],
+    ["path", { d: "M21 3v5h-5", key: "1q7to0" }]
+  ];
+  const RotateCw = createLucideIcon("rotate-cw", __iconNode$6);
   /**
    * @license lucide-react v1.34.0 - ISC
    *
@@ -12833,28 +12855,6 @@
    * See the LICENSE file in the root directory of this source tree.
    */
   const __iconNode$5 = [
-    ["path", { d: "M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8", key: "1357e3" }],
-    ["path", { d: "M3 3v5h5", key: "1xhq8a" }]
-  ];
-  const RotateCcw = createLucideIcon("rotate-ccw", __iconNode$5);
-  /**
-   * @license lucide-react v1.34.0 - ISC
-   *
-   * This source code is licensed under the ISC license.
-   * See the LICENSE file in the root directory of this source tree.
-   */
-  const __iconNode$4 = [
-    ["path", { d: "M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8", key: "1p45f6" }],
-    ["path", { d: "M21 3v5h-5", key: "1q7to0" }]
-  ];
-  const RotateCw = createLucideIcon("rotate-cw", __iconNode$4);
-  /**
-   * @license lucide-react v1.34.0 - ISC
-   *
-   * This source code is licensed under the ISC license.
-   * See the LICENSE file in the root directory of this source tree.
-   */
-  const __iconNode$3 = [
     [
       "path",
       {
@@ -12864,14 +12864,14 @@
     ],
     ["circle", { cx: "12", cy: "12", r: "3", key: "1v7zrd" }]
   ];
-  const Settings$2 = createLucideIcon("settings", __iconNode$3);
+  const Settings$2 = createLucideIcon("settings", __iconNode$5);
   /**
    * @license lucide-react v1.34.0 - ISC
    *
    * This source code is licensed under the ISC license.
    * See the LICENSE file in the root directory of this source tree.
    */
-  const __iconNode$2 = [
+  const __iconNode$4 = [
     ["path", { d: "M10 5H3", key: "1qgfaw" }],
     ["path", { d: "M12 19H3", key: "yhmn1j" }],
     ["path", { d: "M14 3v4", key: "1sua03" }],
@@ -12882,14 +12882,14 @@
     ["path", { d: "M8 10v4", key: "tgpxqk" }],
     ["path", { d: "M8 12H3", key: "a7s4jb" }]
   ];
-  const SlidersHorizontal = createLucideIcon("sliders-horizontal", __iconNode$2);
+  const SlidersHorizontal = createLucideIcon("sliders-horizontal", __iconNode$4);
   /**
    * @license lucide-react v1.34.0 - ISC
    *
    * This source code is licensed under the ISC license.
    * See the LICENSE file in the root directory of this source tree.
    */
-  const __iconNode$1 = [
+  const __iconNode$3 = [
     [
       "path",
       {
@@ -12901,7 +12901,31 @@
     ["path", { d: "M22 4h-4", key: "gwowj6" }],
     ["circle", { cx: "4", cy: "20", r: "2", key: "6kqj1y" }]
   ];
-  const Sparkles = createLucideIcon("sparkles", __iconNode$1);
+  const Sparkles = createLucideIcon("sparkles", __iconNode$3);
+  /**
+   * @license lucide-react v1.34.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   */
+  const __iconNode$2 = [
+    ["path", { d: "M21 5H3", key: "1fi0y6" }],
+    ["path", { d: "M15 12H3", key: "6jk70r" }],
+    ["path", { d: "M17 19H3", key: "z6ezky" }]
+  ];
+  const TextAlignStart = createLucideIcon("text-align-start", __iconNode$2);
+  /**
+   * @license lucide-react v1.34.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   */
+  const __iconNode$1 = [
+    ["path", { d: "M12 4v16", key: "1654pz" }],
+    ["path", { d: "M4 7V5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2", key: "e0r10z" }],
+    ["path", { d: "M9 20h6", key: "s66wpe" }]
+  ];
+  const Type = createLucideIcon("type", __iconNode$1);
   /**
    * @license lucide-react v1.34.0 - ISC
    *
@@ -13948,7 +13972,7 @@ ${targetLanguage.trim() || "简体中文"}`;
     delete store.pages[key];
     writeStore(store);
   }
-  const LINKUAL_CURRENT_VERSION = "0.0.55";
+  const LINKUAL_CURRENT_VERSION = "0.0.56";
   const LINKUAL_UPDATE_URL = "https://raw.githubusercontent.com/gsjz/linkualog/main/browser-plugin/user/linkualog.user.js";
   const LINKUAL_DOWNLOAD_URL = LINKUAL_UPDATE_URL;
   const CHECK_INTERVAL_MS = 24 * 60 * 60 * 1e3;
@@ -15088,7 +15112,7 @@ JSON 格式：
     } : {};
     const progressPercent = duration > 0 ? Math.max(0, Math.min(100, currentTime / duration * 100)) : 0;
     return /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
-      !fullscreen && /* @__PURE__ */ jsxRuntimeExports.jsxs(
+      !fullscreen && /* @__PURE__ */ jsxRuntimeExports.jsx(
         "button",
         {
           ref: buttonRef,
@@ -15100,10 +15124,9 @@ JSON 格式：
           onPointerUp: handlePointerUp,
           onPointerCancel: handlePointerUp,
           onClick: handleClick,
-          children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx(Maximize2, { className: "linkual-mobile-fullscreen-icon", size: 15, strokeWidth: 2.2 }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "进入全屏" })
-          ]
+          title: "进入全屏",
+          "aria-label": "进入全屏",
+          children: /* @__PURE__ */ jsxRuntimeExports.jsx(Maximize2, { className: "linkual-mobile-fullscreen-icon", size: 18, strokeWidth: 2.2 })
         }
       ),
       fullscreen && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-player-controls", children: [
@@ -15935,7 +15958,9 @@ ${paragraph.text}`,
       expand: PanelTopOpen,
       collapse: PanelTopClose,
       translate: Languages,
-      clear: X
+      clear: X,
+      word: Type,
+      context: TextAlignStart
     };
     const Icon2 = icons[name];
     return /* @__PURE__ */ jsxRuntimeExports.jsx(Icon2, { className: "linkual-universal-button-icon", "aria-hidden": "true", strokeWidth: 2.2 });
@@ -16664,7 +16689,10 @@ ${paragraph.text}`,
                   className: `linkual-universal-mode-tab ${selectionMode === "word" ? "active" : ""}`,
                   onMouseDown: (event) => event.preventDefault(),
                   onClick: () => handleModeChange("word"),
-                  children: "词块"
+                  title: "词块",
+                  "aria-label": "词块",
+                  "aria-pressed": selectionMode === "word",
+                  children: /* @__PURE__ */ jsxRuntimeExports.jsx(ActionIcon, { name: "word" })
                 }
               ),
               /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -16688,7 +16716,10 @@ ${paragraph.text}`,
                   className: `linkual-universal-mode-tab ${selectionMode === "context" ? "active" : ""}`,
                   onMouseDown: (event) => event.preventDefault(),
                   onClick: () => handleModeChange("context"),
-                  children: "上下文"
+                  title: "上下文",
+                  "aria-label": "上下文",
+                  "aria-pressed": selectionMode === "context",
+                  children: /* @__PURE__ */ jsxRuntimeExports.jsx(ActionIcon, { name: "context" })
                 }
               ),
               /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -16706,20 +16737,13 @@ ${paragraph.text}`,
               )
             ] }),
             /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", className: "linkual-universal-clear", onClick: handleClear, disabled: !hasPayload && !context, children: /* @__PURE__ */ jsxRuntimeExports.jsx(ActionIcon, { name: "clear" }) }),
-            /* @__PURE__ */ jsxRuntimeExports.jsxs("button", { type: "button", className: "linkual-universal-send", onClick: handleAddToQueue, disabled: !canSend, title: "加入队列", "aria-label": "加入队列", children: [
-              /* @__PURE__ */ jsxRuntimeExports.jsx(ActionIcon, { name: "add" }),
-              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "linkual-universal-button-text", children: "加入队列" })
-            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", className: "linkual-universal-send", onClick: handleAddToQueue, disabled: !canSend, title: "加入队列", "aria-label": "加入队列", children: /* @__PURE__ */ jsxRuntimeExports.jsx(ActionIcon, { name: "add" }) }),
             /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-universal-inline-actions", children: [
               /* @__PURE__ */ jsxRuntimeExports.jsxs("button", { type: "button", className: "linkual-universal-icon-btn linkual-universal-queue-btn", onClick: handleQueueToggle, title: "制卡队列", "aria-label": `制卡队列${queueCount > 0 ? ` ${queueCount}` : ""}`, children: [
                 /* @__PURE__ */ jsxRuntimeExports.jsx(ActionIcon, { name: "queue" }),
-                /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "linkual-universal-button-text", children: "制卡队列" }),
                 queueCount > 0 && /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "linkual-universal-queue-count", children: queueCount })
               ] }),
-              /* @__PURE__ */ jsxRuntimeExports.jsxs("button", { type: "button", className: "linkual-universal-icon-btn", onClick: onOpenSettings, title: "设置", "aria-label": "设置", children: [
-                /* @__PURE__ */ jsxRuntimeExports.jsx(ActionIcon, { name: "settings" }),
-                /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "linkual-universal-button-text", children: "设置" })
-              ] })
+              /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", className: "linkual-universal-icon-btn", onClick: onOpenSettings, title: "设置", "aria-label": "设置", children: /* @__PURE__ */ jsxRuntimeExports.jsx(ActionIcon, { name: "settings" }) })
             ] })
           ] })
         ]
@@ -32924,13 +32948,15 @@ ${paragraph.text}`,
   right: 20px;
   bottom: calc(20px + var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom, 0px));
   z-index: 2147483647;
-  min-width: 78px;
-  min-height: 40px;
-  padding: 10px 15px;
+  width: 42px;
+  min-width: 42px;
+  height: 42px;
+  min-height: 42px;
+  padding: 0;
   background: #000;
   color: #fff;
   border: 0;
-  border-radius: 5px;
+  border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.25);
   cursor: grab;
   font-size: 14px;
@@ -32944,7 +32970,6 @@ ${paragraph.text}`,
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
 }
 
 #linkual-root .linkual-mobile-fullscreen.is-dragging {
@@ -33879,6 +33904,9 @@ html.linkual-mobile-fullscreen-fallback {
 
 #linkual-root .linkual-universal-icon-btn,
 #linkual-root .linkual-universal-send {
+  width: 34px;
+  min-width: 34px;
+  padding: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -33928,11 +33956,20 @@ html.linkual-mobile-fullscreen-fallback {
   pointer-events: none;
 }
 
+#linkual-root .linkual-universal-icon-btn .linkual-universal-button-icon,
+#linkual-root .linkual-universal-mode-tab .linkual-universal-button-icon,
+#linkual-root .linkual-universal-send .linkual-universal-button-icon {
+  display: block;
+}
+
 #linkual-root .linkual-universal-button-text {
   min-width: 0;
 }
 
 #linkual-root .linkual-universal-queue-count {
+  position: absolute;
+  top: -5px;
+  right: -5px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -33985,9 +34022,10 @@ html.linkual-mobile-fullscreen-fallback {
 
 #linkual-root .linkual-universal-mode-tab {
   flex: 0 0 auto;
-  min-width: 48px;
+  width: 34px;
+  min-width: 34px;
   height: 34px;
-  padding: 0 8px;
+  padding: 0;
   border: 1px solid #d7d7d7;
   border-radius: 6px;
   background: #f6f6f6;
@@ -33996,6 +34034,9 @@ html.linkual-mobile-fullscreen-fallback {
   font-weight: 700;
   cursor: pointer;
   font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 #linkual-root .linkual-universal-mode-tab.active {
@@ -34040,6 +34081,11 @@ html.linkual-mobile-fullscreen-fallback {
 #linkual-root .linkual-universal-send {
   align-self: center;
   height: 34px;
+}
+
+#linkual-root .linkual-universal-send {
+  width: 36px;
+  min-width: 36px;
 }
 
 #linkual-root .linkual-universal-send:disabled,
@@ -34242,7 +34288,7 @@ html.linkual-mobile-fullscreen-fallback {
 
   #linkual-root .linkual-universal-form {
     flex: 1 0 100%;
-    grid-template-columns: minmax(0, 1fr) 32px 36px minmax(96px, auto);
+    grid-template-columns: minmax(0, 1fr) 32px 36px auto;
     gap: 4px;
     min-width: min(360px, 100%);
   }
@@ -34406,7 +34452,7 @@ html.linkual-mobile-fullscreen-fallback {
   }
 
   #linkual-root .linkual-universal-form {
-    grid-template-columns: minmax(0, 1fr) 32px 36px minmax(87px, auto);
+    grid-template-columns: minmax(0, 1fr) 32px 36px auto;
     gap: 4px;
     min-width: 0;
   }
@@ -34491,13 +34537,14 @@ html.linkual-mobile-fullscreen-fallback {
   }
 
   #linkual-root .linkual-universal-form {
-    grid-template-columns: minmax(0, 1fr) 28px 32px minmax(81px, auto);
+    grid-template-columns: minmax(0, 1fr) 28px 32px auto;
     gap: 3px;
   }
 
   #linkual-root .linkual-universal-mode-tab {
-    min-width: 42px;
-    padding: 0 5px;
+    width: 30px;
+    min-width: 30px;
+    padding: 0;
   }
 
   #linkual-root .linkual-universal-field {
