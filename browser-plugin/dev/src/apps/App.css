@@ -749,9 +749,106 @@ html.linkual-mobile-fullscreen-fallback {
   margin-top: 8px;
   padding-top: 8px;
   font-size: 13px;
-  white-space: pre-wrap;
+  white-space: normal;
   line-height: 1.6;
   cursor: text;
+  overflow-wrap: anywhere;
+}
+
+#linkual-root .ai-box .linkual-markdown-paragraph,
+#linkual-root .ai-box .linkual-markdown-heading,
+#linkual-root .ai-box .linkual-markdown-list,
+#linkual-root .ai-box .linkual-markdown-quote,
+#linkual-root .ai-box .linkual-markdown-code-block,
+#linkual-root .ai-box .linkual-article-markdown-table-wrap {
+  margin-top: 0;
+  margin-bottom: 8px;
+}
+
+#linkual-root .ai-box .linkual-markdown-paragraph:last-child,
+#linkual-root .ai-box .linkual-markdown-heading:last-child,
+#linkual-root .ai-box .linkual-markdown-list:last-child,
+#linkual-root .ai-box .linkual-markdown-quote:last-child,
+#linkual-root .ai-box .linkual-markdown-code-block:last-child,
+#linkual-root .ai-box .linkual-article-markdown-table-wrap:last-child {
+  margin-bottom: 0;
+}
+
+#linkual-root .linkual-markdown-paragraph {
+  white-space: pre-wrap;
+}
+
+#linkual-root .linkual-markdown-heading {
+  color: inherit;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+#linkual-root .ai-box .linkual-markdown-heading-1,
+#linkual-root .ai-box .linkual-markdown-heading-2 {
+  font-size: 14px;
+}
+
+#linkual-root .ai-box .linkual-markdown-heading-3,
+#linkual-root .ai-box .linkual-markdown-heading-4,
+#linkual-root .ai-box .linkual-markdown-heading-5,
+#linkual-root .ai-box .linkual-markdown-heading-6 {
+  font-size: 13px;
+}
+
+#linkual-root .linkual-markdown-list {
+  padding-left: 20px;
+}
+
+#linkual-root .linkual-markdown-list li {
+  margin: 2px 0;
+  padding-left: 1px;
+  white-space: pre-wrap;
+}
+
+#linkual-root .linkual-markdown-quote {
+  padding: 6px 9px;
+  border-left: 3px solid rgba(106, 27, 154, 0.32);
+  border-radius: 4px;
+  background: rgba(106, 27, 154, 0.06);
+  white-space: pre-wrap;
+}
+
+#linkual-root .linkual-markdown-code-block {
+  max-width: 100%;
+  padding: 8px 9px;
+  overflow-x: auto;
+  border-radius: 6px;
+  background: #f5f5f5;
+  color: #222;
+  font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  white-space: pre;
+}
+
+#linkual-root .linkual-markdown-code-block code,
+#linkual-root .linkual-markdown-inline-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+#linkual-root .linkual-markdown-inline-code {
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.08);
+  color: inherit;
+  font-size: 0.92em;
+}
+
+#linkual-root .linkual-markdown-link {
+  color: var(--linkual-theme, #6a1b9a);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+#linkual-root .linkual-markdown-rule {
+  height: 1px;
+  margin: 9px 0;
+  border: 0;
+  background: rgba(0, 0, 0, 0.12);
 }
 
 #linkual-root .lan-sync-module {

@@ -2,7 +2,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import monkey from 'vite-plugin-monkey';
 
-const USER_SCRIPT_VERSION = '0.0.56';
+const USER_SCRIPT_VERSION = '0.0.57';
 
 export default defineConfig({
   define: {

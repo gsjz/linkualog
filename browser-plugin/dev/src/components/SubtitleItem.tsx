@@ -5,6 +5,7 @@ import { IVideoAdapter } from '../adapters/BaseAdapter';
 import { Subtitle } from '../types';
 import { ConfigService } from '../services/configService';
 import { enqueueVocabTask } from '../services/vocabQueueStore';
+import ArticleMarkdown from './ArticleMarkdown';
 
 interface SubtitleItemProps {
   data: Subtitle; 
@@ -566,7 +567,7 @@ const SubtitleItem: React.FC<SubtitleItemProps> = ({ data, index, allSubs, isAct
       
       {isExpanded && (
         <div className="ai-box" style={{ color: isError ? '#c62828' : '#444' }}>
-          {aiContent}
+          <ArticleMarkdown text={aiContent} mode="block" />
         </div>
       )}
     </div>
