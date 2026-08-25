@@ -45,15 +45,23 @@
 }
 
 #linkual-root .close-btn {
-  font-size: 24px;
-  line-height: 1;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
   color: #999;
   cursor: pointer;
-  transition: color 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: color 0.2s, background 0.2s;
 }
 
 #linkual-root .close-btn:hover {
   color: #333;
+  background: rgba(0,0,0,0.05);
 }
 
 /* Tab 样式 */
@@ -65,7 +73,10 @@
 
 #linkual-root .tab {
   flex: 1;
-  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   padding: 12px 0;
   font-size: 14px;
   color: #666;
@@ -73,6 +84,11 @@
   border-bottom: 2px solid transparent;
   transition: all 0.2s;
   user-select: none;
+  min-width: 0;
+}
+
+#linkual-root .tab svg {
+  flex: 0 0 auto;
 }
 
 #linkual-root .tab:hover {

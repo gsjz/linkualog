@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Palette, PlugZap, SlidersHorizontal, X } from 'lucide-react';
 import { ConfigService } from '../services/configService';
 import { IVideoAdapter } from '../adapters/BaseAdapter';
 import { DEFAULTS } from '../constants/defaults';
@@ -206,13 +207,24 @@ const Settings: React.FC<SettingsProps> = ({ adapter, onClose }) => {
       <div className="modal-box">
         <div className="modal-header">
           <h3>全局设置</h3>
-          <span className="close-btn" onClick={onClose} title="关闭">&times;</span>
+          <button type="button" className="close-btn" onClick={onClose} title="关闭" aria-label="关闭">
+            <X size={18} strokeWidth={2.3} />
+          </button>
         </div>
 
         <div className="tabs">
-          <div className={`tab ${activeTab === 'api' ? 'active' : ''}`} onClick={() => setActiveTab('api')}>🔌 API 设置</div>
-          <div className={`tab ${activeTab === 'params' ? 'active' : ''}`} onClick={() => setActiveTab('params')}>⚙️ 参数调整</div>
-          <div className={`tab ${activeTab === 'ui' ? 'active' : ''}`} onClick={() => setActiveTab('ui')}>🎨 界面设置</div>
+          <div className={`tab ${activeTab === 'api' ? 'active' : ''}`} onClick={() => setActiveTab('api')}>
+            <PlugZap size={15} strokeWidth={2.2} />
+            <span>API 设置</span>
+          </div>
+          <div className={`tab ${activeTab === 'params' ? 'active' : ''}`} onClick={() => setActiveTab('params')}>
+            <SlidersHorizontal size={15} strokeWidth={2.2} />
+            <span>参数调整</span>
+          </div>
+          <div className={`tab ${activeTab === 'ui' ? 'active' : ''}`} onClick={() => setActiveTab('ui')}>
+            <Palette size={15} strokeWidth={2.2} />
+            <span>界面设置</span>
+          </div>
         </div>
 
         <div className="tab-content">

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { CirclePlay, X } from 'lucide-react';
 import { ConfigService } from '../services/configService';
 import { fetchLlmStream } from '../services/llmApi';
 import { requestJson } from '../services/jsonApi';
@@ -275,9 +276,11 @@ const VocabQueue: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsOpen(false)}
-                  style={{ border: 'none', background: '#eee', color: '#333', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold', borderRadius: '4px', padding: '4px 8px' }}
+                  style={{ border: 'none', background: '#eee', color: '#333', cursor: 'pointer', borderRadius: '4px', width: '28px', height: '28px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}
+                  aria-label="关闭队列"
+                  title="关闭队列"
                 >
-                  x
+                  <X size={15} strokeWidth={2.3} />
                 </button>
              </div>
              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px', flexWrap: 'wrap' }}>
@@ -313,7 +316,10 @@ const VocabQueue: React.FC = () => {
                 </div>
 
                 <div style={{ fontSize: '11px', color: '#e53935', marginBottom: '8px', display: 'flex', justifyContent: 'space-between' }}>
-                  <span>{t.youtube ? `▶ YouTube 捕获: ${t.youtube.timestamp}s` : '本地字幕记录'}</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                    {t.youtube && <CirclePlay size={12} strokeWidth={2.2} />}
+                    {t.youtube ? `YouTube 捕获: ${t.youtube.timestamp}s` : '本地字幕记录'}
+                  </span>
                   <span style={{ color: '#888', fontStyle: 'italic', maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {t.source}
                   </span>

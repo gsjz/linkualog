@@ -1,4 +1,5 @@
 import React, { useCallback, useState, useEffect, useRef } from 'react';
+import { Settings as SettingsIcon } from 'lucide-react';
 import { useVideoSync } from '../hooks/useVideoSync';
 import SubtitleItem from '../components/SubtitleItem';
 import Settings from '../components/Settings';
@@ -356,7 +357,11 @@ const App: React.FC<AppProps> = ({ adapter }) => {
         <div className="resizer" onMouseDown={startResize} title={layout === 'right' ? '左右拖拽调整宽度' : '上下拖拽调整高度'} />
         <div className="header">
           <span>Link-ual Log [{adapter.platformName}]</span>
-          <div><span className="settings-icon" onClick={() => setIsSettingsOpen(true)} title="全局设置">⚙️</span></div>
+          <div>
+            <button type="button" className="settings-icon" onClick={() => setIsSettingsOpen(true)} title="全局设置" aria-label="全局设置">
+              <SettingsIcon size={17} strokeWidth={2.2} />
+            </button>
+          </div>
         </div>
         <div className="list" ref={listRef} onScroll={handleListScroll}>
           {subs.length === 0 ? (

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { BadgePlus, ChevronDown, ChevronLeft, MapPin, Play, Sparkles } from 'lucide-react';
 import { fetchLlmStream } from '../services/llmApi';
 import { IVideoAdapter } from '../adapters/BaseAdapter';
 import { Subtitle } from '../types';
@@ -522,21 +523,31 @@ const SubtitleItem: React.FC<SubtitleItemProps> = ({ data, index, allSubs, isAct
             left: selectionBox.left
           } : undefined}
         >
-          <span>+</span>
+          <BadgePlus className="linkual-selection-add-icon" size={16} strokeWidth={2.2} />
           <span className="linkual-selection-add-text">"{selectionBox.text}"</span>
         </button>
       )}
 
       <div className={ctrlClass}>
-        <span className="tag-btn tag-play" onClick={handlePlay} title="点击跳转并播放">
-          ▶ {Math.floor(data.start / 60)}:{(Math.floor(data.start % 60)).toString().padStart(2, '0')}
-        </span>
-        <span className="tag-btn tag-pin" onClick={handlePin} title="定位到此处并暂停">📌</span>
+        <button type="button" className="tag-btn tag-play" onClick={handlePlay} title="点击跳转并播放">
+          <Play className="linkual-subtitle-icon" size={12} strokeWidth={2.4} />
+          <span>{Math.floor(data.start / 60)}:{(Math.floor(data.start % 60)).toString().padStart(2, '0')}</span>
+        </button>
+        <button type="button" className="tag-btn tag-pin" onClick={handlePin} title="定位到此处并暂停" aria-label="定位到此处并暂停">
+          <MapPin className="linkual-subtitle-icon" size={13} strokeWidth={2.3} />
+        </button>
         
-        <span className="btn-parse" onClick={handleParse}>
+        <button type="button" className="btn-parse" onClick={handleParse}>
+          <Sparkles className="linkual-subtitle-icon" size={13} strokeWidth={2.2} />
           {isGenerating ? '解析中' : (aiContent ? '重新解析' : '解析')}
-        </span>
-        <span className="btn-chevron" onClick={handleToggle}>{isExpanded ? '▼' : '◀'}</span>
+        </button>
+        <button type="button" className="btn-chevron" onClick={handleToggle} title={isExpanded ? '收起解析' : '展开解析'} aria-label={isExpanded ? '收起解析' : '展开解析'}>
+          {isExpanded ? (
+            <ChevronDown className="linkual-subtitle-icon" size={15} strokeWidth={2.3} />
+          ) : (
+            <ChevronLeft className="linkual-subtitle-icon" size={15} strokeWidth={2.3} />
+          )}
+        </button>
       </div>
       
       <div

@@ -1,4 +1,15 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  BadgePlus,
+  GripVertical,
+  Languages,
+  ListChecks,
+  PanelTopClose,
+  PanelTopOpen,
+  Settings as SettingsIcon,
+  X,
+  type LucideIcon,
+} from 'lucide-react';
 import { ConfigService } from '../services/configService';
 import {
   QUEUE_COUNT_EVENT,
@@ -14,7 +25,7 @@ interface UniversalVocabWidgetProps {
 
 type SendStatus = 'idle' | 'filled' | 'success' | 'error';
 type SelectionMode = 'word' | 'context';
-type WidgetIcon = 'add' | 'queue' | 'settings' | 'expand' | 'collapse' | 'translate';
+type WidgetIcon = 'add' | 'queue' | 'settings' | 'expand' | 'collapse' | 'translate' | 'clear';
 
 interface SelectionCapture {
   text: string;
@@ -73,10 +84,13 @@ const getVisualViewportHeight = () => {
 };
 
 const syncVisualViewportHeightProperty = () => {
+  const viewportHeight = `${getVisualViewportHeight()}px`;
+  document.documentElement.style.setProperty('--linkual-visual-viewport-height', viewportHeight);
+
   const root = document.getElementById('linkual-root');
   if (!root) return;
 
-  root.style.setProperty('--linkual-visual-viewport-height', `${getVisualViewportHeight()}px`);
+  root.style.setProperty('--linkual-visual-viewport-height', viewportHeight);
 };
 
 const getMaxWidgetHeight = () => Math.max(
@@ -190,48 +204,19 @@ const saveBubblePosition = (position: BubblePosition) => {
 };
 
 const ActionIcon: React.FC<{ name: WidgetIcon }> = ({ name }) => {
-  const paths: Record<WidgetIcon, React.ReactNode> = {
-    add: (
-      <>
-        <path d="M4 7.5h5l2 2h9v8.5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z" />
-        <path d="M12 12v5" />
-        <path d="M9.5 14.5h5" />
-      </>
-    ),
-    queue: (
-      <>
-        <path d="M8 6h12" />
-        <path d="M8 12h12" />
-        <path d="M8 18h12" />
-        <path d="M4 6h.01" />
-        <path d="M4 12h.01" />
-        <path d="M4 18h.01" />
-      </>
-    ),
-    settings: (
-      <>
-        <circle cx="12" cy="12" r="3" />
-        <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.04.04a2 2 0 1 1-2.83 2.83l-.04-.04a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.07a1.7 1.7 0 0 0-1.03-1.56 1.7 1.7 0 0 0-1.88.34l-.04.04a2 2 0 1 1-2.83-2.83l.04-.04A1.7 1.7 0 0 0 4.6 15 1.7 1.7 0 0 0 3 14H3a2 2 0 1 1 0-4h.07A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.88l-.04-.04a2 2 0 1 1 2.83-2.83l.04.04A1.7 1.7 0 0 0 9 4.6 1.7 1.7 0 0 0 10 3V3a2 2 0 1 1 4 0v.07A1.7 1.7 0 0 0 15 4.6a1.7 1.7 0 0 0 1.88-.34l.04-.04a2 2 0 1 1 2.83 2.83l-.04.04A1.7 1.7 0 0 0 19.4 9c.17.62.7 1 1.6 1H21a2 2 0 1 1 0 4h-.07a1.7 1.7 0 0 0-1.53 1Z" />
-      </>
-    ),
-    expand: <path d="m6 15 6-6 6 6" />,
-    collapse: <path d="m6 9 6 6 6-6" />,
-    translate: (
-      <>
-        <path d="M4 5h8" />
-        <path d="M8 3v2" />
-        <path d="M10.5 5c-.8 3.2-2.6 5.6-5.5 7" />
-        <path d="M5 8c1.1 1.8 2.5 3.1 4.3 4" />
-        <path d="M13 19l4-9 4 9" />
-        <path d="M14.4 16h5.2" />
-      </>
-    ),
+  const icons: Record<WidgetIcon, LucideIcon> = {
+    add: BadgePlus,
+    queue: ListChecks,
+    settings: SettingsIcon,
+    expand: PanelTopOpen,
+    collapse: PanelTopClose,
+    translate: Languages,
+    clear: X,
   };
+  const Icon = icons[name];
 
   return (
-    <svg className="linkual-universal-button-icon" viewBox="0 0 24 24" aria-hidden="true">
-      {paths[name]}
-    </svg>
+    <Icon className="linkual-universal-button-icon" aria-hidden="true" strokeWidth={2.2} />
   );
 };
 
@@ -939,7 +924,7 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
         } as React.CSSProperties}
         title="Linkual"
       >
-        <span className="linkual-universal-bubble-grip" aria-hidden="true">⋮⋮</span>
+        <GripVertical className="linkual-universal-bubble-grip" size={15} strokeWidth={2.1} aria-hidden="true" />
         {articleTranslation.isPageSupported && (
           <button
             type="button"
@@ -995,7 +980,8 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
             '--linkual-theme': themeColor,
           } as React.CSSProperties}
         >
-          填入
+          <ActionIcon name="add" />
+          <span>填入</span>
         </button>
       )}
 
@@ -1012,6 +998,7 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
                 onPointerDown={(event) => event.preventDefault()}
                 onClick={handleAddSelection}
               >
+                <ActionIcon name="add" />
                 填入
               </button>
             </>
@@ -1096,7 +1083,7 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
         </label>
 
         <button type="button" className="linkual-universal-clear" onClick={handleClear} disabled={!hasPayload && !context}>
-          x
+          <ActionIcon name="clear" />
         </button>
 
         <button type="button" className="linkual-universal-send" onClick={handleAddToQueue} disabled={!canSend} title="加入队列" aria-label="加入队列">
