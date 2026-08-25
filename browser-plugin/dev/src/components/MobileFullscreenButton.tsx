@@ -443,9 +443,10 @@ const MobileFullscreenButton: React.FC<MobileFullscreenButtonProps> = ({ adapter
           onPointerUp={handlePointerUp}
           onPointerCancel={handlePointerUp}
           onClick={handleClick}
+          title="进入全屏"
+          aria-label="进入全屏"
         >
-          <Maximize2 className="linkual-mobile-fullscreen-icon" size={15} strokeWidth={2.2} />
-          <span>进入全屏</span>
+          <Maximize2 className="linkual-mobile-fullscreen-icon" size={18} strokeWidth={2.2} />
         </button>
       )}
 

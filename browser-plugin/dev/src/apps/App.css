@@ -114,13 +114,15 @@
   right: 20px;
   bottom: calc(20px + var(--linkual-universal-widget-height, 0px) + env(safe-area-inset-bottom, 0px));
   z-index: 2147483647;
-  min-width: 78px;
-  min-height: 40px;
-  padding: 10px 15px;
+  width: 42px;
+  min-width: 42px;
+  height: 42px;
+  min-height: 42px;
+  padding: 0;
   background: #000;
   color: #fff;
   border: 0;
-  border-radius: 5px;
+  border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.25);
   cursor: grab;
   font-size: 14px;
@@ -134,7 +136,6 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
 }
 
 #linkual-root .linkual-mobile-fullscreen.is-dragging {
@@ -1069,6 +1070,9 @@ html.linkual-mobile-fullscreen-fallback {
 
 #linkual-root .linkual-universal-icon-btn,
 #linkual-root .linkual-universal-send {
+  width: 34px;
+  min-width: 34px;
+  padding: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1118,11 +1122,20 @@ html.linkual-mobile-fullscreen-fallback {
   pointer-events: none;
 }
 
+#linkual-root .linkual-universal-icon-btn .linkual-universal-button-icon,
+#linkual-root .linkual-universal-mode-tab .linkual-universal-button-icon,
+#linkual-root .linkual-universal-send .linkual-universal-button-icon {
+  display: block;
+}
+
 #linkual-root .linkual-universal-button-text {
   min-width: 0;
 }
 
 #linkual-root .linkual-universal-queue-count {
+  position: absolute;
+  top: -5px;
+  right: -5px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1175,9 +1188,10 @@ html.linkual-mobile-fullscreen-fallback {
 
 #linkual-root .linkual-universal-mode-tab {
   flex: 0 0 auto;
-  min-width: 48px;
+  width: 34px;
+  min-width: 34px;
   height: 34px;
-  padding: 0 8px;
+  padding: 0;
   border: 1px solid #d7d7d7;
   border-radius: 6px;
   background: #f6f6f6;
@@ -1186,6 +1200,9 @@ html.linkual-mobile-fullscreen-fallback {
   font-weight: 700;
   cursor: pointer;
   font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 #linkual-root .linkual-universal-mode-tab.active {
@@ -1230,6 +1247,11 @@ html.linkual-mobile-fullscreen-fallback {
 #linkual-root .linkual-universal-send {
   align-self: center;
   height: 34px;
+}
+
+#linkual-root .linkual-universal-send {
+  width: 36px;
+  min-width: 36px;
 }
 
 #linkual-root .linkual-universal-send:disabled,
@@ -1432,7 +1454,7 @@ html.linkual-mobile-fullscreen-fallback {
 
   #linkual-root .linkual-universal-form {
     flex: 1 0 100%;
-    grid-template-columns: minmax(0, 1fr) 32px 36px minmax(96px, auto);
+    grid-template-columns: minmax(0, 1fr) 32px 36px auto;
     gap: 4px;
     min-width: min(360px, 100%);
   }
@@ -1596,7 +1618,7 @@ html.linkual-mobile-fullscreen-fallback {
   }
 
   #linkual-root .linkual-universal-form {
-    grid-template-columns: minmax(0, 1fr) 32px 36px minmax(87px, auto);
+    grid-template-columns: minmax(0, 1fr) 32px 36px auto;
     gap: 4px;
     min-width: 0;
   }
@@ -1681,13 +1703,14 @@ html.linkual-mobile-fullscreen-fallback {
   }
 
   #linkual-root .linkual-universal-form {
-    grid-template-columns: minmax(0, 1fr) 28px 32px minmax(81px, auto);
+    grid-template-columns: minmax(0, 1fr) 28px 32px auto;
     gap: 3px;
   }
 
   #linkual-root .linkual-universal-mode-tab {
-    min-width: 42px;
-    padding: 0 5px;
+    width: 30px;
+    min-width: 30px;
+    padding: 0;
   }
 
   #linkual-root .linkual-universal-field {

@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  AlignLeft,
   BadgePlus,
   GripVertical,
   Languages,
@@ -7,6 +8,7 @@ import {
   PanelTopClose,
   PanelTopOpen,
   Settings as SettingsIcon,
+  Type,
   X,
   type LucideIcon,
 } from 'lucide-react';
@@ -25,7 +27,7 @@ interface UniversalVocabWidgetProps {
 
 type SendStatus = 'idle' | 'filled' | 'success' | 'error';
 type SelectionMode = 'word' | 'context';
-type WidgetIcon = 'add' | 'queue' | 'settings' | 'expand' | 'collapse' | 'translate' | 'clear';
+type WidgetIcon = 'add' | 'queue' | 'settings' | 'expand' | 'collapse' | 'translate' | 'clear' | 'word' | 'context';
 
 interface SelectionCapture {
   text: string;
@@ -212,6 +214,8 @@ const ActionIcon: React.FC<{ name: WidgetIcon }> = ({ name }) => {
     collapse: PanelTopClose,
     translate: Languages,
     clear: X,
+    word: Type,
+    context: AlignLeft,
   };
   const Icon = icons[name];
 
@@ -1047,8 +1051,11 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
             className={`linkual-universal-mode-tab ${selectionMode === 'word' ? 'active' : ''}`}
             onMouseDown={(event) => event.preventDefault()}
             onClick={() => handleModeChange('word')}
+            title="词块"
+            aria-label="词块"
+            aria-pressed={selectionMode === 'word'}
           >
-            词块
+            <ActionIcon name="word" />
           </button>
           <input
             value={word}
@@ -1067,8 +1074,11 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
             className={`linkual-universal-mode-tab ${selectionMode === 'context' ? 'active' : ''}`}
             onMouseDown={(event) => event.preventDefault()}
             onClick={() => handleModeChange('context')}
+            title="上下文"
+            aria-label="上下文"
+            aria-pressed={selectionMode === 'context'}
           >
-            上下文
+            <ActionIcon name="context" />
           </button>
           <input
             value={context}
@@ -1088,18 +1098,15 @@ const UniversalVocabWidget: React.FC<UniversalVocabWidgetProps> = ({ onOpenSetti
 
         <button type="button" className="linkual-universal-send" onClick={handleAddToQueue} disabled={!canSend} title="加入队列" aria-label="加入队列">
           <ActionIcon name="add" />
-          <span className="linkual-universal-button-text">加入队列</span>
         </button>
 
         <div className="linkual-universal-inline-actions">
           <button type="button" className="linkual-universal-icon-btn linkual-universal-queue-btn" onClick={handleQueueToggle} title="制卡队列" aria-label={`制卡队列${queueCount > 0 ? ` ${queueCount}` : ''}`}>
             <ActionIcon name="queue" />
-            <span className="linkual-universal-button-text">制卡队列</span>
             {queueCount > 0 && <span className="linkual-universal-queue-count">{queueCount}</span>}
           </button>
           <button type="button" className="linkual-universal-icon-btn" onClick={onOpenSettings} title="设置" aria-label="设置">
             <ActionIcon name="settings" />
-            <span className="linkual-universal-button-text">设置</span>
           </button>
         </div>
       </div>
