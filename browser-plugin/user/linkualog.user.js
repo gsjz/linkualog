@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Linkual Log
 // @namespace    npm/vite-plugin-monkey
-// @version      0.0.53
+// @version      0.0.54
 // @author       Sergio Gao
 // @icon         https://vitejs.dev/logo.svg
 // @downloadURL  https://raw.githubusercontent.com/gsjz/linkualog/main/browser-plugin/user/linkualog.user.js
@@ -14619,22 +14619,42 @@ JSON 格式：
   };
   const DRAG_THRESHOLD = 5;
   const SEEK_STEP_SECONDS = 5;
-  const LINKUAL_CUSTOM_FULLSCREEN_CLASS = "linkual-custom-fullscreen";
-  function getBrowserFullscreenElement$1() {
+  const LINKUAL_CUSTOM_FULLSCREEN_CLASS$1 = "linkual-custom-fullscreen";
+  const LINKUAL_MOBILE_FULLSCREEN_FALLBACK_CLASS$1 = "linkual-mobile-fullscreen-fallback";
+  function getBrowserFullscreenElement$3() {
     const doc = document;
     return document.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement || doc.msFullscreenElement || null;
   }
-  function exitBrowserFullscreen$1() {
+  function exitBrowserFullscreen$2() {
     const doc = document;
     if (document.exitFullscreen) return document.exitFullscreen();
     if (doc.webkitExitFullscreen) return doc.webkitExitFullscreen();
     if (doc.mozCancelFullScreen) return doc.mozCancelFullScreen();
     if (doc.msExitFullscreen) return doc.msExitFullscreen();
   }
-  function isPromiseLike$1(value) {
+  function isPromiseLike$2(value) {
     return Boolean(value && typeof value.then === "function");
   }
+  function getViewportSize() {
+    var _a, _b;
+    const width = ((_a = window.visualViewport) == null ? void 0 : _a.width) || window.innerWidth || document.documentElement.clientWidth;
+    const height = ((_b = window.visualViewport) == null ? void 0 : _b.height) || window.innerHeight || document.documentElement.clientHeight;
+    return {
+      width: Number.isFinite(width) && width > 0 ? width : window.innerWidth,
+      height: Number.isFinite(height) && height > 0 ? height : window.innerHeight
+    };
+  }
+  function syncMobileViewportVars() {
+    const viewport = getViewportSize();
+    document.documentElement.style.setProperty("--linkual-mobile-viewport-width", `${Math.ceil(viewport.width)}px`);
+    document.documentElement.style.setProperty("--linkual-mobile-viewport-height", `${Math.ceil(viewport.height)}px`);
+    document.documentElement.style.setProperty("--linkual-visual-viewport-height", `${Math.ceil(viewport.height)}px`);
+    const root2 = document.getElementById("linkual-root");
+    root2 == null ? void 0 : root2.style.setProperty("--linkual-visual-viewport-height", `${Math.ceil(viewport.height)}px`);
+  }
   function emitCustomLayoutChange() {
+    syncMobileViewportVars();
+    window.dispatchEvent(new Event("linkual_root_recover"));
     window.dispatchEvent(new Event("linkual_custom_layout_refresh"));
     window.dispatchEvent(new Event("linkual_custom_fullscreen_changed"));
     window.dispatchEvent(new Event("resize"));
@@ -14651,16 +14671,18 @@ JSON 格式：
     return `${minutes}:${String(secs).padStart(2, "0")}`;
   }
   function clampPosition(left, top, element) {
-    const maxLeft = Math.max(0, window.innerWidth - element.offsetWidth);
-    const maxTop = Math.max(0, window.innerHeight - element.offsetHeight);
+    const viewport = getViewportSize();
+    const maxLeft = Math.max(0, viewport.width - element.offsetWidth);
+    const maxTop = Math.max(0, viewport.height - element.offsetHeight);
     return {
       left: Math.min(Math.max(0, left), maxLeft),
       top: Math.min(Math.max(0, top), maxTop)
     };
   }
   function getPositionRatios(left, top, element) {
-    const maxLeft = Math.max(0, window.innerWidth - element.offsetWidth);
-    const maxTop = Math.max(0, window.innerHeight - element.offsetHeight);
+    const viewport = getViewportSize();
+    const maxLeft = Math.max(0, viewport.width - element.offsetWidth);
+    const maxTop = Math.max(0, viewport.height - element.offsetHeight);
     return {
       ratioX: maxLeft > 0 ? left / maxLeft : 0,
       ratioY: maxTop > 0 ? top / maxTop : 0
@@ -14672,12 +14694,13 @@ JSON 格式：
     return { ...clamped, ...ratios };
   }
   function createPositionFromRatios(ratioX, ratioY, element) {
-    const maxLeft = Math.max(0, window.innerWidth - element.offsetWidth);
-    const maxTop = Math.max(0, window.innerHeight - element.offsetHeight);
+    const viewport = getViewportSize();
+    const maxLeft = Math.max(0, viewport.width - element.offsetWidth);
+    const maxTop = Math.max(0, viewport.height - element.offsetHeight);
     return createPosition(ratioX * maxLeft, ratioY * maxTop, element);
   }
   const MobileFullscreenButton = ({ adapter }) => {
-    const [fullscreen, setFullscreen] = reactExports.useState(() => document.documentElement.classList.contains(LINKUAL_CUSTOM_FULLSCREEN_CLASS));
+    const [fullscreen, setFullscreen] = reactExports.useState(() => document.documentElement.classList.contains(LINKUAL_CUSTOM_FULLSCREEN_CLASS$1));
     const [position, setPosition] = reactExports.useState(null);
     const [dragging, setDragging] = reactExports.useState(false);
     const [currentTime, setCurrentTime] = reactExports.useState(0);
@@ -14685,7 +14708,7 @@ JSON 格式：
     const [paused, setPaused] = reactExports.useState(true);
     const buttonRef = reactExports.useRef(null);
     const progressRef = reactExports.useRef(null);
-    const browserFullscreenWasActiveRef = reactExports.useRef(Boolean(getBrowserFullscreenElement$1()));
+    const browserFullscreenWasActiveRef = reactExports.useRef(Boolean(getBrowserFullscreenElement$3()));
     const dragRef = reactExports.useRef({
       pointerId: -1,
       offsetX: 0,
@@ -14694,39 +14717,47 @@ JSON 格式：
       startY: 0,
       moved: false
     });
-    const applyCustomFullscreenState = reactExports.useCallback((enabled) => {
+    const setAdapterCustomFullscreen = reactExports.useCallback((enabled) => {
       var _a;
-      browserFullscreenWasActiveRef.current = enabled && Boolean(getBrowserFullscreenElement$1());
-      document.documentElement.classList.toggle(LINKUAL_CUSTOM_FULLSCREEN_CLASS, enabled);
-      (_a = adapter.setCustomFullscreen) == null ? void 0 : _a.call(adapter, enabled);
+      try {
+        (_a = adapter.setCustomFullscreen) == null ? void 0 : _a.call(adapter, enabled);
+      } catch (error) {
+        console.warn("[Linkual] 自定义全屏状态同步失败", error);
+      }
+    }, [adapter]);
+    const applyCustomFullscreenState = reactExports.useCallback((enabled) => {
+      browserFullscreenWasActiveRef.current = enabled && Boolean(getBrowserFullscreenElement$3());
+      document.documentElement.classList.toggle(LINKUAL_CUSTOM_FULLSCREEN_CLASS$1, enabled);
+      setAdapterCustomFullscreen(enabled);
       setFullscreen(enabled);
       emitCustomLayoutChange();
-    }, [adapter]);
-    const clearCustomFullscreenState = reactExports.useCallback(() => {
-      var _a;
-      const hadCustomFullscreen = document.documentElement.classList.contains(LINKUAL_CUSTOM_FULLSCREEN_CLASS);
+    }, [setAdapterCustomFullscreen]);
+    const clearCustomFullscreenState2 = reactExports.useCallback(() => {
+      const hadCustomFullscreen = document.documentElement.classList.contains(LINKUAL_CUSTOM_FULLSCREEN_CLASS$1);
       browserFullscreenWasActiveRef.current = false;
       if (!hadCustomFullscreen) {
+        document.documentElement.classList.remove(LINKUAL_MOBILE_FULLSCREEN_FALLBACK_CLASS$1);
         setFullscreen(false);
         return;
       }
-      document.documentElement.classList.remove(LINKUAL_CUSTOM_FULLSCREEN_CLASS);
-      (_a = adapter.setCustomFullscreen) == null ? void 0 : _a.call(adapter, false);
+      document.documentElement.classList.remove(LINKUAL_CUSTOM_FULLSCREEN_CLASS$1);
+      document.documentElement.classList.remove(LINKUAL_MOBILE_FULLSCREEN_FALLBACK_CLASS$1);
+      setAdapterCustomFullscreen(false);
       setFullscreen(false);
       emitCustomLayoutChange();
-    }, [adapter]);
+    }, [setAdapterCustomFullscreen]);
     reactExports.useEffect(() => {
       const syncFullscreenState = () => {
-        setFullscreen(document.documentElement.classList.contains(LINKUAL_CUSTOM_FULLSCREEN_CLASS));
+        setFullscreen(document.documentElement.classList.contains(LINKUAL_CUSTOM_FULLSCREEN_CLASS$1));
       };
       const clearStaleCustomFullscreen = () => {
-        const browserFullscreenElement = getBrowserFullscreenElement$1();
+        const browserFullscreenElement = getBrowserFullscreenElement$3();
         if (browserFullscreenElement) {
           browserFullscreenWasActiveRef.current = true;
           return;
         }
-        if (browserFullscreenWasActiveRef.current && document.documentElement.classList.contains(LINKUAL_CUSTOM_FULLSCREEN_CLASS)) {
-          clearCustomFullscreenState();
+        if (browserFullscreenWasActiveRef.current && document.documentElement.classList.contains(LINKUAL_CUSTOM_FULLSCREEN_CLASS$1)) {
+          clearCustomFullscreenState2();
           return;
         }
         browserFullscreenWasActiveRef.current = false;
@@ -14744,28 +14775,45 @@ JSON 格式：
         document.removeEventListener("mozfullscreenchange", clearStaleCustomFullscreen);
         document.removeEventListener("MSFullscreenChange", clearStaleCustomFullscreen);
       };
-    }, [clearCustomFullscreenState]);
+    }, [clearCustomFullscreenState2]);
     reactExports.useEffect(() => {
-      var _a;
-      (_a = adapter.setCustomFullscreen) == null ? void 0 : _a.call(adapter, fullscreen);
+      setAdapterCustomFullscreen(fullscreen);
       window.dispatchEvent(new Event("linkual_custom_layout_refresh"));
       window.dispatchEvent(new Event("resize"));
-    }, [adapter, fullscreen]);
+    }, [fullscreen, setAdapterCustomFullscreen]);
     reactExports.useEffect(() => () => {
-      var _a;
-      const hadCustomFullscreen = document.documentElement.classList.contains(LINKUAL_CUSTOM_FULLSCREEN_CLASS);
+      const hadCustomFullscreen = document.documentElement.classList.contains(LINKUAL_CUSTOM_FULLSCREEN_CLASS$1);
       browserFullscreenWasActiveRef.current = false;
       if (!hadCustomFullscreen) return;
-      document.documentElement.classList.remove(LINKUAL_CUSTOM_FULLSCREEN_CLASS);
-      (_a = adapter.setCustomFullscreen) == null ? void 0 : _a.call(adapter, false);
+      document.documentElement.classList.remove(LINKUAL_CUSTOM_FULLSCREEN_CLASS$1);
+      document.documentElement.classList.remove(LINKUAL_MOBILE_FULLSCREEN_FALLBACK_CLASS$1);
+      setAdapterCustomFullscreen(false);
       emitCustomLayoutChange();
-      if (getBrowserFullscreenElement$1() === document.documentElement) {
-        const browserFullscreenAction = exitBrowserFullscreen$1();
-        if (isPromiseLike$1(browserFullscreenAction)) {
+      if (getBrowserFullscreenElement$3()) {
+        const browserFullscreenAction = exitBrowserFullscreen$2();
+        if (isPromiseLike$2(browserFullscreenAction)) {
           browserFullscreenAction.catch((error) => console.warn("[Linkual] 浏览器全屏退出失败", error));
         }
       }
-    }, [adapter]);
+    }, [setAdapterCustomFullscreen]);
+    reactExports.useEffect(() => {
+      var _a, _b;
+      const syncViewport = () => {
+        syncMobileViewportVars();
+      };
+      syncViewport();
+      window.addEventListener("resize", syncViewport);
+      window.addEventListener("orientationchange", syncViewport);
+      (_a = window.visualViewport) == null ? void 0 : _a.addEventListener("resize", syncViewport);
+      (_b = window.visualViewport) == null ? void 0 : _b.addEventListener("scroll", syncViewport);
+      return () => {
+        var _a2, _b2;
+        window.removeEventListener("resize", syncViewport);
+        window.removeEventListener("orientationchange", syncViewport);
+        (_a2 = window.visualViewport) == null ? void 0 : _a2.removeEventListener("resize", syncViewport);
+        (_b2 = window.visualViewport) == null ? void 0 : _b2.removeEventListener("scroll", syncViewport);
+      };
+    }, [fullscreen]);
     reactExports.useEffect(() => {
       var _a;
       if (!position) return;
@@ -14834,12 +14882,13 @@ JSON 格式：
       setDragging(false);
     };
     const exitCustomFullscreen = reactExports.useCallback(() => {
-      clearCustomFullscreenState();
-      const browserFullscreenAction = getBrowserFullscreenElement$1() === document.documentElement ? exitBrowserFullscreen$1() : void 0;
-      if (isPromiseLike$1(browserFullscreenAction)) {
+      const browserFullscreenElement = getBrowserFullscreenElement$3();
+      clearCustomFullscreenState2();
+      const browserFullscreenAction = browserFullscreenElement ? exitBrowserFullscreen$2() : void 0;
+      if (isPromiseLike$2(browserFullscreenAction)) {
         browserFullscreenAction.catch((error) => console.warn("[Linkual] 浏览器全屏切换失败", error));
       }
-    }, [clearCustomFullscreenState]);
+    }, [clearCustomFullscreenState2]);
     const handleClick = (event) => {
       if (dragRef.current.moved) {
         event.preventDefault();
@@ -31000,18 +31049,18 @@ ${paragraph.text}`,
   function isYouTubeHost$1() {
     return /(^|\.)youtube(?:-nocookie)?\.com$/i.test(window.location.hostname);
   }
-  function getBrowserFullscreenElement() {
+  function getBrowserFullscreenElement$2() {
     const doc = document;
     return document.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement || doc.msFullscreenElement || null;
   }
-  function exitBrowserFullscreen() {
+  function exitBrowserFullscreen$1() {
     const doc = document;
     if (document.exitFullscreen) return document.exitFullscreen();
     if (doc.webkitExitFullscreen) return doc.webkitExitFullscreen();
     if (doc.mozCancelFullScreen) return doc.mozCancelFullScreen();
     if (doc.msExitFullscreen) return doc.msExitFullscreen();
   }
-  function isPromiseLike(value) {
+  function isPromiseLike$1(value) {
     return Boolean(value && typeof value.then === "function");
   }
   function getVisualViewportSize() {
@@ -31139,13 +31188,17 @@ ${paragraph.text}`,
         var _a;
         if (inVideo || !document.documentElement.classList.contains("linkual-custom-fullscreen")) return;
         document.documentElement.classList.remove("linkual-custom-fullscreen");
-        (_a = adapter.setCustomFullscreen) == null ? void 0 : _a.call(adapter, false);
+        try {
+          (_a = adapter.setCustomFullscreen) == null ? void 0 : _a.call(adapter, false);
+        } catch (error) {
+          console.warn("[Linkual] 自定义全屏状态清理失败", error);
+        }
         window.dispatchEvent(new Event("linkual_custom_fullscreen_changed"));
         window.dispatchEvent(new Event("linkual_custom_layout_refresh"));
         window.dispatchEvent(new Event("resize"));
-        if (getBrowserFullscreenElement() === document.documentElement) {
-          const browserFullscreenAction = exitBrowserFullscreen();
-          if (isPromiseLike(browserFullscreenAction)) {
+        if (getBrowserFullscreenElement$2()) {
+          const browserFullscreenAction = exitBrowserFullscreen$1();
+          if (isPromiseLike$1(browserFullscreenAction)) {
             browserFullscreenAction.catch((error) => console.warn("[Linkual] 浏览器全屏退出失败", error));
           }
         }
@@ -32043,6 +32096,16 @@ ${paragraph.text}`,
       (_a = this.getVideoEl()) == null ? void 0 : _a.pause();
     }
   }
+  const FULLSCREEN_CHANGE_EVENTS$1 = [
+    "fullscreenchange",
+    "webkitfullscreenchange",
+    "mozfullscreenchange",
+    "MSFullscreenChange"
+  ];
+  function getBrowserFullscreenElement$1() {
+    const doc = document;
+    return document.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement || doc.msFullscreenElement || null;
+  }
   class YouTubeAdapter {
     constructor() {
       __publicField(this, "platformName", "YouTube");
@@ -32099,6 +32162,17 @@ ${paragraph.text}`,
     getPlayerEl() {
       return document.getElementById("movie_player") || document.querySelector(".html5-video-player");
     }
+    callPlayerMethod(methodName) {
+      const player = this.getPlayerEl();
+      if (!player || typeof player[methodName] !== "function") return false;
+      try {
+        player[methodName]();
+        return true;
+      } catch (error) {
+        console.warn(`[Linkual] YouTube player method failed: ${methodName}`, error);
+        return false;
+      }
+    }
     requestCurrentCaptions(delay = 0) {
       var _a;
       if (!this.match(window.location.href)) return;
@@ -32123,27 +32197,17 @@ ${paragraph.text}`,
       }, delay);
     }
     setCaptionsState(state) {
-      const script2 = document.createElement("script");
-      script2.textContent = `
-      try {
-        const player = document.getElementById('movie_player') || document.querySelector('.html5-video-player');
-        if (player) {
-          if ('${state}' === 'on' && typeof player.toggleSubtitlesOn === 'function') {
-            player.toggleSubtitlesOn();
-          } else if ('${state}' === 'off' && typeof player.toggleSubtitlesOff === 'function') {
-            player.toggleSubtitlesOff();
-          }
-        }
-      } catch(e) { console.error('[Linkual] API 调用失败', e); }
-    `;
-      document.body.appendChild(script2);
-      script2.remove();
+      this.callPlayerMethod(state === "on" ? "toggleSubtitlesOn" : "toggleSubtitlesOff");
       setTimeout(() => {
-        const ccButton = document.querySelector(".ytp-subtitles-button");
-        if (ccButton) {
-          const isCurrentlyOn = ccButton.getAttribute("aria-pressed") === "true";
-          if (state === "on" && !isCurrentlyOn) ccButton.click();
-          else if (state === "off" && isCurrentlyOn) ccButton.click();
+        try {
+          const ccButton = document.querySelector(".ytp-subtitles-button");
+          if (ccButton) {
+            const isCurrentlyOn = ccButton.getAttribute("aria-pressed") === "true";
+            if (state === "on" && !isCurrentlyOn) ccButton.click();
+            else if (state === "off" && isCurrentlyOn) ccButton.click();
+          }
+        } catch (error) {
+          console.warn("[Linkual] YouTube caption button toggle failed", error);
         }
       }, 150);
     }
@@ -32264,15 +32328,18 @@ ${paragraph.text}`,
       }
     }
     initFullscreenHook() {
-      document.addEventListener("fullscreenchange", () => {
+      const handleFullscreenChange = () => {
         const root2 = document.getElementById("linkual-root");
         if (!root2) return;
-        const fsElement = document.fullscreenElement;
+        const fsElement = getBrowserFullscreenElement$1();
         if (fsElement && (fsElement.classList.contains("html5-video-player") || fsElement.tagName === "YTD-WATCH-FLEXY")) {
           fsElement.appendChild(root2);
         } else if (!fsElement) {
           document.body.appendChild(root2);
         }
+      };
+      FULLSCREEN_CHANGE_EVENTS$1.forEach((eventName) => {
+        document.addEventListener(eventName, handleFullscreenChange);
       });
     }
     refreshCustomFullscreenLayout() {
@@ -32324,6 +32391,21 @@ ${paragraph.text}`,
         background: #000 !important;
         z-index: 2147483000 !important;
       }
+      html.linkual-custom-fullscreen ytd-watch-flexy,
+      html.linkual-custom-fullscreen #columns,
+      html.linkual-custom-fullscreen #primary,
+      html.linkual-custom-fullscreen #primary-inner {
+        display: block !important;
+        position: static !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 100% !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        transform: none !important;
+        background: #000 !important;
+      }
       html.linkual-custom-fullscreen #masthead-container,
       html.linkual-custom-fullscreen ytd-miniplayer,
       html.linkual-custom-fullscreen ytd-guide-renderer,
@@ -32337,20 +32419,17 @@ ${paragraph.text}`,
       html.linkual-custom-fullscreen ytd-live-chat-frame {
         display: none !important;
       }
-      html.linkual-custom-fullscreen ytd-watch-flexy,
-      html.linkual-custom-fullscreen #columns,
-      html.linkual-custom-fullscreen #primary,
-      html.linkual-custom-fullscreen #primary-inner,
       html.linkual-custom-fullscreen #player,
       html.linkual-custom-fullscreen #player-container,
+      html.linkual-custom-fullscreen #player-container-inner,
       html.linkual-custom-fullscreen #player-container-outer,
       html.linkual-custom-fullscreen #player-theater-container,
       html.linkual-custom-fullscreen #player-full-bleed-container,
       html.linkual-custom-fullscreen #full-bleed-container,
       html.linkual-custom-fullscreen ytd-player,
       html.linkual-custom-fullscreen .html5-video-player {
-        position: fixed !important;
-        inset: 0 auto auto 0 !important;
+        position: absolute !important;
+        inset: 0 !important;
         width: calc(100vw - var(--linkual-sidebar-width, 0px)) !important;
         max-width: calc(100vw - var(--linkual-sidebar-width, 0px)) !important;
         height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px)) !important;
@@ -32360,6 +32439,7 @@ ${paragraph.text}`,
         padding: 0 !important;
         transform: none !important;
         background: #000 !important;
+        overflow: hidden !important;
       }
       html.linkual-custom-fullscreen .html5-video-player .ytp-chrome-top,
       html.linkual-custom-fullscreen .html5-video-player .ytp-chrome-bottom,
@@ -32392,6 +32472,11 @@ ${paragraph.text}`,
         top: 0 !important;
         margin: 0 !important;
         object-fit: contain !important;
+      }
+      html.linkual-custom-fullscreen .html5-video-player video {
+        position: absolute !important;
+        inset: 0 !important;
+        transform: none !important;
       }
     `;
       if (layout === "right") {
@@ -34280,6 +34365,15 @@ ${appCss}`;
   let navigationRefreshTimer = null;
   const LINKUAL_NAVIGATION_EVENT = "linkual_navigation";
   const LINKUAL_ROOT_ID = "linkual-root";
+  const LINKUAL_ROOT_RECOVER_EVENT = "linkual_root_recover";
+  const LINKUAL_CUSTOM_FULLSCREEN_CLASS = "linkual-custom-fullscreen";
+  const LINKUAL_MOBILE_FULLSCREEN_FALLBACK_CLASS = "linkual-mobile-fullscreen-fallback";
+  const FULLSCREEN_CHANGE_EVENTS = [
+    "fullscreenchange",
+    "webkitfullscreenchange",
+    "mozfullscreenchange",
+    "MSFullscreenChange"
+  ];
   function isYouTubeHost() {
     return /(^|\.)youtube(?:-nocookie)?\.com$/i.test(window.location.hostname);
   }
@@ -34315,8 +34409,22 @@ ${appCss}`;
     app.style.colorScheme = "normal";
     app.style.contain = "style";
   }
+  function getBrowserFullscreenElement() {
+    const doc = document;
+    return document.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement || doc.msFullscreenElement || null;
+  }
+  function exitBrowserFullscreen() {
+    const doc = document;
+    if (document.exitFullscreen) return document.exitFullscreen();
+    if (doc.webkitExitFullscreen) return doc.webkitExitFullscreen();
+    if (doc.mozCancelFullScreen) return doc.mozCancelFullScreen();
+    if (doc.msExitFullscreen) return doc.msExitFullscreen();
+  }
+  function isPromiseLike(value) {
+    return Boolean(value && typeof value.then === "function");
+  }
   function getRootHost() {
-    const fullscreenElement = document.fullscreenElement;
+    const fullscreenElement = getBrowserFullscreenElement();
     if (fullscreenElement instanceof HTMLElement && fullscreenElement.isConnected) {
       return fullscreenElement;
     }
@@ -34327,6 +34435,21 @@ ${appCss}`;
     if (host && app.parentElement !== host) {
       host.append(app);
     }
+  }
+  function recoverLinkualRoot() {
+    if (!document.body) return;
+    const app = document.getElementById(LINKUAL_ROOT_ID);
+    if (!app) {
+      mountApp();
+      return;
+    }
+    attachRootToActiveHost(app);
+    isolateRoot(app);
+  }
+  function scheduleRootRecover() {
+    recoverLinkualRoot();
+    window.setTimeout(recoverLinkualRoot, 80);
+    window.setTimeout(recoverLinkualRoot, 250);
   }
   function getShadowMount(app) {
     const shadow = app.shadowRoot || app.attachShadow({ mode: "open" });
@@ -34367,6 +34490,37 @@ ${appCss}`;
     window.dispatchEvent(new Event(LINKUAL_NAVIGATION_EVENT));
     window.dispatchEvent(new Event("linkual_custom_layout_refresh"));
     window.dispatchEvent(new Event("resize"));
+  }
+  function clearCustomFullscreenState() {
+    const root2 = document.documentElement;
+    const hadCustomFullscreen = root2.classList.contains(LINKUAL_CUSTOM_FULLSCREEN_CLASS) || root2.classList.contains(LINKUAL_MOBILE_FULLSCREEN_FALLBACK_CLASS);
+    root2.classList.remove(LINKUAL_CUSTOM_FULLSCREEN_CLASS);
+    root2.classList.remove(LINKUAL_MOBILE_FULLSCREEN_FALLBACK_CLASS);
+    scheduleRootRecover();
+    if (!hadCustomFullscreen) return;
+    window.dispatchEvent(new Event("linkual_custom_fullscreen_changed"));
+    window.dispatchEvent(new Event("linkual_custom_layout_refresh"));
+    window.dispatchEvent(new Event("resize"));
+  }
+  function handleFullscreenHostChange() {
+    if (!getBrowserFullscreenElement() && document.documentElement.classList.contains(LINKUAL_CUSTOM_FULLSCREEN_CLASS)) {
+      clearCustomFullscreenState();
+      return;
+    }
+    scheduleRootRecover();
+  }
+  function handleGlobalEscape(event) {
+    if (event.key !== "Escape" || !document.documentElement.classList.contains(LINKUAL_CUSTOM_FULLSCREEN_CLASS)) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const browserFullscreenElement = getBrowserFullscreenElement();
+    clearCustomFullscreenState();
+    if (browserFullscreenElement) {
+      const browserFullscreenAction = exitBrowserFullscreen();
+      if (isPromiseLike(browserFullscreenAction)) {
+        browserFullscreenAction.catch((error) => console.warn("[Linkual] 浏览器全屏退出失败", error));
+      }
+    }
   }
   function scheduleNavigationRefresh() {
     if (navigationRefreshTimer !== null) {
@@ -34421,10 +34575,14 @@ ${appCss}`;
         window.addEventListener("yt-navigate-finish", scheduleNavigationRefresh);
       }
     }
-    document.addEventListener("fullscreenchange", () => {
-      const app = document.getElementById(LINKUAL_ROOT_ID);
-      if (app) attachRootToActiveHost(app);
+    FULLSCREEN_CHANGE_EVENTS.forEach((eventName) => {
+      document.addEventListener(eventName, handleFullscreenHostChange, true);
     });
+    window.addEventListener("keydown", handleGlobalEscape, true);
+    window.addEventListener("keyup", handleGlobalEscape, true);
+    document.addEventListener("keydown", handleGlobalEscape, true);
+    document.addEventListener("keyup", handleGlobalEscape, true);
+    window.addEventListener(LINKUAL_ROOT_RECOVER_EVENT, scheduleRootRecover);
     if (shouldHookNavigation() || isArticleTranslationSupportedPage()) {
       const observer = new MutationObserver(() => {
         if (document.body && !document.getElementById(LINKUAL_ROOT_ID)) {
