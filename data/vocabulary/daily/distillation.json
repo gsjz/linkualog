@@ -2,11 +2,13 @@
   "word": "distillation",
   "createdAt": "2026-07-08",
   "reviews": [],
-  "definitions": [],
+  "definitions": [
+    "蒸馏；通过加热使液体中的成分汽化，再冷凝收集，以分离或提纯物质的过程。"
+  ],
   "examples": [
     {
       "text": "So for thousands of years, alcohol content was limited. That changed with the invention of a process called distillation. 9th century Arabic writings describe boiling fermented liquids to vaporize the alcohol in them.",
-      "explanation": "",
+      "explanation": "这里 distillation 指“蒸馏”这种工艺：把发酵液加热，使酒精汽化并被分离出来，因此酒精含量不再只受普通发酵的限制。",
       "focusWords": [
         "distillation"
       ],
