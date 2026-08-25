@@ -366,9 +366,20 @@ export class YouTubeAdapter implements IVideoAdapter {
       html.linkual-custom-fullscreen .html5-video-player .ytp-cards-teaser,
       html.linkual-custom-fullscreen .html5-video-player .ytp-ce-element,
       html.linkual-custom-fullscreen .html5-video-player .ytp-iv-player-content,
-      html.linkual-custom-fullscreen .html5-video-player .ytp-player-content,
       html.linkual-custom-fullscreen .html5-video-player .ytp-caption-window-container {
         display: none !important;
+      }
+      html.linkual-custom-fullscreen .html5-video-container,
+      html.linkual-custom-fullscreen .html5-video-player video {
+        display: block !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        z-index: 2147483002 !important;
+      }
+      html.linkual-custom-fullscreen .html5-video-container {
+        position: absolute !important;
+        inset: 0 !important;
+        background: #000 !important;
       }
       html.linkual-custom-fullscreen .html5-video-container,
       html.linkual-custom-fullscreen .html5-video-player video {
