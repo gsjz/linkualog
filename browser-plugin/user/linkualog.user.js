@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Linkual Log
 // @namespace    npm/vite-plugin-monkey
-// @version      0.0.56
+// @version      0.0.57
 // @author       Sergio Gao
 // @icon         https://vitejs.dev/logo.svg
 // @downloadURL  https://raw.githubusercontent.com/gsjz/linkualog/main/browser-plugin/user/linkualog.user.js
@@ -13430,3326 +13430,6 @@
     emitQueueChanged(envelope.tasks, envelope.updatedAt);
     return task;
   };
-  const MAX_SELECTION_LENGTH = 50;
-  const SELECTION_BOX_MARGIN = 12;
-  const TOUCH_SELECTION_RECENCY_MS = 3e3;
-  const SUBTITLE_AUTO_SCROLL_PAUSE_MS = 5e3;
-  const normalizeSelectedText = (value) => value.replace(/\s+/g, " ").trim();
-  const isNodeInside = (node, container) => {
-    if (!node || !container) return false;
-    const target = node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
-    return !!target && container.contains(target);
-  };
-  const isShadowRoot = (root2) => typeof ShadowRoot !== "undefined" && root2 instanceof ShadowRoot;
-  const isSelectionEventTarget = (target) => !!target && (target instanceof Document || isShadowRoot(target));
-  const isRangeInside = (range, container) => isNodeInside(range.startContainer, container) && isNodeInside(range.endContainer, container);
-  const getVisibleRangeRect$1 = (range) => {
-    const rects = Array.from(range.getClientRects()).filter((rect2) => rect2.width > 0 && rect2.height > 0);
-    if (rects.length > 0) return rects[0];
-    const rect = range.getBoundingClientRect();
-    return rect.width > 0 && rect.height > 0 ? rect : null;
-  };
-  const getSelectionBoxPosition = (rect, text2) => {
-    var _a, _b, _c, _d;
-    const viewportWidth = ((_a = window.visualViewport) == null ? void 0 : _a.width) ?? window.innerWidth;
-    const viewportHeight = ((_b = window.visualViewport) == null ? void 0 : _b.height) ?? window.innerHeight;
-    const viewportLeft = ((_c = window.visualViewport) == null ? void 0 : _c.offsetLeft) ?? 0;
-    const viewportTop = ((_d = window.visualViewport) == null ? void 0 : _d.offsetTop) ?? 0;
-    const estimatedButtonWidth = Math.min(320, viewportWidth - SELECTION_BOX_MARGIN * 2, 34 + text2.length * 8);
-    const horizontalInset = estimatedButtonWidth / 2 + SELECTION_BOX_MARGIN;
-    const left = Math.min(
-      viewportLeft + viewportWidth - horizontalInset,
-      Math.max(viewportLeft + horizontalInset, rect.left + rect.width / 2)
-    );
-    let top = rect.top - 48;
-    if (top < viewportTop + SELECTION_BOX_MARGIN) {
-      top = rect.bottom + 10;
-    }
-    top = Math.min(viewportTop + viewportHeight - 52, Math.max(viewportTop + SELECTION_BOX_MARGIN, top));
-    return { top, left };
-  };
-  const hasCoarsePointer = () => typeof window.matchMedia === "function" && window.matchMedia("(pointer: coarse)").matches;
-  const staticRangeToRange = (staticRange) => {
-    const range = document.createRange();
-    range.setStart(staticRange.startContainer, staticRange.startOffset);
-    range.setEnd(staticRange.endContainer, staticRange.endOffset);
-    return range;
-  };
-  const getComposedSelectionRanges = (selection, root2) => {
-    if (typeof selection.getComposedRanges !== "function") return [];
-    try {
-      return selection.getComposedRanges({ shadowRoots: [root2] });
-    } catch {
-    }
-    try {
-      return selection.getComposedRanges(root2);
-    } catch {
-    }
-    return [];
-  };
-  const getRootSelection = (root2) => {
-    var _a;
-    if (isShadowRoot(root2)) {
-      const shadowSelection = (_a = root2.getSelection) == null ? void 0 : _a.call(root2);
-      if (shadowSelection && (shadowSelection.rangeCount > 0 || !shadowSelection.isCollapsed)) return shadowSelection;
-    }
-    return (typeof document.getSelection === "function" ? document.getSelection() : window.getSelection()) ?? null;
-  };
-  const getSubtitleSelection = (textContainer) => {
-    if (!textContainer) return null;
-    const root2 = textContainer.getRootNode();
-    const selection = getRootSelection(root2);
-    if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
-      return null;
-    }
-    if (isShadowRoot(root2)) {
-      const composedRanges = getComposedSelectionRanges(selection, root2);
-      const composedRange = composedRanges.find((range2) => isRangeInside(range2, textContainer));
-      if (composedRange) {
-        const range2 = staticRangeToRange(composedRange);
-        const text22 = normalizeSelectedText(range2.toString() || selection.toString() || "");
-        if (text22 && text22.length <= MAX_SELECTION_LENGTH) {
-          return { selection, range: range2, text: text22 };
-        }
-      }
-    }
-    const range = selection.getRangeAt(0);
-    const text2 = normalizeSelectedText(selection.toString() || range.toString() || "");
-    if (!text2 || text2.length > MAX_SELECTION_LENGTH) return null;
-    if (!isRangeInside(range, textContainer) && (!isNodeInside(selection.anchorNode, textContainer) || !isNodeInside(selection.focusNode, textContainer))) {
-      return null;
-    }
-    return { selection, range, text: text2 };
-  };
-  let subtitleAutoScrollPausedUntil = 0;
-  let subtitleSelectionGestureActive = false;
-  const pauseSubtitleAutoScroll = (ms = SUBTITLE_AUTO_SCROLL_PAUSE_MS) => {
-    subtitleAutoScrollPausedUntil = Math.max(subtitleAutoScrollPausedUntil, Date.now() + ms);
-  };
-  const lockSubtitleSelectionGesture = (ms = SUBTITLE_AUTO_SCROLL_PAUSE_MS) => {
-    subtitleSelectionGestureActive = true;
-    pauseSubtitleAutoScroll(ms);
-  };
-  const clearSubtitleSelectionGesture = () => {
-    subtitleSelectionGestureActive = false;
-  };
-  const isSubtitleAutoScrollPaused = () => subtitleSelectionGestureActive || Date.now() < subtitleAutoScrollPausedUntil;
-  const SubtitleItem = ({ data, index: index2, allSubs, isActive, adapter }) => {
-    const [isExpanded, setIsExpanded] = reactExports.useState(false);
-    const [isGenerating, setIsGenerating] = reactExports.useState(false);
-    const [aiContent, setAiContent] = reactExports.useState("");
-    const [isError, setIsError] = reactExports.useState(false);
-    const [selectionBox, setSelectionBox] = reactExports.useState(null);
-    const itemRef = reactExports.useRef(null);
-    const textRef = reactExports.useRef(null);
-    const abortRef = reactExports.useRef(null);
-    const selectionTimerRef = reactExports.useRef(null);
-    const ignoreNextClickRef = reactExports.useRef(false);
-    const lastSelectionInputRef = reactExports.useRef("mouse");
-    const lastTouchSelectionAtRef = reactExports.useRef(0);
-    reactExports.useEffect(() => {
-      return () => {
-        if (abortRef.current) {
-          abortRef.current();
-          abortRef.current = null;
-        }
-      };
-    }, []);
-    reactExports.useEffect(() => {
-      if (isActive && itemRef.current && !isSubtitleAutoScrollPaused()) {
-        itemRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
-      }
-    }, [isActive]);
-    reactExports.useEffect(() => {
-      return () => {
-        clearSubtitleSelectionGesture();
-      };
-    }, []);
-    const handlePlay = (e) => {
-      e.stopPropagation();
-      adapter.seekTo(data.start);
-      adapter.play();
-    };
-    const handlePin = (e) => {
-      e.stopPropagation();
-      adapter.seekTo(data.start);
-      adapter.pause();
-    };
-    const rememberSelectionInput = reactExports.useCallback((inputType) => {
-      lastSelectionInputRef.current = inputType;
-      if (inputType === "touch") {
-        lastTouchSelectionAtRef.current = Date.now();
-      }
-    }, []);
-    const shouldDockSelectionBox = reactExports.useCallback(() => lastSelectionInputRef.current === "touch" || Date.now() - lastTouchSelectionAtRef.current < TOUCH_SELECTION_RECENCY_MS || hasCoarsePointer(), []);
-    const refreshSelectionBox = reactExports.useCallback(() => {
-      const subtitleSelection = getSubtitleSelection(textRef.current);
-      if (!subtitleSelection) {
-        setSelectionBox(null);
-        return;
-      }
-      const rect = getVisibleRangeRect$1(subtitleSelection.range);
-      if (rect) {
-        const position = getSelectionBoxPosition(rect, subtitleSelection.text);
-        const placement = shouldDockSelectionBox() ? "dock" : "floating";
-        lockSubtitleSelectionGesture();
-        setSelectionBox({
-          text: subtitleSelection.text,
-          top: position.top,
-          left: position.left,
-          placement
-        });
-      } else {
-        setSelectionBox(null);
-      }
-    }, [shouldDockSelectionBox]);
-    const scheduleSelectionRefresh = reactExports.useCallback((delay = 0) => {
-      if (selectionTimerRef.current !== null) {
-        window.clearTimeout(selectionTimerRef.current);
-      }
-      selectionTimerRef.current = window.setTimeout(() => {
-        selectionTimerRef.current = null;
-        refreshSelectionBox();
-      }, delay);
-    }, [refreshSelectionBox]);
-    const handleSelectionPointerDown = (e) => {
-      lockSubtitleSelectionGesture();
-      rememberSelectionInput(e.pointerType === "touch" ? "touch" : e.pointerType === "pen" ? "pen" : "mouse");
-    };
-    const handleSelectionPointerUp = (e) => {
-      e.stopPropagation();
-      rememberSelectionInput(e.pointerType === "touch" ? "touch" : e.pointerType === "pen" ? "pen" : "mouse");
-      scheduleSelectionRefresh(e.pointerType === "touch" ? 180 : 0);
-    };
-    const handleSelectionPointerCancel = (e) => {
-      rememberSelectionInput(e.pointerType === "touch" ? "touch" : e.pointerType === "pen" ? "pen" : "mouse");
-      scheduleSelectionRefresh(e.pointerType === "touch" ? 180 : 0);
-    };
-    const handleSelectionMouseDown = () => {
-      lockSubtitleSelectionGesture();
-      rememberSelectionInput("mouse");
-    };
-    const handleSelectionMouseUp = (e) => {
-      e.stopPropagation();
-      rememberSelectionInput("mouse");
-      scheduleSelectionRefresh(0);
-    };
-    const handleSelectionTouchStart = () => {
-      lockSubtitleSelectionGesture();
-      rememberSelectionInput("touch");
-    };
-    const handleSelectionTouchEnd = (e) => {
-      e.stopPropagation();
-      rememberSelectionInput("touch");
-      scheduleSelectionRefresh(180);
-    };
-    reactExports.useEffect(() => {
-      var _a;
-      const handleSelectionChange = () => scheduleSelectionRefresh(120);
-      const handleGlobalPointerUp = () => {
-        if (subtitleSelectionGestureActive) scheduleSelectionRefresh(20);
-      };
-      const selectionTargets = /* @__PURE__ */ new Set([document]);
-      const root2 = (_a = textRef.current) == null ? void 0 : _a.getRootNode();
-      if (isSelectionEventTarget(root2)) {
-        selectionTargets.add(root2);
-      }
-      selectionTargets.forEach((target) => target.addEventListener("selectionchange", handleSelectionChange));
-      window.addEventListener("pointerup", handleGlobalPointerUp, true);
-      window.addEventListener("touchend", handleGlobalPointerUp, true);
-      return () => {
-        selectionTargets.forEach((target) => target.removeEventListener("selectionchange", handleSelectionChange));
-        window.removeEventListener("pointerup", handleGlobalPointerUp, true);
-        window.removeEventListener("touchend", handleGlobalPointerUp, true);
-        if (selectionTimerRef.current !== null) {
-          window.clearTimeout(selectionTimerRef.current);
-        }
-      };
-    }, [scheduleSelectionRefresh]);
-    reactExports.useEffect(() => {
-      const closeBox = (event) => {
-        const path2 = typeof event.composedPath === "function" ? event.composedPath() : [];
-        if (path2.some((node) => node instanceof Element && node.classList.contains("linkual-selection-add"))) return;
-        if (path2.some((node) => node instanceof Element && node.classList.contains("text-content"))) return;
-        clearSubtitleSelectionGesture();
-        setSelectionBox(null);
-      };
-      const closeOnEscape = (event) => {
-        if (event.key === "Escape") setSelectionBox(null);
-      };
-      window.addEventListener("pointerdown", closeBox, true);
-      window.addEventListener("touchstart", closeBox, true);
-      window.addEventListener("mousedown", closeBox, true);
-      window.addEventListener("scroll", closeBox, true);
-      window.addEventListener("keydown", closeOnEscape);
-      return () => {
-        window.removeEventListener("pointerdown", closeBox, true);
-        window.removeEventListener("touchstart", closeBox, true);
-        window.removeEventListener("mousedown", closeBox, true);
-        window.removeEventListener("scroll", closeBox, true);
-        window.removeEventListener("keydown", closeOnEscape);
-        clearSubtitleSelectionGesture();
-      };
-    }, []);
-    const handleAddVocab = (e, word) => {
-      var _a, _b, _c, _d;
-      e.preventDefault();
-      e.stopPropagation();
-      let cleanUrl = window.location.href;
-      try {
-        const urlObj = new URL(cleanUrl);
-        urlObj.searchParams.delete("t");
-        cleanUrl = urlObj.toString();
-      } catch (err) {
-      }
-      let videoTitle = (_a = document.querySelector("h1.ytd-watch-metadata yt-formatted-string")) == null ? void 0 : _a.textContent;
-      if (!videoTitle) {
-        videoTitle = document.title.replace(/^\(\d+\)\s+/, "").replace(/ - YouTube$/, "");
-      }
-      const ctxSize = parseInt(ConfigService.get("api_ctxSize"), 10) || 2;
-      const startIdx = Math.max(0, index2 - ctxSize);
-      const endIdx = Math.min(allSubs.length - 1, index2 + ctxSize);
-      let contextBlock = "";
-      for (let i = startIdx; i <= endIdx; i++) {
-        contextBlock += allSubs[i].text + " ";
-      }
-      try {
-        enqueueVocabTask({
-          word,
-          context: contextBlock.trim(),
-          source: videoTitle == null ? void 0 : videoTitle.trim(),
-          youtube: { url: cleanUrl, timestamp: Math.floor(data.start) }
-        });
-      } catch (err) {
-        console.error("[Linkual] 加入制卡队列失败:", err);
-      }
-      setSelectionBox(null);
-      const root2 = (_b = textRef.current) == null ? void 0 : _b.getRootNode();
-      if (root2) {
-        (_c = getRootSelection(root2)) == null ? void 0 : _c.removeAllRanges();
-      } else {
-        (_d = window.getSelection()) == null ? void 0 : _d.removeAllRanges();
-      }
-    };
-    const handleSelectionButtonPointerUp = (e) => {
-      e.stopPropagation();
-      if (e.pointerType !== "touch" || !selectionBox) return;
-      ignoreNextClickRef.current = true;
-      window.setTimeout(() => {
-        ignoreNextClickRef.current = false;
-      }, 400);
-      handleAddVocab(e, selectionBox.text);
-    };
-    const handleSelectionButtonTouchEnd = (e) => {
-      e.stopPropagation();
-      if (ignoreNextClickRef.current || !selectionBox) return;
-      ignoreNextClickRef.current = true;
-      window.setTimeout(() => {
-        ignoreNextClickRef.current = false;
-      }, 400);
-      handleAddVocab(e, selectionBox.text);
-    };
-    const handleSelectionButtonClick = (e) => {
-      if (!selectionBox) {
-        e.preventDefault();
-        e.stopPropagation();
-        return;
-      }
-      if (ignoreNextClickRef.current) {
-        e.preventDefault();
-        e.stopPropagation();
-        ignoreNextClickRef.current = false;
-        return;
-      }
-      handleAddVocab(e, selectionBox.text);
-    };
-    const handleParse = (e, forceExpand = false) => {
-      e.stopPropagation();
-      if (isGenerating && abortRef.current) {
-        abortRef.current();
-        abortRef.current = null;
-      }
-      if (forceExpand) setIsExpanded(true);
-      const apiKey = ConfigService.get("api_key").trim();
-      const apiUrl = ConfigService.get("api_url").trim();
-      const apiModel = ConfigService.get("api_model").trim();
-      const systemPrompt = ConfigService.get("api_prompt");
-      const ctxSize = parseInt(ConfigService.get("api_ctxSize"), 10);
-      const timeout = parseInt(ConfigService.get("api_timeout"), 10) || 60;
-      if (!apiKey) {
-        setIsError(true);
-        setAiContent("请在设置中填入 API Key！");
-        setIsExpanded(true);
-        return;
-      }
-      setIsGenerating(true);
-      setIsError(false);
-      setAiContent("解析语境中...\n");
-      setIsExpanded(true);
-      const startIdx = Math.max(0, index2 - ctxSize);
-      const endIdx = Math.min(allSubs.length - 1, index2 + ctxSize);
-      let contextBlock = "";
-      for (let i = startIdx; i <= endIdx; i++) {
-        if (i === index2) contextBlock += `【目标字幕】：${allSubs[i].text}
-`;
-        else contextBlock += `（上下文）：${allSubs[i].text}
-`;
-      }
-      setAiContent("");
-      const { abort } = fetchLlmStream({
-        apiUrl,
-        apiKey,
-        apiModel,
-        systemPrompt,
-        timeoutSec: timeout,
-        userPrompt: `请根据以下字幕片段进行解释：
-
-${contextBlock}`,
-        onData: (chunk) => setAiContent((prev) => prev + chunk),
-        onError: (err) => {
-          if (err === "ABORTED") return;
-          setIsError(true);
-          setAiContent((prev) => prev + err);
-          setIsGenerating(false);
-        },
-        onDone: () => {
-          setIsGenerating(false);
-          abortRef.current = null;
-        }
-      });
-      abortRef.current = abort;
-    };
-    const handleToggle = (e) => {
-      e.stopPropagation();
-      if (!aiContent && !isGenerating && !isError) {
-        handleParse(e, true);
-      } else {
-        setIsExpanded(!isExpanded);
-      }
-    };
-    const itemClass = `item ${isActive ? "active" : ""}`;
-    const ctrlClass = `ctrl-bar ${isError ? "error" : aiContent ? "done" : ""}`;
-    return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: itemClass, ref: itemRef, children: [
-      selectionBox && /* @__PURE__ */ jsxRuntimeExports.jsxs(
-        "button",
-        {
-          type: "button",
-          className: `linkual-selection-add linkual-selection-add-${selectionBox.placement}`,
-          onPointerDown: (e) => e.stopPropagation(),
-          onPointerUp: handleSelectionButtonPointerUp,
-          onTouchStart: (e) => e.stopPropagation(),
-          onTouchEnd: handleSelectionButtonTouchEnd,
-          onMouseDown: (e) => e.stopPropagation(),
-          onClick: handleSelectionButtonClick,
-          style: selectionBox.placement === "floating" ? {
-            top: selectionBox.top,
-            left: selectionBox.left
-          } : void 0,
-          children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx(BadgePlus, { className: "linkual-selection-add-icon", size: 16, strokeWidth: 2.2 }),
-            /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "linkual-selection-add-text", children: [
-              '"',
-              selectionBox.text,
-              '"'
-            ] })
-          ]
-        }
-      ),
-      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: ctrlClass, children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("button", { type: "button", className: "tag-btn tag-play", onClick: handlePlay, title: "点击跳转并播放", children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx(Play, { className: "linkual-subtitle-icon", size: 12, strokeWidth: 2.4 }),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
-            Math.floor(data.start / 60),
-            ":",
-            Math.floor(data.start % 60).toString().padStart(2, "0")
-          ] })
-        ] }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", className: "tag-btn tag-pin", onClick: handlePin, title: "定位到此处并暂停", "aria-label": "定位到此处并暂停", children: /* @__PURE__ */ jsxRuntimeExports.jsx(MapPin, { className: "linkual-subtitle-icon", size: 13, strokeWidth: 2.3 }) }),
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("button", { type: "button", className: "btn-parse", onClick: handleParse, children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx(Sparkles, { className: "linkual-subtitle-icon", size: 13, strokeWidth: 2.2 }),
-          isGenerating ? "解析中" : aiContent ? "重新解析" : "解析"
-        ] }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", className: "btn-chevron", onClick: handleToggle, title: isExpanded ? "收起解析" : "展开解析", "aria-label": isExpanded ? "收起解析" : "展开解析", children: isExpanded ? /* @__PURE__ */ jsxRuntimeExports.jsx(ChevronDown, { className: "linkual-subtitle-icon", size: 15, strokeWidth: 2.3 }) : /* @__PURE__ */ jsxRuntimeExports.jsx(ChevronLeft, { className: "linkual-subtitle-icon", size: 15, strokeWidth: 2.3 }) })
-      ] }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx(
-        "div",
-        {
-          className: "text-content",
-          ref: textRef,
-          onPointerDown: handleSelectionPointerDown,
-          onPointerUp: handleSelectionPointerUp,
-          onPointerCancel: handleSelectionPointerCancel,
-          onMouseDown: handleSelectionMouseDown,
-          onMouseUp: handleSelectionMouseUp,
-          onTouchStart: handleSelectionTouchStart,
-          onTouchEnd: handleSelectionTouchEnd,
-          children: data.text
-        }
-      ),
-      isExpanded && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "ai-box", style: { color: isError ? "#c62828" : "#444" }, children: aiContent })
-    ] });
-  };
-  const STORAGE_KEY = "linkual_article_translation_cache";
-  const CACHE_VERSION = 1;
-  const CACHE_UPDATED_EVENT = "linkual_article_cache_updated";
-  function getCanonicalUrl(url) {
-    try {
-      const parsed = new URL(url);
-      parsed.hash = "";
-      return parsed.toString();
-    } catch {
-      return url.split("#")[0] || url;
-    }
-  }
-  function getArticleTranslationCacheKey(url, targetLanguage) {
-    return `${getCanonicalUrl(url)}
-${targetLanguage.trim() || "简体中文"}`;
-  }
-  function parseStore(value) {
-    const parsed = typeof value === "string" ? (() => {
-      try {
-        return JSON.parse(value);
-      } catch {
-        return null;
-      }
-    })() : value;
-    if (!parsed || typeof parsed !== "object") return { version: CACHE_VERSION, pages: {} };
-    const candidate = parsed;
-    if (!candidate.pages || typeof candidate.pages !== "object") return { version: CACHE_VERSION, pages: {} };
-    return { version: CACHE_VERSION, pages: candidate.pages };
-  }
-  function readStore() {
-    try {
-      if (typeof _GM_getValue !== "undefined") {
-        const gmValue = _GM_getValue(STORAGE_KEY);
-        if (gmValue !== void 0 && gmValue !== null) return parseStore(gmValue);
-      }
-    } catch {
-    }
-    return parseStore(localStorage.getItem(STORAGE_KEY));
-  }
-  function writeStore(store) {
-    const serialized = JSON.stringify(store);
-    try {
-      if (typeof _GM_setValue !== "undefined") _GM_setValue(STORAGE_KEY, store);
-    } catch {
-    }
-    localStorage.setItem(STORAGE_KEY, serialized);
-    window.dispatchEvent(new Event(CACHE_UPDATED_EVENT));
-  }
-  function getArticleTranslationCache(url, targetLanguage) {
-    return readStore().pages[getArticleTranslationCacheKey(url, targetLanguage)] || null;
-  }
-  function saveArticleTranslation(url, targetLanguage, paragraphId, entry) {
-    const store = readStore();
-    const key = getArticleTranslationCacheKey(url, targetLanguage);
-    const current = store.pages[key] || {
-      url: getCanonicalUrl(url),
-      targetLanguage: targetLanguage.trim() || "简体中文",
-      updatedAt: Date.now(),
-      entries: {}
-    };
-    current.entries[paragraphId] = entry;
-    current.updatedAt = Date.now();
-    store.pages[key] = current;
-    writeStore(store);
-  }
-  function listArticleTranslationCaches() {
-    return Object.entries(readStore().pages).map(([key, page]) => ({ key, ...page, entryCount: Object.keys(page.entries || {}).length })).sort((a, b) => b.updatedAt - a.updatedAt);
-  }
-  function clearArticleTranslationCaches() {
-    const empty = { version: CACHE_VERSION, pages: {} };
-    try {
-      if (typeof _GM_setValue !== "undefined") _GM_setValue(STORAGE_KEY, empty);
-      if (typeof _GM_deleteValue !== "undefined") _GM_deleteValue(`${STORAGE_KEY}_legacy`);
-    } catch {
-    }
-    localStorage.removeItem(STORAGE_KEY);
-    window.dispatchEvent(new Event(CACHE_UPDATED_EVENT));
-  }
-  function deleteArticleTranslationCache(key) {
-    const store = readStore();
-    delete store.pages[key];
-    writeStore(store);
-  }
-  const LINKUAL_CURRENT_VERSION = "0.0.56";
-  const LINKUAL_UPDATE_URL = "https://raw.githubusercontent.com/gsjz/linkualog/main/browser-plugin/user/linkualog.user.js";
-  const LINKUAL_DOWNLOAD_URL = LINKUAL_UPDATE_URL;
-  const CHECK_INTERVAL_MS = 24 * 60 * 60 * 1e3;
-  const REQUEST_TIMEOUT_MS = 12e3;
-  function requestText(url) {
-    const requestUrl = `${url}?_=${Date.now()}`;
-    if (typeof _GM_xmlhttpRequest !== "undefined") {
-      return new Promise((resolve, reject) => {
-        _GM_xmlhttpRequest({
-          method: "GET",
-          url: requestUrl,
-          timeout: REQUEST_TIMEOUT_MS,
-          headers: {
-            Accept: "text/plain,*/*",
-            "Cache-Control": "no-cache"
-          },
-          onload: (response) => {
-            if (response.status < 200 || response.status >= 300) {
-              reject(new Error(`HTTP ${response.status}`));
-              return;
-            }
-            resolve(String(response.responseText || ""));
-          },
-          onerror: () => reject(new Error("更新检查请求失败")),
-          ontimeout: () => reject(new Error("更新检查请求超时")),
-          onabort: () => reject(new Error("更新检查请求已取消"))
-        });
-      });
-    }
-    return fetch(requestUrl, { cache: "no-store" }).then(async (response) => {
-      const text2 = await response.text();
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      return text2;
-    });
-  }
-  function readUserscriptVersion(source) {
-    var _a, _b;
-    return ((_b = (_a = source.match(/^\s*\/\/\s*@version\s+(.+?)\s*$/m)) == null ? void 0 : _a[1]) == null ? void 0 : _b.trim()) || "";
-  }
-  function normalizeVersion(value) {
-    return value.trim().replace(/^v/i, "");
-  }
-  function compareVersions(left, right) {
-    const leftParts = normalizeVersion(left).split(/[.-]/);
-    const rightParts = normalizeVersion(right).split(/[.-]/);
-    const length = Math.max(leftParts.length, rightParts.length);
-    for (let index2 = 0; index2 < length; index2 += 1) {
-      const leftPart = leftParts[index2] || "0";
-      const rightPart = rightParts[index2] || "0";
-      const leftNumber = Number(leftPart);
-      const rightNumber = Number(rightPart);
-      if (Number.isFinite(leftNumber) && Number.isFinite(rightNumber)) {
-        if (leftNumber !== rightNumber) return leftNumber > rightNumber ? 1 : -1;
-        continue;
-      }
-      const stringCompare = leftPart.localeCompare(rightPart);
-      if (stringCompare !== 0) return stringCompare > 0 ? 1 : -1;
-    }
-    return 0;
-  }
-  function getLastCheckedAt() {
-    const parsed = Number.parseInt(ConfigService.get("update_last_checked_at"), 10);
-    return Number.isFinite(parsed) ? parsed : 0;
-  }
-  function markCheckedNow() {
-    ConfigService.set("update_last_checked_at", String(Date.now()));
-  }
-  function isAutoUpdateCheckEnabled() {
-    return ConfigService.get("auto_update_check") !== "false";
-  }
-  function shouldCheckForUpdates(force = false) {
-    if (!force && !isAutoUpdateCheckEnabled()) return false;
-    if (force) return true;
-    return Date.now() - getLastCheckedAt() >= CHECK_INTERVAL_MS;
-  }
-  async function checkForUpdates(options = {}) {
-    if (!shouldCheckForUpdates(Boolean(options.force))) return null;
-    markCheckedNow();
-    const source = await requestText(LINKUAL_UPDATE_URL);
-    const latestVersion = readUserscriptVersion(source);
-    if (!latestVersion || compareVersions(latestVersion, LINKUAL_CURRENT_VERSION) <= 0) return null;
-    if (ConfigService.get("update_ignored_version") === latestVersion) return null;
-    return {
-      currentVersion: LINKUAL_CURRENT_VERSION,
-      latestVersion,
-      downloadUrl: LINKUAL_DOWNLOAD_URL
-    };
-  }
-  function ignoreUpdateVersion(version2) {
-    ConfigService.set("update_ignored_version", version2);
-  }
-  const API_BASE_PATH = "/v1";
-  const API_CHAT_COMPLETIONS_PATH = "/chat/completions";
-  const LAN_SYNC_API_PATH = "/api/vocabulary/add";
-  const normalizeUrlPrefix = (prefix2) => prefix2.trim().replace(/\/+$/, "");
-  const stripUrlProtocol = (value) => value.replace(/^https?:\/\//i, "");
-  const getUrlProtocol = (url, fallback = "http") => {
-    const match = url.trim().match(/^(https?):\/\//i);
-    if (!match) return fallback;
-    return match[1].toLowerCase() === "https" ? "https" : "http";
-  };
-  const buildUrlWithPath = (prefix2, protocol, path2) => {
-    const normalizedPrefix = normalizeUrlPrefix(stripUrlProtocol(prefix2));
-    return normalizedPrefix ? `${protocol}://${normalizedPrefix}${path2}` : "";
-  };
-  const getUrlPrefixForPath = (url, path2) => {
-    const trimmedUrl = normalizeUrlPrefix(url);
-    const protocolMatch = trimmedUrl.match(/^https?:\/\//i);
-    return protocolMatch && trimmedUrl.toLowerCase().endsWith(path2.toLowerCase()) ? normalizeUrlPrefix(trimmedUrl.slice(protocolMatch[0].length, -path2.length)) : "";
-  };
-  const getApiEndpointPath = (url) => {
-    const normalizedUrl = normalizeUrlPrefix(url);
-    if (/\/chat\/completions$/i.test(normalizedUrl)) return API_CHAT_COMPLETIONS_PATH;
-    if (/\/v1$/i.test(normalizedUrl)) return API_BASE_PATH;
-    return API_BASE_PATH;
-  };
-  const getApiPrefix = (url) => {
-    const normalizedUrl = normalizeUrlPrefix(url);
-    const protocolMatch = normalizedUrl.match(/^https?:\/\//i);
-    if (!protocolMatch) return "";
-    const withoutProtocol = normalizedUrl.slice(protocolMatch[0].length);
-    if (/\/chat\/completions$/i.test(withoutProtocol)) {
-      return normalizeUrlPrefix(withoutProtocol.replace(/\/chat\/completions$/i, ""));
-    }
-    if (/\/v1$/i.test(withoutProtocol)) {
-      return normalizeUrlPrefix(withoutProtocol.replace(/\/v1$/i, ""));
-    }
-    return "";
-  };
-  const buildApiUrl = (prefix2, protocol, endpointPath) => {
-    let normalizedPrefix = normalizeUrlPrefix(stripUrlProtocol(prefix2)).replace(/\/chat\/completions$/i, "");
-    if (endpointPath === API_BASE_PATH) {
-      normalizedPrefix = normalizedPrefix.replace(/\/v1$/i, "");
-    }
-    return buildUrlWithPath(normalizedPrefix, protocol, endpointPath);
-  };
-  const buildLanSyncUrl = (prefix2, protocol) => buildUrlWithPath(stripUrlProtocol(prefix2).replace(/\/api\/vocabulary\/add$/i, ""), protocol, LAN_SYNC_API_PATH);
-  const getLanPrefix = (url) => getUrlPrefixForPath(url, LAN_SYNC_API_PATH);
-  const Settings$1 = ({ adapter, onClose }) => {
-    const [activeTab, setActiveTab] = reactExports.useState("api");
-    const [translationCaches, setTranslationCaches] = reactExports.useState(listArticleTranslationCaches);
-    const getAdpCfg = (key) => {
-      const val = ConfigService.get(`${key}_${adapter.platformName}`);
-      return val !== null && val !== void 0 && val !== "" ? val : ConfigService.get(key);
-    };
-    const [cfg, setCfg] = reactExports.useState({
-      color: ConfigService.get("theme_color"),
-      doneColor: ConfigService.get("done_color"),
-      errorColor: ConfigService.get("error_color"),
-      url: ConfigService.get("api_url"),
-      key: ConfigService.get("api_key"),
-      model: ConfigService.get("api_model"),
-      prompt: ConfigService.get("api_prompt"),
-      webTargetLanguage: ConfigService.get("web_target_language"),
-      webTranslationPrompt: ConfigService.get("web_translation_prompt"),
-      timeout: ConfigService.get("api_timeout"),
-      ctxSize: ConfigService.get("api_ctxSize"),
-      lanUrl: ConfigService.get("lan_sync_url"),
-      lanAction: ConfigService.get("lan_action"),
-      mobileFullscreenMode: ConfigService.get("mobile_fullscreen_mode"),
-      autoUpdateCheck: ConfigService.get("auto_update_check"),
-      layout: getAdpCfg("layout_position"),
-      sidebarWidth: getAdpCfg("sidebar_width"),
-      sidebarHeight: getAdpCfg("sidebar_height")
-    });
-    const handleChange = (e) => {
-      const { name, value } = e.target;
-      setCfg((prev) => ({ ...prev, [name]: value }));
-    };
-    const handleCheckboxChange = (e) => {
-      const { name, checked } = e.target;
-      setCfg((prev) => ({ ...prev, [name]: checked ? "true" : "false" }));
-    };
-    const handleApiPrefixChange = (e) => {
-      setCfg((prev) => ({ ...prev, url: buildApiUrl(e.target.value, getUrlProtocol(prev.url, "https"), getApiEndpointPath(prev.url)) }));
-    };
-    const handleApiProtocolChange = (e) => {
-      const protocol = e.target.value;
-      setCfg((prev) => {
-        const prefix2 = getApiPrefix(prev.url);
-        return prefix2 ? { ...prev, url: buildApiUrl(prefix2, protocol, getApiEndpointPath(prev.url)) } : prev;
-      });
-    };
-    const handleApiEndpointPathChange = (e) => {
-      const endpointPath = e.target.value;
-      setCfg((prev) => {
-        const prefix2 = getApiPrefix(prev.url);
-        return prefix2 ? { ...prev, url: buildApiUrl(prefix2, getUrlProtocol(prev.url, "https"), endpointPath) } : prev;
-      });
-    };
-    const handleLanPrefixChange = (e) => {
-      setCfg((prev) => ({ ...prev, lanUrl: buildLanSyncUrl(e.target.value, getUrlProtocol(prev.lanUrl)) }));
-    };
-    const handleLanProtocolChange = (e) => {
-      const protocol = e.target.value;
-      setCfg((prev) => {
-        const prefix2 = getLanPrefix(prev.lanUrl);
-        return prefix2 ? { ...prev, lanUrl: buildLanSyncUrl(prefix2, protocol) } : prev;
-      });
-    };
-    const handleSave = () => {
-      ConfigService.set("theme_color", cfg.color);
-      ConfigService.set("done_color", cfg.doneColor);
-      ConfigService.set("error_color", cfg.errorColor);
-      ConfigService.set("api_url", cfg.url);
-      ConfigService.set("api_key", cfg.key);
-      ConfigService.set("api_model", cfg.model);
-      ConfigService.set("api_prompt", cfg.prompt);
-      ConfigService.set("web_target_language", cfg.webTargetLanguage);
-      ConfigService.set("web_translation_prompt", cfg.webTranslationPrompt);
-      ConfigService.set("api_timeout", cfg.timeout);
-      ConfigService.set("api_ctxSize", cfg.ctxSize);
-      ConfigService.set("lan_sync_url", cfg.lanUrl.trim());
-      ConfigService.set("lan_action", cfg.lanAction);
-      ConfigService.set("mobile_fullscreen_mode", cfg.mobileFullscreenMode);
-      ConfigService.set("auto_update_check", cfg.autoUpdateCheck);
-      ConfigService.set(`layout_position_${adapter.platformName}`, cfg.layout);
-      ConfigService.set(`sidebar_width_${adapter.platformName}`, cfg.sidebarWidth);
-      ConfigService.set(`sidebar_height_${adapter.platformName}`, cfg.sidebarHeight);
-      ConfigService.set("layout_position", cfg.layout);
-      ConfigService.set("sidebar_width", cfg.sidebarWidth);
-      ConfigService.set("sidebar_height", cfg.sidebarHeight);
-      onClose();
-      window.dispatchEvent(new Event("linkual_settings_updated"));
-    };
-    const handleReset = () => {
-      if (window.confirm("清空所有自定义设置恢复默认？")) {
-        ConfigService.reset();
-        onClose();
-        window.dispatchEvent(new Event("linkual_settings_updated"));
-      }
-    };
-    const handleBackdropMouseDown = (e) => {
-      if (e.target === e.currentTarget) onClose();
-    };
-    React$2.useEffect(() => {
-      const refreshCaches = () => setTranslationCaches(listArticleTranslationCaches());
-      window.addEventListener(CACHE_UPDATED_EVENT, refreshCaches);
-      return () => window.removeEventListener(CACHE_UPDATED_EVENT, refreshCaches);
-    }, []);
-    const apiPrefix = getApiPrefix(cfg.url);
-    const apiProtocol = getUrlProtocol(cfg.url, "https");
-    const apiEndpointPath = getApiEndpointPath(cfg.url);
-    const lanPrefix = getLanPrefix(cfg.lanUrl);
-    const lanProtocol = getUrlProtocol(cfg.lanUrl);
-    return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "modal", onMouseDown: handleBackdropMouseDown, children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "modal-box", children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "modal-header", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx("h3", { children: "全局设置" }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", className: "close-btn", onClick: onClose, title: "关闭", "aria-label": "关闭", children: /* @__PURE__ */ jsxRuntimeExports.jsx(X, { size: 18, strokeWidth: 2.3 }) })
-      ] }),
-      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "tabs", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: `tab ${activeTab === "api" ? "active" : ""}`, onClick: () => setActiveTab("api"), children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx(PlugZap, { size: 15, strokeWidth: 2.2 }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "API 设置" })
-        ] }),
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: `tab ${activeTab === "params" ? "active" : ""}`, onClick: () => setActiveTab("params"), children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx(SlidersHorizontal, { size: 15, strokeWidth: 2.2 }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "参数调整" })
-        ] }),
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: `tab ${activeTab === "ui" ? "active" : ""}`, onClick: () => setActiveTab("ui"), children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx(Palette, { size: 15, strokeWidth: 2.2 }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "界面设置" })
-        ] })
-      ] }),
-      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "tab-content", children: [
-        activeTab === "api" && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "tab-pane fade-in", children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-col", children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "API URL（快捷）" }),
-            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "url-prefix-row", children: [
-              /* @__PURE__ */ jsxRuntimeExports.jsxs("select", { className: "url-protocol-select", value: apiProtocol, onChange: handleApiProtocolChange, "aria-label": "API 协议", children: [
-                /* @__PURE__ */ jsxRuntimeExports.jsx("option", { value: "http", children: "http" }),
-                /* @__PURE__ */ jsxRuntimeExports.jsx("option", { value: "https", children: "https" })
-              ] }),
-              /* @__PURE__ */ jsxRuntimeExports.jsx("input", { value: apiPrefix, onChange: handleApiPrefixChange, placeholder: "dashscope.aliyuncs.com/compatible-mode/v1" }),
-              /* @__PURE__ */ jsxRuntimeExports.jsxs("select", { className: "url-path-select", value: apiEndpointPath, onChange: handleApiEndpointPathChange, "aria-label": "API 端点", children: [
-                /* @__PURE__ */ jsxRuntimeExports.jsx("option", { value: API_BASE_PATH, children: "/v1" }),
-                /* @__PURE__ */ jsxRuntimeExports.jsx("option", { value: API_CHAT_COMPLETIONS_PATH, children: "/chat/completions" })
-              ] })
-            ] }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "setting-help", children: "快捷模式支持 /v1 或 /chat/completions；如需 /v1/chat/completions，可让前缀以 /v1 结尾。" })
-          ] }),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-col", children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "API URL（完整）" }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("input", { name: "url", value: cfg.url, onChange: handleChange, placeholder: "https://..." })
-          ] }),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-col", children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "API Key" }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("input", { name: "key", type: "password", value: cfg.key, onChange: handleChange, placeholder: "sk-..." })
-          ] }),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-col", children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "对话模型 (Model)" }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("input", { name: "model", value: cfg.model, onChange: handleChange, placeholder: "如：gpt-3.5-turbo" })
-          ] }),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-col", children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "后端服务前缀（快捷）" }),
-            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "url-prefix-row", children: [
-              /* @__PURE__ */ jsxRuntimeExports.jsxs("select", { className: "url-protocol-select", value: lanProtocol, onChange: handleLanProtocolChange, "aria-label": "后端服务协议", children: [
-                /* @__PURE__ */ jsxRuntimeExports.jsx("option", { value: "http", children: "http" }),
-                /* @__PURE__ */ jsxRuntimeExports.jsx("option", { value: "https", children: "https" })
-              ] }),
-              /* @__PURE__ */ jsxRuntimeExports.jsx("input", { value: lanPrefix, onChange: handleLanPrefixChange, placeholder: "127.0.0.1:8000" }),
-              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "url-fixed-suffix", children: LAN_SYNC_API_PATH })
-            ] }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "setting-help", children: "只填写主机和端口会自动生成下方完整地址；如需自定义协议或路径，可直接编辑完整 API 地址。" })
-          ] }),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-col", children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "后端生词添加 API 地址（完整）" }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("input", { name: "lanUrl", value: cfg.lanUrl, onChange: handleChange, placeholder: "http://127.0.0.1:8000/api/vocabulary/add" })
-          ] }),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-col", children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "默认生词本目录 (Category)" }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("input", { name: "lanAction", value: cfg.lanAction, onChange: handleChange, placeholder: "例如: Video_Sync" })
-          ] })
-        ] }),
-        activeTab === "params" && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "tab-pane fade-in", children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-col", children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "上下文携带数量 (上下各取 N 条)" }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("input", { type: "number", name: "ctxSize", value: cfg.ctxSize, onChange: handleChange, min: "0", max: "10" })
-          ] }),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-col", children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "API 超时时间 (秒)" }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("input", { type: "number", name: "timeout", value: cfg.timeout, onChange: handleChange, min: "5", max: "300" })
-          ] }),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-col", children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "提示词 (Prompt)" }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("textarea", { name: "prompt", value: cfg.prompt, onChange: handleChange, placeholder: "请输入系统提示词..." })
-          ] }),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-col", children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "网页翻译目标语言" }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("input", { name: "webTargetLanguage", value: cfg.webTargetLanguage, onChange: handleChange, placeholder: "例如：简体中文" })
-          ] }),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-col", children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "网页翻译提示词" }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("textarea", { name: "webTranslationPrompt", value: cfg.webTranslationPrompt, onChange: handleChange, placeholder: "留空则使用默认学术翻译提示词" }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "setting-help", children: "网页翻译会按段请求模型；提示词应要求模型只输出译文，行内公式写成 $...$，行间公式写成 $$...$$，表格输出为 GitHub Flavored Markdown 表格。" })
-          ] }),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-col linkual-translation-cache-manager", children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-cache-manager-heading", children: [
-              /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "网页翻译缓存" }),
-              translationCaches.length > 0 && /* @__PURE__ */ jsxRuntimeExports.jsx(
-                "button",
-                {
-                  type: "button",
-                  className: "linkual-cache-clear-btn",
-                  onClick: () => {
-                    if (window.confirm("清空所有网页翻译缓存？")) clearArticleTranslationCaches();
-                  },
-                  children: "清空全部"
-                }
-              )
-            ] }),
-            translationCaches.length === 0 ? /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "setting-help", children: "暂无缓存。翻译成功的段落会自动保存，刷新页面后继续使用。" }) : /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "linkual-cache-list", children: translationCaches.map((cache) => /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-cache-item", children: [
-              /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-cache-item-main", children: [
-                /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { children: cache.url }),
-                /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
-                  cache.targetLanguage,
-                  " · ",
-                  cache.entryCount,
-                  " 段 · ",
-                  new Date(cache.updatedAt).toLocaleString()
-                ] })
-              ] }),
-              /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", onClick: () => deleteArticleTranslationCache(cache.key), children: "删除" })
-            ] }, cache.key)) })
-          ] })
-        ] }),
-        activeTab === "ui" && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "tab-pane fade-in", children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-row", children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "主题颜色" }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("input", { type: "color", name: "color", value: cfg.color, onChange: handleChange })
-          ] }),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-row", children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "解析成功背景色" }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("input", { type: "color", name: "doneColor", value: cfg.doneColor, onChange: handleChange })
-          ] }),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-row", children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "解析失败背景色" }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("input", { type: "color", name: "errorColor", value: cfg.errorColor, onChange: handleChange })
-          ] }),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-col", children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "移动端全屏按钮" }),
-            /* @__PURE__ */ jsxRuntimeExports.jsxs("select", { name: "mobileFullscreenMode", value: cfg.mobileFullscreenMode, onChange: handleChange, style: { width: "100%", padding: "10px", borderRadius: "6px", border: "1px solid #ddd" }, children: [
-              /* @__PURE__ */ jsxRuntimeExports.jsx("option", { value: "off", children: "关闭" }),
-              /* @__PURE__ */ jsxRuntimeExports.jsx("option", { value: "video", children: "只在视频页开启" }),
-              /* @__PURE__ */ jsxRuntimeExports.jsx("option", { value: "always", children: "任意页面开启" })
-            ] })
-          ] }),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-row setting-row-toggle", children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
-              /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "自动检查插件更新" }),
-              /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "setting-help", children: "每天自动检查一次；发现新版本时在页面右上角弹出提示。" })
-            ] }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx(
-              "input",
-              {
-                type: "checkbox",
-                name: "autoUpdateCheck",
-                checked: cfg.autoUpdateCheck !== "false",
-                onChange: handleCheckboxChange
-              }
-            )
-          ] }),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-version-info", children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "当前插件版本" }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("code", { children: LINKUAL_CURRENT_VERSION })
-          ] }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "setting-col", style: { marginTop: "15px" }, children: /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { style: { fontSize: "12px", color: "#1976d2", padding: "4px 8px", background: "#e3f2fd", borderRadius: "4px" }, children: [
-            "当前网页 (",
-            adapter.platformName,
-            ") 的布局设置："
-          ] }) }),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-col", children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "UI 布局位置" }),
-            /* @__PURE__ */ jsxRuntimeExports.jsxs("select", { name: "layout", value: cfg.layout, onChange: handleChange, style: { width: "100%", padding: "10px", borderRadius: "6px", border: "1px solid #ddd" }, children: [
-              /* @__PURE__ */ jsxRuntimeExports.jsx("option", { value: "right", children: "靠右对齐 (左右分屏)" }),
-              /* @__PURE__ */ jsxRuntimeExports.jsx("option", { value: "bottom", children: "靠下对齐 (上下分屏)" })
-            ] })
-          ] }),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-col", style: { opacity: cfg.layout === "right" ? 1 : 0.5 }, children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "侧边栏宽度 (px) - 仅靠右对齐时生效" }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("input", { type: "number", name: "sidebarWidth", value: cfg.sidebarWidth, onChange: handleChange, min: "250", max: "1000", disabled: cfg.layout !== "right" })
-          ] }),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-col", style: { opacity: cfg.layout === "bottom" ? 1 : 0.5 }, children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "底部栏高度 (px) - 仅靠下对齐时生效" }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("input", { type: "number", name: "sidebarHeight", value: cfg.sidebarHeight, onChange: handleChange, min: "150", max: "800", disabled: cfg.layout !== "bottom" })
-          ] })
-        ] })
-      ] }),
-      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "modal-footer", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx("button", { className: "btn reset-btn", onClick: handleReset, children: "恢复默认" }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("button", { className: "btn save-btn", style: { background: cfg.color, color: "#fff" }, onClick: handleSave, children: "保存设置" })
-      ] })
-    ] }) });
-  };
-  const formatHttpError = (status, responseText) => {
-    const detail = (responseText || "").trim();
-    return detail ? `HTTP ${status}: ${detail}` : `HTTP ${status}`;
-  };
-  async function requestJson({
-    url,
-    method = "GET",
-    headers = {},
-    body,
-    timeoutMs = 15e3
-  }) {
-    if (typeof _GM_xmlhttpRequest !== "undefined") {
-      return new Promise((resolve, reject) => {
-        _GM_xmlhttpRequest({
-          method,
-          url,
-          headers,
-          data: body,
-          timeout: timeoutMs,
-          onload: (res) => {
-            if (res.status < 200 || res.status >= 300) {
-              reject(new Error(formatHttpError(res.status, res.responseText)));
-              return;
-            }
-            const text2 = String(res.responseText || "").trim();
-            if (!text2) {
-              resolve({});
-              return;
-            }
-            try {
-              resolve(JSON.parse(text2));
-            } catch (err) {
-              const message = err instanceof Error ? err.message : String(err);
-              reject(new Error(`响应 JSON 解析失败: ${message}`));
-            }
-          },
-          onerror: () => reject(new Error(`GM_xmlhttpRequest 网络请求被拦截或断开: ${url}`)),
-          ontimeout: () => reject(new Error(`请求超时 (${Math.ceil(timeoutMs / 1e3)}s)`)),
-          onabort: () => reject(new Error("请求已取消"))
-        });
-      });
-    }
-    const abortController = new AbortController();
-    const timeoutId = setTimeout(() => abortController.abort(), timeoutMs);
-    try {
-      console.warn("[Linkual] GM_xmlhttpRequest 不可用，正在使用 fetch 发送请求:", url);
-      const response = await fetch(url, {
-        method,
-        headers,
-        body,
-        signal: abortController.signal
-      });
-      const text2 = await response.text();
-      if (!response.ok) {
-        throw new Error(formatHttpError(response.status, text2));
-      }
-      if (!text2.trim()) {
-        return {};
-      }
-      return JSON.parse(text2);
-    } catch (err) {
-      if ((err == null ? void 0 : err.name) === "AbortError") {
-        throw new Error(`fetch 请求超时 (${Math.ceil(timeoutMs / 1e3)}s): ${url}`);
-      }
-      const message = err instanceof Error ? err.message : String(err);
-      throw new Error(`fetch 请求失败: ${message}`);
-    } finally {
-      clearTimeout(timeoutId);
-    }
-  }
-  const VOCAB_LLM_SYSTEM_PROMPT = `你是一个专业的英文翻译和词典 API 引擎。
-请根据目标词或短语及其上下文，生成适合写入生词本的 JSON。
-
-要求：
-1. 不要输出 pronunciation、音标或任何发音字段。
-2. definitions 只给目标词在当前上下文中最贴切的 1-3 条中文释义，格式为“词性. 中文释义”，释义必须以中文为主，不能是纯英文。
-3. examples 必须包含且只包含一个例句对象；text 必须与用户提供的上下文完全一致。
-4. examples[0].explanation 必须是自然、完整的中文解释，既翻译上下文，也点明目标词在此处的具体含义。
-5. examples[0].focusWords 只放真正需要聚焦的词或最小必要词组，优先使用上下文中出现的原始形态。
-6. 只输出合法 JSON，不要输出 markdown、代码块、注释或额外说明。
-
-JSON 格式：
-{
-  "definitions": ["vt. 放弃，抛弃（在此语境下）"],
-  "examples": [
-    {
-      "text": "原始上下文句子",
-      "explanation": "自然中文解释。",
-      "focusWords": ["目标词"]
-    }
-  ]
-}`;
-  const QUEUE_SYNC_INTERVAL_MS = 1800;
-  const parseLlmJson = (rawText) => {
-    var _a;
-    const trimmed = rawText.trim();
-    const fenced = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
-    const candidate = fenced ? fenced[1] : ((_a = trimmed.match(/\{[\s\S]*\}/)) == null ? void 0 : _a[0]) || trimmed;
-    return JSON.parse(candidate);
-  };
-  const LlmResultPreview = ({ result }) => {
-    var _a;
-    if (!hasUsableLlmResult(result)) return null;
-    const explanation = getLlmExplanation(result);
-    return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { background: "#f4f4f5", padding: "8px", borderRadius: "6px", fontSize: "12px", marginBottom: "10px" }, children: [
-      ((_a = result == null ? void 0 : result.definitions) == null ? void 0 : _a.length) ? /* @__PURE__ */ jsxRuntimeExports.jsx("ul", { style: { margin: "4px 0", paddingLeft: "16px", color: "#444" }, children: result.definitions.map((d, i) => /* @__PURE__ */ jsxRuntimeExports.jsx("li", { children: d }, i)) }) : null,
-      explanation ? /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { color: "#1976d2", fontStyle: "italic" }, children: [
-        "解析: ",
-        explanation
-      ] }) : null
-    ] });
-  };
-  const VocabQueue = () => {
-    const [isOpen, setIsOpen] = reactExports.useState(false);
-    const [isBulkSending, setIsBulkSending] = reactExports.useState(false);
-    const [tasks, setTasks] = reactExports.useState(readStoredQueue);
-    const updateStoredTasks = (updater) => {
-      setTasks((prev) => {
-        const storedTasks = readStoredQueue();
-        const baseTasks = JSON.stringify(prev) === JSON.stringify(storedTasks) ? prev : storedTasks;
-        const nextTasks = updater(baseTasks);
-        const envelope = writeStoredQueue(nextTasks);
-        emitQueueCount(envelope.tasks);
-        return envelope.tasks;
-      });
-    };
-    reactExports.useEffect(() => {
-      const syncQueue = () => {
-        const storedTasks = readStoredQueue();
-        setTasks((prev) => JSON.stringify(prev) === JSON.stringify(storedTasks) ? prev : storedTasks);
-        emitQueueCount(storedTasks);
-      };
-      const syncAcrossTabs = (e) => {
-        if (e.key === QUEUE_STORAGE_KEY) syncQueue();
-      };
-      const toggleQueue = () => setIsOpen((prev) => !prev);
-      const reportCount = () => emitQueueCount(readStoredQueue());
-      const enqueueFromEvent = (event) => {
-        const detail = event.detail || {};
-        try {
-          enqueueVocabTask(detail);
-        } catch (err) {
-          console.error("[Linkual] 加入制卡队列失败:", err);
-        }
-      };
-      window.addEventListener("storage", syncAcrossTabs);
-      window.addEventListener(QUEUE_TOGGLE_EVENT, toggleQueue);
-      window.addEventListener(QUEUE_REQUEST_COUNT_EVENT, reportCount);
-      window.addEventListener(QUEUE_CHANGED_EVENT, syncQueue);
-      window.addEventListener("linkual-add-vocab", enqueueFromEvent);
-      const interval = window.setInterval(syncQueue, QUEUE_SYNC_INTERVAL_MS);
-      reportCount();
-      return () => {
-        window.removeEventListener("storage", syncAcrossTabs);
-        window.removeEventListener(QUEUE_TOGGLE_EVENT, toggleQueue);
-        window.removeEventListener(QUEUE_REQUEST_COUNT_EVENT, reportCount);
-        window.removeEventListener(QUEUE_CHANGED_EVENT, syncQueue);
-        window.removeEventListener("linkual-add-vocab", enqueueFromEvent);
-        window.clearInterval(interval);
-      };
-    }, []);
-    const handleFetchLlm = (taskId) => {
-      const task = tasks.find((t) => t.id === taskId);
-      if (!task) return;
-      const apiKey = ConfigService.get("api_key");
-      const apiUrl = ConfigService.get("api_url");
-      const apiModel = ConfigService.get("api_model");
-      if (!apiKey) {
-        alert("请先在设置中配置 API Key");
-        return;
-      }
-      updateStoredTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, status: "fetching_llm", error: null, rawJson: "" } : t));
-      let generatedJsonStr = "";
-      fetchLlmStream({
-        apiUrl,
-        apiKey,
-        apiModel,
-        systemPrompt: VOCAB_LLM_SYSTEM_PROMPT,
-        userPrompt: `目标词或短语：${task.word}
-上下文：${task.context}`,
-        timeoutSec: 30,
-        onData: (chunk) => {
-          generatedJsonStr += chunk;
-          updateStoredTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, rawJson: generatedJsonStr } : t));
-        },
-        onError: (err) => {
-          updateStoredTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, status: "failed", error: err } : t));
-        },
-        onDone: () => {
-          let parsed = {};
-          try {
-            parsed = sanitizeLlmResult(parseLlmJson(generatedJsonStr));
-          } catch (e) {
-            const message = e instanceof Error ? e.message : String(e);
-            updateStoredTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, status: "failed", error: `LLM 返回 JSON 解析失败: ${message}`, rawJson: generatedJsonStr } : t));
-            return;
-          }
-          if (!hasUsableLlmResult(parsed)) {
-            updateStoredTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, status: "failed", error: "LLM 未返回可用释义 JSON", rawJson: generatedJsonStr } : t));
-            return;
-          }
-          updateStoredTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, status: "idle", llmResult: parsed, rawJson: generatedJsonStr } : t));
-        }
-      });
-    };
-    const sendTaskToServer = (sendingTask) => {
-      var _a;
-      const serverUrl = ConfigService.get("lan_sync_url");
-      const payload = {
-        word: sendingTask.word,
-        context: sendingTask.context,
-        source: sendingTask.source,
-        source_url: sendingTask.source_url || ((_a = sendingTask.youtube) == null ? void 0 : _a.url) || "",
-        youtube: sendingTask.youtube,
-        date: sendingTask.date,
-        llm_result: sanitizeLlmResult(sendingTask.llmResult),
-        fetch_llm: false,
-        category: sendingTask.category
-      };
-      console.info("[Linkual] 发送生词到后端:", serverUrl, payload);
-      return requestJson({
-        url: serverUrl,
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-        timeoutMs: 15e3
-      });
-    };
-    const handleSend = (taskId, deleteOnSuccess) => {
-      const sendingTask = tasks.find((t) => t.id === taskId);
-      if (!sendingTask || !canSendTask(sendingTask)) return;
-      updateStoredTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, status: "sending", error: null } : t));
-      sendTaskToServer(sendingTask).then(() => {
-        console.info("[Linkual] 生词发送成功:", sendingTask.word);
-        if (deleteOnSuccess) {
-          updateStoredTasks((prev) => prev.filter((t) => t.id !== taskId));
-        } else {
-          updateStoredTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, status: "success" } : t));
-        }
-      }).catch((err) => {
-        const message = err instanceof Error ? err.message : "请求异常";
-        console.error("[Linkual] 生词发送失败:", message, { task: sendingTask });
-        updateStoredTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, status: "failed", error: message } : t));
-      });
-    };
-    const handleSendAllAndDelete = async () => {
-      const tasksToSend = readStoredQueue().filter(canSendTask);
-      if (tasksToSend.length === 0 || isBulkSending) return;
-      const sendingTaskIds = new Set(tasksToSend.map((task) => task.id));
-      setIsBulkSending(true);
-      updateStoredTasks((prev) => prev.map((t) => sendingTaskIds.has(t.id) ? { ...t, status: "sending", error: null } : t));
-      try {
-        for (const task of tasksToSend) {
-          try {
-            await sendTaskToServer(task);
-            console.info("[Linkual] 生词发送成功:", task.word);
-            updateStoredTasks((prev) => prev.filter((t) => t.id !== task.id));
-          } catch (err) {
-            const message = err instanceof Error ? err.message : "请求异常";
-            console.error("[Linkual] 生词发送失败:", message, { task });
-            updateStoredTasks((prev) => prev.map((t) => t.id === task.id ? { ...t, status: "failed", error: message } : t));
-          }
-        }
-      } finally {
-        setIsBulkSending(false);
-      }
-    };
-    const handleDeleteTask = (taskId) => {
-      updateStoredTasks((prev) => prev.filter((t) => t.id !== taskId));
-    };
-    const handleClearAll = () => {
-      if (window.confirm("确定清空当前队列中所有的缓存词卡吗？")) {
-        setTasks([]);
-        clearStoredQueue();
-      }
-    };
-    tasks.filter((t) => t.status !== "success").length;
-    const sendableCount = tasks.filter(canSendTask).length;
-    const bulkSendDisabled = isBulkSending || sendableCount === 0;
-    if (!isOpen) return null;
-    return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "linkual-vocab-queue-panel-wrap", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-vocab-queue-panel", children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { padding: "12px", borderBottom: "1px solid #e4e4e7", background: "#fafafa", display: "flex", flexDirection: "column", gap: "8px" }, children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }, children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { style: { fontSize: "14px", color: "#333" }, children: "制卡队列" }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx(
-            "button",
-            {
-              type: "button",
-              onClick: () => setIsOpen(false),
-              style: { border: "none", background: "#eee", color: "#333", cursor: "pointer", borderRadius: "4px", width: "28px", height: "28px", display: "inline-flex", alignItems: "center", justifyContent: "center", padding: 0 },
-              "aria-label": "关闭队列",
-              title: "关闭队列",
-              children: /* @__PURE__ */ jsxRuntimeExports.jsx(X, { size: 15, strokeWidth: 2.3 })
-            }
-          )
-        ] }),
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "8px", flexWrap: "wrap" }, children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx(
-            "button",
-            {
-              onClick: handleSendAllAndDelete,
-              disabled: bulkSendDisabled,
-              style: { border: "none", background: bulkSendDisabled ? "#a7f3d0" : "#10b981", color: "#fff", cursor: bulkSendDisabled ? "not-allowed" : "pointer", fontSize: "12px", fontWeight: "bold", borderRadius: "4px", padding: "5px 9px" },
-              children: isBulkSending ? "批量发送中..." : "一键发送并删除"
-            }
-          ),
-          /* @__PURE__ */ jsxRuntimeExports.jsx("button", { onClick: handleClearAll, style: { border: "none", background: "none", color: "#f44336", cursor: "pointer", fontSize: "12px", fontWeight: "bold" }, children: "清空全部队列" })
-        ] })
-      ] }),
-      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { flex: 1, overflowY: "auto", padding: "12px", display: "flex", flexDirection: "column", gap: "12px", background: "#f9f9f9" }, children: [
-        tasks.length === 0 && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { style: { textAlign: "center", color: "#999", marginTop: "40px", fontSize: "13px" }, children: "暂无待处理单词" }),
-        tasks.map((t) => /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { padding: "12px", border: "1px solid #eaeaea", borderRadius: "8px", background: "#fff", boxShadow: "0 2px 5px rgba(0,0,0,0.02)" }, children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }, children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { style: { fontSize: "16px", color: "#333" }, children: t.word }),
-            /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { style: { fontSize: "11px", padding: "2px 6px", borderRadius: "10px", background: t.status === "success" ? "#e8f5e9" : t.status === "failed" ? "#ffebee" : "#e3f2fd", color: t.status === "success" ? "#4caf50" : t.status === "failed" ? "#f44336" : "#1976d2" }, children: [
-              t.status === "idle" && (hasUsableLlmResult(t.llmResult) ? "释义已就绪" : "等待操作"),
-              t.status === "fetching_llm" && "正在解析...",
-              t.status === "sending" && "发送中...",
-              t.status === "success" && "发送成功",
-              t.status === "failed" && "操作失败"
-            ] })
-          ] }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { style: { fontSize: "12px", color: "#666", marginBottom: "8px", paddingBottom: "8px", borderBottom: "1px dashed #eee" }, children: t.context }),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { fontSize: "11px", color: "#e53935", marginBottom: "8px", display: "flex", justifyContent: "space-between" }, children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { style: { display: "inline-flex", alignItems: "center", gap: "4px" }, children: [
-              t.youtube && /* @__PURE__ */ jsxRuntimeExports.jsx(CirclePlay, { size: 12, strokeWidth: 2.2 }),
-              t.youtube ? `YouTube 捕获: ${t.youtube.timestamp}s` : "本地字幕记录"
-            ] }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { style: { color: "#888", fontStyle: "italic", maxWidth: "150px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: t.source })
-          ] }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx(LlmResultPreview, { result: t.llmResult }),
-          t.error && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { style: { color: "#f44336", fontSize: "11px", marginBottom: "8px" }, children: t.error }),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "12px" }, children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx(
-              "button",
-              {
-                onClick: () => handleFetchLlm(t.id),
-                disabled: t.status === "fetching_llm" || t.status === "sending",
-                style: { flex: "1 1 auto", padding: "6px 10px", background: "#f4f4f5", color: "#333", border: "1px solid #ccc", borderRadius: "4px", cursor: "pointer", fontSize: "12px", fontWeight: "bold" },
-                children: "请求释义"
-              }
-            ),
-            /* @__PURE__ */ jsxRuntimeExports.jsx(
-              "button",
-              {
-                onClick: () => handleSend(t.id, true),
-                disabled: !canSendTask(t),
-                style: { flex: "1 1 auto", padding: "6px 10px", background: canSendTask(t) ? "#10b981" : "#a7f3d0", color: "#fff", border: "none", borderRadius: "4px", cursor: canSendTask(t) ? "pointer" : "not-allowed", fontSize: "12px", fontWeight: "bold" },
-                children: "发送并删除"
-              }
-            ),
-            /* @__PURE__ */ jsxRuntimeExports.jsx(
-              "button",
-              {
-                onClick: () => handleSend(t.id, false),
-                disabled: !canSendTask(t),
-                style: { flex: "1 1 auto", padding: "6px 10px", background: canSendTask(t) ? "#3b82f6" : "#bfdbfe", color: "#fff", border: "none", borderRadius: "4px", cursor: canSendTask(t) ? "pointer" : "not-allowed", fontSize: "12px", fontWeight: "bold" },
-                children: "发送并保留"
-              }
-            ),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("button", { onClick: () => handleDeleteTask(t.id), style: { padding: "6px 12px", background: "transparent", color: "#f44336", border: "1px solid #f44336", borderRadius: "4px", cursor: "pointer", fontSize: "12px" }, children: "丢弃" })
-          ] })
-        ] }, t.id))
-      ] })
-    ] }) });
-  };
-  const DRAG_THRESHOLD = 5;
-  const SEEK_STEP_SECONDS = 5;
-  const LINKUAL_CUSTOM_FULLSCREEN_CLASS$1 = "linkual-custom-fullscreen";
-  const LINKUAL_MOBILE_FULLSCREEN_FALLBACK_CLASS$1 = "linkual-mobile-fullscreen-fallback";
-  function getBrowserFullscreenElement$3() {
-    const doc = document;
-    return document.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement || doc.msFullscreenElement || null;
-  }
-  function exitBrowserFullscreen$2() {
-    const doc = document;
-    if (document.exitFullscreen) return document.exitFullscreen();
-    if (doc.webkitExitFullscreen) return doc.webkitExitFullscreen();
-    if (doc.mozCancelFullScreen) return doc.mozCancelFullScreen();
-    if (doc.msExitFullscreen) return doc.msExitFullscreen();
-  }
-  function isPromiseLike$2(value) {
-    return Boolean(value && typeof value.then === "function");
-  }
-  function getViewportSize() {
-    var _a, _b;
-    const width = ((_a = window.visualViewport) == null ? void 0 : _a.width) || window.innerWidth || document.documentElement.clientWidth;
-    const height = ((_b = window.visualViewport) == null ? void 0 : _b.height) || window.innerHeight || document.documentElement.clientHeight;
-    return {
-      width: Number.isFinite(width) && width > 0 ? width : window.innerWidth,
-      height: Number.isFinite(height) && height > 0 ? height : window.innerHeight
-    };
-  }
-  function syncMobileViewportVars() {
-    const viewport = getViewportSize();
-    document.documentElement.style.setProperty("--linkual-mobile-viewport-width", `${Math.ceil(viewport.width)}px`);
-    document.documentElement.style.setProperty("--linkual-mobile-viewport-height", `${Math.ceil(viewport.height)}px`);
-    document.documentElement.style.setProperty("--linkual-visual-viewport-height", `${Math.ceil(viewport.height)}px`);
-    const root2 = document.getElementById("linkual-root");
-    root2 == null ? void 0 : root2.style.setProperty("--linkual-visual-viewport-height", `${Math.ceil(viewport.height)}px`);
-  }
-  function emitCustomLayoutChange() {
-    syncMobileViewportVars();
-    window.dispatchEvent(new Event("linkual_root_recover"));
-    window.dispatchEvent(new Event("linkual_custom_layout_refresh"));
-    window.dispatchEvent(new Event("linkual_custom_fullscreen_changed"));
-    window.dispatchEvent(new Event("resize"));
-  }
-  function formatTime(seconds) {
-    if (!Number.isFinite(seconds) || seconds <= 0) return "0:00";
-    const totalSeconds = Math.floor(seconds);
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor(totalSeconds % 3600 / 60);
-    const secs = totalSeconds % 60;
-    if (hours > 0) {
-      return `${hours}:${String(minutes).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
-    }
-    return `${minutes}:${String(secs).padStart(2, "0")}`;
-  }
-  function clampPosition(left, top, element) {
-    const viewport = getViewportSize();
-    const maxLeft = Math.max(0, viewport.width - element.offsetWidth);
-    const maxTop = Math.max(0, viewport.height - element.offsetHeight);
-    return {
-      left: Math.min(Math.max(0, left), maxLeft),
-      top: Math.min(Math.max(0, top), maxTop)
-    };
-  }
-  function getPositionRatios(left, top, element) {
-    const viewport = getViewportSize();
-    const maxLeft = Math.max(0, viewport.width - element.offsetWidth);
-    const maxTop = Math.max(0, viewport.height - element.offsetHeight);
-    return {
-      ratioX: maxLeft > 0 ? left / maxLeft : 0,
-      ratioY: maxTop > 0 ? top / maxTop : 0
-    };
-  }
-  function createPosition(left, top, element) {
-    const clamped = clampPosition(left, top, element);
-    const ratios = getPositionRatios(clamped.left, clamped.top, element);
-    return { ...clamped, ...ratios };
-  }
-  function createPositionFromRatios(ratioX, ratioY, element) {
-    const viewport = getViewportSize();
-    const maxLeft = Math.max(0, viewport.width - element.offsetWidth);
-    const maxTop = Math.max(0, viewport.height - element.offsetHeight);
-    return createPosition(ratioX * maxLeft, ratioY * maxTop, element);
-  }
-  const MobileFullscreenButton = ({ adapter }) => {
-    const [fullscreen, setFullscreen] = reactExports.useState(() => document.documentElement.classList.contains(LINKUAL_CUSTOM_FULLSCREEN_CLASS$1));
-    const [position, setPosition] = reactExports.useState(null);
-    const [dragging, setDragging] = reactExports.useState(false);
-    const [currentTime, setCurrentTime] = reactExports.useState(0);
-    const [duration, setDuration] = reactExports.useState(0);
-    const [paused, setPaused] = reactExports.useState(true);
-    const buttonRef = reactExports.useRef(null);
-    const progressRef = reactExports.useRef(null);
-    const browserFullscreenWasActiveRef = reactExports.useRef(Boolean(getBrowserFullscreenElement$3()));
-    const dragRef = reactExports.useRef({
-      pointerId: -1,
-      offsetX: 0,
-      offsetY: 0,
-      startX: 0,
-      startY: 0,
-      moved: false
-    });
-    const setAdapterCustomFullscreen = reactExports.useCallback((enabled) => {
-      var _a;
-      try {
-        (_a = adapter.setCustomFullscreen) == null ? void 0 : _a.call(adapter, enabled);
-      } catch (error) {
-        console.warn("[Linkual] 自定义全屏状态同步失败", error);
-      }
-    }, [adapter]);
-    const applyCustomFullscreenState = reactExports.useCallback((enabled) => {
-      browserFullscreenWasActiveRef.current = enabled && Boolean(getBrowserFullscreenElement$3());
-      document.documentElement.classList.toggle(LINKUAL_CUSTOM_FULLSCREEN_CLASS$1, enabled);
-      setAdapterCustomFullscreen(enabled);
-      setFullscreen(enabled);
-      emitCustomLayoutChange();
-    }, [setAdapterCustomFullscreen]);
-    const clearCustomFullscreenState2 = reactExports.useCallback(() => {
-      const hadCustomFullscreen = document.documentElement.classList.contains(LINKUAL_CUSTOM_FULLSCREEN_CLASS$1);
-      browserFullscreenWasActiveRef.current = false;
-      if (!hadCustomFullscreen) {
-        document.documentElement.classList.remove(LINKUAL_MOBILE_FULLSCREEN_FALLBACK_CLASS$1);
-        setFullscreen(false);
-        return;
-      }
-      document.documentElement.classList.remove(LINKUAL_CUSTOM_FULLSCREEN_CLASS$1);
-      document.documentElement.classList.remove(LINKUAL_MOBILE_FULLSCREEN_FALLBACK_CLASS$1);
-      setAdapterCustomFullscreen(false);
-      setFullscreen(false);
-      emitCustomLayoutChange();
-    }, [setAdapterCustomFullscreen]);
-    reactExports.useEffect(() => {
-      const syncFullscreenState = () => {
-        setFullscreen(document.documentElement.classList.contains(LINKUAL_CUSTOM_FULLSCREEN_CLASS$1));
-      };
-      const clearStaleCustomFullscreen = () => {
-        const browserFullscreenElement = getBrowserFullscreenElement$3();
-        if (browserFullscreenElement) {
-          browserFullscreenWasActiveRef.current = true;
-          return;
-        }
-        if (browserFullscreenWasActiveRef.current && document.documentElement.classList.contains(LINKUAL_CUSTOM_FULLSCREEN_CLASS$1)) {
-          clearCustomFullscreenState2();
-          return;
-        }
-        browserFullscreenWasActiveRef.current = false;
-        syncFullscreenState();
-      };
-      window.addEventListener("linkual_custom_fullscreen_changed", syncFullscreenState);
-      document.addEventListener("fullscreenchange", clearStaleCustomFullscreen);
-      document.addEventListener("webkitfullscreenchange", clearStaleCustomFullscreen);
-      document.addEventListener("mozfullscreenchange", clearStaleCustomFullscreen);
-      document.addEventListener("MSFullscreenChange", clearStaleCustomFullscreen);
-      return () => {
-        window.removeEventListener("linkual_custom_fullscreen_changed", syncFullscreenState);
-        document.removeEventListener("fullscreenchange", clearStaleCustomFullscreen);
-        document.removeEventListener("webkitfullscreenchange", clearStaleCustomFullscreen);
-        document.removeEventListener("mozfullscreenchange", clearStaleCustomFullscreen);
-        document.removeEventListener("MSFullscreenChange", clearStaleCustomFullscreen);
-      };
-    }, [clearCustomFullscreenState2]);
-    reactExports.useEffect(() => {
-      setAdapterCustomFullscreen(fullscreen);
-      window.dispatchEvent(new Event("linkual_custom_layout_refresh"));
-      window.dispatchEvent(new Event("resize"));
-    }, [fullscreen, setAdapterCustomFullscreen]);
-    reactExports.useEffect(() => () => {
-      const hadCustomFullscreen = document.documentElement.classList.contains(LINKUAL_CUSTOM_FULLSCREEN_CLASS$1);
-      browserFullscreenWasActiveRef.current = false;
-      if (!hadCustomFullscreen) return;
-      document.documentElement.classList.remove(LINKUAL_CUSTOM_FULLSCREEN_CLASS$1);
-      document.documentElement.classList.remove(LINKUAL_MOBILE_FULLSCREEN_FALLBACK_CLASS$1);
-      setAdapterCustomFullscreen(false);
-      emitCustomLayoutChange();
-      if (getBrowserFullscreenElement$3()) {
-        const browserFullscreenAction = exitBrowserFullscreen$2();
-        if (isPromiseLike$2(browserFullscreenAction)) {
-          browserFullscreenAction.catch((error) => console.warn("[Linkual] 浏览器全屏退出失败", error));
-        }
-      }
-    }, [setAdapterCustomFullscreen]);
-    reactExports.useEffect(() => {
-      var _a, _b;
-      const syncViewport = () => {
-        syncMobileViewportVars();
-      };
-      syncViewport();
-      window.addEventListener("resize", syncViewport);
-      window.addEventListener("orientationchange", syncViewport);
-      (_a = window.visualViewport) == null ? void 0 : _a.addEventListener("resize", syncViewport);
-      (_b = window.visualViewport) == null ? void 0 : _b.addEventListener("scroll", syncViewport);
-      return () => {
-        var _a2, _b2;
-        window.removeEventListener("resize", syncViewport);
-        window.removeEventListener("orientationchange", syncViewport);
-        (_a2 = window.visualViewport) == null ? void 0 : _a2.removeEventListener("resize", syncViewport);
-        (_b2 = window.visualViewport) == null ? void 0 : _b2.removeEventListener("scroll", syncViewport);
-      };
-    }, [fullscreen]);
-    reactExports.useEffect(() => {
-      var _a;
-      if (!position) return;
-      const keepButtonInView = () => {
-        const button = buttonRef.current;
-        if (!button) return;
-        setPosition((current) => current ? createPositionFromRatios(current.ratioX, current.ratioY, button) : current);
-      };
-      window.addEventListener("resize", keepButtonInView);
-      window.addEventListener("orientationchange", keepButtonInView);
-      (_a = window.visualViewport) == null ? void 0 : _a.addEventListener("resize", keepButtonInView);
-      return () => {
-        var _a2;
-        window.removeEventListener("resize", keepButtonInView);
-        window.removeEventListener("orientationchange", keepButtonInView);
-        (_a2 = window.visualViewport) == null ? void 0 : _a2.removeEventListener("resize", keepButtonInView);
-      };
-    }, [position]);
-    reactExports.useEffect(() => {
-      if (!fullscreen) return void 0;
-      let frameId = 0;
-      const syncPlaybackState = () => {
-        var _a, _b;
-        const nextCurrentTime = adapter.getCurrentTime();
-        const nextDuration = ((_a = adapter.getDuration) == null ? void 0 : _a.call(adapter)) || 0;
-        setCurrentTime(Number.isFinite(nextCurrentTime) ? nextCurrentTime : 0);
-        setDuration(Number.isFinite(nextDuration) ? nextDuration : 0);
-        setPaused(((_b = adapter.isPaused) == null ? void 0 : _b.call(adapter)) ?? false);
-        frameId = window.requestAnimationFrame(syncPlaybackState);
-      };
-      syncPlaybackState();
-      return () => window.cancelAnimationFrame(frameId);
-    }, [adapter, fullscreen]);
-    const handlePointerDown = (event) => {
-      const button = event.currentTarget;
-      const rect = button.getBoundingClientRect();
-      dragRef.current = {
-        pointerId: event.pointerId,
-        offsetX: event.clientX - rect.left,
-        offsetY: event.clientY - rect.top,
-        startX: event.clientX,
-        startY: event.clientY,
-        moved: false
-      };
-      button.setPointerCapture(event.pointerId);
-      setPosition(createPosition(rect.left, rect.top, button));
-      setDragging(true);
-    };
-    const handlePointerMove = (event) => {
-      const button = buttonRef.current;
-      const drag = dragRef.current;
-      if (!dragging || !button || event.pointerId !== drag.pointerId) return;
-      const dx = Math.abs(event.clientX - drag.startX);
-      const dy = Math.abs(event.clientY - drag.startY);
-      if (dx > DRAG_THRESHOLD || dy > DRAG_THRESHOLD) {
-        drag.moved = true;
-      }
-      setPosition(createPosition(event.clientX - drag.offsetX, event.clientY - drag.offsetY, button));
-    };
-    const handlePointerUp = (event) => {
-      const button = event.currentTarget;
-      const drag = dragRef.current;
-      if (event.pointerId === drag.pointerId && button.hasPointerCapture(event.pointerId)) {
-        button.releasePointerCapture(event.pointerId);
-      }
-      setDragging(false);
-    };
-    const exitCustomFullscreen = reactExports.useCallback(() => {
-      const browserFullscreenElement = getBrowserFullscreenElement$3();
-      clearCustomFullscreenState2();
-      const browserFullscreenAction = browserFullscreenElement ? exitBrowserFullscreen$2() : void 0;
-      if (isPromiseLike$2(browserFullscreenAction)) {
-        browserFullscreenAction.catch((error) => console.warn("[Linkual] 浏览器全屏切换失败", error));
-      }
-    }, [clearCustomFullscreenState2]);
-    const handleClick = (event) => {
-      if (dragRef.current.moved) {
-        event.preventDefault();
-        event.stopPropagation();
-        dragRef.current.moved = false;
-        return;
-      }
-      const nextFullscreen = !fullscreen;
-      if (nextFullscreen) {
-        applyCustomFullscreenState(true);
-        return;
-      }
-      exitCustomFullscreen();
-    };
-    const togglePlayback = () => {
-      var _a;
-      if (((_a = adapter.isPaused) == null ? void 0 : _a.call(adapter)) ?? paused) {
-        adapter.play();
-      } else {
-        adapter.pause();
-      }
-    };
-    const seekBy = (delta) => {
-      const nextTime = Math.max(0, Math.min(duration || Number.MAX_SAFE_INTEGER, adapter.getCurrentTime() + delta));
-      adapter.seekTo(nextTime);
-    };
-    const handleProgressInput = (event) => {
-      const nextTime = Number(event.currentTarget.value);
-      if (!Number.isFinite(nextTime)) return;
-      adapter.seekTo(nextTime);
-      setCurrentTime(nextTime);
-    };
-    const handleProgressPointerDown = () => {
-      var _a;
-      (_a = progressRef.current) == null ? void 0 : _a.focus();
-    };
-    reactExports.useEffect(() => {
-      if (!fullscreen) return void 0;
-      const handleKeyDown = (event) => {
-        const target = event.target;
-        const isEditing = Boolean(target == null ? void 0 : target.closest("input, textarea, select, [contenteditable]"));
-        if (isEditing) return;
-        if (event.key === " " || event.key === "Spacebar") {
-          event.preventDefault();
-          togglePlayback();
-        } else if (event.key === "ArrowLeft") {
-          event.preventDefault();
-          seekBy(-SEEK_STEP_SECONDS);
-        } else if (event.key === "ArrowRight") {
-          event.preventDefault();
-          seekBy(SEEK_STEP_SECONDS);
-        } else if (event.key === "Escape") {
-          event.preventDefault();
-          exitCustomFullscreen();
-        }
-      };
-      window.addEventListener("keydown", handleKeyDown, true);
-      return () => window.removeEventListener("keydown", handleKeyDown, true);
-    }, [adapter, duration, exitCustomFullscreen, fullscreen, paused]);
-    const style2 = position ? {
-      left: position.left,
-      top: position.top,
-      right: "auto",
-      bottom: "auto"
-    } : {};
-    const progressPercent = duration > 0 ? Math.max(0, Math.min(100, currentTime / duration * 100)) : 0;
-    return /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
-      !fullscreen && /* @__PURE__ */ jsxRuntimeExports.jsx(
-        "button",
-        {
-          ref: buttonRef,
-          type: "button",
-          className: `linkual-mobile-fullscreen ${dragging ? "is-dragging" : ""}`,
-          style: style2,
-          onPointerDown: handlePointerDown,
-          onPointerMove: handlePointerMove,
-          onPointerUp: handlePointerUp,
-          onPointerCancel: handlePointerUp,
-          onClick: handleClick,
-          title: "进入全屏",
-          "aria-label": "进入全屏",
-          children: /* @__PURE__ */ jsxRuntimeExports.jsx(Maximize2, { className: "linkual-mobile-fullscreen-icon", size: 18, strokeWidth: 2.2 })
-        }
-      ),
-      fullscreen && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-player-controls", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-player-progress-row", children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "linkual-player-time", children: formatTime(currentTime) }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx(
-            "input",
-            {
-              ref: progressRef,
-              className: "linkual-player-progress",
-              type: "range",
-              min: "0",
-              max: Math.max(1, duration),
-              step: "0.1",
-              value: Math.min(currentTime, Math.max(1, duration)),
-              onChange: handleProgressInput,
-              onPointerDown: handleProgressPointerDown,
-              style: {
-                "--linkual-progress": `${progressPercent}%`
-              },
-              "aria-label": "播放进度"
-            }
-          ),
-          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "linkual-player-time", children: formatTime(duration) })
-        ] }),
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-player-button-row", children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("button", { type: "button", className: "linkual-player-btn", onClick: () => seekBy(-SEEK_STEP_SECONDS), title: "后退 5 秒", children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx(RotateCcw, { className: "linkual-player-btn-icon", size: 15, strokeWidth: 2.2 }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "5s" })
-          ] }),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("button", { type: "button", className: "linkual-player-btn primary", onClick: togglePlayback, title: paused ? "播放" : "暂停", children: [
-            paused ? /* @__PURE__ */ jsxRuntimeExports.jsx(Play, { className: "linkual-player-btn-icon", size: 15, strokeWidth: 2.2 }) : /* @__PURE__ */ jsxRuntimeExports.jsx(Pause, { className: "linkual-player-btn-icon", size: 15, strokeWidth: 2.2 }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: paused ? "播放" : "暂停" })
-          ] }),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("button", { type: "button", className: "linkual-player-btn", onClick: () => seekBy(SEEK_STEP_SECONDS), title: "前进 5 秒", children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx(RotateCw, { className: "linkual-player-btn-icon", size: 15, strokeWidth: 2.2 }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "5s" })
-          ] }),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("button", { type: "button", className: "linkual-player-btn", onClick: exitCustomFullscreen, title: "退出全屏", children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx(Minimize2, { className: "linkual-player-btn-icon", size: 15, strokeWidth: 2.2 }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "退出" })
-          ] })
-        ] })
-      ] })
-    ] });
-  };
-  const MAX_PARAGRAPHS = 600;
-  const MIN_PARAGRAPH_LENGTH = 18;
-  const HOST_CLASS = "linkual-article-translation-host";
-  const EXCLUDED_SELECTOR = [
-    "nav",
-    "header",
-    "footer",
-    "aside",
-    "figure",
-    "table",
-    "pre",
-    "code",
-    "script",
-    "style",
-    "noscript",
-    ".ltx_bibliography",
-    ".ltx_biblist",
-    ".ltx_figure",
-    ".ltx_table",
-    ".ltx_caption",
-    ".ltx_equation",
-    ".ltx_title",
-    ".ltx_authors",
-    ".ltx_note"
-  ].join(",");
-  const BLOCKING_DESCENDANT_SELECTOR = [
-    "img",
-    "video",
-    "iframe",
-    "canvas",
-    "textarea",
-    "input",
-    "select",
-    "button",
-    "pre",
-    ".CodeMirror",
-    ".monaco-editor"
-  ].join(",");
-  const normalizeText$1 = (value) => value.replace(/\s+/g, " ").trim();
-  const normalizeMarkdownText = (value) => value.replace(/\r\n?/g, "\n").split("\n").map((line) => normalizeText$1(line)).join("\n").replace(/\n{3,}/g, "\n\n").trim();
-  const TRANSLATABLE_TABLE_SELECTOR = "table, .ltx_table";
-  const OPENREVIEW_VALUE_SELECTOR = ".note-content-value, .markdown-rendered";
-  const TABLE_EXCLUDED_ANCESTOR_SELECTOR = [
-    "[data-linkual-article-host]",
-    "nav",
-    "header",
-    "footer",
-    "aside",
-    "pre",
-    "code",
-    "script",
-    "style",
-    "noscript",
-    ".ltx_bibliography",
-    ".ltx_biblist",
-    ".ltx_figure",
-    ".ltx_caption",
-    ".ltx_equation",
-    ".ltx_title",
-    ".ltx_authors",
-    ".ltx_note"
-  ].join(",");
-  const ARXIV_HOSTNAMES = /* @__PURE__ */ new Set(["arxiv.org", "www.arxiv.org"]);
-  const OPENREVIEW_HOSTNAMES = /* @__PURE__ */ new Set(["openreview.net", "www.openreview.net"]);
-  const OPENREVIEW_EXCLUDED_FIELDS = /* @__PURE__ */ new Set([
-    "title",
-    "authors",
-    "authoremails",
-    "authorids",
-    "pdf",
-    "html",
-    "paperhash",
-    "ee",
-    "year",
-    "venue",
-    "venueid",
-    "submissionnumber",
-    "externalids"
-  ]);
-  function isArxivHtmlPage() {
-    return ARXIV_HOSTNAMES.has(window.location.hostname) && window.location.pathname.startsWith("/html/");
-  }
-  function isOpenReviewHost() {
-    return OPENREVIEW_HOSTNAMES.has(window.location.hostname);
-  }
-  function isOpenReviewForumPage() {
-    const pathname = window.location.pathname.replace(/\/+$/, "") || "/";
-    return isOpenReviewHost() && (pathname === "/forum" || pathname.startsWith("/forum/"));
-  }
-  function isArticleTranslationSupportedPage() {
-    return isArxivHtmlPage() || isOpenReviewForumPage();
-  }
-  function escapeMarkdownTableCell(value) {
-    return normalizeText$1(value).replace(/\|/g, "\\|");
-  }
-  function tableElementToMarkdown(table) {
-    const rows = Array.from(table.rows).map((row) => Array.from(row.cells).map((cell) => escapeMarkdownTableCell(cell.innerText || cell.textContent || ""))).filter((row) => row.some(Boolean));
-    if (rows.length === 0) return "";
-    const columnCount = Math.max(...rows.map((row) => row.length));
-    const header = rows[0] || [];
-    const separator = Array.from({ length: columnCount }, () => "---");
-    const body = rows.slice(1);
-    const normalizeRow = (row) => Array.from({ length: columnCount }, (_, index2) => row[index2] || "");
-    const formatRow = (row) => `| ${normalizeRow(row).join(" | ")} |`;
-    return [formatRow(header), formatRow(separator), ...body.map(formatRow)].join("\n");
-  }
-  function getTableCaption(element, table) {
-    const caption = table.caption || element.querySelector(".ltx_caption");
-    return caption ? normalizeMarkdownText(caption.innerText || caption.textContent || "") : "";
-  }
-  function ltxTableToMarkdown(element) {
-    const table = element.matches("table") ? element : element.querySelector("table");
-    if (table instanceof HTMLTableElement) {
-      return [getTableCaption(element, table), tableElementToMarkdown(table)].filter(Boolean).join("\n\n");
-    }
-    return "";
-  }
-  function isTranslatableTableElement(element) {
-    return element.matches(TRANSLATABLE_TABLE_SELECTOR);
-  }
-  function getOpenReviewValueElement(element) {
-    const value = element.closest(OPENREVIEW_VALUE_SELECTOR);
-    return value instanceof HTMLElement ? value : null;
-  }
-  function elementToTranslatableText(element) {
-    if (isTranslatableTableElement(element)) {
-      return ltxTableToMarkdown(element) || normalizeMarkdownText(element.innerText || element.textContent || "");
-    }
-    const clone = element.cloneNode(true);
-    clone.querySelectorAll("table").forEach((table) => {
-      const markdown = tableElementToMarkdown(table);
-      if (!markdown) return;
-      const replacement = document.createElement("span");
-      replacement.textContent = `
-${markdown}
-`;
-      table.replaceWith(replacement);
-    });
-    return normalizeMarkdownText(clone.innerText || clone.textContent || "");
-  }
-  function hashText(value) {
-    let hash = 0;
-    for (let index2 = 0; index2 < value.length; index2 += 1) {
-      hash = (hash << 5) - hash + value.charCodeAt(index2) | 0;
-    }
-    return Math.abs(hash).toString(36);
-  }
-  function isExcluded(element) {
-    if (isTranslatableTableElement(element)) {
-      const tableWrapper = element.closest(".ltx_table");
-      if (element.matches("table") && tableWrapper && tableWrapper !== element) return true;
-      return Boolean(element.closest(TABLE_EXCLUDED_ANCESTOR_SELECTOR));
-    }
-    return Boolean(element.closest(EXCLUDED_SELECTOR)) || Boolean(element.closest("[data-linkual-article-host]"));
-  }
-  function getCandidateSelector() {
-    if (isOpenReviewForumPage()) {
-      return [
-        ".note-content .note-content-value > p",
-        ".note-content .note-content-value > ul > li",
-        ".note-content .note-content-value > ol > li",
-        ".note-content .note-content-value blockquote",
-        ".note-content .note-content-value table",
-        ".note-content .note-content-value",
-        ".note-content-value > p",
-        ".note-content-value > ul > li",
-        ".note-content-value > ol > li",
-        ".note-content-value blockquote",
-        ".note-content-value table",
-        ".note-content-value",
-        ".markdown-rendered > p",
-        ".markdown-rendered > ul > li",
-        ".markdown-rendered > ol > li",
-        ".markdown-rendered blockquote",
-        ".markdown-rendered table",
-        ".markdown-rendered"
-      ].join(",");
-    }
-    return [
-      ".ltx_document .ltx_para",
-      ".ltx_document p.ltx_p",
-      ".ltx_document p",
-      ".ltx_document blockquote.ltx_quote",
-      ".ltx_document li.ltx_item",
-      ".ltx_document .ltx_theorem",
-      ".ltx_document .ltx_proof",
-      ".ltx_document .ltx_quote",
-      ".ltx_document .ltx_table",
-      ".ltx_document table"
-    ].join(",");
-  }
-  function getArticleRoot() {
-    if (isOpenReviewForumPage()) {
-      return document.querySelector(".forum-container");
-    }
-    return document.querySelector(".ltx_document");
-  }
-  function getOpenReviewFieldName(element) {
-    var _a, _b;
-    const fieldAnchor = getOpenReviewValueElement(element) || element;
-    let sibling = fieldAnchor.previousSibling;
-    while (sibling) {
-      if (sibling instanceof HTMLElement && sibling.classList.contains("note-content-field")) {
-        return normalizeText$1(sibling.textContent || "").replace(/:$/, "").trim();
-      }
-      sibling = sibling.previousSibling;
-    }
-    const field = ((_a = fieldAnchor.parentElement) == null ? void 0 : _a.querySelector(".note-content-field")) || ((_b = fieldAnchor.closest(".note-content")) == null ? void 0 : _b.querySelector(".note-content-field"));
-    return field ? normalizeText$1(field.textContent || "").replace(/:$/, "").trim() : "";
-  }
-  function normalizeOpenReviewFieldName(fieldName) {
-    return fieldName.toLowerCase().replace(/[^a-z0-9]+/g, "");
-  }
-  function isOpenReviewFieldExcluded(element) {
-    if (!isOpenReviewForumPage()) return false;
-    const fieldName = getOpenReviewFieldName(element);
-    if (!fieldName) return false;
-    return OPENREVIEW_EXCLUDED_FIELDS.has(normalizeOpenReviewFieldName(fieldName));
-  }
-  function getOrCreateHost(element) {
-    const next = element.nextElementSibling;
-    if (next instanceof HTMLDivElement && next.dataset.linkualArticleHost === "true") {
-      return next;
-    }
-    const host = document.createElement("div");
-    host.className = HOST_CLASS;
-    host.dataset.linkualArticleHost = "true";
-    element.insertAdjacentElement("afterend", host);
-    return host;
-  }
-  function canonicalizeCandidateElement(element) {
-    if (isArxivHtmlPage()) {
-      const tableWrapper = element.closest(".ltx_table");
-      if (tableWrapper instanceof HTMLElement) return tableWrapper;
-      const paragraphWrapper = element.closest(".ltx_para");
-      if (paragraphWrapper instanceof HTMLElement) return paragraphWrapper;
-    }
-    return element;
-  }
-  function hasNestedTextCandidate(element, candidates) {
-    return candidates.some((candidate) => candidate !== element && element.contains(candidate) && !isTranslatableTableElement(candidate));
-  }
-  function shouldSkipNestedCandidate(element, candidates) {
-    if (isOpenReviewForumPage() && isTranslatableTableElement(element)) {
-      const value = getOpenReviewValueElement(element);
-      if (value && value !== element && candidates.includes(value) && !hasNestedTextCandidate(value, candidates)) {
-        return true;
-      }
-    }
-    return !isTranslatableTableElement(element) && hasNestedTextCandidate(element, candidates);
-  }
-  function collectCandidateElements(root2) {
-    const elements = Array.from(root2.querySelectorAll(getCandidateSelector())).map(canonicalizeCandidateElement);
-    const uniqueElements = Array.from(new Set(elements));
-    return uniqueElements.filter((element) => !shouldSkipNestedCandidate(element, uniqueElements));
-  }
-  function collectArticleParagraphs() {
-    if (!isArticleTranslationSupportedPage()) return [];
-    const root2 = getArticleRoot();
-    if (!root2) return [];
-    const candidates = collectCandidateElements(root2).filter((element) => !isExcluded(element) && !isOpenReviewFieldExcluded(element)).map((element) => ({ element, text: elementToTranslatableText(element) })).filter(({ element, text: text2 }) => text2.length >= MIN_PARAGRAPH_LENGTH && (isTranslatableTableElement(element) || !element.querySelector(BLOCKING_DESCENDANT_SELECTOR)));
-    const seen = /* @__PURE__ */ new Set();
-    return candidates.slice(0, MAX_PARAGRAPHS).filter(({ element }) => {
-      if (seen.has(element)) return false;
-      seen.add(element);
-      return true;
-    }).map(({ element, text: text2 }, index2) => ({
-      id: `article-${index2}-${hashText(text2)}`,
-      element,
-      text: text2,
-      host: getOrCreateHost(element)
-    }));
-  }
-  function removeArticleTranslationHosts(keep = /* @__PURE__ */ new Set()) {
-    document.querySelectorAll(`[data-linkual-article-host="true"]`).forEach((host) => {
-      if (!keep.has(host)) host.remove();
-    });
-  }
-  const SENTENCE_PATTERN$1 = /[^.!?。！？]+[.!?。！？]+["'”’）)]*|[^.!?。！？]+$/g;
-  function normalizeSentence(value) {
-    return value.replace(/\s+/g, " ").trim();
-  }
-  function splitSentences(value) {
-    return Array.from(value.matchAll(SENTENCE_PATTERN$1)).map((match) => normalizeSentence(match[0] || "")).filter(Boolean);
-  }
-  function alignSentencePairs(source, translation) {
-    const sourceSentences = splitSentences(source);
-    const translatedSentences = splitSentences(translation);
-    if (sourceSentences.length === 0 || translatedSentences.length === 0) return [];
-    return translatedSentences.map((translatedSentence, translationIndex) => {
-      const sourceIndex = sourceSentences.length === translatedSentences.length ? translationIndex : Math.min(
-        sourceSentences.length - 1,
-        Math.floor(translationIndex * sourceSentences.length / translatedSentences.length)
-      );
-      return {
-        sourceIndex,
-        translationIndex,
-        source: sourceSentences[sourceIndex] || sourceSentences[sourceSentences.length - 1] || "",
-        translation: translatedSentence
-      };
-    });
-  }
-  function createTextModel(root2) {
-    const walker = document.createTreeWalker(root2, NodeFilter.SHOW_TEXT);
-    let node = walker.nextNode();
-    let text2 = "";
-    const points = [];
-    while (node) {
-      const textNode = node;
-      const parent = textNode.parentElement;
-      if (parent && !parent.closest("[data-linkual-article-host], script, style, noscript")) {
-        const value = textNode.nodeValue || "";
-        for (let index2 = 0; index2 < value.length; index2 += 1) {
-          const character = value[index2] || "";
-          if (/\s/.test(character)) {
-            if (text2.endsWith(" ")) continue;
-            text2 += " ";
-            points.push({ node: textNode, offset: index2 });
-          } else {
-            text2 += character;
-            points.push({ node: textNode, offset: index2 });
-          }
-        }
-      }
-      node = walker.nextNode();
-    }
-    return { text: text2.trim(), points };
-  }
-  function findSentenceRange(root2, sentence) {
-    const model = createTextModel(root2);
-    const target = normalizeSentence(sentence);
-    if (!target) return null;
-    const start = model.text.indexOf(target);
-    if (start < 0) return null;
-    const end = start + target.length - 1;
-    const startPoint = model.points[start];
-    const endPoint = model.points[end];
-    if (!startPoint || !endPoint) return null;
-    const range = document.createRange();
-    range.setStart(startPoint.node, startPoint.offset);
-    range.setEnd(endPoint.node, endPoint.offset + 1);
-    return range;
-  }
-  function getSentenceIndexAtPoint(root2, event, source) {
-    var _a, _b;
-    const getCaretRange = document;
-    const range = (_a = getCaretRange.caretRangeFromPoint) == null ? void 0 : _a.call(getCaretRange, event.clientX, event.clientY);
-    const position = range || ((_b = getCaretRange.caretPositionFromPoint) == null ? void 0 : _b.call(getCaretRange, event.clientX, event.clientY));
-    if (!position) return -1;
-    const caret = "startContainer" in position ? position : (() => {
-      const next = document.createRange();
-      next.setStart(position.offsetNode, position.offset);
-      next.collapse(true);
-      return next;
-    })();
-    if (!root2.contains(caret.startContainer)) return -1;
-    const before = document.createRange();
-    before.selectNodeContents(root2);
-    before.setEnd(caret.startContainer, caret.startOffset);
-    const offset = normalizeSentence(before.toString()).length;
-    const sentences = splitSentences(source);
-    let cursor = 0;
-    for (let index2 = 0; index2 < sentences.length; index2 += 1) {
-      const sentence = sentences[index2] || "";
-      if (offset <= cursor + sentence.length) return index2;
-      cursor += sentence.length + 1;
-    }
-    return sentences.length - 1;
-  }
-  const LINKUAL_NAVIGATION_EVENT$3 = "linkual_navigation";
-  const INITIAL_TRANSLATION_CONCURRENCY = 4;
-  const MIN_TRANSLATION_CONCURRENCY = 1;
-  const MAX_TRANSLATION_CONCURRENCY = 8;
-  const HEALTHY_RESPONSES_TO_SCALE = 3;
-  const RATE_LIMIT_ERROR_PATTERN = /(?:429|rate\s*limit|too\s*many\s*requests|限流|请求过多)/i;
-  const WEB_MATH_FORMAT_INSTRUCTION = "所有数学公式必须使用 LaTeX；行内公式用 $...$ 包裹，行间公式或独立成行的公式用 $$...$$ 包裹。";
-  const WEB_MARKDOWN_TABLE_FORMAT_INSTRUCTION = "如果输入包含表格或表格状数据，必须输出 GitHub Flavored Markdown 表格；表格单元格中的公式同样遵守 $...$ 和 $$...$$ 规则。";
-  const ArticleTranslationContext = reactExports.createContext(null);
-  function getWebTranslationSystemPrompt(targetLanguage, promptTemplate) {
-    const basePrompt = promptTemplate || `你是专业学术翻译。请将输入内容准确翻译成${targetLanguage}。保留变量名、引用标记和段落语气；只输出译文，不要解释，不要添加标题。`;
-    return [WEB_MATH_FORMAT_INSTRUCTION, WEB_MARKDOWN_TABLE_FORMAT_INSTRUCTION].reduce((prompt, instruction) => prompt.includes(instruction) ? prompt : `${prompt}
-${instruction}`, basePrompt);
-  }
-  const ArticleTranslationProvider = ({ enabled, children }) => {
-    const [paragraphs, setParagraphs] = reactExports.useState([]);
-    const [pageUrl, setPageUrl] = reactExports.useState(window.location.href);
-    const [translations, setTranslations] = reactExports.useState({});
-    const [isTranslatingAll, setIsTranslatingAll] = reactExports.useState(false);
-    const [translationConcurrency, setTranslationConcurrency] = reactExports.useState(INITIAL_TRANSLATION_CONCURRENCY);
-    const abortsRef = reactExports.useRef(/* @__PURE__ */ new Map());
-    const allRunIdRef = reactExports.useRef(0);
-    const concurrencyRef = reactExports.useRef(INITIAL_TRANSLATION_CONCURRENCY);
-    const healthyResponsesRef = reactExports.useRef(0);
-    const translationsRef = reactExports.useRef(translations);
-    reactExports.useEffect(() => {
-      translationsRef.current = translations;
-    }, [translations]);
-    const getTargetLanguage = () => ConfigService.get("web_target_language").trim() || "简体中文";
-    const cacheScopeRef = reactExports.useRef(`${window.location.href}
-${ConfigService.get("web_target_language").trim() || "简体中文"}`);
-    const hydrateCache = reactExports.useCallback((nextParagraphs, nextUrl) => {
-      const cache = getArticleTranslationCache(nextUrl, getTargetLanguage());
-      if (!cache) return {};
-      return nextParagraphs.reduce((result, paragraph) => {
-        const entry = cache.entries[paragraph.id];
-        if (entry && entry.sourceText === paragraph.text && entry.text) {
-          result[paragraph.id] = { status: "done", text: entry.text, sentences: entry.sentences };
-        }
-        return result;
-      }, {});
-    }, []);
-    const syncParagraphs = reactExports.useCallback(() => {
-      if (!enabled) return;
-      const nextParagraphs = collectArticleParagraphs();
-      const nextUrl = window.location.href;
-      const nextCacheScope = `${nextUrl}
-${getTargetLanguage()}`;
-      const nextHosts = new Set(nextParagraphs.map((paragraph) => paragraph.host));
-      removeArticleTranslationHosts(nextHosts);
-      setParagraphs((previous) => {
-        const unchanged = previous.length === nextParagraphs.length && previous.every((paragraph, index2) => {
-          var _a, _b;
-          return paragraph.element === ((_a = nextParagraphs[index2]) == null ? void 0 : _a.element) && paragraph.text === ((_b = nextParagraphs[index2]) == null ? void 0 : _b.text);
-        });
-        return unchanged ? previous : nextParagraphs;
-      });
-      setTranslations((previous) => {
-        const cached = hydrateCache(nextParagraphs, nextUrl);
-        if (cacheScopeRef.current !== nextCacheScope) {
-          cacheScopeRef.current = nextCacheScope;
-          return cached;
-        }
-        return Object.keys(cached).length > 0 ? { ...previous, ...cached } : previous;
-      });
-      setPageUrl((previous) => {
-        if (previous === nextUrl) return previous;
-        allRunIdRef.current += 1;
-        abortsRef.current.forEach((abort) => abort());
-        abortsRef.current.clear();
-        setTranslations(hydrateCache(nextParagraphs, nextUrl));
-        setIsTranslatingAll(false);
-        return nextUrl;
-      });
-    }, [enabled, hydrateCache]);
-    reactExports.useEffect(() => {
-      if (!enabled) {
-        allRunIdRef.current += 1;
-        abortsRef.current.forEach((abort) => abort());
-        abortsRef.current.clear();
-        setParagraphs([]);
-        setTranslations({});
-        setIsTranslatingAll(false);
-        removeArticleTranslationHosts();
-        return void 0;
-      }
-      syncParagraphs();
-      const interval = window.setInterval(syncParagraphs, 1200);
-      window.addEventListener(LINKUAL_NAVIGATION_EVENT$3, syncParagraphs);
-      window.addEventListener("popstate", syncParagraphs);
-      window.addEventListener("hashchange", syncParagraphs);
-      window.addEventListener("linkual_settings_updated", syncParagraphs);
-      const refreshCurrentCache = () => {
-        const currentParagraphs = collectArticleParagraphs();
-        setTranslations(hydrateCache(currentParagraphs, window.location.href));
-      };
-      window.addEventListener(CACHE_UPDATED_EVENT, refreshCurrentCache);
-      return () => {
-        window.clearInterval(interval);
-        window.removeEventListener(LINKUAL_NAVIGATION_EVENT$3, syncParagraphs);
-        window.removeEventListener("popstate", syncParagraphs);
-        window.removeEventListener("hashchange", syncParagraphs);
-        window.removeEventListener("linkual_settings_updated", syncParagraphs);
-        window.removeEventListener(CACHE_UPDATED_EVENT, refreshCurrentCache);
-        abortsRef.current.forEach((abort) => abort());
-        abortsRef.current.clear();
-        removeArticleTranslationHosts();
-      };
-    }, [enabled, syncParagraphs]);
-    const translateParagraphRequest = reactExports.useCallback((paragraph) => {
-      var _a;
-      const apiKey = ConfigService.get("api_key").trim();
-      const apiUrl = ConfigService.get("api_url").trim();
-      const apiModel = ConfigService.get("api_model").trim();
-      const timeout = parseInt(ConfigService.get("api_timeout"), 10) || 60;
-      const targetLanguage = getTargetLanguage();
-      const promptTemplate = ConfigService.get("web_translation_prompt").trim();
-      if (!apiKey) {
-        setTranslations((previous) => ({
-          ...previous,
-          [paragraph.id]: { status: "error", text: "", error: "请先在设置中填入 API Key" }
-        }));
-        return Promise.resolve({ success: false, aborted: false, error: "请先在设置中填入 API Key", elapsedMs: 0 });
-      }
-      (_a = abortsRef.current.get(paragraph.id)) == null ? void 0 : _a();
-      setTranslations((previous) => ({
-        ...previous,
-        [paragraph.id]: { status: "loading", text: "" }
-      }));
-      return new Promise((resolve) => {
-        let content = "";
-        let settled = false;
-        const startedAt = Date.now();
-        const finish = (success, error) => {
-          if (settled) return;
-          settled = true;
-          abortsRef.current.delete(paragraph.id);
-          if (success) {
-            setTranslations((previous) => ({
-              ...previous,
-              [paragraph.id]: {
-                status: "done",
-                text: content.trim(),
-                sentences: alignSentencePairs(paragraph.text, content.trim())
-              }
-            }));
-            saveArticleTranslation(window.location.href, targetLanguage, paragraph.id, {
-              sourceText: paragraph.text,
-              text: content.trim(),
-              sentences: alignSentencePairs(paragraph.text, content.trim())
-            });
-          } else if (error === "ABORTED") {
-            setTranslations((previous) => ({
-              ...previous,
-              [paragraph.id]: { status: "idle", text: "" }
-            }));
-          } else {
-            setTranslations((previous) => ({
-              ...previous,
-              [paragraph.id]: { status: "error", text: content, error: error || "翻译失败，请重试" }
-            }));
-          }
-          resolve({
-            success,
-            error,
-            aborted: error === "ABORTED",
-            elapsedMs: Date.now() - startedAt
-          });
-        };
-        const request = fetchLlmStream({
-          apiUrl,
-          apiKey,
-          apiModel,
-          stream: false,
-          timeoutSec: timeout,
-          systemPrompt: getWebTranslationSystemPrompt(targetLanguage, promptTemplate),
-          userPrompt: `请将下面这一个网页论文段落或表格翻译成${targetLanguage}：
-
-${paragraph.text}`,
-          onData: (chunk) => {
-            content += chunk;
-            setTranslations((previous) => ({
-              ...previous,
-              [paragraph.id]: { status: "loading", text: content }
-            }));
-          },
-          onError: (error) => finish(false, error),
-          onDone: () => finish(true)
-        });
-        abortsRef.current.set(paragraph.id, request.abort);
-      });
-    }, []);
-    const translateParagraph = reactExports.useCallback(async (paragraph) => (await translateParagraphRequest(paragraph)).success, [translateParagraphRequest]);
-    const adaptTranslationConcurrency = reactExports.useCallback((result, timeoutSec) => {
-      if (result.aborted) return;
-      const slowResponseLimit = Math.max(5e3, timeoutSec * 1e3 * 0.65);
-      const shouldReduce = !result.success || result.elapsedMs >= slowResponseLimit;
-      if (shouldReduce) {
-        healthyResponsesRef.current = 0;
-        const isRateLimited = RATE_LIMIT_ERROR_PATTERN.test(result.error || "");
-        const nextConcurrency2 = isRateLimited ? Math.max(MIN_TRANSLATION_CONCURRENCY, Math.floor(concurrencyRef.current / 2)) : Math.max(MIN_TRANSLATION_CONCURRENCY, concurrencyRef.current - 1);
-        concurrencyRef.current = nextConcurrency2;
-        setTranslationConcurrency(nextConcurrency2);
-        return;
-      }
-      healthyResponsesRef.current += 1;
-      if (healthyResponsesRef.current < HEALTHY_RESPONSES_TO_SCALE) return;
-      healthyResponsesRef.current = 0;
-      const nextConcurrency = Math.min(
-        MAX_TRANSLATION_CONCURRENCY,
-        concurrencyRef.current + 1
-      );
-      concurrencyRef.current = nextConcurrency;
-      setTranslationConcurrency(nextConcurrency);
-    }, []);
-    const translateAll = reactExports.useCallback(async () => {
-      if (isTranslatingAll || paragraphs.length === 0) return;
-      const runId = allRunIdRef.current + 1;
-      allRunIdRef.current = runId;
-      setIsTranslatingAll(true);
-      healthyResponsesRef.current = 0;
-      const timeout = parseInt(ConfigService.get("api_timeout"), 10) || 60;
-      const queue = paragraphs.filter((paragraph) => {
-        var _a;
-        return ((_a = translationsRef.current[paragraph.id]) == null ? void 0 : _a.status) !== "done";
-      });
-      await new Promise((resolve) => {
-        let cursor = 0;
-        let activeCount = 0;
-        let settled = false;
-        const finish = () => {
-          if (settled || activeCount > 0 || cursor < queue.length && allRunIdRef.current === runId) return;
-          settled = true;
-          if (allRunIdRef.current === runId) setIsTranslatingAll(false);
-          resolve();
-        };
-        const pump = () => {
-          if (allRunIdRef.current !== runId) {
-            finish();
-            return;
-          }
-          while (activeCount < concurrencyRef.current && cursor < queue.length) {
-            const paragraph = queue[cursor];
-            cursor += 1;
-            activeCount += 1;
-            void translateParagraphRequest(paragraph).then((result) => {
-              adaptTranslationConcurrency(result, timeout);
-            }).finally(() => {
-              activeCount -= 1;
-              pump();
-              finish();
-            });
-          }
-          finish();
-        };
-        pump();
-      });
-    }, [adaptTranslationConcurrency, isTranslatingAll, paragraphs, translateParagraphRequest]);
-    const stopTranslation = reactExports.useCallback(() => {
-      allRunIdRef.current += 1;
-      abortsRef.current.forEach((abort) => abort());
-      abortsRef.current.clear();
-      setIsTranslatingAll(false);
-    }, []);
-    reactExports.useEffect(() => () => {
-      allRunIdRef.current += 1;
-      abortsRef.current.forEach((abort) => abort());
-    }, [pageUrl]);
-    const doneCount = reactExports.useMemo(() => paragraphs.reduce((count, paragraph) => {
-      var _a;
-      return ((_a = translations[paragraph.id]) == null ? void 0 : _a.status) === "done" ? count + 1 : count;
-    }, 0), [paragraphs, translations]);
-    const value = reactExports.useMemo(() => ({
-      paragraphs,
-      translations,
-      isPageSupported: paragraphs.length > 0,
-      doneCount,
-      isTranslatingAll,
-      translationConcurrency,
-      translateParagraph,
-      translateAll,
-      stopTranslation,
-      rescan: syncParagraphs
-    }), [doneCount, isTranslatingAll, paragraphs, stopTranslation, syncParagraphs, translateAll, translateParagraph, translationConcurrency, translations]);
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(ArticleTranslationContext.Provider, { value, children });
-  };
-  function useArticleTranslation() {
-    const context = reactExports.useContext(ArticleTranslationContext);
-    if (!context) {
-      throw new Error("useArticleTranslation must be used inside ArticleTranslationProvider");
-    }
-    return context;
-  }
-  const DESKTOP_WIDGET_HEIGHT = 58;
-  const MOBILE_WIDGET_HEIGHT = 132;
-  const COLLAPSED_WIDGET_HEIGHT = 28;
-  const WIDGET_VIEWPORT_MARGIN = 8;
-  const MAX_WORD_SELECTION_LENGTH = 180;
-  const MAX_CONTEXT_SELECTION_LENGTH = 4e3;
-  const CONTEXT_SENTENCE_RADIUS = 2;
-  const SENTENCE_PATTERN = /[^.!?。！？]+[.!?。！？]+["'”’）)]*|[^.!?。！？]+$/g;
-  const LINKUAL_NAVIGATION_EVENT$2 = "linkual_navigation";
-  const FLOATING_BUTTON_MARGIN = 10;
-  const BUBBLE_MARGIN = 12;
-  const BUBBLE_EDGE_OFFSET = 0;
-  const DEFAULT_BUBBLE_TOP_RATIO = 1;
-  const DEFAULT_BUBBLE_WIDTH = 180;
-  const DEFAULT_BUBBLE_HEIGHT = 44;
-  const LEGACY_BUBBLE_STORAGE_KEYS = ["universal_bubble_left", "universal_bubble_top"];
-  const getDefaultExpandedHeight = () => window.matchMedia("(max-width: 720px)").matches ? MOBILE_WIDGET_HEIGHT : DESKTOP_WIDGET_HEIGHT;
-  const getVisualViewportHeight = () => {
-    var _a;
-    const viewportHeight = ((_a = window.visualViewport) == null ? void 0 : _a.height) || window.innerHeight || document.documentElement.clientHeight;
-    const rawHeight = Number(viewportHeight);
-    return Number.isFinite(rawHeight) && rawHeight > 0 ? rawHeight : getDefaultExpandedHeight();
-  };
-  const syncVisualViewportHeightProperty = () => {
-    const viewportHeight = `${getVisualViewportHeight()}px`;
-    document.documentElement.style.setProperty("--linkual-visual-viewport-height", viewportHeight);
-    const root2 = document.getElementById("linkual-root");
-    if (!root2) return;
-    root2.style.setProperty("--linkual-visual-viewport-height", viewportHeight);
-  };
-  const getMaxWidgetHeight = () => Math.max(
-    COLLAPSED_WIDGET_HEIGHT,
-    Math.floor(getVisualViewportHeight() - WIDGET_VIEWPORT_MARGIN)
-  );
-  const clampNumber = (value, min, max) => Math.max(min, Math.min(value, max));
-  const getViewportWidth = () => Math.max(
-    DEFAULT_BUBBLE_WIDTH,
-    window.innerWidth || document.documentElement.clientWidth || DEFAULT_BUBBLE_WIDTH
-  );
-  const getRightScrollbarInset = () => {
-    const viewportWidth = getViewportWidth();
-    const contentWidth = document.documentElement.clientWidth || viewportWidth;
-    return Math.max(BUBBLE_EDGE_OFFSET, Math.ceil(viewportWidth - contentWidth));
-  };
-  const normalizeBubbleSide = (value) => String(value || "").trim() === "left" ? "left" : "right";
-  const normalizeBubbleTopRatio = (value, fallback = DEFAULT_BUBBLE_TOP_RATIO) => {
-    const parsed = Number.parseFloat(String(value ?? ""));
-    if (!Number.isFinite(parsed)) return fallback;
-    return clampNumber(parsed, 0, 1);
-  };
-  const getBubbleViewportBounds = (size) => {
-    const viewportWidth = getViewportWidth();
-    const viewportHeight = Math.max(DEFAULT_BUBBLE_HEIGHT, getVisualViewportHeight());
-    const rightInset = getRightScrollbarInset();
-    const maxLeft = Math.max(BUBBLE_EDGE_OFFSET, viewportWidth - size.width - rightInset);
-    const minTop = BUBBLE_MARGIN;
-    const maxTop = Math.max(minTop, viewportHeight - size.height - BUBBLE_MARGIN);
-    return { viewportWidth, viewportHeight, maxLeft, minTop, maxTop };
-  };
-  const getBubbleTopRatioFromTop = (top, size) => {
-    const bounds = getBubbleViewportBounds(size);
-    if (bounds.maxTop <= bounds.minTop) return 0;
-    const clampedTop = clampNumber(top, bounds.minTop, bounds.maxTop);
-    return clampNumber((clampedTop - bounds.minTop) / (bounds.maxTop - bounds.minTop), 0, 1);
-  };
-  const getBubblePositionFromDock = (side, topRatio, size) => {
-    const bounds = getBubbleViewportBounds(size);
-    const normalizedRatio = normalizeBubbleTopRatio(topRatio);
-    return {
-      left: side === "left" ? BUBBLE_EDGE_OFFSET : bounds.maxLeft,
-      top: bounds.minTop + (bounds.maxTop - bounds.minTop) * normalizedRatio,
-      side,
-      topRatio: normalizedRatio
-    };
-  };
-  const getBubblePositionFromPoint = (left, top, size, preferredSide) => {
-    const bounds = getBubbleViewportBounds(size);
-    const clampedLeft = clampNumber(left, BUBBLE_EDGE_OFFSET, bounds.maxLeft);
-    const clampedTop = clampNumber(top, bounds.minTop, bounds.maxTop);
-    const side = preferredSide || (clampedLeft + size.width / 2 < bounds.viewportWidth / 2 ? "left" : "right");
-    return {
-      left: clampedLeft,
-      top: clampedTop,
-      side,
-      topRatio: getBubbleTopRatioFromTop(clampedTop, size)
-    };
-  };
-  const readBubblePosition = (size) => {
-    const storedSide = String(ConfigService.get("universal_bubble_side") || "").trim();
-    const storedRatio = ConfigService.get("universal_bubble_top_ratio");
-    if (storedSide || storedRatio) {
-      return getBubblePositionFromDock(
-        normalizeBubbleSide(storedSide),
-        normalizeBubbleTopRatio(storedRatio),
-        size
-      );
-    }
-    const legacyLeft = Number.parseFloat(ConfigService.get(LEGACY_BUBBLE_STORAGE_KEYS[0]));
-    const legacyTop = Number.parseFloat(ConfigService.get(LEGACY_BUBBLE_STORAGE_KEYS[1]));
-    if (Number.isFinite(legacyLeft) && Number.isFinite(legacyTop)) {
-      const legacyPosition = getBubblePositionFromPoint(legacyLeft, legacyTop, size);
-      return getBubblePositionFromDock(legacyPosition.side, legacyPosition.topRatio, size);
-    }
-    return getBubblePositionFromDock("right", DEFAULT_BUBBLE_TOP_RATIO, size);
-  };
-  const saveBubblePosition = (position) => {
-    try {
-      ConfigService.set("universal_bubble_side", position.side);
-      ConfigService.set("universal_bubble_top_ratio", position.topRatio.toFixed(4));
-      ConfigService.set("universal_bubble_left", String(Math.round(position.left)));
-      ConfigService.set("universal_bubble_top", String(Math.round(position.top)));
-    } catch (err) {
-      console.warn("[Linkual] 气泡位置保存失败", err);
-    }
-  };
-  const ActionIcon = ({ name }) => {
-    const icons = {
-      add: BadgePlus,
-      queue: ListChecks,
-      settings: Settings$2,
-      expand: PanelTopOpen,
-      collapse: PanelTopClose,
-      translate: Languages,
-      clear: X,
-      word: Type,
-      context: TextAlignStart
-    };
-    const Icon2 = icons[name];
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(Icon2, { className: "linkual-universal-button-icon", "aria-hidden": "true", strokeWidth: 2.2 });
-  };
-  const normalizeText = (value) => value.replace(/\s+/g, " ").trim();
-  const getSourceTitle = () => {
-    const title = normalizeText(document.title.replace(/^\(\d+\)\s+/, ""));
-    return title || window.location.hostname || window.location.href;
-  };
-  const getPageUrl = () => window.location.href;
-  const getElementFromNode = (node) => {
-    if (!node) return null;
-    if (node instanceof Element) return node;
-    return node.parentElement;
-  };
-  const isInsideLinkualRoot = (node) => {
-    const element = getElementFromNode(node);
-    return Boolean(element == null ? void 0 : element.closest("#linkual-root"));
-  };
-  const isInsideEditableElement = (node) => {
-    const element = getElementFromNode(node);
-    if (!element) return false;
-    return Boolean(element.closest("input, textarea, select, [contenteditable]"));
-  };
-  const getSelectionScope = (range) => {
-    let element = getElementFromNode(range.commonAncestorContainer);
-    let fallback = null;
-    while (element && element !== document.body && element instanceof HTMLElement) {
-      if (element.id === "linkual-root") return null;
-      const tagName = element.tagName.toLowerCase();
-      const textLength = normalizeText(element.textContent || "").length;
-      if (["article", "main", "section"].includes(tagName) || element.getAttribute("role") === "main") {
-        return element;
-      }
-      if (["p", "li", "blockquote", "td", "th"].includes(tagName)) {
-        fallback = element;
-      } else if (tagName === "div" && textLength > 220 && textLength < 8e3) {
-        return element;
-      }
-      element = element.parentElement;
-    }
-    return fallback || document.body;
-  };
-  const getRangeText = (scope, range, side) => {
-    const scopedRange = document.createRange();
-    scopedRange.selectNodeContents(scope);
-    try {
-      if (side === "before") {
-        scopedRange.setEnd(range.startContainer, range.startOffset);
-      } else {
-        scopedRange.setStart(range.endContainer, range.endOffset);
-      }
-      return scopedRange.toString();
-    } catch (err) {
-      return "";
-    } finally {
-      scopedRange.detach();
-    }
-  };
-  const extractSentenceContext = (beforeText, selectedText, afterText) => {
-    const normalizedBefore = normalizeText(beforeText);
-    const normalizedSelected = normalizeText(selectedText);
-    const normalizedAfter = normalizeText(afterText);
-    const fullText = normalizeText([normalizedBefore, normalizedSelected, normalizedAfter].filter(Boolean).join(" "));
-    if (!fullText) return normalizedSelected;
-    const targetStart = normalizedBefore.length + (normalizedBefore ? 1 : 0);
-    const targetEnd = targetStart + normalizedSelected.length;
-    const sentences = Array.from(fullText.matchAll(SENTENCE_PATTERN)).map((match) => ({
-      text: normalizeText(match[0] || ""),
-      start: match.index ?? 0,
-      end: (match.index ?? 0) + (match[0] || "").length
-    })).filter((sentence) => sentence.text);
-    if (sentences.length === 0) {
-      const sliceStart = Math.max(0, targetStart - 360);
-      const sliceEnd = Math.min(fullText.length, targetEnd + 360);
-      return normalizeText(fullText.slice(sliceStart, sliceEnd));
-    }
-    const targetSentenceIndex = sentences.findIndex((sentence) => sentence.start <= targetEnd && sentence.end >= targetStart);
-    if (targetSentenceIndex < 0) {
-      return normalizeText(fullText.slice(Math.max(0, targetStart - 360), Math.min(fullText.length, targetEnd + 360)));
-    }
-    const startIndex = Math.max(0, targetSentenceIndex - CONTEXT_SENTENCE_RADIUS);
-    const endIndex = Math.min(sentences.length, targetSentenceIndex + CONTEXT_SENTENCE_RADIUS + 1);
-    return normalizeText(sentences.slice(startIndex, endIndex).map((sentence) => sentence.text).join(" "));
-  };
-  const getVisibleRangeRect = (range) => {
-    const rects = Array.from(range.getClientRects()).filter((rect2) => rect2.width > 0 && rect2.height > 0);
-    if (rects.length > 0) return rects[0];
-    const rect = range.getBoundingClientRect();
-    return rect.width > 0 && rect.height > 0 ? rect : null;
-  };
-  const getFloatingButtonPosition = (rect) => {
-    var _a, _b, _c, _d;
-    const viewportWidth = ((_a = window.visualViewport) == null ? void 0 : _a.width) ?? window.innerWidth;
-    const viewportHeight = ((_b = window.visualViewport) == null ? void 0 : _b.height) ?? window.innerHeight;
-    const viewportLeft = ((_c = window.visualViewport) == null ? void 0 : _c.offsetLeft) ?? 0;
-    const viewportTop = ((_d = window.visualViewport) == null ? void 0 : _d.offsetTop) ?? 0;
-    const left = Math.min(
-      viewportLeft + viewportWidth - 44,
-      Math.max(viewportLeft + 44, rect.left + rect.width / 2)
-    );
-    let top = rect.top - 38;
-    if (top < viewportTop + FLOATING_BUTTON_MARGIN) {
-      top = rect.bottom + 8;
-    }
-    return {
-      left,
-      top: Math.min(
-        viewportTop + viewportHeight - 38,
-        Math.max(viewportTop + FLOATING_BUTTON_MARGIN, top)
-      )
-    };
-  };
-  const captureSelection = (mode) => {
-    const selection = window.getSelection();
-    const selectedText = normalizeText((selection == null ? void 0 : selection.toString()) || "");
-    if (!selection || selection.rangeCount === 0 || selection.isCollapsed || !selectedText) {
-      return null;
-    }
-    const maxSelectionLength = mode === "word" ? MAX_WORD_SELECTION_LENGTH : MAX_CONTEXT_SELECTION_LENGTH;
-    if (selectedText.length > maxSelectionLength) {
-      return null;
-    }
-    if (isInsideLinkualRoot(selection.anchorNode) || isInsideLinkualRoot(selection.focusNode) || isInsideEditableElement(selection.anchorNode) || isInsideEditableElement(selection.focusNode)) {
-      return null;
-    }
-    const range = selection.getRangeAt(0);
-    const scope = getSelectionScope(range);
-    if (!scope) return null;
-    const rect = getVisibleRangeRect(range);
-    if (!rect) return null;
-    const beforeText = getRangeText(scope, range, "before");
-    const afterText = getRangeText(scope, range, "after");
-    const position = getFloatingButtonPosition(rect);
-    return {
-      text: selectedText,
-      context: mode === "word" ? extractSentenceContext(beforeText, selectedText, afterText) : selectedText,
-      source: getSourceTitle(),
-      url: getPageUrl(),
-      top: position.top,
-      left: position.left
-    };
-  };
-  const UniversalVocabWidget = ({ onOpenSettings }) => {
-    const [isExpanded, setIsExpanded] = reactExports.useState(false);
-    const [selection, setSelection] = reactExports.useState(null);
-    const [word, setWord] = reactExports.useState("");
-    const [context, setContext] = reactExports.useState("");
-    const [source, setSource] = reactExports.useState("");
-    const [sourceUrl, setSourceUrl] = reactExports.useState(getPageUrl);
-    const [selectionMode, setSelectionMode] = reactExports.useState("word");
-    const [themeColor, setThemeColor] = reactExports.useState(ConfigService.get("theme_color") || "#000000");
-    const [status, setStatus] = reactExports.useState("idle");
-    const [message, setMessage] = reactExports.useState("");
-    const [reservedHeight, setReservedHeight] = reactExports.useState(getDefaultExpandedHeight);
-    const [queueCount, setQueueCount] = reactExports.useState(0);
-    const [bubblePosition, setBubblePosition] = reactExports.useState(() => readBubblePosition({ width: DEFAULT_BUBBLE_WIDTH, height: DEFAULT_BUBBLE_HEIGHT }));
-    const [expandedAnchor, setExpandedAnchor] = reactExports.useState(null);
-    const widgetRef = reactExports.useRef(null);
-    const bubbleRef = reactExports.useRef(null);
-    const bubbleSizeRef = reactExports.useRef({ width: DEFAULT_BUBBLE_WIDTH, height: DEFAULT_BUBBLE_HEIGHT });
-    const bubblePositionRef = reactExports.useRef(bubblePosition);
-    const bubbleDragRef = reactExports.useRef(null);
-    const bubbleMovedRef = reactExports.useRef(false);
-    const expandedDragRef = reactExports.useRef(null);
-    const selectionTimerRef = reactExports.useRef(null);
-    const articleTranslation = useArticleTranslation();
-    const hasPayload = Boolean(word.trim());
-    const canSend = hasPayload;
-    const statusText = reactExports.useMemo(() => {
-      if (status === "success") return message || "已加入队列";
-      if (status === "error") return message || "加入失败";
-      if (status === "filled") return "已填入";
-      return "";
-    }, [message, status]);
-    const measureWidgetHeight = reactExports.useCallback(() => {
-      const baseHeight = getDefaultExpandedHeight();
-      const measuredHeight = widgetRef.current ? Math.ceil(widgetRef.current.scrollHeight) : 0;
-      const nextHeight = Math.min(getMaxWidgetHeight(), Math.max(baseHeight, measuredHeight));
-      setReservedHeight((currentHeight) => Math.abs(currentHeight - nextHeight) > 1 ? nextHeight : currentHeight);
-    }, []);
-    reactExports.useEffect(() => {
-      var _a;
-      const updateReservedHeight = () => {
-        syncVisualViewportHeightProperty();
-        setReservedHeight(Math.min(getDefaultExpandedHeight(), getMaxWidgetHeight()));
-        window.requestAnimationFrame(measureWidgetHeight);
-      };
-      updateReservedHeight();
-      const desktopQuery = window.matchMedia("(max-width: 720px)");
-      desktopQuery.addEventListener("change", updateReservedHeight);
-      (_a = window.visualViewport) == null ? void 0 : _a.addEventListener("resize", updateReservedHeight);
-      return () => {
-        var _a2;
-        desktopQuery.removeEventListener("change", updateReservedHeight);
-        (_a2 = window.visualViewport) == null ? void 0 : _a2.removeEventListener("resize", updateReservedHeight);
-      };
-    }, [measureWidgetHeight]);
-    reactExports.useEffect(() => {
-      if (!isExpanded) return void 0;
-      const frameId = window.requestAnimationFrame(measureWidgetHeight);
-      return () => window.cancelAnimationFrame(frameId);
-    });
-    reactExports.useEffect(() => {
-      const handleConfigUpdate = () => {
-        setThemeColor(ConfigService.get("theme_color") || "#000000");
-      };
-      window.addEventListener("linkual_settings_updated", handleConfigUpdate);
-      return () => window.removeEventListener("linkual_settings_updated", handleConfigUpdate);
-    }, []);
-    reactExports.useEffect(() => {
-      const updateQueueCount = (event) => {
-        const detail = event.detail;
-        const nextCount = Number((detail == null ? void 0 : detail.pendingCount) || 0);
-        setQueueCount(Number.isFinite(nextCount) ? nextCount : 0);
-      };
-      window.addEventListener(QUEUE_COUNT_EVENT, updateQueueCount);
-      window.dispatchEvent(new Event(QUEUE_REQUEST_COUNT_EVENT));
-      return () => window.removeEventListener(QUEUE_COUNT_EVENT, updateQueueCount);
-    }, []);
-    reactExports.useEffect(() => {
-      const handleNavigationRefresh = () => {
-        setSelection(null);
-        setSourceUrl(getPageUrl());
-        window.requestAnimationFrame(() => {
-          if (isExpanded) measureWidgetHeight();
-          syncVisualViewportHeightProperty();
-        });
-      };
-      window.addEventListener(LINKUAL_NAVIGATION_EVENT$2, handleNavigationRefresh);
-      window.addEventListener("pageshow", handleNavigationRefresh);
-      return () => {
-        window.removeEventListener(LINKUAL_NAVIGATION_EVENT$2, handleNavigationRefresh);
-        window.removeEventListener("pageshow", handleNavigationRefresh);
-      };
-    }, [isExpanded, measureWidgetHeight]);
-    const refreshSelection = reactExports.useCallback(() => {
-      if (!isExpanded) return;
-      setSelection(captureSelection(selectionMode));
-    }, [isExpanded, selectionMode]);
-    const scheduleSelectionRefresh = reactExports.useCallback((delay = 80) => {
-      if (!isExpanded) return;
-      if (selectionTimerRef.current !== null) {
-        window.clearTimeout(selectionTimerRef.current);
-      }
-      selectionTimerRef.current = window.setTimeout(() => {
-        selectionTimerRef.current = null;
-        refreshSelection();
-      }, delay);
-    }, [isExpanded, refreshSelection]);
-    reactExports.useEffect(() => {
-      if (!isExpanded) return void 0;
-      const handleSelectionChange = () => scheduleSelectionRefresh(90);
-      const handlePointerUp = () => scheduleSelectionRefresh(20);
-      const handleKeyUp = () => scheduleSelectionRefresh(20);
-      document.addEventListener("selectionchange", handleSelectionChange);
-      window.addEventListener("pointerup", handlePointerUp, true);
-      window.addEventListener("keyup", handleKeyUp, true);
-      return () => {
-        document.removeEventListener("selectionchange", handleSelectionChange);
-        window.removeEventListener("pointerup", handlePointerUp, true);
-        window.removeEventListener("keyup", handleKeyUp, true);
-        if (selectionTimerRef.current !== null) {
-          window.clearTimeout(selectionTimerRef.current);
-          selectionTimerRef.current = null;
-        }
-      };
-    }, [isExpanded, scheduleSelectionRefresh]);
-    const handleAddSelection = () => {
-      var _a;
-      if (!selection) return;
-      if (selectionMode === "word") {
-        setWord(selection.text);
-        setContext(selection.context);
-        setSelectionMode("context");
-      } else {
-        setContext(selection.text);
-      }
-      setSource(selection.source);
-      setSourceUrl(selection.url);
-      setStatus("filled");
-      setMessage("");
-      setSelection(null);
-      (_a = window.getSelection()) == null ? void 0 : _a.removeAllRanges();
-    };
-    const handleClear = () => {
-      setWord("");
-      setContext("");
-      setSource("");
-      setSourceUrl(getPageUrl());
-      setStatus("idle");
-      setMessage("");
-      setSelection(null);
-      setSelectionMode("word");
-    };
-    const handleAddToQueue = () => {
-      var _a;
-      const finalWord = word.trim();
-      const finalContext = context.trim();
-      if (!finalWord) {
-        setStatus("error");
-        setMessage("词块不能为空");
-        return;
-      }
-      try {
-        enqueueVocabTask({
-          word: finalWord,
-          context: finalContext,
-          source: source || getSourceTitle(),
-          source_url: sourceUrl || getPageUrl()
-        });
-      } catch (err) {
-        setStatus("error");
-        setMessage(err instanceof Error ? err.message : "加入失败");
-        return;
-      }
-      setStatus("success");
-      setMessage("已加入队列");
-      setSelectionMode("word");
-      setSelection(null);
-      (_a = window.getSelection()) == null ? void 0 : _a.removeAllRanges();
-    };
-    const handleModeChange = (mode) => {
-      setSelectionMode(mode);
-      setMessage("");
-      window.setTimeout(() => setSelection(captureSelection(mode)), 0);
-    };
-    const handleContextWheel = (event) => {
-      const input = event.currentTarget;
-      const maxScroll = input.scrollWidth - input.clientWidth;
-      if (maxScroll <= 0) return;
-      const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
-      if (!delta) return;
-      const nextScroll = Math.max(0, Math.min(maxScroll, input.scrollLeft + delta));
-      if (nextScroll !== input.scrollLeft) {
-        event.preventDefault();
-        input.scrollLeft = nextScroll;
-      }
-    };
-    const handleQueueToggle = () => {
-      window.dispatchEvent(new Event(QUEUE_TOGGLE_EVENT));
-      window.dispatchEvent(new Event(QUEUE_REQUEST_COUNT_EVENT));
-    };
-    const handleBubblePointerDown = (event) => {
-      var _a, _b, _c;
-      if (event.pointerType === "mouse" && event.button !== 0) return;
-      const rect = (_a = bubbleRef.current) == null ? void 0 : _a.getBoundingClientRect();
-      if (!rect) return;
-      bubbleSizeRef.current = { width: rect.width, height: rect.height };
-      bubbleMovedRef.current = false;
-      bubbleDragRef.current = {
-        pointerId: event.pointerId,
-        startX: event.clientX,
-        startY: event.clientY,
-        left: rect.left,
-        top: rect.top
-      };
-      (_c = (_b = event.currentTarget).setPointerCapture) == null ? void 0 : _c.call(_b, event.pointerId);
-    };
-    const handleBubblePointerMove = (event) => {
-      const drag = bubbleDragRef.current;
-      if (!drag || drag.pointerId !== event.pointerId) return;
-      const deltaX = event.clientX - drag.startX;
-      const deltaY = event.clientY - drag.startY;
-      if (Math.abs(deltaX) > 3 || Math.abs(deltaY) > 3) bubbleMovedRef.current = true;
-      const nextPosition = getBubblePositionFromPoint(drag.left + deltaX, drag.top + deltaY, bubbleSizeRef.current);
-      bubblePositionRef.current = nextPosition;
-      setBubblePosition(nextPosition);
-    };
-    const handleBubblePointerUp = (event) => {
-      const drag = bubbleDragRef.current;
-      if (!drag || drag.pointerId !== event.pointerId) return;
-      const currentPosition = bubblePositionRef.current || getBubblePositionFromPoint(drag.left, drag.top, bubbleSizeRef.current);
-      const nextPosition = getBubblePositionFromDock(currentPosition.side, currentPosition.topRatio, bubbleSizeRef.current);
-      bubbleDragRef.current = null;
-      if (bubbleMovedRef.current) {
-        bubblePositionRef.current = nextPosition;
-        setBubblePosition(nextPosition);
-        saveBubblePosition(nextPosition);
-      }
-    };
-    reactExports.useEffect(() => {
-      var _a;
-      const refreshBubbleSize = () => {
-        var _a2;
-        const rect = (_a2 = bubbleRef.current) == null ? void 0 : _a2.getBoundingClientRect();
-        if (rect) bubbleSizeRef.current = { width: rect.width, height: rect.height };
-      };
-      const clampCurrentPosition = () => setBubblePosition((current) => {
-        refreshBubbleSize();
-        const nextPosition = getBubblePositionFromDock(current.side, current.topRatio, bubbleSizeRef.current);
-        bubblePositionRef.current = nextPosition;
-        return nextPosition;
-      });
-      clampCurrentPosition();
-      window.addEventListener("resize", clampCurrentPosition);
-      (_a = window.visualViewport) == null ? void 0 : _a.addEventListener("resize", clampCurrentPosition);
-      return () => {
-        var _a2;
-        window.removeEventListener("resize", clampCurrentPosition);
-        (_a2 = window.visualViewport) == null ? void 0 : _a2.removeEventListener("resize", clampCurrentPosition);
-      };
-    }, []);
-    reactExports.useEffect(() => {
-      const syncStoredBubblePosition = () => {
-        var _a;
-        if (isExpanded || bubbleDragRef.current || expandedDragRef.current) return;
-        const rect = (_a = bubbleRef.current) == null ? void 0 : _a.getBoundingClientRect();
-        if (rect) bubbleSizeRef.current = { width: rect.width, height: rect.height };
-        const nextPosition = readBubblePosition(bubbleSizeRef.current);
-        bubblePositionRef.current = nextPosition;
-        setBubblePosition(nextPosition);
-      };
-      const handleVisibilityChange = () => {
-        if (document.visibilityState === "visible") syncStoredBubblePosition();
-      };
-      const handleStorage = (event) => {
-        if (!event.key || !event.key.startsWith("linkual_universal_bubble_")) return;
-        syncStoredBubblePosition();
-      };
-      window.addEventListener("focus", syncStoredBubblePosition);
-      window.addEventListener("pageshow", syncStoredBubblePosition);
-      window.addEventListener("storage", handleStorage);
-      document.addEventListener("visibilitychange", handleVisibilityChange);
-      return () => {
-        window.removeEventListener("focus", syncStoredBubblePosition);
-        window.removeEventListener("pageshow", syncStoredBubblePosition);
-        window.removeEventListener("storage", handleStorage);
-        document.removeEventListener("visibilitychange", handleVisibilityChange);
-      };
-    }, [isExpanded]);
-    const handleBubbleButtonPointerDown = (event) => {
-      event.stopPropagation();
-    };
-    const handleBubbleClick = (event) => {
-      if (bubbleMovedRef.current) {
-        event.preventDefault();
-        event.stopPropagation();
-        bubbleMovedRef.current = false;
-      }
-    };
-    const getBubbleSize = reactExports.useCallback(() => {
-      var _a;
-      const rect = (_a = bubbleRef.current) == null ? void 0 : _a.getBoundingClientRect();
-      if (rect) {
-        bubbleSizeRef.current = { width: rect.width, height: rect.height };
-        return bubbleSizeRef.current;
-      }
-      return bubbleSizeRef.current;
-    }, []);
-    const getBubbleAnchor = reactExports.useCallback(() => {
-      var _a;
-      const rect = (_a = bubbleRef.current) == null ? void 0 : _a.getBoundingClientRect();
-      const current = bubblePositionRef.current;
-      const side = (current == null ? void 0 : current.side) || "right";
-      if (rect) {
-        bubbleSizeRef.current = { width: rect.width, height: rect.height };
-        return {
-          side,
-          edge: side === "right" ? Math.max(getRightScrollbarInset(), getViewportWidth() - rect.right) : Math.max(0, rect.left),
-          top: rect.top
-        };
-      }
-      if (current) {
-        const size = getBubbleSize();
-        return {
-          side: current.side,
-          edge: current.side === "right" ? Math.max(getRightScrollbarInset(), getViewportWidth() - current.left - size.width) : Math.max(0, current.left),
-          top: current.top
-        };
-      }
-      return {
-        side: "right",
-        edge: BUBBLE_EDGE_OFFSET,
-        top: getBubblePositionFromDock("right", DEFAULT_BUBBLE_TOP_RATIO, {
-          width: DEFAULT_BUBBLE_WIDTH,
-          height: DEFAULT_BUBBLE_HEIGHT
-        }).top
-      };
-    }, [getBubbleSize]);
-    const clampExpandedAnchor = reactExports.useCallback((anchor) => {
-      const minEdge = anchor.side === "right" ? getRightScrollbarInset() : BUBBLE_EDGE_OFFSET;
-      const maxEdge = Math.max(minEdge, getViewportWidth() - BUBBLE_MARGIN);
-      const maxTop = Math.max(BUBBLE_MARGIN, getVisualViewportHeight() - BUBBLE_MARGIN);
-      return {
-        side: anchor.side,
-        edge: clampNumber(anchor.edge, minEdge, maxEdge),
-        top: clampNumber(anchor.top, BUBBLE_MARGIN, maxTop)
-      };
-    }, []);
-    const getExpandedWindowStyle = reactExports.useCallback((anchor) => {
-      if (!anchor) return {};
-      const baseStyle = {
-        top: anchor.top,
-        bottom: "auto"
-      };
-      return anchor.side === "left" ? {
-        ...baseStyle,
-        left: anchor.edge,
-        right: "auto"
-      } : {
-        ...baseStyle,
-        right: anchor.edge,
-        left: "auto"
-      };
-    }, []);
-    const persistBubblePosition = reactExports.useCallback((position) => {
-      const nextPosition = getBubblePositionFromDock(position.side, position.topRatio, getBubbleSize());
-      setBubblePosition(nextPosition);
-      bubblePositionRef.current = nextPosition;
-      saveBubblePosition(nextPosition);
-    }, [getBubbleSize]);
-    const persistBubblePositionFromAnchor = reactExports.useCallback((anchor) => {
-      const size = getBubbleSize();
-      const left = anchor.side === "right" ? getViewportWidth() - anchor.edge - size.width : anchor.edge;
-      persistBubblePosition(getBubblePositionFromPoint(left, anchor.top, size, anchor.side));
-    }, [getBubbleSize, persistBubblePosition]);
-    const handleExpandedPointerDown = (event) => {
-      var _a, _b;
-      const target = event.target;
-      if (target instanceof Element && target.closest('button, input, textarea, select, [contenteditable="true"]')) return;
-      const anchor = expandedAnchor || getBubbleAnchor();
-      expandedDragRef.current = {
-        pointerId: event.pointerId,
-        startX: event.clientX,
-        startY: event.clientY,
-        side: anchor.side,
-        edge: anchor.edge,
-        top: anchor.top
-      };
-      (_b = (_a = event.currentTarget).setPointerCapture) == null ? void 0 : _b.call(_a, event.pointerId);
-    };
-    const handleExpandedPointerMove = (event) => {
-      const drag = expandedDragRef.current;
-      if (!drag || drag.pointerId !== event.pointerId) return;
-      const deltaX = event.clientX - drag.startX;
-      setExpandedAnchor(clampExpandedAnchor({
-        side: drag.side,
-        edge: drag.side === "right" ? drag.edge - deltaX : drag.edge + deltaX,
-        top: drag.top + event.clientY - drag.startY
-      }));
-    };
-    const handleExpandedPointerUp = (event) => {
-      const drag = expandedDragRef.current;
-      if (!drag || drag.pointerId !== event.pointerId) return;
-      expandedDragRef.current = null;
-      const deltaX = event.clientX - drag.startX;
-      const anchor = clampExpandedAnchor({
-        side: drag.side,
-        edge: drag.side === "right" ? drag.edge - deltaX : drag.edge + deltaX,
-        top: drag.top + event.clientY - drag.startY
-      });
-      setExpandedAnchor(anchor);
-      persistBubblePositionFromAnchor(anchor);
-    };
-    const handleCollapseWindow = () => {
-      setSelection(null);
-      setIsExpanded(false);
-      if (expandedAnchor) persistBubblePositionFromAnchor(expandedAnchor);
-    };
-    const handleBubbleExpand = () => {
-      setExpandedAnchor(clampExpandedAnchor(getBubbleAnchor()));
-      syncVisualViewportHeightProperty();
-      setIsExpanded(true);
-    };
-    reactExports.useEffect(() => {
-      if (!isExpanded) return void 0;
-      const clampExpandedAnchorToViewport = () => setExpandedAnchor((current) => {
-        if (!current) return current;
-        return clampExpandedAnchor(current);
-      });
-      const frameId = window.requestAnimationFrame(clampExpandedAnchorToViewport);
-      window.addEventListener("resize", clampExpandedAnchorToViewport);
-      return () => {
-        window.cancelAnimationFrame(frameId);
-        window.removeEventListener("resize", clampExpandedAnchorToViewport);
-      };
-    }, [clampExpandedAnchor, isExpanded, reservedHeight]);
-    if (!isExpanded) {
-      return /* @__PURE__ */ jsxRuntimeExports.jsxs(
-        "div",
-        {
-          ref: bubbleRef,
-          className: `linkual-universal-expand-bar is-side-${bubblePosition.side}`,
-          onPointerDown: handleBubblePointerDown,
-          onPointerMove: handleBubblePointerMove,
-          onPointerUp: handleBubblePointerUp,
-          onPointerCancel: handleBubblePointerUp,
-          onClick: handleBubbleClick,
-          style: {
-            "--linkual-theme": themeColor,
-            left: bubblePosition.left,
-            top: bubblePosition.top,
-            right: "auto",
-            bottom: "auto"
-          },
-          title: "Linkual",
-          children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx(GripVertical, { className: "linkual-universal-bubble-grip", size: 15, strokeWidth: 2.1, "aria-hidden": "true" }),
-            articleTranslation.isPageSupported && /* @__PURE__ */ jsxRuntimeExports.jsx(
-              "button",
-              {
-                type: "button",
-                className: "linkual-universal-bubble-translate",
-                onPointerDown: handleBubbleButtonPointerDown,
-                onClick: () => void articleTranslation.translateAll(),
-                disabled: articleTranslation.isTranslatingAll,
-                "aria-label": "翻译页面",
-                title: "翻译页面",
-                children: /* @__PURE__ */ jsxRuntimeExports.jsx(ActionIcon, { name: "translate" })
-              }
-            ),
-            /* @__PURE__ */ jsxRuntimeExports.jsxs(
-              "button",
-              {
-                type: "button",
-                className: "linkual-universal-icon-btn linkual-universal-window-toggle",
-                onPointerDown: handleBubbleButtonPointerDown,
-                onClick: handleBubbleExpand,
-                title: "展开 Linkual 工具栏",
-                "aria-label": "展开 Linkual 工具栏",
-                children: [
-                  /* @__PURE__ */ jsxRuntimeExports.jsx(ActionIcon, { name: "expand" }),
-                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "linkual-universal-button-text", children: "展开" })
-                ]
-              }
-            )
-          ]
-        }
-      );
-    }
-    return /* @__PURE__ */ jsxRuntimeExports.jsxs(
-      "div",
-      {
-        ref: widgetRef,
-        className: "linkual-universal-widget linkual-universal-floating-window",
-        onPointerDown: handleExpandedPointerDown,
-        onPointerMove: handleExpandedPointerMove,
-        onPointerUp: handleExpandedPointerUp,
-        onPointerCancel: handleExpandedPointerUp,
-        style: {
-          "--linkual-theme": themeColor,
-          "--linkual-universal-widget-height": `${reservedHeight}px`,
-          ...getExpandedWindowStyle(expandedAnchor)
-        },
-        children: [
-          selection && /* @__PURE__ */ jsxRuntimeExports.jsxs(
-            "button",
-            {
-              type: "button",
-              className: "linkual-universal-floating-add",
-              onMouseDown: (event) => event.preventDefault(),
-              onPointerDown: (event) => event.preventDefault(),
-              onClick: handleAddSelection,
-              style: {
-                top: selection.top,
-                left: selection.left,
-                "--linkual-theme": themeColor
-              },
-              children: [
-                /* @__PURE__ */ jsxRuntimeExports.jsx(ActionIcon, { name: "add" }),
-                /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "填入" })
-              ]
-            }
-          ),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-universal-top", children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "linkual-universal-selection", children: selection ? /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
-              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "linkual-universal-selection-label", children: "已选" }),
-              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "linkual-universal-selection-text", children: selection.text }),
-              /* @__PURE__ */ jsxRuntimeExports.jsxs(
-                "button",
-                {
-                  type: "button",
-                  className: "linkual-universal-add-btn",
-                  onMouseDown: (event) => event.preventDefault(),
-                  onPointerDown: (event) => event.preventDefault(),
-                  onClick: handleAddSelection,
-                  children: [
-                    /* @__PURE__ */ jsxRuntimeExports.jsx(ActionIcon, { name: "add" }),
-                    "填入"
-                  ]
-                }
-              )
-            ] }) : /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "linkual-universal-muted", children: "未选中文本" }) }),
-            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-universal-actions", children: [
-              statusText && /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: `linkual-universal-status status-${status}`, children: statusText }),
-              /* @__PURE__ */ jsxRuntimeExports.jsxs(
-                "button",
-                {
-                  type: "button",
-                  className: "linkual-universal-icon-btn linkual-universal-window-toggle",
-                  onPointerDown: (event) => event.stopPropagation(),
-                  onClick: handleCollapseWindow,
-                  title: "收起 Linkual 工具栏",
-                  "aria-label": "收起 Linkual 工具栏",
-                  children: [
-                    /* @__PURE__ */ jsxRuntimeExports.jsx(ActionIcon, { name: "collapse" }),
-                    /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "linkual-universal-button-text", children: "收起" })
-                  ]
-                }
-              )
-            ] })
-          ] }),
-          articleTranslation.isPageSupported && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-universal-translation-row", children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-universal-translation-summary", children: [
-              /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { children: "网页翻译" }),
-              /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
-                articleTranslation.doneCount,
-                "/",
-                articleTranslation.paragraphs.length,
-                " 段 · 并发 ",
-                articleTranslation.translationConcurrency
-              ] })
-            ] }),
-            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-universal-translation-actions", children: [
-              articleTranslation.isTranslatingAll ? /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", className: "primary", onClick: articleTranslation.stopTranslation, children: "停止翻译" }) : /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", className: "primary", onClick: () => void articleTranslation.translateAll(), children: "翻译页面" }),
-              /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", onClick: articleTranslation.rescan, children: "重新扫描" })
-            ] })
-          ] }),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-universal-form", children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsxs("label", { className: "linkual-universal-field field-word", children: [
-              /* @__PURE__ */ jsxRuntimeExports.jsx(
-                "button",
-                {
-                  type: "button",
-                  className: `linkual-universal-mode-tab ${selectionMode === "word" ? "active" : ""}`,
-                  onMouseDown: (event) => event.preventDefault(),
-                  onClick: () => handleModeChange("word"),
-                  title: "词块",
-                  "aria-label": "词块",
-                  "aria-pressed": selectionMode === "word",
-                  children: /* @__PURE__ */ jsxRuntimeExports.jsx(ActionIcon, { name: "word" })
-                }
-              ),
-              /* @__PURE__ */ jsxRuntimeExports.jsx(
-                "input",
-                {
-                  value: word,
-                  onChange: (event) => {
-                    setWord(event.target.value);
-                    setStatus(event.target.value.trim() ? "filled" : "idle");
-                    setMessage("");
-                  },
-                  placeholder: "word or phrase"
-                }
-              )
-            ] }),
-            /* @__PURE__ */ jsxRuntimeExports.jsxs("label", { className: "linkual-universal-field field-context", children: [
-              /* @__PURE__ */ jsxRuntimeExports.jsx(
-                "button",
-                {
-                  type: "button",
-                  className: `linkual-universal-mode-tab ${selectionMode === "context" ? "active" : ""}`,
-                  onMouseDown: (event) => event.preventDefault(),
-                  onClick: () => handleModeChange("context"),
-                  title: "上下文",
-                  "aria-label": "上下文",
-                  "aria-pressed": selectionMode === "context",
-                  children: /* @__PURE__ */ jsxRuntimeExports.jsx(ActionIcon, { name: "context" })
-                }
-              ),
-              /* @__PURE__ */ jsxRuntimeExports.jsx(
-                "input",
-                {
-                  value: context,
-                  onChange: (event) => {
-                    setContext(event.target.value);
-                    if (word.trim()) setStatus("filled");
-                    setMessage("");
-                  },
-                  onWheel: handleContextWheel,
-                  placeholder: "context"
-                }
-              )
-            ] }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", className: "linkual-universal-clear", onClick: handleClear, disabled: !hasPayload && !context, children: /* @__PURE__ */ jsxRuntimeExports.jsx(ActionIcon, { name: "clear" }) }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", className: "linkual-universal-send", onClick: handleAddToQueue, disabled: !canSend, title: "加入队列", "aria-label": "加入队列", children: /* @__PURE__ */ jsxRuntimeExports.jsx(ActionIcon, { name: "add" }) }),
-            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-universal-inline-actions", children: [
-              /* @__PURE__ */ jsxRuntimeExports.jsxs("button", { type: "button", className: "linkual-universal-icon-btn linkual-universal-queue-btn", onClick: handleQueueToggle, title: "制卡队列", "aria-label": `制卡队列${queueCount > 0 ? ` ${queueCount}` : ""}`, children: [
-                /* @__PURE__ */ jsxRuntimeExports.jsx(ActionIcon, { name: "queue" }),
-                queueCount > 0 && /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "linkual-universal-queue-count", children: queueCount })
-              ] }),
-              /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", className: "linkual-universal-icon-btn", onClick: onOpenSettings, title: "设置", "aria-label": "设置", children: /* @__PURE__ */ jsxRuntimeExports.jsx(ActionIcon, { name: "settings" }) })
-            ] })
-          ] })
-        ]
-      }
-    );
-  };
   class ParseError extends Error {
     // The underlying error message without any context added.
     constructor(message, token) {
@@ -16957,7 +13637,7 @@ ${paragraph.text}`,
     var optionValue = options[prop];
     target[prop] = optionValue !== void 0 ? schema.processor ? schema.processor(optionValue) : optionValue : getDefaultValue(schema);
   }
-  class Settings {
+  let Settings$1 = class Settings {
     constructor(options) {
       if (options === void 0) {
         options = {};
@@ -17051,7 +13731,7 @@ ${paragraph.text}`,
       var trust = typeof this.trust === "function" ? this.trust(context) : this.trust;
       return Boolean(trust);
     }
-  }
+  };
   class Style {
     constructor(id, size, cramped) {
       this.id = void 0;
@@ -30724,7 +27404,7 @@ ${paragraph.text}`,
     return markup;
   };
   var generateParseTree = function generateParseTree2(expression, options) {
-    var settings = new Settings(options);
+    var settings = new Settings$1(options);
     return parseTree(expression, settings);
   };
   var renderError = function renderError2(error, expression, options) {
@@ -30737,7 +27417,7 @@ ${paragraph.text}`,
     return node;
   };
   var renderToDomTree = function renderToDomTree2(expression, options) {
-    var settings = new Settings(options);
+    var settings = new Settings$1(options);
     try {
       var tree = parseTree(expression, settings);
       return buildTree(tree, expression, settings);
@@ -30746,7 +27426,7 @@ ${paragraph.text}`,
     }
   };
   var renderToHTMLTree = function renderToHTMLTree2(expression, options) {
-    var settings = new Settings(options);
+    var settings = new Settings$1(options);
     try {
       var tree = parseTree(expression, settings);
       return buildHTMLTree(tree, expression, settings);
@@ -30901,6 +27581,16 @@ ${paragraph.text}`,
     }) });
   };
   const TABLE_SEPARATOR_CELL_PATTERN = /^:?-{3,}:?$/;
+  const FENCE_PATTERN = /^\s*(```+|~~~+)\s*([\w-]+)?\s*$/;
+  const THEMATIC_BREAK_PATTERN = /^\s{0,3}(([-*_])\s*){3,}$/;
+  const HEADING_PATTERN = /^\s{0,3}(#{1,6})\s+(.+?)\s*#*\s*$/;
+  const QUOTE_PATTERN = /^\s{0,3}>\s?(.*)$/;
+  const BULLET_LIST_PATTERN = /^\s{0,3}[-*+]\s+(.+)$/;
+  const ORDERED_LIST_PATTERN = /^\s{0,3}\d+[.)]\s+(.+)$/;
+  const INLINE_MARKDOWN_PATTERN = /(`[^`\n]+`|\[[^\]\n]+\]\([^)]+\)|\*\*[\s\S]+?\*\*|\*[^*\n]+?\*)/g;
+  function normalizeMarkdown(text2) {
+    return text2.replace(/\r\n?/g, "\n");
+  }
   function splitMarkdownTableRow(row) {
     let value = row.trim();
     if (value.startsWith("|")) value = value.slice(1);
@@ -30958,8 +27648,34 @@ ${paragraph.text}`,
   function normalizeTableRow(cells, columnCount) {
     return Array.from({ length: columnCount }, (_, index2) => cells[index2] || "");
   }
-  function parseMarkdownBlocks(text2) {
-    const lines = text2.replace(/\r\n?/g, "\n").split("\n");
+  function parseTableBlock(lines, index2) {
+    const header = splitMarkdownTableRow(lines[index2] || "");
+    const separator = splitMarkdownTableRow(lines[index2 + 1] || "");
+    const rows = [];
+    let nextIndex = index2 + 2;
+    while (nextIndex < lines.length) {
+      const line = lines[nextIndex] || "";
+      if (!line.trim() || !line.includes("|") || isTableSeparator(line)) break;
+      rows.push(splitMarkdownTableRow(line));
+      nextIndex += 1;
+    }
+    const columnCount = Math.max(
+      header.length,
+      separator.length,
+      ...rows.map((row) => row.length)
+    );
+    return {
+      block: {
+        type: "table",
+        header: normalizeTableRow(header, columnCount),
+        alignments: normalizeTableRow(separator, columnCount).map(getAlignment),
+        rows: rows.map((row) => normalizeTableRow(row, columnCount))
+      },
+      nextIndex
+    };
+  }
+  function parseInlineMarkdownBlocks(text2) {
+    const lines = normalizeMarkdown(text2).split("\n");
     const blocks = [];
     let index2 = 0;
     let textBuffer = [];
@@ -30971,27 +27687,9 @@ ${paragraph.text}`,
     while (index2 < lines.length) {
       if (isTableStart(lines, index2)) {
         flushText();
-        const header = splitMarkdownTableRow(lines[index2] || "");
-        const separator = splitMarkdownTableRow(lines[index2 + 1] || "");
-        const rows = [];
-        index2 += 2;
-        while (index2 < lines.length) {
-          const line = lines[index2] || "";
-          if (!line.trim() || !line.includes("|") || isTableSeparator(line)) break;
-          rows.push(splitMarkdownTableRow(line));
-          index2 += 1;
-        }
-        const columnCount = Math.max(
-          header.length,
-          separator.length,
-          ...rows.map((row) => row.length)
-        );
-        blocks.push({
-          type: "table",
-          header: normalizeTableRow(header, columnCount),
-          alignments: normalizeTableRow(separator, columnCount).map(getAlignment),
-          rows: rows.map((row) => normalizeTableRow(row, columnCount))
-        });
+        const { block, nextIndex } = parseTableBlock(lines, index2);
+        blocks.push(block);
+        index2 = nextIndex;
         continue;
       }
       textBuffer.push(lines[index2] || "");
@@ -31000,21 +27698,3559 @@ ${paragraph.text}`,
     flushText();
     return blocks.length > 0 ? blocks : [{ type: "text", text: text2 }];
   }
+  function getListMatch(line) {
+    const ordered = line.match(ORDERED_LIST_PATTERN);
+    if (ordered) return { ordered: true, text: ordered[1] || "" };
+    const bullet = line.match(BULLET_LIST_PATTERN);
+    if (bullet) return { ordered: false, text: bullet[1] || "" };
+    return null;
+  }
+  function isBlockStart(lines, index2) {
+    const line = lines[index2] || "";
+    return Boolean(
+      FENCE_PATTERN.test(line) || isTableStart(lines, index2) || HEADING_PATTERN.test(line) || THEMATIC_BREAK_PATTERN.test(line) || QUOTE_PATTERN.test(line) || getListMatch(line)
+    );
+  }
+  function parseBlockMarkdownBlocks(text2) {
+    var _a;
+    const lines = normalizeMarkdown(text2).split("\n");
+    const blocks = [];
+    let index2 = 0;
+    while (index2 < lines.length) {
+      const line = lines[index2] || "";
+      if (!line.trim()) {
+        index2 += 1;
+        continue;
+      }
+      const fence = line.match(FENCE_PATTERN);
+      if (fence) {
+        const fenceMarker = fence[1] || "";
+        const fenceChar = fenceMarker[0] || "`";
+        const fenceLength = fenceMarker.length;
+        const closingFence = new RegExp(`^\\s*${fenceChar}{${fenceLength},}\\s*$`);
+        const codeLines = [];
+        index2 += 1;
+        while (index2 < lines.length && !closingFence.test(lines[index2] || "")) {
+          codeLines.push(lines[index2] || "");
+          index2 += 1;
+        }
+        if (index2 < lines.length) index2 += 1;
+        blocks.push({ type: "code", code: codeLines.join("\n"), language: fence[2] || "" });
+        continue;
+      }
+      if (isTableStart(lines, index2)) {
+        const { block, nextIndex } = parseTableBlock(lines, index2);
+        blocks.push(block);
+        index2 = nextIndex;
+        continue;
+      }
+      const heading = line.match(HEADING_PATTERN);
+      if (heading) {
+        blocks.push({
+          type: "heading",
+          level: Math.min(6, ((_a = heading[1]) == null ? void 0 : _a.length) || 1),
+          text: (heading[2] || "").trim()
+        });
+        index2 += 1;
+        continue;
+      }
+      if (THEMATIC_BREAK_PATTERN.test(line)) {
+        blocks.push({ type: "rule" });
+        index2 += 1;
+        continue;
+      }
+      const quote = line.match(QUOTE_PATTERN);
+      if (quote) {
+        const quoteLines = [];
+        while (index2 < lines.length) {
+          const quoteLine = (lines[index2] || "").match(QUOTE_PATTERN);
+          if (!quoteLine) break;
+          quoteLines.push(quoteLine[1] || "");
+          index2 += 1;
+        }
+        blocks.push({ type: "quote", text: quoteLines.join("\n").trim() });
+        continue;
+      }
+      const listMatch = getListMatch(line);
+      if (listMatch) {
+        const items = [];
+        const ordered = listMatch.ordered;
+        while (index2 < lines.length) {
+          const currentMatch = getListMatch(lines[index2] || "");
+          if (!currentMatch || currentMatch.ordered !== ordered) break;
+          let itemText = currentMatch.text;
+          index2 += 1;
+          while (index2 < lines.length) {
+            const continuation = lines[index2] || "";
+            if (!continuation.trim()) {
+              index2 += 1;
+              break;
+            }
+            if (getListMatch(continuation) || isBlockStart(lines, index2)) break;
+            if (/^\s{2,}/.test(continuation)) {
+              itemText += `
+${continuation.replace(/^\s{2,}/, "")}`;
+              index2 += 1;
+              continue;
+            }
+            break;
+          }
+          items.push(itemText.trim());
+        }
+        blocks.push({ type: "list", ordered, items });
+        continue;
+      }
+      const paragraphLines = [];
+      while (index2 < lines.length) {
+        const currentLine = lines[index2] || "";
+        if (!currentLine.trim()) break;
+        if (paragraphLines.length > 0 && isBlockStart(lines, index2)) break;
+        paragraphLines.push(currentLine);
+        index2 += 1;
+      }
+      blocks.push({ type: "paragraph", text: paragraphLines.join("\n").trim() });
+    }
+    return blocks.length > 0 ? blocks : [{ type: "paragraph", text: text2 }];
+  }
   function hasMarkdownTable(text2) {
-    const lines = text2.replace(/\r\n?/g, "\n").split("\n");
+    const lines = normalizeMarkdown(text2).split("\n");
     return lines.some((_, index2) => isTableStart(lines, index2));
   }
-  const ArticleMarkdown = ({ text: text2 }) => {
-    const blocks = reactExports.useMemo(() => parseMarkdownBlocks(text2), [text2]);
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(jsxRuntimeExports.Fragment, { children: blocks.map((block, blockIndex) => {
-      if (block.type === "text") {
-        return /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "linkual-article-markdown-text", children: /* @__PURE__ */ jsxRuntimeExports.jsx(ArticleMath, { text: block.text }) }, `text-${blockIndex}`);
+  function getSafeMarkdownUrl(rawUrl) {
+    const url = rawUrl.trim().replace(/^<|>$/g, "");
+    if (/^(https?:|mailto:|#|\/)/i.test(url)) return url;
+    return "";
+  }
+  function renderInlineMarkdown(text2, keyPrefix, allowLinks = false) {
+    const nodes = [];
+    const pattern = new RegExp(INLINE_MARKDOWN_PATTERN);
+    let cursor = 0;
+    let match = pattern.exec(text2);
+    while (match) {
+      const token = match[0] || "";
+      if (match.index > cursor) {
+        nodes.push(/* @__PURE__ */ jsxRuntimeExports.jsx(ArticleMath, { text: text2.slice(cursor, match.index) }, `${keyPrefix}-text-${cursor}`));
       }
-      return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "linkual-article-markdown-table-wrap", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("table", { className: "linkual-article-markdown-table", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx("thead", { children: /* @__PURE__ */ jsxRuntimeExports.jsx("tr", { children: block.header.map((cell, cellIndex) => /* @__PURE__ */ jsxRuntimeExports.jsx("th", { style: { textAlign: block.alignments[cellIndex] }, children: /* @__PURE__ */ jsxRuntimeExports.jsx(ArticleMath, { text: cell }) }, `head-${cellIndex}`)) }) }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("tbody", { children: block.rows.map((row, rowIndex) => /* @__PURE__ */ jsxRuntimeExports.jsx("tr", { children: row.map((cell, cellIndex) => /* @__PURE__ */ jsxRuntimeExports.jsx("td", { style: { textAlign: block.alignments[cellIndex] }, children: /* @__PURE__ */ jsxRuntimeExports.jsx(ArticleMath, { text: cell }) }, `cell-${rowIndex}-${cellIndex}`)) }, `row-${rowIndex}`)) })
-      ] }) }, `table-${blockIndex}`);
+      if (token.startsWith("`") && token.endsWith("`")) {
+        nodes.push(/* @__PURE__ */ jsxRuntimeExports.jsx("code", { className: "linkual-markdown-inline-code", children: token.slice(1, -1) }, `${keyPrefix}-code-${match.index}`));
+      } else if (token.startsWith("[")) {
+        const link = token.match(/^\[([^\]\n]+)\]\(([^)\n]+)\)$/);
+        const href = getSafeMarkdownUrl((link == null ? void 0 : link[2]) || "");
+        if (link && href && allowLinks) {
+          nodes.push(
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "a",
+              {
+                className: "linkual-markdown-link",
+                href,
+                rel: "noreferrer",
+                target: "_blank",
+                children: renderInlineMarkdown(link[1] || "", `${keyPrefix}-link-${match.index}`, allowLinks)
+              },
+              `${keyPrefix}-link-${match.index}`
+            )
+          );
+        } else if (link) {
+          nodes.push(
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "linkual-markdown-link-text", children: renderInlineMarkdown(link[1] || "", `${keyPrefix}-link-text-${match.index}`, allowLinks) }, `${keyPrefix}-link-text-${match.index}`)
+          );
+        } else {
+          nodes.push(/* @__PURE__ */ jsxRuntimeExports.jsx(ArticleMath, { text: token }, `${keyPrefix}-link-text-${match.index}`));
+        }
+      } else if (token.startsWith("**") && token.endsWith("**")) {
+        nodes.push(
+          /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { children: renderInlineMarkdown(token.slice(2, -2), `${keyPrefix}-strong-${match.index}`, allowLinks) }, `${keyPrefix}-strong-${match.index}`)
+        );
+      } else if (token.startsWith("*") && token.endsWith("*")) {
+        nodes.push(
+          /* @__PURE__ */ jsxRuntimeExports.jsx("em", { children: renderInlineMarkdown(token.slice(1, -1), `${keyPrefix}-em-${match.index}`, allowLinks) }, `${keyPrefix}-em-${match.index}`)
+        );
+      } else {
+        nodes.push(/* @__PURE__ */ jsxRuntimeExports.jsx(ArticleMath, { text: token }, `${keyPrefix}-fallback-${match.index}`));
+      }
+      cursor = match.index + token.length;
+      match = pattern.exec(text2);
+    }
+    if (cursor < text2.length) {
+      nodes.push(/* @__PURE__ */ jsxRuntimeExports.jsx(ArticleMath, { text: text2.slice(cursor) }, `${keyPrefix}-text-${cursor}`));
+    }
+    return nodes.length > 0 ? nodes : [/* @__PURE__ */ jsxRuntimeExports.jsx(ArticleMath, { text: text2 }, `${keyPrefix}-empty`)];
+  }
+  function renderTable(block, blockIndex, allowLinks) {
+    return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "linkual-article-markdown-table-wrap", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("table", { className: "linkual-article-markdown-table", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx("thead", { children: /* @__PURE__ */ jsxRuntimeExports.jsx("tr", { children: block.header.map((cell, cellIndex) => /* @__PURE__ */ jsxRuntimeExports.jsx("th", { style: { textAlign: block.alignments[cellIndex] }, children: renderInlineMarkdown(cell, `table-${blockIndex}-head-${cellIndex}`, allowLinks) }, `head-${cellIndex}`)) }) }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx("tbody", { children: block.rows.map((row, rowIndex) => /* @__PURE__ */ jsxRuntimeExports.jsx("tr", { children: row.map((cell, cellIndex) => /* @__PURE__ */ jsxRuntimeExports.jsx("td", { style: { textAlign: block.alignments[cellIndex] }, children: renderInlineMarkdown(cell, `table-${blockIndex}-cell-${rowIndex}-${cellIndex}`, allowLinks) }, `cell-${rowIndex}-${cellIndex}`)) }, `row-${rowIndex}`)) })
+    ] }) }, `table-${blockIndex}`);
+  }
+  function renderHeading(block, blockIndex) {
+    const children = renderInlineMarkdown(block.text, `heading-${blockIndex}`, true);
+    const className = `linkual-markdown-heading linkual-markdown-heading-${block.level}`;
+    switch (block.level) {
+      case 1:
+        return /* @__PURE__ */ jsxRuntimeExports.jsx("h1", { className, children }, `heading-${blockIndex}`);
+      case 2:
+        return /* @__PURE__ */ jsxRuntimeExports.jsx("h2", { className, children }, `heading-${blockIndex}`);
+      case 3:
+        return /* @__PURE__ */ jsxRuntimeExports.jsx("h3", { className, children }, `heading-${blockIndex}`);
+      case 4:
+        return /* @__PURE__ */ jsxRuntimeExports.jsx("h4", { className, children }, `heading-${blockIndex}`);
+      case 5:
+        return /* @__PURE__ */ jsxRuntimeExports.jsx("h5", { className, children }, `heading-${blockIndex}`);
+      default:
+        return /* @__PURE__ */ jsxRuntimeExports.jsx("h6", { className, children }, `heading-${blockIndex}`);
+    }
+  }
+  const ArticleMarkdown = ({ text: text2, mode = "inline" }) => {
+    const inlineBlocks = reactExports.useMemo(() => mode === "inline" ? parseInlineMarkdownBlocks(text2) : [], [mode, text2]);
+    const blockBlocks = reactExports.useMemo(() => mode === "block" ? parseBlockMarkdownBlocks(text2) : [], [mode, text2]);
+    if (mode === "inline") {
+      return /* @__PURE__ */ jsxRuntimeExports.jsx(jsxRuntimeExports.Fragment, { children: inlineBlocks.map((block, blockIndex) => {
+        if (block.type === "text") {
+          return /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "linkual-article-markdown-text", children: renderInlineMarkdown(block.text, `text-${blockIndex}`, false) }, `text-${blockIndex}`);
+        }
+        return renderTable(block, blockIndex, false);
+      }) });
+    }
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(jsxRuntimeExports.Fragment, { children: blockBlocks.map((block, blockIndex) => {
+      if (block.type === "paragraph") {
+        return /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "linkual-markdown-paragraph", children: renderInlineMarkdown(block.text, `paragraph-${blockIndex}`, true) }, `paragraph-${blockIndex}`);
+      }
+      if (block.type === "heading") return renderHeading(block, blockIndex);
+      if (block.type === "list") {
+        const ListTag = block.ordered ? "ol" : "ul";
+        return /* @__PURE__ */ jsxRuntimeExports.jsx(ListTag, { className: "linkual-markdown-list", children: block.items.map((item, itemIndex) => /* @__PURE__ */ jsxRuntimeExports.jsx("li", { children: renderInlineMarkdown(item, `list-${blockIndex}-item-${itemIndex}`, true) }, `item-${itemIndex}`)) }, `list-${blockIndex}`);
+      }
+      if (block.type === "quote") {
+        return /* @__PURE__ */ jsxRuntimeExports.jsx("blockquote", { className: "linkual-markdown-quote", children: renderInlineMarkdown(block.text, `quote-${blockIndex}`, true) }, `quote-${blockIndex}`);
+      }
+      if (block.type === "code") {
+        return /* @__PURE__ */ jsxRuntimeExports.jsx("pre", { className: "linkual-markdown-code-block", children: /* @__PURE__ */ jsxRuntimeExports.jsx("code", { "data-language": block.language || void 0, children: block.code }) }, `code-${blockIndex}`);
+      }
+      if (block.type === "rule") {
+        return /* @__PURE__ */ jsxRuntimeExports.jsx("hr", { className: "linkual-markdown-rule" }, `rule-${blockIndex}`);
+      }
+      return renderTable(block, blockIndex, true);
     }) });
+  };
+  const MAX_SELECTION_LENGTH = 50;
+  const SELECTION_BOX_MARGIN = 12;
+  const TOUCH_SELECTION_RECENCY_MS = 3e3;
+  const SUBTITLE_AUTO_SCROLL_PAUSE_MS = 5e3;
+  const normalizeSelectedText = (value) => value.replace(/\s+/g, " ").trim();
+  const isNodeInside = (node, container) => {
+    if (!node || !container) return false;
+    const target = node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+    return !!target && container.contains(target);
+  };
+  const isShadowRoot = (root2) => typeof ShadowRoot !== "undefined" && root2 instanceof ShadowRoot;
+  const isSelectionEventTarget = (target) => !!target && (target instanceof Document || isShadowRoot(target));
+  const isRangeInside = (range, container) => isNodeInside(range.startContainer, container) && isNodeInside(range.endContainer, container);
+  const getVisibleRangeRect$1 = (range) => {
+    const rects = Array.from(range.getClientRects()).filter((rect2) => rect2.width > 0 && rect2.height > 0);
+    if (rects.length > 0) return rects[0];
+    const rect = range.getBoundingClientRect();
+    return rect.width > 0 && rect.height > 0 ? rect : null;
+  };
+  const getSelectionBoxPosition = (rect, text2) => {
+    var _a, _b, _c, _d;
+    const viewportWidth = ((_a = window.visualViewport) == null ? void 0 : _a.width) ?? window.innerWidth;
+    const viewportHeight = ((_b = window.visualViewport) == null ? void 0 : _b.height) ?? window.innerHeight;
+    const viewportLeft = ((_c = window.visualViewport) == null ? void 0 : _c.offsetLeft) ?? 0;
+    const viewportTop = ((_d = window.visualViewport) == null ? void 0 : _d.offsetTop) ?? 0;
+    const estimatedButtonWidth = Math.min(320, viewportWidth - SELECTION_BOX_MARGIN * 2, 34 + text2.length * 8);
+    const horizontalInset = estimatedButtonWidth / 2 + SELECTION_BOX_MARGIN;
+    const left = Math.min(
+      viewportLeft + viewportWidth - horizontalInset,
+      Math.max(viewportLeft + horizontalInset, rect.left + rect.width / 2)
+    );
+    let top = rect.top - 48;
+    if (top < viewportTop + SELECTION_BOX_MARGIN) {
+      top = rect.bottom + 10;
+    }
+    top = Math.min(viewportTop + viewportHeight - 52, Math.max(viewportTop + SELECTION_BOX_MARGIN, top));
+    return { top, left };
+  };
+  const hasCoarsePointer = () => typeof window.matchMedia === "function" && window.matchMedia("(pointer: coarse)").matches;
+  const staticRangeToRange = (staticRange) => {
+    const range = document.createRange();
+    range.setStart(staticRange.startContainer, staticRange.startOffset);
+    range.setEnd(staticRange.endContainer, staticRange.endOffset);
+    return range;
+  };
+  const getComposedSelectionRanges = (selection, root2) => {
+    if (typeof selection.getComposedRanges !== "function") return [];
+    try {
+      return selection.getComposedRanges({ shadowRoots: [root2] });
+    } catch {
+    }
+    try {
+      return selection.getComposedRanges(root2);
+    } catch {
+    }
+    return [];
+  };
+  const getRootSelection = (root2) => {
+    var _a;
+    if (isShadowRoot(root2)) {
+      const shadowSelection = (_a = root2.getSelection) == null ? void 0 : _a.call(root2);
+      if (shadowSelection && (shadowSelection.rangeCount > 0 || !shadowSelection.isCollapsed)) return shadowSelection;
+    }
+    return (typeof document.getSelection === "function" ? document.getSelection() : window.getSelection()) ?? null;
+  };
+  const getSubtitleSelection = (textContainer) => {
+    if (!textContainer) return null;
+    const root2 = textContainer.getRootNode();
+    const selection = getRootSelection(root2);
+    if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
+      return null;
+    }
+    if (isShadowRoot(root2)) {
+      const composedRanges = getComposedSelectionRanges(selection, root2);
+      const composedRange = composedRanges.find((range2) => isRangeInside(range2, textContainer));
+      if (composedRange) {
+        const range2 = staticRangeToRange(composedRange);
+        const text22 = normalizeSelectedText(range2.toString() || selection.toString() || "");
+        if (text22 && text22.length <= MAX_SELECTION_LENGTH) {
+          return { selection, range: range2, text: text22 };
+        }
+      }
+    }
+    const range = selection.getRangeAt(0);
+    const text2 = normalizeSelectedText(selection.toString() || range.toString() || "");
+    if (!text2 || text2.length > MAX_SELECTION_LENGTH) return null;
+    if (!isRangeInside(range, textContainer) && (!isNodeInside(selection.anchorNode, textContainer) || !isNodeInside(selection.focusNode, textContainer))) {
+      return null;
+    }
+    return { selection, range, text: text2 };
+  };
+  let subtitleAutoScrollPausedUntil = 0;
+  let subtitleSelectionGestureActive = false;
+  const pauseSubtitleAutoScroll = (ms = SUBTITLE_AUTO_SCROLL_PAUSE_MS) => {
+    subtitleAutoScrollPausedUntil = Math.max(subtitleAutoScrollPausedUntil, Date.now() + ms);
+  };
+  const lockSubtitleSelectionGesture = (ms = SUBTITLE_AUTO_SCROLL_PAUSE_MS) => {
+    subtitleSelectionGestureActive = true;
+    pauseSubtitleAutoScroll(ms);
+  };
+  const clearSubtitleSelectionGesture = () => {
+    subtitleSelectionGestureActive = false;
+  };
+  const isSubtitleAutoScrollPaused = () => subtitleSelectionGestureActive || Date.now() < subtitleAutoScrollPausedUntil;
+  const SubtitleItem = ({ data, index: index2, allSubs, isActive, adapter }) => {
+    const [isExpanded, setIsExpanded] = reactExports.useState(false);
+    const [isGenerating, setIsGenerating] = reactExports.useState(false);
+    const [aiContent, setAiContent] = reactExports.useState("");
+    const [isError, setIsError] = reactExports.useState(false);
+    const [selectionBox, setSelectionBox] = reactExports.useState(null);
+    const itemRef = reactExports.useRef(null);
+    const textRef = reactExports.useRef(null);
+    const abortRef = reactExports.useRef(null);
+    const selectionTimerRef = reactExports.useRef(null);
+    const ignoreNextClickRef = reactExports.useRef(false);
+    const lastSelectionInputRef = reactExports.useRef("mouse");
+    const lastTouchSelectionAtRef = reactExports.useRef(0);
+    reactExports.useEffect(() => {
+      return () => {
+        if (abortRef.current) {
+          abortRef.current();
+          abortRef.current = null;
+        }
+      };
+    }, []);
+    reactExports.useEffect(() => {
+      if (isActive && itemRef.current && !isSubtitleAutoScrollPaused()) {
+        itemRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }, [isActive]);
+    reactExports.useEffect(() => {
+      return () => {
+        clearSubtitleSelectionGesture();
+      };
+    }, []);
+    const handlePlay = (e) => {
+      e.stopPropagation();
+      adapter.seekTo(data.start);
+      adapter.play();
+    };
+    const handlePin = (e) => {
+      e.stopPropagation();
+      adapter.seekTo(data.start);
+      adapter.pause();
+    };
+    const rememberSelectionInput = reactExports.useCallback((inputType) => {
+      lastSelectionInputRef.current = inputType;
+      if (inputType === "touch") {
+        lastTouchSelectionAtRef.current = Date.now();
+      }
+    }, []);
+    const shouldDockSelectionBox = reactExports.useCallback(() => lastSelectionInputRef.current === "touch" || Date.now() - lastTouchSelectionAtRef.current < TOUCH_SELECTION_RECENCY_MS || hasCoarsePointer(), []);
+    const refreshSelectionBox = reactExports.useCallback(() => {
+      const subtitleSelection = getSubtitleSelection(textRef.current);
+      if (!subtitleSelection) {
+        setSelectionBox(null);
+        return;
+      }
+      const rect = getVisibleRangeRect$1(subtitleSelection.range);
+      if (rect) {
+        const position = getSelectionBoxPosition(rect, subtitleSelection.text);
+        const placement = shouldDockSelectionBox() ? "dock" : "floating";
+        lockSubtitleSelectionGesture();
+        setSelectionBox({
+          text: subtitleSelection.text,
+          top: position.top,
+          left: position.left,
+          placement
+        });
+      } else {
+        setSelectionBox(null);
+      }
+    }, [shouldDockSelectionBox]);
+    const scheduleSelectionRefresh = reactExports.useCallback((delay = 0) => {
+      if (selectionTimerRef.current !== null) {
+        window.clearTimeout(selectionTimerRef.current);
+      }
+      selectionTimerRef.current = window.setTimeout(() => {
+        selectionTimerRef.current = null;
+        refreshSelectionBox();
+      }, delay);
+    }, [refreshSelectionBox]);
+    const handleSelectionPointerDown = (e) => {
+      lockSubtitleSelectionGesture();
+      rememberSelectionInput(e.pointerType === "touch" ? "touch" : e.pointerType === "pen" ? "pen" : "mouse");
+    };
+    const handleSelectionPointerUp = (e) => {
+      e.stopPropagation();
+      rememberSelectionInput(e.pointerType === "touch" ? "touch" : e.pointerType === "pen" ? "pen" : "mouse");
+      scheduleSelectionRefresh(e.pointerType === "touch" ? 180 : 0);
+    };
+    const handleSelectionPointerCancel = (e) => {
+      rememberSelectionInput(e.pointerType === "touch" ? "touch" : e.pointerType === "pen" ? "pen" : "mouse");
+      scheduleSelectionRefresh(e.pointerType === "touch" ? 180 : 0);
+    };
+    const handleSelectionMouseDown = () => {
+      lockSubtitleSelectionGesture();
+      rememberSelectionInput("mouse");
+    };
+    const handleSelectionMouseUp = (e) => {
+      e.stopPropagation();
+      rememberSelectionInput("mouse");
+      scheduleSelectionRefresh(0);
+    };
+    const handleSelectionTouchStart = () => {
+      lockSubtitleSelectionGesture();
+      rememberSelectionInput("touch");
+    };
+    const handleSelectionTouchEnd = (e) => {
+      e.stopPropagation();
+      rememberSelectionInput("touch");
+      scheduleSelectionRefresh(180);
+    };
+    reactExports.useEffect(() => {
+      var _a;
+      const handleSelectionChange = () => scheduleSelectionRefresh(120);
+      const handleGlobalPointerUp = () => {
+        if (subtitleSelectionGestureActive) scheduleSelectionRefresh(20);
+      };
+      const selectionTargets = /* @__PURE__ */ new Set([document]);
+      const root2 = (_a = textRef.current) == null ? void 0 : _a.getRootNode();
+      if (isSelectionEventTarget(root2)) {
+        selectionTargets.add(root2);
+      }
+      selectionTargets.forEach((target) => target.addEventListener("selectionchange", handleSelectionChange));
+      window.addEventListener("pointerup", handleGlobalPointerUp, true);
+      window.addEventListener("touchend", handleGlobalPointerUp, true);
+      return () => {
+        selectionTargets.forEach((target) => target.removeEventListener("selectionchange", handleSelectionChange));
+        window.removeEventListener("pointerup", handleGlobalPointerUp, true);
+        window.removeEventListener("touchend", handleGlobalPointerUp, true);
+        if (selectionTimerRef.current !== null) {
+          window.clearTimeout(selectionTimerRef.current);
+        }
+      };
+    }, [scheduleSelectionRefresh]);
+    reactExports.useEffect(() => {
+      const closeBox = (event) => {
+        const path2 = typeof event.composedPath === "function" ? event.composedPath() : [];
+        if (path2.some((node) => node instanceof Element && node.classList.contains("linkual-selection-add"))) return;
+        if (path2.some((node) => node instanceof Element && node.classList.contains("text-content"))) return;
+        clearSubtitleSelectionGesture();
+        setSelectionBox(null);
+      };
+      const closeOnEscape = (event) => {
+        if (event.key === "Escape") setSelectionBox(null);
+      };
+      window.addEventListener("pointerdown", closeBox, true);
+      window.addEventListener("touchstart", closeBox, true);
+      window.addEventListener("mousedown", closeBox, true);
+      window.addEventListener("scroll", closeBox, true);
+      window.addEventListener("keydown", closeOnEscape);
+      return () => {
+        window.removeEventListener("pointerdown", closeBox, true);
+        window.removeEventListener("touchstart", closeBox, true);
+        window.removeEventListener("mousedown", closeBox, true);
+        window.removeEventListener("scroll", closeBox, true);
+        window.removeEventListener("keydown", closeOnEscape);
+        clearSubtitleSelectionGesture();
+      };
+    }, []);
+    const handleAddVocab = (e, word) => {
+      var _a, _b, _c, _d;
+      e.preventDefault();
+      e.stopPropagation();
+      let cleanUrl = window.location.href;
+      try {
+        const urlObj = new URL(cleanUrl);
+        urlObj.searchParams.delete("t");
+        cleanUrl = urlObj.toString();
+      } catch (err) {
+      }
+      let videoTitle = (_a = document.querySelector("h1.ytd-watch-metadata yt-formatted-string")) == null ? void 0 : _a.textContent;
+      if (!videoTitle) {
+        videoTitle = document.title.replace(/^\(\d+\)\s+/, "").replace(/ - YouTube$/, "");
+      }
+      const ctxSize = parseInt(ConfigService.get("api_ctxSize"), 10) || 2;
+      const startIdx = Math.max(0, index2 - ctxSize);
+      const endIdx = Math.min(allSubs.length - 1, index2 + ctxSize);
+      let contextBlock = "";
+      for (let i = startIdx; i <= endIdx; i++) {
+        contextBlock += allSubs[i].text + " ";
+      }
+      try {
+        enqueueVocabTask({
+          word,
+          context: contextBlock.trim(),
+          source: videoTitle == null ? void 0 : videoTitle.trim(),
+          youtube: { url: cleanUrl, timestamp: Math.floor(data.start) }
+        });
+      } catch (err) {
+        console.error("[Linkual] 加入制卡队列失败:", err);
+      }
+      setSelectionBox(null);
+      const root2 = (_b = textRef.current) == null ? void 0 : _b.getRootNode();
+      if (root2) {
+        (_c = getRootSelection(root2)) == null ? void 0 : _c.removeAllRanges();
+      } else {
+        (_d = window.getSelection()) == null ? void 0 : _d.removeAllRanges();
+      }
+    };
+    const handleSelectionButtonPointerUp = (e) => {
+      e.stopPropagation();
+      if (e.pointerType !== "touch" || !selectionBox) return;
+      ignoreNextClickRef.current = true;
+      window.setTimeout(() => {
+        ignoreNextClickRef.current = false;
+      }, 400);
+      handleAddVocab(e, selectionBox.text);
+    };
+    const handleSelectionButtonTouchEnd = (e) => {
+      e.stopPropagation();
+      if (ignoreNextClickRef.current || !selectionBox) return;
+      ignoreNextClickRef.current = true;
+      window.setTimeout(() => {
+        ignoreNextClickRef.current = false;
+      }, 400);
+      handleAddVocab(e, selectionBox.text);
+    };
+    const handleSelectionButtonClick = (e) => {
+      if (!selectionBox) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
+      if (ignoreNextClickRef.current) {
+        e.preventDefault();
+        e.stopPropagation();
+        ignoreNextClickRef.current = false;
+        return;
+      }
+      handleAddVocab(e, selectionBox.text);
+    };
+    const handleParse = (e, forceExpand = false) => {
+      e.stopPropagation();
+      if (isGenerating && abortRef.current) {
+        abortRef.current();
+        abortRef.current = null;
+      }
+      if (forceExpand) setIsExpanded(true);
+      const apiKey = ConfigService.get("api_key").trim();
+      const apiUrl = ConfigService.get("api_url").trim();
+      const apiModel = ConfigService.get("api_model").trim();
+      const systemPrompt = ConfigService.get("api_prompt");
+      const ctxSize = parseInt(ConfigService.get("api_ctxSize"), 10);
+      const timeout = parseInt(ConfigService.get("api_timeout"), 10) || 60;
+      if (!apiKey) {
+        setIsError(true);
+        setAiContent("请在设置中填入 API Key！");
+        setIsExpanded(true);
+        return;
+      }
+      setIsGenerating(true);
+      setIsError(false);
+      setAiContent("解析语境中...\n");
+      setIsExpanded(true);
+      const startIdx = Math.max(0, index2 - ctxSize);
+      const endIdx = Math.min(allSubs.length - 1, index2 + ctxSize);
+      let contextBlock = "";
+      for (let i = startIdx; i <= endIdx; i++) {
+        if (i === index2) contextBlock += `【目标字幕】：${allSubs[i].text}
+`;
+        else contextBlock += `（上下文）：${allSubs[i].text}
+`;
+      }
+      setAiContent("");
+      const { abort } = fetchLlmStream({
+        apiUrl,
+        apiKey,
+        apiModel,
+        systemPrompt,
+        timeoutSec: timeout,
+        userPrompt: `请根据以下字幕片段进行解释：
+
+${contextBlock}`,
+        onData: (chunk) => setAiContent((prev) => prev + chunk),
+        onError: (err) => {
+          if (err === "ABORTED") return;
+          setIsError(true);
+          setAiContent((prev) => prev + err);
+          setIsGenerating(false);
+        },
+        onDone: () => {
+          setIsGenerating(false);
+          abortRef.current = null;
+        }
+      });
+      abortRef.current = abort;
+    };
+    const handleToggle = (e) => {
+      e.stopPropagation();
+      if (!aiContent && !isGenerating && !isError) {
+        handleParse(e, true);
+      } else {
+        setIsExpanded(!isExpanded);
+      }
+    };
+    const itemClass = `item ${isActive ? "active" : ""}`;
+    const ctrlClass = `ctrl-bar ${isError ? "error" : aiContent ? "done" : ""}`;
+    return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: itemClass, ref: itemRef, children: [
+      selectionBox && /* @__PURE__ */ jsxRuntimeExports.jsxs(
+        "button",
+        {
+          type: "button",
+          className: `linkual-selection-add linkual-selection-add-${selectionBox.placement}`,
+          onPointerDown: (e) => e.stopPropagation(),
+          onPointerUp: handleSelectionButtonPointerUp,
+          onTouchStart: (e) => e.stopPropagation(),
+          onTouchEnd: handleSelectionButtonTouchEnd,
+          onMouseDown: (e) => e.stopPropagation(),
+          onClick: handleSelectionButtonClick,
+          style: selectionBox.placement === "floating" ? {
+            top: selectionBox.top,
+            left: selectionBox.left
+          } : void 0,
+          children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx(BadgePlus, { className: "linkual-selection-add-icon", size: 16, strokeWidth: 2.2 }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "linkual-selection-add-text", children: [
+              '"',
+              selectionBox.text,
+              '"'
+            ] })
+          ]
+        }
+      ),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: ctrlClass, children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("button", { type: "button", className: "tag-btn tag-play", onClick: handlePlay, title: "点击跳转并播放", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx(Play, { className: "linkual-subtitle-icon", size: 12, strokeWidth: 2.4 }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
+            Math.floor(data.start / 60),
+            ":",
+            Math.floor(data.start % 60).toString().padStart(2, "0")
+          ] })
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", className: "tag-btn tag-pin", onClick: handlePin, title: "定位到此处并暂停", "aria-label": "定位到此处并暂停", children: /* @__PURE__ */ jsxRuntimeExports.jsx(MapPin, { className: "linkual-subtitle-icon", size: 13, strokeWidth: 2.3 }) }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("button", { type: "button", className: "btn-parse", onClick: handleParse, children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx(Sparkles, { className: "linkual-subtitle-icon", size: 13, strokeWidth: 2.2 }),
+          isGenerating ? "解析中" : aiContent ? "重新解析" : "解析"
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", className: "btn-chevron", onClick: handleToggle, title: isExpanded ? "收起解析" : "展开解析", "aria-label": isExpanded ? "收起解析" : "展开解析", children: isExpanded ? /* @__PURE__ */ jsxRuntimeExports.jsx(ChevronDown, { className: "linkual-subtitle-icon", size: 15, strokeWidth: 2.3 }) : /* @__PURE__ */ jsxRuntimeExports.jsx(ChevronLeft, { className: "linkual-subtitle-icon", size: 15, strokeWidth: 2.3 }) })
+      ] }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx(
+        "div",
+        {
+          className: "text-content",
+          ref: textRef,
+          onPointerDown: handleSelectionPointerDown,
+          onPointerUp: handleSelectionPointerUp,
+          onPointerCancel: handleSelectionPointerCancel,
+          onMouseDown: handleSelectionMouseDown,
+          onMouseUp: handleSelectionMouseUp,
+          onTouchStart: handleSelectionTouchStart,
+          onTouchEnd: handleSelectionTouchEnd,
+          children: data.text
+        }
+      ),
+      isExpanded && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "ai-box", style: { color: isError ? "#c62828" : "#444" }, children: /* @__PURE__ */ jsxRuntimeExports.jsx(ArticleMarkdown, { text: aiContent, mode: "block" }) })
+    ] });
+  };
+  const STORAGE_KEY = "linkual_article_translation_cache";
+  const CACHE_VERSION = 1;
+  const CACHE_UPDATED_EVENT = "linkual_article_cache_updated";
+  function getCanonicalUrl(url) {
+    try {
+      const parsed = new URL(url);
+      parsed.hash = "";
+      return parsed.toString();
+    } catch {
+      return url.split("#")[0] || url;
+    }
+  }
+  function getArticleTranslationCacheKey(url, targetLanguage) {
+    return `${getCanonicalUrl(url)}
+${targetLanguage.trim() || "简体中文"}`;
+  }
+  function parseStore(value) {
+    const parsed = typeof value === "string" ? (() => {
+      try {
+        return JSON.parse(value);
+      } catch {
+        return null;
+      }
+    })() : value;
+    if (!parsed || typeof parsed !== "object") return { version: CACHE_VERSION, pages: {} };
+    const candidate = parsed;
+    if (!candidate.pages || typeof candidate.pages !== "object") return { version: CACHE_VERSION, pages: {} };
+    return { version: CACHE_VERSION, pages: candidate.pages };
+  }
+  function readStore() {
+    try {
+      if (typeof _GM_getValue !== "undefined") {
+        const gmValue = _GM_getValue(STORAGE_KEY);
+        if (gmValue !== void 0 && gmValue !== null) return parseStore(gmValue);
+      }
+    } catch {
+    }
+    return parseStore(localStorage.getItem(STORAGE_KEY));
+  }
+  function writeStore(store) {
+    const serialized = JSON.stringify(store);
+    try {
+      if (typeof _GM_setValue !== "undefined") _GM_setValue(STORAGE_KEY, store);
+    } catch {
+    }
+    localStorage.setItem(STORAGE_KEY, serialized);
+    window.dispatchEvent(new Event(CACHE_UPDATED_EVENT));
+  }
+  function getArticleTranslationCache(url, targetLanguage) {
+    return readStore().pages[getArticleTranslationCacheKey(url, targetLanguage)] || null;
+  }
+  function saveArticleTranslation(url, targetLanguage, paragraphId, entry) {
+    const store = readStore();
+    const key = getArticleTranslationCacheKey(url, targetLanguage);
+    const current = store.pages[key] || {
+      url: getCanonicalUrl(url),
+      targetLanguage: targetLanguage.trim() || "简体中文",
+      updatedAt: Date.now(),
+      entries: {}
+    };
+    current.entries[paragraphId] = entry;
+    current.updatedAt = Date.now();
+    store.pages[key] = current;
+    writeStore(store);
+  }
+  function listArticleTranslationCaches() {
+    return Object.entries(readStore().pages).map(([key, page]) => ({ key, ...page, entryCount: Object.keys(page.entries || {}).length })).sort((a, b) => b.updatedAt - a.updatedAt);
+  }
+  function clearArticleTranslationCaches() {
+    const empty = { version: CACHE_VERSION, pages: {} };
+    try {
+      if (typeof _GM_setValue !== "undefined") _GM_setValue(STORAGE_KEY, empty);
+      if (typeof _GM_deleteValue !== "undefined") _GM_deleteValue(`${STORAGE_KEY}_legacy`);
+    } catch {
+    }
+    localStorage.removeItem(STORAGE_KEY);
+    window.dispatchEvent(new Event(CACHE_UPDATED_EVENT));
+  }
+  function deleteArticleTranslationCache(key) {
+    const store = readStore();
+    delete store.pages[key];
+    writeStore(store);
+  }
+  const LINKUAL_CURRENT_VERSION = "0.0.57";
+  const LINKUAL_UPDATE_URL = "https://raw.githubusercontent.com/gsjz/linkualog/main/browser-plugin/user/linkualog.user.js";
+  const LINKUAL_DOWNLOAD_URL = LINKUAL_UPDATE_URL;
+  const CHECK_INTERVAL_MS = 24 * 60 * 60 * 1e3;
+  const REQUEST_TIMEOUT_MS = 12e3;
+  function requestText(url) {
+    const requestUrl = `${url}?_=${Date.now()}`;
+    if (typeof _GM_xmlhttpRequest !== "undefined") {
+      return new Promise((resolve, reject) => {
+        _GM_xmlhttpRequest({
+          method: "GET",
+          url: requestUrl,
+          timeout: REQUEST_TIMEOUT_MS,
+          headers: {
+            Accept: "text/plain,*/*",
+            "Cache-Control": "no-cache"
+          },
+          onload: (response) => {
+            if (response.status < 200 || response.status >= 300) {
+              reject(new Error(`HTTP ${response.status}`));
+              return;
+            }
+            resolve(String(response.responseText || ""));
+          },
+          onerror: () => reject(new Error("更新检查请求失败")),
+          ontimeout: () => reject(new Error("更新检查请求超时")),
+          onabort: () => reject(new Error("更新检查请求已取消"))
+        });
+      });
+    }
+    return fetch(requestUrl, { cache: "no-store" }).then(async (response) => {
+      const text2 = await response.text();
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return text2;
+    });
+  }
+  function readUserscriptVersion(source) {
+    var _a, _b;
+    return ((_b = (_a = source.match(/^\s*\/\/\s*@version\s+(.+?)\s*$/m)) == null ? void 0 : _a[1]) == null ? void 0 : _b.trim()) || "";
+  }
+  function normalizeVersion(value) {
+    return value.trim().replace(/^v/i, "");
+  }
+  function compareVersions(left, right) {
+    const leftParts = normalizeVersion(left).split(/[.-]/);
+    const rightParts = normalizeVersion(right).split(/[.-]/);
+    const length = Math.max(leftParts.length, rightParts.length);
+    for (let index2 = 0; index2 < length; index2 += 1) {
+      const leftPart = leftParts[index2] || "0";
+      const rightPart = rightParts[index2] || "0";
+      const leftNumber = Number(leftPart);
+      const rightNumber = Number(rightPart);
+      if (Number.isFinite(leftNumber) && Number.isFinite(rightNumber)) {
+        if (leftNumber !== rightNumber) return leftNumber > rightNumber ? 1 : -1;
+        continue;
+      }
+      const stringCompare = leftPart.localeCompare(rightPart);
+      if (stringCompare !== 0) return stringCompare > 0 ? 1 : -1;
+    }
+    return 0;
+  }
+  function getLastCheckedAt() {
+    const parsed = Number.parseInt(ConfigService.get("update_last_checked_at"), 10);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  function markCheckedNow() {
+    ConfigService.set("update_last_checked_at", String(Date.now()));
+  }
+  function isAutoUpdateCheckEnabled() {
+    return ConfigService.get("auto_update_check") !== "false";
+  }
+  function shouldCheckForUpdates(force = false) {
+    if (!force && !isAutoUpdateCheckEnabled()) return false;
+    if (force) return true;
+    return Date.now() - getLastCheckedAt() >= CHECK_INTERVAL_MS;
+  }
+  async function checkForUpdates(options = {}) {
+    if (!shouldCheckForUpdates(Boolean(options.force))) return null;
+    markCheckedNow();
+    const source = await requestText(LINKUAL_UPDATE_URL);
+    const latestVersion = readUserscriptVersion(source);
+    if (!latestVersion || compareVersions(latestVersion, LINKUAL_CURRENT_VERSION) <= 0) return null;
+    if (ConfigService.get("update_ignored_version") === latestVersion) return null;
+    return {
+      currentVersion: LINKUAL_CURRENT_VERSION,
+      latestVersion,
+      downloadUrl: LINKUAL_DOWNLOAD_URL
+    };
+  }
+  function ignoreUpdateVersion(version2) {
+    ConfigService.set("update_ignored_version", version2);
+  }
+  const API_BASE_PATH = "/v1";
+  const API_CHAT_COMPLETIONS_PATH = "/chat/completions";
+  const LAN_SYNC_API_PATH = "/api/vocabulary/add";
+  const normalizeUrlPrefix = (prefix2) => prefix2.trim().replace(/\/+$/, "");
+  const stripUrlProtocol = (value) => value.replace(/^https?:\/\//i, "");
+  const getUrlProtocol = (url, fallback = "http") => {
+    const match = url.trim().match(/^(https?):\/\//i);
+    if (!match) return fallback;
+    return match[1].toLowerCase() === "https" ? "https" : "http";
+  };
+  const buildUrlWithPath = (prefix2, protocol, path2) => {
+    const normalizedPrefix = normalizeUrlPrefix(stripUrlProtocol(prefix2));
+    return normalizedPrefix ? `${protocol}://${normalizedPrefix}${path2}` : "";
+  };
+  const getUrlPrefixForPath = (url, path2) => {
+    const trimmedUrl = normalizeUrlPrefix(url);
+    const protocolMatch = trimmedUrl.match(/^https?:\/\//i);
+    return protocolMatch && trimmedUrl.toLowerCase().endsWith(path2.toLowerCase()) ? normalizeUrlPrefix(trimmedUrl.slice(protocolMatch[0].length, -path2.length)) : "";
+  };
+  const getApiEndpointPath = (url) => {
+    const normalizedUrl = normalizeUrlPrefix(url);
+    if (/\/chat\/completions$/i.test(normalizedUrl)) return API_CHAT_COMPLETIONS_PATH;
+    if (/\/v1$/i.test(normalizedUrl)) return API_BASE_PATH;
+    return API_BASE_PATH;
+  };
+  const getApiPrefix = (url) => {
+    const normalizedUrl = normalizeUrlPrefix(url);
+    const protocolMatch = normalizedUrl.match(/^https?:\/\//i);
+    if (!protocolMatch) return "";
+    const withoutProtocol = normalizedUrl.slice(protocolMatch[0].length);
+    if (/\/chat\/completions$/i.test(withoutProtocol)) {
+      return normalizeUrlPrefix(withoutProtocol.replace(/\/chat\/completions$/i, ""));
+    }
+    if (/\/v1$/i.test(withoutProtocol)) {
+      return normalizeUrlPrefix(withoutProtocol.replace(/\/v1$/i, ""));
+    }
+    return "";
+  };
+  const buildApiUrl = (prefix2, protocol, endpointPath) => {
+    let normalizedPrefix = normalizeUrlPrefix(stripUrlProtocol(prefix2)).replace(/\/chat\/completions$/i, "");
+    if (endpointPath === API_BASE_PATH) {
+      normalizedPrefix = normalizedPrefix.replace(/\/v1$/i, "");
+    }
+    return buildUrlWithPath(normalizedPrefix, protocol, endpointPath);
+  };
+  const buildLanSyncUrl = (prefix2, protocol) => buildUrlWithPath(stripUrlProtocol(prefix2).replace(/\/api\/vocabulary\/add$/i, ""), protocol, LAN_SYNC_API_PATH);
+  const getLanPrefix = (url) => getUrlPrefixForPath(url, LAN_SYNC_API_PATH);
+  const Settings2 = ({ adapter, onClose }) => {
+    const [activeTab, setActiveTab] = reactExports.useState("api");
+    const [translationCaches, setTranslationCaches] = reactExports.useState(listArticleTranslationCaches);
+    const getAdpCfg = (key) => {
+      const val = ConfigService.get(`${key}_${adapter.platformName}`);
+      return val !== null && val !== void 0 && val !== "" ? val : ConfigService.get(key);
+    };
+    const [cfg, setCfg] = reactExports.useState({
+      color: ConfigService.get("theme_color"),
+      doneColor: ConfigService.get("done_color"),
+      errorColor: ConfigService.get("error_color"),
+      url: ConfigService.get("api_url"),
+      key: ConfigService.get("api_key"),
+      model: ConfigService.get("api_model"),
+      prompt: ConfigService.get("api_prompt"),
+      webTargetLanguage: ConfigService.get("web_target_language"),
+      webTranslationPrompt: ConfigService.get("web_translation_prompt"),
+      timeout: ConfigService.get("api_timeout"),
+      ctxSize: ConfigService.get("api_ctxSize"),
+      lanUrl: ConfigService.get("lan_sync_url"),
+      lanAction: ConfigService.get("lan_action"),
+      mobileFullscreenMode: ConfigService.get("mobile_fullscreen_mode"),
+      autoUpdateCheck: ConfigService.get("auto_update_check"),
+      layout: getAdpCfg("layout_position"),
+      sidebarWidth: getAdpCfg("sidebar_width"),
+      sidebarHeight: getAdpCfg("sidebar_height")
+    });
+    const handleChange = (e) => {
+      const { name, value } = e.target;
+      setCfg((prev) => ({ ...prev, [name]: value }));
+    };
+    const handleCheckboxChange = (e) => {
+      const { name, checked } = e.target;
+      setCfg((prev) => ({ ...prev, [name]: checked ? "true" : "false" }));
+    };
+    const handleApiPrefixChange = (e) => {
+      setCfg((prev) => ({ ...prev, url: buildApiUrl(e.target.value, getUrlProtocol(prev.url, "https"), getApiEndpointPath(prev.url)) }));
+    };
+    const handleApiProtocolChange = (e) => {
+      const protocol = e.target.value;
+      setCfg((prev) => {
+        const prefix2 = getApiPrefix(prev.url);
+        return prefix2 ? { ...prev, url: buildApiUrl(prefix2, protocol, getApiEndpointPath(prev.url)) } : prev;
+      });
+    };
+    const handleApiEndpointPathChange = (e) => {
+      const endpointPath = e.target.value;
+      setCfg((prev) => {
+        const prefix2 = getApiPrefix(prev.url);
+        return prefix2 ? { ...prev, url: buildApiUrl(prefix2, getUrlProtocol(prev.url, "https"), endpointPath) } : prev;
+      });
+    };
+    const handleLanPrefixChange = (e) => {
+      setCfg((prev) => ({ ...prev, lanUrl: buildLanSyncUrl(e.target.value, getUrlProtocol(prev.lanUrl)) }));
+    };
+    const handleLanProtocolChange = (e) => {
+      const protocol = e.target.value;
+      setCfg((prev) => {
+        const prefix2 = getLanPrefix(prev.lanUrl);
+        return prefix2 ? { ...prev, lanUrl: buildLanSyncUrl(prefix2, protocol) } : prev;
+      });
+    };
+    const handleSave = () => {
+      ConfigService.set("theme_color", cfg.color);
+      ConfigService.set("done_color", cfg.doneColor);
+      ConfigService.set("error_color", cfg.errorColor);
+      ConfigService.set("api_url", cfg.url);
+      ConfigService.set("api_key", cfg.key);
+      ConfigService.set("api_model", cfg.model);
+      ConfigService.set("api_prompt", cfg.prompt);
+      ConfigService.set("web_target_language", cfg.webTargetLanguage);
+      ConfigService.set("web_translation_prompt", cfg.webTranslationPrompt);
+      ConfigService.set("api_timeout", cfg.timeout);
+      ConfigService.set("api_ctxSize", cfg.ctxSize);
+      ConfigService.set("lan_sync_url", cfg.lanUrl.trim());
+      ConfigService.set("lan_action", cfg.lanAction);
+      ConfigService.set("mobile_fullscreen_mode", cfg.mobileFullscreenMode);
+      ConfigService.set("auto_update_check", cfg.autoUpdateCheck);
+      ConfigService.set(`layout_position_${adapter.platformName}`, cfg.layout);
+      ConfigService.set(`sidebar_width_${adapter.platformName}`, cfg.sidebarWidth);
+      ConfigService.set(`sidebar_height_${adapter.platformName}`, cfg.sidebarHeight);
+      ConfigService.set("layout_position", cfg.layout);
+      ConfigService.set("sidebar_width", cfg.sidebarWidth);
+      ConfigService.set("sidebar_height", cfg.sidebarHeight);
+      onClose();
+      window.dispatchEvent(new Event("linkual_settings_updated"));
+    };
+    const handleReset = () => {
+      if (window.confirm("清空所有自定义设置恢复默认？")) {
+        ConfigService.reset();
+        onClose();
+        window.dispatchEvent(new Event("linkual_settings_updated"));
+      }
+    };
+    const handleBackdropMouseDown = (e) => {
+      if (e.target === e.currentTarget) onClose();
+    };
+    React$2.useEffect(() => {
+      const refreshCaches = () => setTranslationCaches(listArticleTranslationCaches());
+      window.addEventListener(CACHE_UPDATED_EVENT, refreshCaches);
+      return () => window.removeEventListener(CACHE_UPDATED_EVENT, refreshCaches);
+    }, []);
+    const apiPrefix = getApiPrefix(cfg.url);
+    const apiProtocol = getUrlProtocol(cfg.url, "https");
+    const apiEndpointPath = getApiEndpointPath(cfg.url);
+    const lanPrefix = getLanPrefix(cfg.lanUrl);
+    const lanProtocol = getUrlProtocol(cfg.lanUrl);
+    return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "modal", onMouseDown: handleBackdropMouseDown, children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "modal-box", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "modal-header", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx("h3", { children: "全局设置" }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", className: "close-btn", onClick: onClose, title: "关闭", "aria-label": "关闭", children: /* @__PURE__ */ jsxRuntimeExports.jsx(X, { size: 18, strokeWidth: 2.3 }) })
+      ] }),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "tabs", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: `tab ${activeTab === "api" ? "active" : ""}`, onClick: () => setActiveTab("api"), children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx(PlugZap, { size: 15, strokeWidth: 2.2 }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "API 设置" })
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: `tab ${activeTab === "params" ? "active" : ""}`, onClick: () => setActiveTab("params"), children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx(SlidersHorizontal, { size: 15, strokeWidth: 2.2 }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "参数调整" })
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: `tab ${activeTab === "ui" ? "active" : ""}`, onClick: () => setActiveTab("ui"), children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx(Palette, { size: 15, strokeWidth: 2.2 }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "界面设置" })
+        ] })
+      ] }),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "tab-content", children: [
+        activeTab === "api" && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "tab-pane fade-in", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-col", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "API URL（快捷）" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "url-prefix-row", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsxs("select", { className: "url-protocol-select", value: apiProtocol, onChange: handleApiProtocolChange, "aria-label": "API 协议", children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx("option", { value: "http", children: "http" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("option", { value: "https", children: "https" })
+              ] }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("input", { value: apiPrefix, onChange: handleApiPrefixChange, placeholder: "dashscope.aliyuncs.com/compatible-mode/v1" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsxs("select", { className: "url-path-select", value: apiEndpointPath, onChange: handleApiEndpointPathChange, "aria-label": "API 端点", children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx("option", { value: API_BASE_PATH, children: "/v1" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("option", { value: API_CHAT_COMPLETIONS_PATH, children: "/chat/completions" })
+              ] })
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "setting-help", children: "快捷模式支持 /v1 或 /chat/completions；如需 /v1/chat/completions，可让前缀以 /v1 结尾。" })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-col", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "API URL（完整）" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("input", { name: "url", value: cfg.url, onChange: handleChange, placeholder: "https://..." })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-col", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "API Key" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("input", { name: "key", type: "password", value: cfg.key, onChange: handleChange, placeholder: "sk-..." })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-col", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "对话模型 (Model)" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("input", { name: "model", value: cfg.model, onChange: handleChange, placeholder: "如：gpt-3.5-turbo" })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-col", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "后端服务前缀（快捷）" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "url-prefix-row", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsxs("select", { className: "url-protocol-select", value: lanProtocol, onChange: handleLanProtocolChange, "aria-label": "后端服务协议", children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx("option", { value: "http", children: "http" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("option", { value: "https", children: "https" })
+              ] }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("input", { value: lanPrefix, onChange: handleLanPrefixChange, placeholder: "127.0.0.1:8000" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "url-fixed-suffix", children: LAN_SYNC_API_PATH })
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "setting-help", children: "只填写主机和端口会自动生成下方完整地址；如需自定义协议或路径，可直接编辑完整 API 地址。" })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-col", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "后端生词添加 API 地址（完整）" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("input", { name: "lanUrl", value: cfg.lanUrl, onChange: handleChange, placeholder: "http://127.0.0.1:8000/api/vocabulary/add" })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-col", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "默认生词本目录 (Category)" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("input", { name: "lanAction", value: cfg.lanAction, onChange: handleChange, placeholder: "例如: Video_Sync" })
+          ] })
+        ] }),
+        activeTab === "params" && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "tab-pane fade-in", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-col", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "上下文携带数量 (上下各取 N 条)" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("input", { type: "number", name: "ctxSize", value: cfg.ctxSize, onChange: handleChange, min: "0", max: "10" })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-col", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "API 超时时间 (秒)" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("input", { type: "number", name: "timeout", value: cfg.timeout, onChange: handleChange, min: "5", max: "300" })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-col", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "提示词 (Prompt)" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("textarea", { name: "prompt", value: cfg.prompt, onChange: handleChange, placeholder: "请输入系统提示词..." })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-col", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "网页翻译目标语言" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("input", { name: "webTargetLanguage", value: cfg.webTargetLanguage, onChange: handleChange, placeholder: "例如：简体中文" })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-col", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "网页翻译提示词" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("textarea", { name: "webTranslationPrompt", value: cfg.webTranslationPrompt, onChange: handleChange, placeholder: "留空则使用默认学术翻译提示词" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "setting-help", children: "网页翻译会按段请求模型；提示词应要求模型只输出译文，行内公式写成 $...$，行间公式写成 $$...$$，表格输出为 GitHub Flavored Markdown 表格。" })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-col linkual-translation-cache-manager", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-cache-manager-heading", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "网页翻译缓存" }),
+              translationCaches.length > 0 && /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "button",
+                {
+                  type: "button",
+                  className: "linkual-cache-clear-btn",
+                  onClick: () => {
+                    if (window.confirm("清空所有网页翻译缓存？")) clearArticleTranslationCaches();
+                  },
+                  children: "清空全部"
+                }
+              )
+            ] }),
+            translationCaches.length === 0 ? /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "setting-help", children: "暂无缓存。翻译成功的段落会自动保存，刷新页面后继续使用。" }) : /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "linkual-cache-list", children: translationCaches.map((cache) => /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-cache-item", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-cache-item-main", children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { children: cache.url }),
+                /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
+                  cache.targetLanguage,
+                  " · ",
+                  cache.entryCount,
+                  " 段 · ",
+                  new Date(cache.updatedAt).toLocaleString()
+                ] })
+              ] }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", onClick: () => deleteArticleTranslationCache(cache.key), children: "删除" })
+            ] }, cache.key)) })
+          ] })
+        ] }),
+        activeTab === "ui" && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "tab-pane fade-in", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-row", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "主题颜色" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("input", { type: "color", name: "color", value: cfg.color, onChange: handleChange })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-row", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "解析成功背景色" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("input", { type: "color", name: "doneColor", value: cfg.doneColor, onChange: handleChange })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-row", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "解析失败背景色" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("input", { type: "color", name: "errorColor", value: cfg.errorColor, onChange: handleChange })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-col", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "移动端全屏按钮" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("select", { name: "mobileFullscreenMode", value: cfg.mobileFullscreenMode, onChange: handleChange, style: { width: "100%", padding: "10px", borderRadius: "6px", border: "1px solid #ddd" }, children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("option", { value: "off", children: "关闭" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("option", { value: "video", children: "只在视频页开启" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("option", { value: "always", children: "任意页面开启" })
+            ] })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-row setting-row-toggle", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "自动检查插件更新" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "setting-help", children: "每天自动检查一次；发现新版本时在页面右上角弹出提示。" })
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "input",
+              {
+                type: "checkbox",
+                name: "autoUpdateCheck",
+                checked: cfg.autoUpdateCheck !== "false",
+                onChange: handleCheckboxChange
+              }
+            )
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-version-info", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "当前插件版本" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("code", { children: LINKUAL_CURRENT_VERSION })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "setting-col", style: { marginTop: "15px" }, children: /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { style: { fontSize: "12px", color: "#1976d2", padding: "4px 8px", background: "#e3f2fd", borderRadius: "4px" }, children: [
+            "当前网页 (",
+            adapter.platformName,
+            ") 的布局设置："
+          ] }) }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-col", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "UI 布局位置" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("select", { name: "layout", value: cfg.layout, onChange: handleChange, style: { width: "100%", padding: "10px", borderRadius: "6px", border: "1px solid #ddd" }, children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("option", { value: "right", children: "靠右对齐 (左右分屏)" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("option", { value: "bottom", children: "靠下对齐 (上下分屏)" })
+            ] })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-col", style: { opacity: cfg.layout === "right" ? 1 : 0.5 }, children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "侧边栏宽度 (px) - 仅靠右对齐时生效" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("input", { type: "number", name: "sidebarWidth", value: cfg.sidebarWidth, onChange: handleChange, min: "250", max: "1000", disabled: cfg.layout !== "right" })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-col", style: { opacity: cfg.layout === "bottom" ? 1 : 0.5 }, children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "底部栏高度 (px) - 仅靠下对齐时生效" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("input", { type: "number", name: "sidebarHeight", value: cfg.sidebarHeight, onChange: handleChange, min: "150", max: "800", disabled: cfg.layout !== "bottom" })
+          ] })
+        ] })
+      ] }),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "modal-footer", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx("button", { className: "btn reset-btn", onClick: handleReset, children: "恢复默认" }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("button", { className: "btn save-btn", style: { background: cfg.color, color: "#fff" }, onClick: handleSave, children: "保存设置" })
+      ] })
+    ] }) });
+  };
+  const formatHttpError = (status, responseText) => {
+    const detail = (responseText || "").trim();
+    return detail ? `HTTP ${status}: ${detail}` : `HTTP ${status}`;
+  };
+  async function requestJson({
+    url,
+    method = "GET",
+    headers = {},
+    body,
+    timeoutMs = 15e3
+  }) {
+    if (typeof _GM_xmlhttpRequest !== "undefined") {
+      return new Promise((resolve, reject) => {
+        _GM_xmlhttpRequest({
+          method,
+          url,
+          headers,
+          data: body,
+          timeout: timeoutMs,
+          onload: (res) => {
+            if (res.status < 200 || res.status >= 300) {
+              reject(new Error(formatHttpError(res.status, res.responseText)));
+              return;
+            }
+            const text2 = String(res.responseText || "").trim();
+            if (!text2) {
+              resolve({});
+              return;
+            }
+            try {
+              resolve(JSON.parse(text2));
+            } catch (err) {
+              const message = err instanceof Error ? err.message : String(err);
+              reject(new Error(`响应 JSON 解析失败: ${message}`));
+            }
+          },
+          onerror: () => reject(new Error(`GM_xmlhttpRequest 网络请求被拦截或断开: ${url}`)),
+          ontimeout: () => reject(new Error(`请求超时 (${Math.ceil(timeoutMs / 1e3)}s)`)),
+          onabort: () => reject(new Error("请求已取消"))
+        });
+      });
+    }
+    const abortController = new AbortController();
+    const timeoutId = setTimeout(() => abortController.abort(), timeoutMs);
+    try {
+      console.warn("[Linkual] GM_xmlhttpRequest 不可用，正在使用 fetch 发送请求:", url);
+      const response = await fetch(url, {
+        method,
+        headers,
+        body,
+        signal: abortController.signal
+      });
+      const text2 = await response.text();
+      if (!response.ok) {
+        throw new Error(formatHttpError(response.status, text2));
+      }
+      if (!text2.trim()) {
+        return {};
+      }
+      return JSON.parse(text2);
+    } catch (err) {
+      if ((err == null ? void 0 : err.name) === "AbortError") {
+        throw new Error(`fetch 请求超时 (${Math.ceil(timeoutMs / 1e3)}s): ${url}`);
+      }
+      const message = err instanceof Error ? err.message : String(err);
+      throw new Error(`fetch 请求失败: ${message}`);
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
+  const VOCAB_LLM_SYSTEM_PROMPT = `你是一个专业的英文翻译和词典 API 引擎。
+请根据目标词或短语及其上下文，生成适合写入生词本的 JSON。
+
+要求：
+1. 不要输出 pronunciation、音标或任何发音字段。
+2. definitions 只给目标词在当前上下文中最贴切的 1-3 条中文释义，格式为“词性. 中文释义”，释义必须以中文为主，不能是纯英文。
+3. examples 必须包含且只包含一个例句对象；text 必须与用户提供的上下文完全一致。
+4. examples[0].explanation 必须是自然、完整的中文解释，既翻译上下文，也点明目标词在此处的具体含义。
+5. examples[0].focusWords 只放真正需要聚焦的词或最小必要词组，优先使用上下文中出现的原始形态。
+6. 只输出合法 JSON，不要输出 markdown、代码块、注释或额外说明。
+
+JSON 格式：
+{
+  "definitions": ["vt. 放弃，抛弃（在此语境下）"],
+  "examples": [
+    {
+      "text": "原始上下文句子",
+      "explanation": "自然中文解释。",
+      "focusWords": ["目标词"]
+    }
+  ]
+}`;
+  const QUEUE_SYNC_INTERVAL_MS = 1800;
+  const parseLlmJson = (rawText) => {
+    var _a;
+    const trimmed = rawText.trim();
+    const fenced = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
+    const candidate = fenced ? fenced[1] : ((_a = trimmed.match(/\{[\s\S]*\}/)) == null ? void 0 : _a[0]) || trimmed;
+    return JSON.parse(candidate);
+  };
+  const LlmResultPreview = ({ result }) => {
+    var _a;
+    if (!hasUsableLlmResult(result)) return null;
+    const explanation = getLlmExplanation(result);
+    return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { background: "#f4f4f5", padding: "8px", borderRadius: "6px", fontSize: "12px", marginBottom: "10px" }, children: [
+      ((_a = result == null ? void 0 : result.definitions) == null ? void 0 : _a.length) ? /* @__PURE__ */ jsxRuntimeExports.jsx("ul", { style: { margin: "4px 0", paddingLeft: "16px", color: "#444" }, children: result.definitions.map((d, i) => /* @__PURE__ */ jsxRuntimeExports.jsx("li", { children: d }, i)) }) : null,
+      explanation ? /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { color: "#1976d2", fontStyle: "italic" }, children: [
+        "解析: ",
+        explanation
+      ] }) : null
+    ] });
+  };
+  const VocabQueue = () => {
+    const [isOpen, setIsOpen] = reactExports.useState(false);
+    const [isBulkSending, setIsBulkSending] = reactExports.useState(false);
+    const [tasks, setTasks] = reactExports.useState(readStoredQueue);
+    const updateStoredTasks = (updater) => {
+      setTasks((prev) => {
+        const storedTasks = readStoredQueue();
+        const baseTasks = JSON.stringify(prev) === JSON.stringify(storedTasks) ? prev : storedTasks;
+        const nextTasks = updater(baseTasks);
+        const envelope = writeStoredQueue(nextTasks);
+        emitQueueCount(envelope.tasks);
+        return envelope.tasks;
+      });
+    };
+    reactExports.useEffect(() => {
+      const syncQueue = () => {
+        const storedTasks = readStoredQueue();
+        setTasks((prev) => JSON.stringify(prev) === JSON.stringify(storedTasks) ? prev : storedTasks);
+        emitQueueCount(storedTasks);
+      };
+      const syncAcrossTabs = (e) => {
+        if (e.key === QUEUE_STORAGE_KEY) syncQueue();
+      };
+      const toggleQueue = () => setIsOpen((prev) => !prev);
+      const reportCount = () => emitQueueCount(readStoredQueue());
+      const enqueueFromEvent = (event) => {
+        const detail = event.detail || {};
+        try {
+          enqueueVocabTask(detail);
+        } catch (err) {
+          console.error("[Linkual] 加入制卡队列失败:", err);
+        }
+      };
+      window.addEventListener("storage", syncAcrossTabs);
+      window.addEventListener(QUEUE_TOGGLE_EVENT, toggleQueue);
+      window.addEventListener(QUEUE_REQUEST_COUNT_EVENT, reportCount);
+      window.addEventListener(QUEUE_CHANGED_EVENT, syncQueue);
+      window.addEventListener("linkual-add-vocab", enqueueFromEvent);
+      const interval = window.setInterval(syncQueue, QUEUE_SYNC_INTERVAL_MS);
+      reportCount();
+      return () => {
+        window.removeEventListener("storage", syncAcrossTabs);
+        window.removeEventListener(QUEUE_TOGGLE_EVENT, toggleQueue);
+        window.removeEventListener(QUEUE_REQUEST_COUNT_EVENT, reportCount);
+        window.removeEventListener(QUEUE_CHANGED_EVENT, syncQueue);
+        window.removeEventListener("linkual-add-vocab", enqueueFromEvent);
+        window.clearInterval(interval);
+      };
+    }, []);
+    const handleFetchLlm = (taskId) => {
+      const task = tasks.find((t) => t.id === taskId);
+      if (!task) return;
+      const apiKey = ConfigService.get("api_key");
+      const apiUrl = ConfigService.get("api_url");
+      const apiModel = ConfigService.get("api_model");
+      if (!apiKey) {
+        alert("请先在设置中配置 API Key");
+        return;
+      }
+      updateStoredTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, status: "fetching_llm", error: null, rawJson: "" } : t));
+      let generatedJsonStr = "";
+      fetchLlmStream({
+        apiUrl,
+        apiKey,
+        apiModel,
+        systemPrompt: VOCAB_LLM_SYSTEM_PROMPT,
+        userPrompt: `目标词或短语：${task.word}
+上下文：${task.context}`,
+        timeoutSec: 30,
+        onData: (chunk) => {
+          generatedJsonStr += chunk;
+          updateStoredTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, rawJson: generatedJsonStr } : t));
+        },
+        onError: (err) => {
+          updateStoredTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, status: "failed", error: err } : t));
+        },
+        onDone: () => {
+          let parsed = {};
+          try {
+            parsed = sanitizeLlmResult(parseLlmJson(generatedJsonStr));
+          } catch (e) {
+            const message = e instanceof Error ? e.message : String(e);
+            updateStoredTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, status: "failed", error: `LLM 返回 JSON 解析失败: ${message}`, rawJson: generatedJsonStr } : t));
+            return;
+          }
+          if (!hasUsableLlmResult(parsed)) {
+            updateStoredTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, status: "failed", error: "LLM 未返回可用释义 JSON", rawJson: generatedJsonStr } : t));
+            return;
+          }
+          updateStoredTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, status: "idle", llmResult: parsed, rawJson: generatedJsonStr } : t));
+        }
+      });
+    };
+    const sendTaskToServer = (sendingTask) => {
+      var _a;
+      const serverUrl = ConfigService.get("lan_sync_url");
+      const payload = {
+        word: sendingTask.word,
+        context: sendingTask.context,
+        source: sendingTask.source,
+        source_url: sendingTask.source_url || ((_a = sendingTask.youtube) == null ? void 0 : _a.url) || "",
+        youtube: sendingTask.youtube,
+        date: sendingTask.date,
+        llm_result: sanitizeLlmResult(sendingTask.llmResult),
+        fetch_llm: false,
+        category: sendingTask.category
+      };
+      console.info("[Linkual] 发送生词到后端:", serverUrl, payload);
+      return requestJson({
+        url: serverUrl,
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        timeoutMs: 15e3
+      });
+    };
+    const handleSend = (taskId, deleteOnSuccess) => {
+      const sendingTask = tasks.find((t) => t.id === taskId);
+      if (!sendingTask || !canSendTask(sendingTask)) return;
+      updateStoredTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, status: "sending", error: null } : t));
+      sendTaskToServer(sendingTask).then(() => {
+        console.info("[Linkual] 生词发送成功:", sendingTask.word);
+        if (deleteOnSuccess) {
+          updateStoredTasks((prev) => prev.filter((t) => t.id !== taskId));
+        } else {
+          updateStoredTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, status: "success" } : t));
+        }
+      }).catch((err) => {
+        const message = err instanceof Error ? err.message : "请求异常";
+        console.error("[Linkual] 生词发送失败:", message, { task: sendingTask });
+        updateStoredTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, status: "failed", error: message } : t));
+      });
+    };
+    const handleSendAllAndDelete = async () => {
+      const tasksToSend = readStoredQueue().filter(canSendTask);
+      if (tasksToSend.length === 0 || isBulkSending) return;
+      const sendingTaskIds = new Set(tasksToSend.map((task) => task.id));
+      setIsBulkSending(true);
+      updateStoredTasks((prev) => prev.map((t) => sendingTaskIds.has(t.id) ? { ...t, status: "sending", error: null } : t));
+      try {
+        for (const task of tasksToSend) {
+          try {
+            await sendTaskToServer(task);
+            console.info("[Linkual] 生词发送成功:", task.word);
+            updateStoredTasks((prev) => prev.filter((t) => t.id !== task.id));
+          } catch (err) {
+            const message = err instanceof Error ? err.message : "请求异常";
+            console.error("[Linkual] 生词发送失败:", message, { task });
+            updateStoredTasks((prev) => prev.map((t) => t.id === task.id ? { ...t, status: "failed", error: message } : t));
+          }
+        }
+      } finally {
+        setIsBulkSending(false);
+      }
+    };
+    const handleDeleteTask = (taskId) => {
+      updateStoredTasks((prev) => prev.filter((t) => t.id !== taskId));
+    };
+    const handleClearAll = () => {
+      if (window.confirm("确定清空当前队列中所有的缓存词卡吗？")) {
+        setTasks([]);
+        clearStoredQueue();
+      }
+    };
+    tasks.filter((t) => t.status !== "success").length;
+    const sendableCount = tasks.filter(canSendTask).length;
+    const bulkSendDisabled = isBulkSending || sendableCount === 0;
+    if (!isOpen) return null;
+    return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "linkual-vocab-queue-panel-wrap", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-vocab-queue-panel", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { padding: "12px", borderBottom: "1px solid #e4e4e7", background: "#fafafa", display: "flex", flexDirection: "column", gap: "8px" }, children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }, children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { style: { fontSize: "14px", color: "#333" }, children: "制卡队列" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "button",
+            {
+              type: "button",
+              onClick: () => setIsOpen(false),
+              style: { border: "none", background: "#eee", color: "#333", cursor: "pointer", borderRadius: "4px", width: "28px", height: "28px", display: "inline-flex", alignItems: "center", justifyContent: "center", padding: 0 },
+              "aria-label": "关闭队列",
+              title: "关闭队列",
+              children: /* @__PURE__ */ jsxRuntimeExports.jsx(X, { size: 15, strokeWidth: 2.3 })
+            }
+          )
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "8px", flexWrap: "wrap" }, children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "button",
+            {
+              onClick: handleSendAllAndDelete,
+              disabled: bulkSendDisabled,
+              style: { border: "none", background: bulkSendDisabled ? "#a7f3d0" : "#10b981", color: "#fff", cursor: bulkSendDisabled ? "not-allowed" : "pointer", fontSize: "12px", fontWeight: "bold", borderRadius: "4px", padding: "5px 9px" },
+              children: isBulkSending ? "批量发送中..." : "一键发送并删除"
+            }
+          ),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("button", { onClick: handleClearAll, style: { border: "none", background: "none", color: "#f44336", cursor: "pointer", fontSize: "12px", fontWeight: "bold" }, children: "清空全部队列" })
+        ] })
+      ] }),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { flex: 1, overflowY: "auto", padding: "12px", display: "flex", flexDirection: "column", gap: "12px", background: "#f9f9f9" }, children: [
+        tasks.length === 0 && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { style: { textAlign: "center", color: "#999", marginTop: "40px", fontSize: "13px" }, children: "暂无待处理单词" }),
+        tasks.map((t) => /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { padding: "12px", border: "1px solid #eaeaea", borderRadius: "8px", background: "#fff", boxShadow: "0 2px 5px rgba(0,0,0,0.02)" }, children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }, children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { style: { fontSize: "16px", color: "#333" }, children: t.word }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { style: { fontSize: "11px", padding: "2px 6px", borderRadius: "10px", background: t.status === "success" ? "#e8f5e9" : t.status === "failed" ? "#ffebee" : "#e3f2fd", color: t.status === "success" ? "#4caf50" : t.status === "failed" ? "#f44336" : "#1976d2" }, children: [
+              t.status === "idle" && (hasUsableLlmResult(t.llmResult) ? "释义已就绪" : "等待操作"),
+              t.status === "fetching_llm" && "正在解析...",
+              t.status === "sending" && "发送中...",
+              t.status === "success" && "发送成功",
+              t.status === "failed" && "操作失败"
+            ] })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { style: { fontSize: "12px", color: "#666", marginBottom: "8px", paddingBottom: "8px", borderBottom: "1px dashed #eee" }, children: t.context }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { fontSize: "11px", color: "#e53935", marginBottom: "8px", display: "flex", justifyContent: "space-between" }, children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { style: { display: "inline-flex", alignItems: "center", gap: "4px" }, children: [
+              t.youtube && /* @__PURE__ */ jsxRuntimeExports.jsx(CirclePlay, { size: 12, strokeWidth: 2.2 }),
+              t.youtube ? `YouTube 捕获: ${t.youtube.timestamp}s` : "本地字幕记录"
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { style: { color: "#888", fontStyle: "italic", maxWidth: "150px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: t.source })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(LlmResultPreview, { result: t.llmResult }),
+          t.error && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { style: { color: "#f44336", fontSize: "11px", marginBottom: "8px" }, children: t.error }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "12px" }, children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "button",
+              {
+                onClick: () => handleFetchLlm(t.id),
+                disabled: t.status === "fetching_llm" || t.status === "sending",
+                style: { flex: "1 1 auto", padding: "6px 10px", background: "#f4f4f5", color: "#333", border: "1px solid #ccc", borderRadius: "4px", cursor: "pointer", fontSize: "12px", fontWeight: "bold" },
+                children: "请求释义"
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "button",
+              {
+                onClick: () => handleSend(t.id, true),
+                disabled: !canSendTask(t),
+                style: { flex: "1 1 auto", padding: "6px 10px", background: canSendTask(t) ? "#10b981" : "#a7f3d0", color: "#fff", border: "none", borderRadius: "4px", cursor: canSendTask(t) ? "pointer" : "not-allowed", fontSize: "12px", fontWeight: "bold" },
+                children: "发送并删除"
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "button",
+              {
+                onClick: () => handleSend(t.id, false),
+                disabled: !canSendTask(t),
+                style: { flex: "1 1 auto", padding: "6px 10px", background: canSendTask(t) ? "#3b82f6" : "#bfdbfe", color: "#fff", border: "none", borderRadius: "4px", cursor: canSendTask(t) ? "pointer" : "not-allowed", fontSize: "12px", fontWeight: "bold" },
+                children: "发送并保留"
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("button", { onClick: () => handleDeleteTask(t.id), style: { padding: "6px 12px", background: "transparent", color: "#f44336", border: "1px solid #f44336", borderRadius: "4px", cursor: "pointer", fontSize: "12px" }, children: "丢弃" })
+          ] })
+        ] }, t.id))
+      ] })
+    ] }) });
+  };
+  const DRAG_THRESHOLD = 5;
+  const SEEK_STEP_SECONDS = 5;
+  const LINKUAL_CUSTOM_FULLSCREEN_CLASS$1 = "linkual-custom-fullscreen";
+  const LINKUAL_MOBILE_FULLSCREEN_FALLBACK_CLASS$1 = "linkual-mobile-fullscreen-fallback";
+  function getBrowserFullscreenElement$3() {
+    const doc = document;
+    return document.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement || doc.msFullscreenElement || null;
+  }
+  function exitBrowserFullscreen$2() {
+    const doc = document;
+    if (document.exitFullscreen) return document.exitFullscreen();
+    if (doc.webkitExitFullscreen) return doc.webkitExitFullscreen();
+    if (doc.mozCancelFullScreen) return doc.mozCancelFullScreen();
+    if (doc.msExitFullscreen) return doc.msExitFullscreen();
+  }
+  function isPromiseLike$2(value) {
+    return Boolean(value && typeof value.then === "function");
+  }
+  function getViewportSize() {
+    var _a, _b;
+    const width = ((_a = window.visualViewport) == null ? void 0 : _a.width) || window.innerWidth || document.documentElement.clientWidth;
+    const height = ((_b = window.visualViewport) == null ? void 0 : _b.height) || window.innerHeight || document.documentElement.clientHeight;
+    return {
+      width: Number.isFinite(width) && width > 0 ? width : window.innerWidth,
+      height: Number.isFinite(height) && height > 0 ? height : window.innerHeight
+    };
+  }
+  function syncMobileViewportVars() {
+    const viewport = getViewportSize();
+    document.documentElement.style.setProperty("--linkual-mobile-viewport-width", `${Math.ceil(viewport.width)}px`);
+    document.documentElement.style.setProperty("--linkual-mobile-viewport-height", `${Math.ceil(viewport.height)}px`);
+    document.documentElement.style.setProperty("--linkual-visual-viewport-height", `${Math.ceil(viewport.height)}px`);
+    const root2 = document.getElementById("linkual-root");
+    root2 == null ? void 0 : root2.style.setProperty("--linkual-visual-viewport-height", `${Math.ceil(viewport.height)}px`);
+  }
+  function emitCustomLayoutChange() {
+    syncMobileViewportVars();
+    window.dispatchEvent(new Event("linkual_root_recover"));
+    window.dispatchEvent(new Event("linkual_custom_layout_refresh"));
+    window.dispatchEvent(new Event("linkual_custom_fullscreen_changed"));
+    window.dispatchEvent(new Event("resize"));
+  }
+  function formatTime(seconds) {
+    if (!Number.isFinite(seconds) || seconds <= 0) return "0:00";
+    const totalSeconds = Math.floor(seconds);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor(totalSeconds % 3600 / 60);
+    const secs = totalSeconds % 60;
+    if (hours > 0) {
+      return `${hours}:${String(minutes).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+    }
+    return `${minutes}:${String(secs).padStart(2, "0")}`;
+  }
+  function clampPosition(left, top, element) {
+    const viewport = getViewportSize();
+    const maxLeft = Math.max(0, viewport.width - element.offsetWidth);
+    const maxTop = Math.max(0, viewport.height - element.offsetHeight);
+    return {
+      left: Math.min(Math.max(0, left), maxLeft),
+      top: Math.min(Math.max(0, top), maxTop)
+    };
+  }
+  function getPositionRatios(left, top, element) {
+    const viewport = getViewportSize();
+    const maxLeft = Math.max(0, viewport.width - element.offsetWidth);
+    const maxTop = Math.max(0, viewport.height - element.offsetHeight);
+    return {
+      ratioX: maxLeft > 0 ? left / maxLeft : 0,
+      ratioY: maxTop > 0 ? top / maxTop : 0
+    };
+  }
+  function createPosition(left, top, element) {
+    const clamped = clampPosition(left, top, element);
+    const ratios = getPositionRatios(clamped.left, clamped.top, element);
+    return { ...clamped, ...ratios };
+  }
+  function createPositionFromRatios(ratioX, ratioY, element) {
+    const viewport = getViewportSize();
+    const maxLeft = Math.max(0, viewport.width - element.offsetWidth);
+    const maxTop = Math.max(0, viewport.height - element.offsetHeight);
+    return createPosition(ratioX * maxLeft, ratioY * maxTop, element);
+  }
+  const MobileFullscreenButton = ({ adapter }) => {
+    const [fullscreen, setFullscreen] = reactExports.useState(() => document.documentElement.classList.contains(LINKUAL_CUSTOM_FULLSCREEN_CLASS$1));
+    const [position, setPosition] = reactExports.useState(null);
+    const [dragging, setDragging] = reactExports.useState(false);
+    const [currentTime, setCurrentTime] = reactExports.useState(0);
+    const [duration, setDuration] = reactExports.useState(0);
+    const [paused, setPaused] = reactExports.useState(true);
+    const buttonRef = reactExports.useRef(null);
+    const progressRef = reactExports.useRef(null);
+    const browserFullscreenWasActiveRef = reactExports.useRef(Boolean(getBrowserFullscreenElement$3()));
+    const dragRef = reactExports.useRef({
+      pointerId: -1,
+      offsetX: 0,
+      offsetY: 0,
+      startX: 0,
+      startY: 0,
+      moved: false
+    });
+    const setAdapterCustomFullscreen = reactExports.useCallback((enabled) => {
+      var _a;
+      try {
+        (_a = adapter.setCustomFullscreen) == null ? void 0 : _a.call(adapter, enabled);
+      } catch (error) {
+        console.warn("[Linkual] 自定义全屏状态同步失败", error);
+      }
+    }, [adapter]);
+    const applyCustomFullscreenState = reactExports.useCallback((enabled) => {
+      browserFullscreenWasActiveRef.current = enabled && Boolean(getBrowserFullscreenElement$3());
+      document.documentElement.classList.toggle(LINKUAL_CUSTOM_FULLSCREEN_CLASS$1, enabled);
+      setAdapterCustomFullscreen(enabled);
+      setFullscreen(enabled);
+      emitCustomLayoutChange();
+    }, [setAdapterCustomFullscreen]);
+    const clearCustomFullscreenState2 = reactExports.useCallback(() => {
+      const hadCustomFullscreen = document.documentElement.classList.contains(LINKUAL_CUSTOM_FULLSCREEN_CLASS$1);
+      browserFullscreenWasActiveRef.current = false;
+      if (!hadCustomFullscreen) {
+        document.documentElement.classList.remove(LINKUAL_MOBILE_FULLSCREEN_FALLBACK_CLASS$1);
+        setFullscreen(false);
+        return;
+      }
+      document.documentElement.classList.remove(LINKUAL_CUSTOM_FULLSCREEN_CLASS$1);
+      document.documentElement.classList.remove(LINKUAL_MOBILE_FULLSCREEN_FALLBACK_CLASS$1);
+      setAdapterCustomFullscreen(false);
+      setFullscreen(false);
+      emitCustomLayoutChange();
+    }, [setAdapterCustomFullscreen]);
+    reactExports.useEffect(() => {
+      const syncFullscreenState = () => {
+        setFullscreen(document.documentElement.classList.contains(LINKUAL_CUSTOM_FULLSCREEN_CLASS$1));
+      };
+      const clearStaleCustomFullscreen = () => {
+        const browserFullscreenElement = getBrowserFullscreenElement$3();
+        if (browserFullscreenElement) {
+          browserFullscreenWasActiveRef.current = true;
+          return;
+        }
+        if (browserFullscreenWasActiveRef.current && document.documentElement.classList.contains(LINKUAL_CUSTOM_FULLSCREEN_CLASS$1)) {
+          clearCustomFullscreenState2();
+          return;
+        }
+        browserFullscreenWasActiveRef.current = false;
+        syncFullscreenState();
+      };
+      window.addEventListener("linkual_custom_fullscreen_changed", syncFullscreenState);
+      document.addEventListener("fullscreenchange", clearStaleCustomFullscreen);
+      document.addEventListener("webkitfullscreenchange", clearStaleCustomFullscreen);
+      document.addEventListener("mozfullscreenchange", clearStaleCustomFullscreen);
+      document.addEventListener("MSFullscreenChange", clearStaleCustomFullscreen);
+      return () => {
+        window.removeEventListener("linkual_custom_fullscreen_changed", syncFullscreenState);
+        document.removeEventListener("fullscreenchange", clearStaleCustomFullscreen);
+        document.removeEventListener("webkitfullscreenchange", clearStaleCustomFullscreen);
+        document.removeEventListener("mozfullscreenchange", clearStaleCustomFullscreen);
+        document.removeEventListener("MSFullscreenChange", clearStaleCustomFullscreen);
+      };
+    }, [clearCustomFullscreenState2]);
+    reactExports.useEffect(() => {
+      setAdapterCustomFullscreen(fullscreen);
+      window.dispatchEvent(new Event("linkual_custom_layout_refresh"));
+      window.dispatchEvent(new Event("resize"));
+    }, [fullscreen, setAdapterCustomFullscreen]);
+    reactExports.useEffect(() => () => {
+      const hadCustomFullscreen = document.documentElement.classList.contains(LINKUAL_CUSTOM_FULLSCREEN_CLASS$1);
+      browserFullscreenWasActiveRef.current = false;
+      if (!hadCustomFullscreen) return;
+      document.documentElement.classList.remove(LINKUAL_CUSTOM_FULLSCREEN_CLASS$1);
+      document.documentElement.classList.remove(LINKUAL_MOBILE_FULLSCREEN_FALLBACK_CLASS$1);
+      setAdapterCustomFullscreen(false);
+      emitCustomLayoutChange();
+      if (getBrowserFullscreenElement$3()) {
+        const browserFullscreenAction = exitBrowserFullscreen$2();
+        if (isPromiseLike$2(browserFullscreenAction)) {
+          browserFullscreenAction.catch((error) => console.warn("[Linkual] 浏览器全屏退出失败", error));
+        }
+      }
+    }, [setAdapterCustomFullscreen]);
+    reactExports.useEffect(() => {
+      var _a, _b;
+      const syncViewport = () => {
+        syncMobileViewportVars();
+      };
+      syncViewport();
+      window.addEventListener("resize", syncViewport);
+      window.addEventListener("orientationchange", syncViewport);
+      (_a = window.visualViewport) == null ? void 0 : _a.addEventListener("resize", syncViewport);
+      (_b = window.visualViewport) == null ? void 0 : _b.addEventListener("scroll", syncViewport);
+      return () => {
+        var _a2, _b2;
+        window.removeEventListener("resize", syncViewport);
+        window.removeEventListener("orientationchange", syncViewport);
+        (_a2 = window.visualViewport) == null ? void 0 : _a2.removeEventListener("resize", syncViewport);
+        (_b2 = window.visualViewport) == null ? void 0 : _b2.removeEventListener("scroll", syncViewport);
+      };
+    }, [fullscreen]);
+    reactExports.useEffect(() => {
+      var _a;
+      if (!position) return;
+      const keepButtonInView = () => {
+        const button = buttonRef.current;
+        if (!button) return;
+        setPosition((current) => current ? createPositionFromRatios(current.ratioX, current.ratioY, button) : current);
+      };
+      window.addEventListener("resize", keepButtonInView);
+      window.addEventListener("orientationchange", keepButtonInView);
+      (_a = window.visualViewport) == null ? void 0 : _a.addEventListener("resize", keepButtonInView);
+      return () => {
+        var _a2;
+        window.removeEventListener("resize", keepButtonInView);
+        window.removeEventListener("orientationchange", keepButtonInView);
+        (_a2 = window.visualViewport) == null ? void 0 : _a2.removeEventListener("resize", keepButtonInView);
+      };
+    }, [position]);
+    reactExports.useEffect(() => {
+      if (!fullscreen) return void 0;
+      let frameId = 0;
+      const syncPlaybackState = () => {
+        var _a, _b;
+        const nextCurrentTime = adapter.getCurrentTime();
+        const nextDuration = ((_a = adapter.getDuration) == null ? void 0 : _a.call(adapter)) || 0;
+        setCurrentTime(Number.isFinite(nextCurrentTime) ? nextCurrentTime : 0);
+        setDuration(Number.isFinite(nextDuration) ? nextDuration : 0);
+        setPaused(((_b = adapter.isPaused) == null ? void 0 : _b.call(adapter)) ?? false);
+        frameId = window.requestAnimationFrame(syncPlaybackState);
+      };
+      syncPlaybackState();
+      return () => window.cancelAnimationFrame(frameId);
+    }, [adapter, fullscreen]);
+    const handlePointerDown = (event) => {
+      const button = event.currentTarget;
+      const rect = button.getBoundingClientRect();
+      dragRef.current = {
+        pointerId: event.pointerId,
+        offsetX: event.clientX - rect.left,
+        offsetY: event.clientY - rect.top,
+        startX: event.clientX,
+        startY: event.clientY,
+        moved: false
+      };
+      button.setPointerCapture(event.pointerId);
+      setPosition(createPosition(rect.left, rect.top, button));
+      setDragging(true);
+    };
+    const handlePointerMove = (event) => {
+      const button = buttonRef.current;
+      const drag = dragRef.current;
+      if (!dragging || !button || event.pointerId !== drag.pointerId) return;
+      const dx = Math.abs(event.clientX - drag.startX);
+      const dy = Math.abs(event.clientY - drag.startY);
+      if (dx > DRAG_THRESHOLD || dy > DRAG_THRESHOLD) {
+        drag.moved = true;
+      }
+      setPosition(createPosition(event.clientX - drag.offsetX, event.clientY - drag.offsetY, button));
+    };
+    const handlePointerUp = (event) => {
+      const button = event.currentTarget;
+      const drag = dragRef.current;
+      if (event.pointerId === drag.pointerId && button.hasPointerCapture(event.pointerId)) {
+        button.releasePointerCapture(event.pointerId);
+      }
+      setDragging(false);
+    };
+    const exitCustomFullscreen = reactExports.useCallback(() => {
+      const browserFullscreenElement = getBrowserFullscreenElement$3();
+      clearCustomFullscreenState2();
+      const browserFullscreenAction = browserFullscreenElement ? exitBrowserFullscreen$2() : void 0;
+      if (isPromiseLike$2(browserFullscreenAction)) {
+        browserFullscreenAction.catch((error) => console.warn("[Linkual] 浏览器全屏切换失败", error));
+      }
+    }, [clearCustomFullscreenState2]);
+    const handleClick = (event) => {
+      if (dragRef.current.moved) {
+        event.preventDefault();
+        event.stopPropagation();
+        dragRef.current.moved = false;
+        return;
+      }
+      const nextFullscreen = !fullscreen;
+      if (nextFullscreen) {
+        applyCustomFullscreenState(true);
+        return;
+      }
+      exitCustomFullscreen();
+    };
+    const togglePlayback = () => {
+      var _a;
+      if (((_a = adapter.isPaused) == null ? void 0 : _a.call(adapter)) ?? paused) {
+        adapter.play();
+      } else {
+        adapter.pause();
+      }
+    };
+    const seekBy = (delta) => {
+      const nextTime = Math.max(0, Math.min(duration || Number.MAX_SAFE_INTEGER, adapter.getCurrentTime() + delta));
+      adapter.seekTo(nextTime);
+    };
+    const handleProgressInput = (event) => {
+      const nextTime = Number(event.currentTarget.value);
+      if (!Number.isFinite(nextTime)) return;
+      adapter.seekTo(nextTime);
+      setCurrentTime(nextTime);
+    };
+    const handleProgressPointerDown = () => {
+      var _a;
+      (_a = progressRef.current) == null ? void 0 : _a.focus();
+    };
+    reactExports.useEffect(() => {
+      if (!fullscreen) return void 0;
+      const handleKeyDown = (event) => {
+        const target = event.target;
+        const isEditing = Boolean(target == null ? void 0 : target.closest("input, textarea, select, [contenteditable]"));
+        if (isEditing) return;
+        if (event.key === " " || event.key === "Spacebar") {
+          event.preventDefault();
+          togglePlayback();
+        } else if (event.key === "ArrowLeft") {
+          event.preventDefault();
+          seekBy(-SEEK_STEP_SECONDS);
+        } else if (event.key === "ArrowRight") {
+          event.preventDefault();
+          seekBy(SEEK_STEP_SECONDS);
+        } else if (event.key === "Escape") {
+          event.preventDefault();
+          exitCustomFullscreen();
+        }
+      };
+      window.addEventListener("keydown", handleKeyDown, true);
+      return () => window.removeEventListener("keydown", handleKeyDown, true);
+    }, [adapter, duration, exitCustomFullscreen, fullscreen, paused]);
+    const style2 = position ? {
+      left: position.left,
+      top: position.top,
+      right: "auto",
+      bottom: "auto"
+    } : {};
+    const progressPercent = duration > 0 ? Math.max(0, Math.min(100, currentTime / duration * 100)) : 0;
+    return /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+      !fullscreen && /* @__PURE__ */ jsxRuntimeExports.jsx(
+        "button",
+        {
+          ref: buttonRef,
+          type: "button",
+          className: `linkual-mobile-fullscreen ${dragging ? "is-dragging" : ""}`,
+          style: style2,
+          onPointerDown: handlePointerDown,
+          onPointerMove: handlePointerMove,
+          onPointerUp: handlePointerUp,
+          onPointerCancel: handlePointerUp,
+          onClick: handleClick,
+          title: "进入全屏",
+          "aria-label": "进入全屏",
+          children: /* @__PURE__ */ jsxRuntimeExports.jsx(Maximize2, { className: "linkual-mobile-fullscreen-icon", size: 18, strokeWidth: 2.2 })
+        }
+      ),
+      fullscreen && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-player-controls", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-player-progress-row", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "linkual-player-time", children: formatTime(currentTime) }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "input",
+            {
+              ref: progressRef,
+              className: "linkual-player-progress",
+              type: "range",
+              min: "0",
+              max: Math.max(1, duration),
+              step: "0.1",
+              value: Math.min(currentTime, Math.max(1, duration)),
+              onChange: handleProgressInput,
+              onPointerDown: handleProgressPointerDown,
+              style: {
+                "--linkual-progress": `${progressPercent}%`
+              },
+              "aria-label": "播放进度"
+            }
+          ),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "linkual-player-time", children: formatTime(duration) })
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-player-button-row", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("button", { type: "button", className: "linkual-player-btn", onClick: () => seekBy(-SEEK_STEP_SECONDS), title: "后退 5 秒", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx(RotateCcw, { className: "linkual-player-btn-icon", size: 15, strokeWidth: 2.2 }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "5s" })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("button", { type: "button", className: "linkual-player-btn primary", onClick: togglePlayback, title: paused ? "播放" : "暂停", children: [
+            paused ? /* @__PURE__ */ jsxRuntimeExports.jsx(Play, { className: "linkual-player-btn-icon", size: 15, strokeWidth: 2.2 }) : /* @__PURE__ */ jsxRuntimeExports.jsx(Pause, { className: "linkual-player-btn-icon", size: 15, strokeWidth: 2.2 }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: paused ? "播放" : "暂停" })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("button", { type: "button", className: "linkual-player-btn", onClick: () => seekBy(SEEK_STEP_SECONDS), title: "前进 5 秒", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx(RotateCw, { className: "linkual-player-btn-icon", size: 15, strokeWidth: 2.2 }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "5s" })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("button", { type: "button", className: "linkual-player-btn", onClick: exitCustomFullscreen, title: "退出全屏", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx(Minimize2, { className: "linkual-player-btn-icon", size: 15, strokeWidth: 2.2 }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "退出" })
+          ] })
+        ] })
+      ] })
+    ] });
+  };
+  const MAX_PARAGRAPHS = 600;
+  const MIN_PARAGRAPH_LENGTH = 18;
+  const HOST_CLASS = "linkual-article-translation-host";
+  const EXCLUDED_SELECTOR = [
+    "nav",
+    "header",
+    "footer",
+    "aside",
+    "figure",
+    "table",
+    "pre",
+    "code",
+    "script",
+    "style",
+    "noscript",
+    ".ltx_bibliography",
+    ".ltx_biblist",
+    ".ltx_figure",
+    ".ltx_table",
+    ".ltx_caption",
+    ".ltx_equation",
+    ".ltx_title",
+    ".ltx_authors",
+    ".ltx_note"
+  ].join(",");
+  const BLOCKING_DESCENDANT_SELECTOR = [
+    "img",
+    "video",
+    "iframe",
+    "canvas",
+    "textarea",
+    "input",
+    "select",
+    "button",
+    "pre",
+    ".CodeMirror",
+    ".monaco-editor"
+  ].join(",");
+  const normalizeText$1 = (value) => value.replace(/\s+/g, " ").trim();
+  const normalizeMarkdownText = (value) => value.replace(/\r\n?/g, "\n").split("\n").map((line) => normalizeText$1(line)).join("\n").replace(/\n{3,}/g, "\n\n").trim();
+  const TRANSLATABLE_TABLE_SELECTOR = "table, .ltx_table";
+  const OPENREVIEW_VALUE_SELECTOR = ".note-content-value, .markdown-rendered";
+  const TABLE_EXCLUDED_ANCESTOR_SELECTOR = [
+    "[data-linkual-article-host]",
+    "nav",
+    "header",
+    "footer",
+    "aside",
+    "pre",
+    "code",
+    "script",
+    "style",
+    "noscript",
+    ".ltx_bibliography",
+    ".ltx_biblist",
+    ".ltx_figure",
+    ".ltx_caption",
+    ".ltx_equation",
+    ".ltx_title",
+    ".ltx_authors",
+    ".ltx_note"
+  ].join(",");
+  const ARXIV_HOSTNAMES = /* @__PURE__ */ new Set(["arxiv.org", "www.arxiv.org"]);
+  const OPENREVIEW_HOSTNAMES = /* @__PURE__ */ new Set(["openreview.net", "www.openreview.net"]);
+  const OPENREVIEW_EXCLUDED_FIELDS = /* @__PURE__ */ new Set([
+    "title",
+    "authors",
+    "authoremails",
+    "authorids",
+    "pdf",
+    "html",
+    "paperhash",
+    "ee",
+    "year",
+    "venue",
+    "venueid",
+    "submissionnumber",
+    "externalids"
+  ]);
+  function isArxivHtmlPage() {
+    return ARXIV_HOSTNAMES.has(window.location.hostname) && window.location.pathname.startsWith("/html/");
+  }
+  function isOpenReviewHost() {
+    return OPENREVIEW_HOSTNAMES.has(window.location.hostname);
+  }
+  function isOpenReviewForumPage() {
+    const pathname = window.location.pathname.replace(/\/+$/, "") || "/";
+    return isOpenReviewHost() && (pathname === "/forum" || pathname.startsWith("/forum/"));
+  }
+  function isArticleTranslationSupportedPage() {
+    return isArxivHtmlPage() || isOpenReviewForumPage();
+  }
+  function escapeMarkdownTableCell(value) {
+    return normalizeText$1(value).replace(/\|/g, "\\|");
+  }
+  function tableElementToMarkdown(table) {
+    const rows = Array.from(table.rows).map((row) => Array.from(row.cells).map((cell) => escapeMarkdownTableCell(cell.innerText || cell.textContent || ""))).filter((row) => row.some(Boolean));
+    if (rows.length === 0) return "";
+    const columnCount = Math.max(...rows.map((row) => row.length));
+    const header = rows[0] || [];
+    const separator = Array.from({ length: columnCount }, () => "---");
+    const body = rows.slice(1);
+    const normalizeRow = (row) => Array.from({ length: columnCount }, (_, index2) => row[index2] || "");
+    const formatRow = (row) => `| ${normalizeRow(row).join(" | ")} |`;
+    return [formatRow(header), formatRow(separator), ...body.map(formatRow)].join("\n");
+  }
+  function getTableCaption(element, table) {
+    const caption = table.caption || element.querySelector(".ltx_caption");
+    return caption ? normalizeMarkdownText(caption.innerText || caption.textContent || "") : "";
+  }
+  function ltxTableToMarkdown(element) {
+    const table = element.matches("table") ? element : element.querySelector("table");
+    if (table instanceof HTMLTableElement) {
+      return [getTableCaption(element, table), tableElementToMarkdown(table)].filter(Boolean).join("\n\n");
+    }
+    return "";
+  }
+  function isTranslatableTableElement(element) {
+    return element.matches(TRANSLATABLE_TABLE_SELECTOR);
+  }
+  function getOpenReviewValueElement(element) {
+    const value = element.closest(OPENREVIEW_VALUE_SELECTOR);
+    return value instanceof HTMLElement ? value : null;
+  }
+  function elementToTranslatableText(element) {
+    if (isTranslatableTableElement(element)) {
+      return ltxTableToMarkdown(element) || normalizeMarkdownText(element.innerText || element.textContent || "");
+    }
+    const clone = element.cloneNode(true);
+    clone.querySelectorAll("table").forEach((table) => {
+      const markdown = tableElementToMarkdown(table);
+      if (!markdown) return;
+      const replacement = document.createElement("span");
+      replacement.textContent = `
+${markdown}
+`;
+      table.replaceWith(replacement);
+    });
+    return normalizeMarkdownText(clone.innerText || clone.textContent || "");
+  }
+  function hashText(value) {
+    let hash = 0;
+    for (let index2 = 0; index2 < value.length; index2 += 1) {
+      hash = (hash << 5) - hash + value.charCodeAt(index2) | 0;
+    }
+    return Math.abs(hash).toString(36);
+  }
+  function isExcluded(element) {
+    if (isTranslatableTableElement(element)) {
+      const tableWrapper = element.closest(".ltx_table");
+      if (element.matches("table") && tableWrapper && tableWrapper !== element) return true;
+      return Boolean(element.closest(TABLE_EXCLUDED_ANCESTOR_SELECTOR));
+    }
+    return Boolean(element.closest(EXCLUDED_SELECTOR)) || Boolean(element.closest("[data-linkual-article-host]"));
+  }
+  function getCandidateSelector() {
+    if (isOpenReviewForumPage()) {
+      return [
+        ".note-content .note-content-value > p",
+        ".note-content .note-content-value > ul > li",
+        ".note-content .note-content-value > ol > li",
+        ".note-content .note-content-value blockquote",
+        ".note-content .note-content-value table",
+        ".note-content .note-content-value",
+        ".note-content-value > p",
+        ".note-content-value > ul > li",
+        ".note-content-value > ol > li",
+        ".note-content-value blockquote",
+        ".note-content-value table",
+        ".note-content-value",
+        ".markdown-rendered > p",
+        ".markdown-rendered > ul > li",
+        ".markdown-rendered > ol > li",
+        ".markdown-rendered blockquote",
+        ".markdown-rendered table",
+        ".markdown-rendered"
+      ].join(",");
+    }
+    return [
+      ".ltx_document .ltx_para",
+      ".ltx_document p.ltx_p",
+      ".ltx_document p",
+      ".ltx_document blockquote.ltx_quote",
+      ".ltx_document li.ltx_item",
+      ".ltx_document .ltx_theorem",
+      ".ltx_document .ltx_proof",
+      ".ltx_document .ltx_quote",
+      ".ltx_document .ltx_table",
+      ".ltx_document table"
+    ].join(",");
+  }
+  function getArticleRoot() {
+    if (isOpenReviewForumPage()) {
+      return document.querySelector(".forum-container");
+    }
+    return document.querySelector(".ltx_document");
+  }
+  function getOpenReviewFieldName(element) {
+    var _a, _b;
+    const fieldAnchor = getOpenReviewValueElement(element) || element;
+    let sibling = fieldAnchor.previousSibling;
+    while (sibling) {
+      if (sibling instanceof HTMLElement && sibling.classList.contains("note-content-field")) {
+        return normalizeText$1(sibling.textContent || "").replace(/:$/, "").trim();
+      }
+      sibling = sibling.previousSibling;
+    }
+    const field = ((_a = fieldAnchor.parentElement) == null ? void 0 : _a.querySelector(".note-content-field")) || ((_b = fieldAnchor.closest(".note-content")) == null ? void 0 : _b.querySelector(".note-content-field"));
+    return field ? normalizeText$1(field.textContent || "").replace(/:$/, "").trim() : "";
+  }
+  function normalizeOpenReviewFieldName(fieldName) {
+    return fieldName.toLowerCase().replace(/[^a-z0-9]+/g, "");
+  }
+  function isOpenReviewFieldExcluded(element) {
+    if (!isOpenReviewForumPage()) return false;
+    const fieldName = getOpenReviewFieldName(element);
+    if (!fieldName) return false;
+    return OPENREVIEW_EXCLUDED_FIELDS.has(normalizeOpenReviewFieldName(fieldName));
+  }
+  function getOrCreateHost(element) {
+    const next = element.nextElementSibling;
+    if (next instanceof HTMLDivElement && next.dataset.linkualArticleHost === "true") {
+      return next;
+    }
+    const host = document.createElement("div");
+    host.className = HOST_CLASS;
+    host.dataset.linkualArticleHost = "true";
+    element.insertAdjacentElement("afterend", host);
+    return host;
+  }
+  function canonicalizeCandidateElement(element) {
+    if (isArxivHtmlPage()) {
+      const tableWrapper = element.closest(".ltx_table");
+      if (tableWrapper instanceof HTMLElement) return tableWrapper;
+      const paragraphWrapper = element.closest(".ltx_para");
+      if (paragraphWrapper instanceof HTMLElement) return paragraphWrapper;
+    }
+    return element;
+  }
+  function hasNestedTextCandidate(element, candidates) {
+    return candidates.some((candidate) => candidate !== element && element.contains(candidate) && !isTranslatableTableElement(candidate));
+  }
+  function shouldSkipNestedCandidate(element, candidates) {
+    if (isOpenReviewForumPage() && isTranslatableTableElement(element)) {
+      const value = getOpenReviewValueElement(element);
+      if (value && value !== element && candidates.includes(value) && !hasNestedTextCandidate(value, candidates)) {
+        return true;
+      }
+    }
+    return !isTranslatableTableElement(element) && hasNestedTextCandidate(element, candidates);
+  }
+  function collectCandidateElements(root2) {
+    const elements = Array.from(root2.querySelectorAll(getCandidateSelector())).map(canonicalizeCandidateElement);
+    const uniqueElements = Array.from(new Set(elements));
+    return uniqueElements.filter((element) => !shouldSkipNestedCandidate(element, uniqueElements));
+  }
+  function collectArticleParagraphs() {
+    if (!isArticleTranslationSupportedPage()) return [];
+    const root2 = getArticleRoot();
+    if (!root2) return [];
+    const candidates = collectCandidateElements(root2).filter((element) => !isExcluded(element) && !isOpenReviewFieldExcluded(element)).map((element) => ({ element, text: elementToTranslatableText(element) })).filter(({ element, text: text2 }) => text2.length >= MIN_PARAGRAPH_LENGTH && (isTranslatableTableElement(element) || !element.querySelector(BLOCKING_DESCENDANT_SELECTOR)));
+    const seen = /* @__PURE__ */ new Set();
+    return candidates.slice(0, MAX_PARAGRAPHS).filter(({ element }) => {
+      if (seen.has(element)) return false;
+      seen.add(element);
+      return true;
+    }).map(({ element, text: text2 }, index2) => ({
+      id: `article-${index2}-${hashText(text2)}`,
+      element,
+      text: text2,
+      host: getOrCreateHost(element)
+    }));
+  }
+  function removeArticleTranslationHosts(keep = /* @__PURE__ */ new Set()) {
+    document.querySelectorAll(`[data-linkual-article-host="true"]`).forEach((host) => {
+      if (!keep.has(host)) host.remove();
+    });
+  }
+  const SENTENCE_PATTERN$1 = /[^.!?。！？]+[.!?。！？]+["'”’）)]*|[^.!?。！？]+$/g;
+  function normalizeSentence(value) {
+    return value.replace(/\s+/g, " ").trim();
+  }
+  function splitSentences(value) {
+    return Array.from(value.matchAll(SENTENCE_PATTERN$1)).map((match) => normalizeSentence(match[0] || "")).filter(Boolean);
+  }
+  function alignSentencePairs(source, translation) {
+    const sourceSentences = splitSentences(source);
+    const translatedSentences = splitSentences(translation);
+    if (sourceSentences.length === 0 || translatedSentences.length === 0) return [];
+    return translatedSentences.map((translatedSentence, translationIndex) => {
+      const sourceIndex = sourceSentences.length === translatedSentences.length ? translationIndex : Math.min(
+        sourceSentences.length - 1,
+        Math.floor(translationIndex * sourceSentences.length / translatedSentences.length)
+      );
+      return {
+        sourceIndex,
+        translationIndex,
+        source: sourceSentences[sourceIndex] || sourceSentences[sourceSentences.length - 1] || "",
+        translation: translatedSentence
+      };
+    });
+  }
+  function createTextModel(root2) {
+    const walker = document.createTreeWalker(root2, NodeFilter.SHOW_TEXT);
+    let node = walker.nextNode();
+    let text2 = "";
+    const points = [];
+    while (node) {
+      const textNode = node;
+      const parent = textNode.parentElement;
+      if (parent && !parent.closest("[data-linkual-article-host], script, style, noscript")) {
+        const value = textNode.nodeValue || "";
+        for (let index2 = 0; index2 < value.length; index2 += 1) {
+          const character = value[index2] || "";
+          if (/\s/.test(character)) {
+            if (text2.endsWith(" ")) continue;
+            text2 += " ";
+            points.push({ node: textNode, offset: index2 });
+          } else {
+            text2 += character;
+            points.push({ node: textNode, offset: index2 });
+          }
+        }
+      }
+      node = walker.nextNode();
+    }
+    return { text: text2.trim(), points };
+  }
+  function findSentenceRange(root2, sentence) {
+    const model = createTextModel(root2);
+    const target = normalizeSentence(sentence);
+    if (!target) return null;
+    const start = model.text.indexOf(target);
+    if (start < 0) return null;
+    const end = start + target.length - 1;
+    const startPoint = model.points[start];
+    const endPoint = model.points[end];
+    if (!startPoint || !endPoint) return null;
+    const range = document.createRange();
+    range.setStart(startPoint.node, startPoint.offset);
+    range.setEnd(endPoint.node, endPoint.offset + 1);
+    return range;
+  }
+  function getSentenceIndexAtPoint(root2, event, source) {
+    var _a, _b;
+    const getCaretRange = document;
+    const range = (_a = getCaretRange.caretRangeFromPoint) == null ? void 0 : _a.call(getCaretRange, event.clientX, event.clientY);
+    const position = range || ((_b = getCaretRange.caretPositionFromPoint) == null ? void 0 : _b.call(getCaretRange, event.clientX, event.clientY));
+    if (!position) return -1;
+    const caret = "startContainer" in position ? position : (() => {
+      const next = document.createRange();
+      next.setStart(position.offsetNode, position.offset);
+      next.collapse(true);
+      return next;
+    })();
+    if (!root2.contains(caret.startContainer)) return -1;
+    const before = document.createRange();
+    before.selectNodeContents(root2);
+    before.setEnd(caret.startContainer, caret.startOffset);
+    const offset = normalizeSentence(before.toString()).length;
+    const sentences = splitSentences(source);
+    let cursor = 0;
+    for (let index2 = 0; index2 < sentences.length; index2 += 1) {
+      const sentence = sentences[index2] || "";
+      if (offset <= cursor + sentence.length) return index2;
+      cursor += sentence.length + 1;
+    }
+    return sentences.length - 1;
+  }
+  const LINKUAL_NAVIGATION_EVENT$3 = "linkual_navigation";
+  const INITIAL_TRANSLATION_CONCURRENCY = 4;
+  const MIN_TRANSLATION_CONCURRENCY = 1;
+  const MAX_TRANSLATION_CONCURRENCY = 8;
+  const HEALTHY_RESPONSES_TO_SCALE = 3;
+  const RATE_LIMIT_ERROR_PATTERN = /(?:429|rate\s*limit|too\s*many\s*requests|限流|请求过多)/i;
+  const WEB_MATH_FORMAT_INSTRUCTION = "所有数学公式必须使用 LaTeX；行内公式用 $...$ 包裹，行间公式或独立成行的公式用 $$...$$ 包裹。";
+  const WEB_MARKDOWN_TABLE_FORMAT_INSTRUCTION = "如果输入包含表格或表格状数据，必须输出 GitHub Flavored Markdown 表格；表格单元格中的公式同样遵守 $...$ 和 $$...$$ 规则。";
+  const ArticleTranslationContext = reactExports.createContext(null);
+  function getWebTranslationSystemPrompt(targetLanguage, promptTemplate) {
+    const basePrompt = promptTemplate || `你是专业学术翻译。请将输入内容准确翻译成${targetLanguage}。保留变量名、引用标记和段落语气；只输出译文，不要解释，不要添加标题。`;
+    return [WEB_MATH_FORMAT_INSTRUCTION, WEB_MARKDOWN_TABLE_FORMAT_INSTRUCTION].reduce((prompt, instruction) => prompt.includes(instruction) ? prompt : `${prompt}
+${instruction}`, basePrompt);
+  }
+  const ArticleTranslationProvider = ({ enabled, children }) => {
+    const [paragraphs, setParagraphs] = reactExports.useState([]);
+    const [pageUrl, setPageUrl] = reactExports.useState(window.location.href);
+    const [translations, setTranslations] = reactExports.useState({});
+    const [isTranslatingAll, setIsTranslatingAll] = reactExports.useState(false);
+    const [translationConcurrency, setTranslationConcurrency] = reactExports.useState(INITIAL_TRANSLATION_CONCURRENCY);
+    const abortsRef = reactExports.useRef(/* @__PURE__ */ new Map());
+    const allRunIdRef = reactExports.useRef(0);
+    const concurrencyRef = reactExports.useRef(INITIAL_TRANSLATION_CONCURRENCY);
+    const healthyResponsesRef = reactExports.useRef(0);
+    const translationsRef = reactExports.useRef(translations);
+    reactExports.useEffect(() => {
+      translationsRef.current = translations;
+    }, [translations]);
+    const getTargetLanguage = () => ConfigService.get("web_target_language").trim() || "简体中文";
+    const cacheScopeRef = reactExports.useRef(`${window.location.href}
+${ConfigService.get("web_target_language").trim() || "简体中文"}`);
+    const hydrateCache = reactExports.useCallback((nextParagraphs, nextUrl) => {
+      const cache = getArticleTranslationCache(nextUrl, getTargetLanguage());
+      if (!cache) return {};
+      return nextParagraphs.reduce((result, paragraph) => {
+        const entry = cache.entries[paragraph.id];
+        if (entry && entry.sourceText === paragraph.text && entry.text) {
+          result[paragraph.id] = { status: "done", text: entry.text, sentences: entry.sentences };
+        }
+        return result;
+      }, {});
+    }, []);
+    const syncParagraphs = reactExports.useCallback(() => {
+      if (!enabled) return;
+      const nextParagraphs = collectArticleParagraphs();
+      const nextUrl = window.location.href;
+      const nextCacheScope = `${nextUrl}
+${getTargetLanguage()}`;
+      const nextHosts = new Set(nextParagraphs.map((paragraph) => paragraph.host));
+      removeArticleTranslationHosts(nextHosts);
+      setParagraphs((previous) => {
+        const unchanged = previous.length === nextParagraphs.length && previous.every((paragraph, index2) => {
+          var _a, _b;
+          return paragraph.element === ((_a = nextParagraphs[index2]) == null ? void 0 : _a.element) && paragraph.text === ((_b = nextParagraphs[index2]) == null ? void 0 : _b.text);
+        });
+        return unchanged ? previous : nextParagraphs;
+      });
+      setTranslations((previous) => {
+        const cached = hydrateCache(nextParagraphs, nextUrl);
+        if (cacheScopeRef.current !== nextCacheScope) {
+          cacheScopeRef.current = nextCacheScope;
+          return cached;
+        }
+        return Object.keys(cached).length > 0 ? { ...previous, ...cached } : previous;
+      });
+      setPageUrl((previous) => {
+        if (previous === nextUrl) return previous;
+        allRunIdRef.current += 1;
+        abortsRef.current.forEach((abort) => abort());
+        abortsRef.current.clear();
+        setTranslations(hydrateCache(nextParagraphs, nextUrl));
+        setIsTranslatingAll(false);
+        return nextUrl;
+      });
+    }, [enabled, hydrateCache]);
+    reactExports.useEffect(() => {
+      if (!enabled) {
+        allRunIdRef.current += 1;
+        abortsRef.current.forEach((abort) => abort());
+        abortsRef.current.clear();
+        setParagraphs([]);
+        setTranslations({});
+        setIsTranslatingAll(false);
+        removeArticleTranslationHosts();
+        return void 0;
+      }
+      syncParagraphs();
+      const interval = window.setInterval(syncParagraphs, 1200);
+      window.addEventListener(LINKUAL_NAVIGATION_EVENT$3, syncParagraphs);
+      window.addEventListener("popstate", syncParagraphs);
+      window.addEventListener("hashchange", syncParagraphs);
+      window.addEventListener("linkual_settings_updated", syncParagraphs);
+      const refreshCurrentCache = () => {
+        const currentParagraphs = collectArticleParagraphs();
+        setTranslations(hydrateCache(currentParagraphs, window.location.href));
+      };
+      window.addEventListener(CACHE_UPDATED_EVENT, refreshCurrentCache);
+      return () => {
+        window.clearInterval(interval);
+        window.removeEventListener(LINKUAL_NAVIGATION_EVENT$3, syncParagraphs);
+        window.removeEventListener("popstate", syncParagraphs);
+        window.removeEventListener("hashchange", syncParagraphs);
+        window.removeEventListener("linkual_settings_updated", syncParagraphs);
+        window.removeEventListener(CACHE_UPDATED_EVENT, refreshCurrentCache);
+        abortsRef.current.forEach((abort) => abort());
+        abortsRef.current.clear();
+        removeArticleTranslationHosts();
+      };
+    }, [enabled, syncParagraphs]);
+    const translateParagraphRequest = reactExports.useCallback((paragraph) => {
+      var _a;
+      const apiKey = ConfigService.get("api_key").trim();
+      const apiUrl = ConfigService.get("api_url").trim();
+      const apiModel = ConfigService.get("api_model").trim();
+      const timeout = parseInt(ConfigService.get("api_timeout"), 10) || 60;
+      const targetLanguage = getTargetLanguage();
+      const promptTemplate = ConfigService.get("web_translation_prompt").trim();
+      if (!apiKey) {
+        setTranslations((previous) => ({
+          ...previous,
+          [paragraph.id]: { status: "error", text: "", error: "请先在设置中填入 API Key" }
+        }));
+        return Promise.resolve({ success: false, aborted: false, error: "请先在设置中填入 API Key", elapsedMs: 0 });
+      }
+      (_a = abortsRef.current.get(paragraph.id)) == null ? void 0 : _a();
+      setTranslations((previous) => ({
+        ...previous,
+        [paragraph.id]: { status: "loading", text: "" }
+      }));
+      return new Promise((resolve) => {
+        let content = "";
+        let settled = false;
+        const startedAt = Date.now();
+        const finish = (success, error) => {
+          if (settled) return;
+          settled = true;
+          abortsRef.current.delete(paragraph.id);
+          if (success) {
+            setTranslations((previous) => ({
+              ...previous,
+              [paragraph.id]: {
+                status: "done",
+                text: content.trim(),
+                sentences: alignSentencePairs(paragraph.text, content.trim())
+              }
+            }));
+            saveArticleTranslation(window.location.href, targetLanguage, paragraph.id, {
+              sourceText: paragraph.text,
+              text: content.trim(),
+              sentences: alignSentencePairs(paragraph.text, content.trim())
+            });
+          } else if (error === "ABORTED") {
+            setTranslations((previous) => ({
+              ...previous,
+              [paragraph.id]: { status: "idle", text: "" }
+            }));
+          } else {
+            setTranslations((previous) => ({
+              ...previous,
+              [paragraph.id]: { status: "error", text: content, error: error || "翻译失败，请重试" }
+            }));
+          }
+          resolve({
+            success,
+            error,
+            aborted: error === "ABORTED",
+            elapsedMs: Date.now() - startedAt
+          });
+        };
+        const request = fetchLlmStream({
+          apiUrl,
+          apiKey,
+          apiModel,
+          stream: false,
+          timeoutSec: timeout,
+          systemPrompt: getWebTranslationSystemPrompt(targetLanguage, promptTemplate),
+          userPrompt: `请将下面这一个网页论文段落或表格翻译成${targetLanguage}：
+
+${paragraph.text}`,
+          onData: (chunk) => {
+            content += chunk;
+            setTranslations((previous) => ({
+              ...previous,
+              [paragraph.id]: { status: "loading", text: content }
+            }));
+          },
+          onError: (error) => finish(false, error),
+          onDone: () => finish(true)
+        });
+        abortsRef.current.set(paragraph.id, request.abort);
+      });
+    }, []);
+    const translateParagraph = reactExports.useCallback(async (paragraph) => (await translateParagraphRequest(paragraph)).success, [translateParagraphRequest]);
+    const adaptTranslationConcurrency = reactExports.useCallback((result, timeoutSec) => {
+      if (result.aborted) return;
+      const slowResponseLimit = Math.max(5e3, timeoutSec * 1e3 * 0.65);
+      const shouldReduce = !result.success || result.elapsedMs >= slowResponseLimit;
+      if (shouldReduce) {
+        healthyResponsesRef.current = 0;
+        const isRateLimited = RATE_LIMIT_ERROR_PATTERN.test(result.error || "");
+        const nextConcurrency2 = isRateLimited ? Math.max(MIN_TRANSLATION_CONCURRENCY, Math.floor(concurrencyRef.current / 2)) : Math.max(MIN_TRANSLATION_CONCURRENCY, concurrencyRef.current - 1);
+        concurrencyRef.current = nextConcurrency2;
+        setTranslationConcurrency(nextConcurrency2);
+        return;
+      }
+      healthyResponsesRef.current += 1;
+      if (healthyResponsesRef.current < HEALTHY_RESPONSES_TO_SCALE) return;
+      healthyResponsesRef.current = 0;
+      const nextConcurrency = Math.min(
+        MAX_TRANSLATION_CONCURRENCY,
+        concurrencyRef.current + 1
+      );
+      concurrencyRef.current = nextConcurrency;
+      setTranslationConcurrency(nextConcurrency);
+    }, []);
+    const translateAll = reactExports.useCallback(async () => {
+      if (isTranslatingAll || paragraphs.length === 0) return;
+      const runId = allRunIdRef.current + 1;
+      allRunIdRef.current = runId;
+      setIsTranslatingAll(true);
+      healthyResponsesRef.current = 0;
+      const timeout = parseInt(ConfigService.get("api_timeout"), 10) || 60;
+      const queue = paragraphs.filter((paragraph) => {
+        var _a;
+        return ((_a = translationsRef.current[paragraph.id]) == null ? void 0 : _a.status) !== "done";
+      });
+      await new Promise((resolve) => {
+        let cursor = 0;
+        let activeCount = 0;
+        let settled = false;
+        const finish = () => {
+          if (settled || activeCount > 0 || cursor < queue.length && allRunIdRef.current === runId) return;
+          settled = true;
+          if (allRunIdRef.current === runId) setIsTranslatingAll(false);
+          resolve();
+        };
+        const pump = () => {
+          if (allRunIdRef.current !== runId) {
+            finish();
+            return;
+          }
+          while (activeCount < concurrencyRef.current && cursor < queue.length) {
+            const paragraph = queue[cursor];
+            cursor += 1;
+            activeCount += 1;
+            void translateParagraphRequest(paragraph).then((result) => {
+              adaptTranslationConcurrency(result, timeout);
+            }).finally(() => {
+              activeCount -= 1;
+              pump();
+              finish();
+            });
+          }
+          finish();
+        };
+        pump();
+      });
+    }, [adaptTranslationConcurrency, isTranslatingAll, paragraphs, translateParagraphRequest]);
+    const stopTranslation = reactExports.useCallback(() => {
+      allRunIdRef.current += 1;
+      abortsRef.current.forEach((abort) => abort());
+      abortsRef.current.clear();
+      setIsTranslatingAll(false);
+    }, []);
+    reactExports.useEffect(() => () => {
+      allRunIdRef.current += 1;
+      abortsRef.current.forEach((abort) => abort());
+    }, [pageUrl]);
+    const doneCount = reactExports.useMemo(() => paragraphs.reduce((count, paragraph) => {
+      var _a;
+      return ((_a = translations[paragraph.id]) == null ? void 0 : _a.status) === "done" ? count + 1 : count;
+    }, 0), [paragraphs, translations]);
+    const value = reactExports.useMemo(() => ({
+      paragraphs,
+      translations,
+      isPageSupported: paragraphs.length > 0,
+      doneCount,
+      isTranslatingAll,
+      translationConcurrency,
+      translateParagraph,
+      translateAll,
+      stopTranslation,
+      rescan: syncParagraphs
+    }), [doneCount, isTranslatingAll, paragraphs, stopTranslation, syncParagraphs, translateAll, translateParagraph, translationConcurrency, translations]);
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(ArticleTranslationContext.Provider, { value, children });
+  };
+  function useArticleTranslation() {
+    const context = reactExports.useContext(ArticleTranslationContext);
+    if (!context) {
+      throw new Error("useArticleTranslation must be used inside ArticleTranslationProvider");
+    }
+    return context;
+  }
+  const DESKTOP_WIDGET_HEIGHT = 58;
+  const MOBILE_WIDGET_HEIGHT = 132;
+  const COLLAPSED_WIDGET_HEIGHT = 28;
+  const WIDGET_VIEWPORT_MARGIN = 8;
+  const MAX_WORD_SELECTION_LENGTH = 180;
+  const MAX_CONTEXT_SELECTION_LENGTH = 4e3;
+  const CONTEXT_SENTENCE_RADIUS = 2;
+  const SENTENCE_PATTERN = /[^.!?。！？]+[.!?。！？]+["'”’）)]*|[^.!?。！？]+$/g;
+  const LINKUAL_NAVIGATION_EVENT$2 = "linkual_navigation";
+  const FLOATING_BUTTON_MARGIN = 10;
+  const BUBBLE_MARGIN = 12;
+  const BUBBLE_EDGE_OFFSET = 0;
+  const DEFAULT_BUBBLE_TOP_RATIO = 1;
+  const DEFAULT_BUBBLE_WIDTH = 180;
+  const DEFAULT_BUBBLE_HEIGHT = 44;
+  const LEGACY_BUBBLE_STORAGE_KEYS = ["universal_bubble_left", "universal_bubble_top"];
+  const getDefaultExpandedHeight = () => window.matchMedia("(max-width: 720px)").matches ? MOBILE_WIDGET_HEIGHT : DESKTOP_WIDGET_HEIGHT;
+  const getVisualViewportHeight = () => {
+    var _a;
+    const viewportHeight = ((_a = window.visualViewport) == null ? void 0 : _a.height) || window.innerHeight || document.documentElement.clientHeight;
+    const rawHeight = Number(viewportHeight);
+    return Number.isFinite(rawHeight) && rawHeight > 0 ? rawHeight : getDefaultExpandedHeight();
+  };
+  const syncVisualViewportHeightProperty = () => {
+    const viewportHeight = `${getVisualViewportHeight()}px`;
+    document.documentElement.style.setProperty("--linkual-visual-viewport-height", viewportHeight);
+    const root2 = document.getElementById("linkual-root");
+    if (!root2) return;
+    root2.style.setProperty("--linkual-visual-viewport-height", viewportHeight);
+  };
+  const getMaxWidgetHeight = () => Math.max(
+    COLLAPSED_WIDGET_HEIGHT,
+    Math.floor(getVisualViewportHeight() - WIDGET_VIEWPORT_MARGIN)
+  );
+  const clampNumber = (value, min, max) => Math.max(min, Math.min(value, max));
+  const getViewportWidth = () => Math.max(
+    DEFAULT_BUBBLE_WIDTH,
+    window.innerWidth || document.documentElement.clientWidth || DEFAULT_BUBBLE_WIDTH
+  );
+  const getRightScrollbarInset = () => {
+    const viewportWidth = getViewportWidth();
+    const contentWidth = document.documentElement.clientWidth || viewportWidth;
+    return Math.max(BUBBLE_EDGE_OFFSET, Math.ceil(viewportWidth - contentWidth));
+  };
+  const normalizeBubbleSide = (value) => String(value || "").trim() === "left" ? "left" : "right";
+  const normalizeBubbleTopRatio = (value, fallback = DEFAULT_BUBBLE_TOP_RATIO) => {
+    const parsed = Number.parseFloat(String(value ?? ""));
+    if (!Number.isFinite(parsed)) return fallback;
+    return clampNumber(parsed, 0, 1);
+  };
+  const getBubbleViewportBounds = (size) => {
+    const viewportWidth = getViewportWidth();
+    const viewportHeight = Math.max(DEFAULT_BUBBLE_HEIGHT, getVisualViewportHeight());
+    const rightInset = getRightScrollbarInset();
+    const maxLeft = Math.max(BUBBLE_EDGE_OFFSET, viewportWidth - size.width - rightInset);
+    const minTop = BUBBLE_MARGIN;
+    const maxTop = Math.max(minTop, viewportHeight - size.height - BUBBLE_MARGIN);
+    return { viewportWidth, viewportHeight, maxLeft, minTop, maxTop };
+  };
+  const getBubbleTopRatioFromTop = (top, size) => {
+    const bounds = getBubbleViewportBounds(size);
+    if (bounds.maxTop <= bounds.minTop) return 0;
+    const clampedTop = clampNumber(top, bounds.minTop, bounds.maxTop);
+    return clampNumber((clampedTop - bounds.minTop) / (bounds.maxTop - bounds.minTop), 0, 1);
+  };
+  const getBubblePositionFromDock = (side, topRatio, size) => {
+    const bounds = getBubbleViewportBounds(size);
+    const normalizedRatio = normalizeBubbleTopRatio(topRatio);
+    return {
+      left: side === "left" ? BUBBLE_EDGE_OFFSET : bounds.maxLeft,
+      top: bounds.minTop + (bounds.maxTop - bounds.minTop) * normalizedRatio,
+      side,
+      topRatio: normalizedRatio
+    };
+  };
+  const getBubblePositionFromPoint = (left, top, size, preferredSide) => {
+    const bounds = getBubbleViewportBounds(size);
+    const clampedLeft = clampNumber(left, BUBBLE_EDGE_OFFSET, bounds.maxLeft);
+    const clampedTop = clampNumber(top, bounds.minTop, bounds.maxTop);
+    const side = preferredSide || (clampedLeft + size.width / 2 < bounds.viewportWidth / 2 ? "left" : "right");
+    return {
+      left: clampedLeft,
+      top: clampedTop,
+      side,
+      topRatio: getBubbleTopRatioFromTop(clampedTop, size)
+    };
+  };
+  const readBubblePosition = (size) => {
+    const storedSide = String(ConfigService.get("universal_bubble_side") || "").trim();
+    const storedRatio = ConfigService.get("universal_bubble_top_ratio");
+    if (storedSide || storedRatio) {
+      return getBubblePositionFromDock(
+        normalizeBubbleSide(storedSide),
+        normalizeBubbleTopRatio(storedRatio),
+        size
+      );
+    }
+    const legacyLeft = Number.parseFloat(ConfigService.get(LEGACY_BUBBLE_STORAGE_KEYS[0]));
+    const legacyTop = Number.parseFloat(ConfigService.get(LEGACY_BUBBLE_STORAGE_KEYS[1]));
+    if (Number.isFinite(legacyLeft) && Number.isFinite(legacyTop)) {
+      const legacyPosition = getBubblePositionFromPoint(legacyLeft, legacyTop, size);
+      return getBubblePositionFromDock(legacyPosition.side, legacyPosition.topRatio, size);
+    }
+    return getBubblePositionFromDock("right", DEFAULT_BUBBLE_TOP_RATIO, size);
+  };
+  const saveBubblePosition = (position) => {
+    try {
+      ConfigService.set("universal_bubble_side", position.side);
+      ConfigService.set("universal_bubble_top_ratio", position.topRatio.toFixed(4));
+      ConfigService.set("universal_bubble_left", String(Math.round(position.left)));
+      ConfigService.set("universal_bubble_top", String(Math.round(position.top)));
+    } catch (err) {
+      console.warn("[Linkual] 气泡位置保存失败", err);
+    }
+  };
+  const ActionIcon = ({ name }) => {
+    const icons = {
+      add: BadgePlus,
+      queue: ListChecks,
+      settings: Settings$2,
+      expand: PanelTopOpen,
+      collapse: PanelTopClose,
+      translate: Languages,
+      clear: X,
+      word: Type,
+      context: TextAlignStart
+    };
+    const Icon2 = icons[name];
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(Icon2, { className: "linkual-universal-button-icon", "aria-hidden": "true", strokeWidth: 2.2 });
+  };
+  const normalizeText = (value) => value.replace(/\s+/g, " ").trim();
+  const getSourceTitle = () => {
+    const title = normalizeText(document.title.replace(/^\(\d+\)\s+/, ""));
+    return title || window.location.hostname || window.location.href;
+  };
+  const getPageUrl = () => window.location.href;
+  const getElementFromNode = (node) => {
+    if (!node) return null;
+    if (node instanceof Element) return node;
+    return node.parentElement;
+  };
+  const isInsideLinkualRoot = (node) => {
+    const element = getElementFromNode(node);
+    return Boolean(element == null ? void 0 : element.closest("#linkual-root"));
+  };
+  const isInsideEditableElement = (node) => {
+    const element = getElementFromNode(node);
+    if (!element) return false;
+    return Boolean(element.closest("input, textarea, select, [contenteditable]"));
+  };
+  const getSelectionScope = (range) => {
+    let element = getElementFromNode(range.commonAncestorContainer);
+    let fallback = null;
+    while (element && element !== document.body && element instanceof HTMLElement) {
+      if (element.id === "linkual-root") return null;
+      const tagName = element.tagName.toLowerCase();
+      const textLength = normalizeText(element.textContent || "").length;
+      if (["article", "main", "section"].includes(tagName) || element.getAttribute("role") === "main") {
+        return element;
+      }
+      if (["p", "li", "blockquote", "td", "th"].includes(tagName)) {
+        fallback = element;
+      } else if (tagName === "div" && textLength > 220 && textLength < 8e3) {
+        return element;
+      }
+      element = element.parentElement;
+    }
+    return fallback || document.body;
+  };
+  const getRangeText = (scope, range, side) => {
+    const scopedRange = document.createRange();
+    scopedRange.selectNodeContents(scope);
+    try {
+      if (side === "before") {
+        scopedRange.setEnd(range.startContainer, range.startOffset);
+      } else {
+        scopedRange.setStart(range.endContainer, range.endOffset);
+      }
+      return scopedRange.toString();
+    } catch (err) {
+      return "";
+    } finally {
+      scopedRange.detach();
+    }
+  };
+  const extractSentenceContext = (beforeText, selectedText, afterText) => {
+    const normalizedBefore = normalizeText(beforeText);
+    const normalizedSelected = normalizeText(selectedText);
+    const normalizedAfter = normalizeText(afterText);
+    const fullText = normalizeText([normalizedBefore, normalizedSelected, normalizedAfter].filter(Boolean).join(" "));
+    if (!fullText) return normalizedSelected;
+    const targetStart = normalizedBefore.length + (normalizedBefore ? 1 : 0);
+    const targetEnd = targetStart + normalizedSelected.length;
+    const sentences = Array.from(fullText.matchAll(SENTENCE_PATTERN)).map((match) => ({
+      text: normalizeText(match[0] || ""),
+      start: match.index ?? 0,
+      end: (match.index ?? 0) + (match[0] || "").length
+    })).filter((sentence) => sentence.text);
+    if (sentences.length === 0) {
+      const sliceStart = Math.max(0, targetStart - 360);
+      const sliceEnd = Math.min(fullText.length, targetEnd + 360);
+      return normalizeText(fullText.slice(sliceStart, sliceEnd));
+    }
+    const targetSentenceIndex = sentences.findIndex((sentence) => sentence.start <= targetEnd && sentence.end >= targetStart);
+    if (targetSentenceIndex < 0) {
+      return normalizeText(fullText.slice(Math.max(0, targetStart - 360), Math.min(fullText.length, targetEnd + 360)));
+    }
+    const startIndex = Math.max(0, targetSentenceIndex - CONTEXT_SENTENCE_RADIUS);
+    const endIndex = Math.min(sentences.length, targetSentenceIndex + CONTEXT_SENTENCE_RADIUS + 1);
+    return normalizeText(sentences.slice(startIndex, endIndex).map((sentence) => sentence.text).join(" "));
+  };
+  const getVisibleRangeRect = (range) => {
+    const rects = Array.from(range.getClientRects()).filter((rect2) => rect2.width > 0 && rect2.height > 0);
+    if (rects.length > 0) return rects[0];
+    const rect = range.getBoundingClientRect();
+    return rect.width > 0 && rect.height > 0 ? rect : null;
+  };
+  const getFloatingButtonPosition = (rect) => {
+    var _a, _b, _c, _d;
+    const viewportWidth = ((_a = window.visualViewport) == null ? void 0 : _a.width) ?? window.innerWidth;
+    const viewportHeight = ((_b = window.visualViewport) == null ? void 0 : _b.height) ?? window.innerHeight;
+    const viewportLeft = ((_c = window.visualViewport) == null ? void 0 : _c.offsetLeft) ?? 0;
+    const viewportTop = ((_d = window.visualViewport) == null ? void 0 : _d.offsetTop) ?? 0;
+    const left = Math.min(
+      viewportLeft + viewportWidth - 44,
+      Math.max(viewportLeft + 44, rect.left + rect.width / 2)
+    );
+    let top = rect.top - 38;
+    if (top < viewportTop + FLOATING_BUTTON_MARGIN) {
+      top = rect.bottom + 8;
+    }
+    return {
+      left,
+      top: Math.min(
+        viewportTop + viewportHeight - 38,
+        Math.max(viewportTop + FLOATING_BUTTON_MARGIN, top)
+      )
+    };
+  };
+  const captureSelection = (mode) => {
+    const selection = window.getSelection();
+    const selectedText = normalizeText((selection == null ? void 0 : selection.toString()) || "");
+    if (!selection || selection.rangeCount === 0 || selection.isCollapsed || !selectedText) {
+      return null;
+    }
+    const maxSelectionLength = mode === "word" ? MAX_WORD_SELECTION_LENGTH : MAX_CONTEXT_SELECTION_LENGTH;
+    if (selectedText.length > maxSelectionLength) {
+      return null;
+    }
+    if (isInsideLinkualRoot(selection.anchorNode) || isInsideLinkualRoot(selection.focusNode) || isInsideEditableElement(selection.anchorNode) || isInsideEditableElement(selection.focusNode)) {
+      return null;
+    }
+    const range = selection.getRangeAt(0);
+    const scope = getSelectionScope(range);
+    if (!scope) return null;
+    const rect = getVisibleRangeRect(range);
+    if (!rect) return null;
+    const beforeText = getRangeText(scope, range, "before");
+    const afterText = getRangeText(scope, range, "after");
+    const position = getFloatingButtonPosition(rect);
+    return {
+      text: selectedText,
+      context: mode === "word" ? extractSentenceContext(beforeText, selectedText, afterText) : selectedText,
+      source: getSourceTitle(),
+      url: getPageUrl(),
+      top: position.top,
+      left: position.left
+    };
+  };
+  const UniversalVocabWidget = ({ onOpenSettings }) => {
+    const [isExpanded, setIsExpanded] = reactExports.useState(false);
+    const [selection, setSelection] = reactExports.useState(null);
+    const [word, setWord] = reactExports.useState("");
+    const [context, setContext] = reactExports.useState("");
+    const [source, setSource] = reactExports.useState("");
+    const [sourceUrl, setSourceUrl] = reactExports.useState(getPageUrl);
+    const [selectionMode, setSelectionMode] = reactExports.useState("word");
+    const [themeColor, setThemeColor] = reactExports.useState(ConfigService.get("theme_color") || "#000000");
+    const [status, setStatus] = reactExports.useState("idle");
+    const [message, setMessage] = reactExports.useState("");
+    const [reservedHeight, setReservedHeight] = reactExports.useState(getDefaultExpandedHeight);
+    const [queueCount, setQueueCount] = reactExports.useState(0);
+    const [bubblePosition, setBubblePosition] = reactExports.useState(() => readBubblePosition({ width: DEFAULT_BUBBLE_WIDTH, height: DEFAULT_BUBBLE_HEIGHT }));
+    const [expandedAnchor, setExpandedAnchor] = reactExports.useState(null);
+    const widgetRef = reactExports.useRef(null);
+    const bubbleRef = reactExports.useRef(null);
+    const bubbleSizeRef = reactExports.useRef({ width: DEFAULT_BUBBLE_WIDTH, height: DEFAULT_BUBBLE_HEIGHT });
+    const bubblePositionRef = reactExports.useRef(bubblePosition);
+    const bubbleDragRef = reactExports.useRef(null);
+    const bubbleMovedRef = reactExports.useRef(false);
+    const expandedDragRef = reactExports.useRef(null);
+    const selectionTimerRef = reactExports.useRef(null);
+    const articleTranslation = useArticleTranslation();
+    const hasPayload = Boolean(word.trim());
+    const canSend = hasPayload;
+    const statusText = reactExports.useMemo(() => {
+      if (status === "success") return message || "已加入队列";
+      if (status === "error") return message || "加入失败";
+      if (status === "filled") return "已填入";
+      return "";
+    }, [message, status]);
+    const measureWidgetHeight = reactExports.useCallback(() => {
+      const baseHeight = getDefaultExpandedHeight();
+      const measuredHeight = widgetRef.current ? Math.ceil(widgetRef.current.scrollHeight) : 0;
+      const nextHeight = Math.min(getMaxWidgetHeight(), Math.max(baseHeight, measuredHeight));
+      setReservedHeight((currentHeight) => Math.abs(currentHeight - nextHeight) > 1 ? nextHeight : currentHeight);
+    }, []);
+    reactExports.useEffect(() => {
+      var _a;
+      const updateReservedHeight = () => {
+        syncVisualViewportHeightProperty();
+        setReservedHeight(Math.min(getDefaultExpandedHeight(), getMaxWidgetHeight()));
+        window.requestAnimationFrame(measureWidgetHeight);
+      };
+      updateReservedHeight();
+      const desktopQuery = window.matchMedia("(max-width: 720px)");
+      desktopQuery.addEventListener("change", updateReservedHeight);
+      (_a = window.visualViewport) == null ? void 0 : _a.addEventListener("resize", updateReservedHeight);
+      return () => {
+        var _a2;
+        desktopQuery.removeEventListener("change", updateReservedHeight);
+        (_a2 = window.visualViewport) == null ? void 0 : _a2.removeEventListener("resize", updateReservedHeight);
+      };
+    }, [measureWidgetHeight]);
+    reactExports.useEffect(() => {
+      if (!isExpanded) return void 0;
+      const frameId = window.requestAnimationFrame(measureWidgetHeight);
+      return () => window.cancelAnimationFrame(frameId);
+    });
+    reactExports.useEffect(() => {
+      const handleConfigUpdate = () => {
+        setThemeColor(ConfigService.get("theme_color") || "#000000");
+      };
+      window.addEventListener("linkual_settings_updated", handleConfigUpdate);
+      return () => window.removeEventListener("linkual_settings_updated", handleConfigUpdate);
+    }, []);
+    reactExports.useEffect(() => {
+      const updateQueueCount = (event) => {
+        const detail = event.detail;
+        const nextCount = Number((detail == null ? void 0 : detail.pendingCount) || 0);
+        setQueueCount(Number.isFinite(nextCount) ? nextCount : 0);
+      };
+      window.addEventListener(QUEUE_COUNT_EVENT, updateQueueCount);
+      window.dispatchEvent(new Event(QUEUE_REQUEST_COUNT_EVENT));
+      return () => window.removeEventListener(QUEUE_COUNT_EVENT, updateQueueCount);
+    }, []);
+    reactExports.useEffect(() => {
+      const handleNavigationRefresh = () => {
+        setSelection(null);
+        setSourceUrl(getPageUrl());
+        window.requestAnimationFrame(() => {
+          if (isExpanded) measureWidgetHeight();
+          syncVisualViewportHeightProperty();
+        });
+      };
+      window.addEventListener(LINKUAL_NAVIGATION_EVENT$2, handleNavigationRefresh);
+      window.addEventListener("pageshow", handleNavigationRefresh);
+      return () => {
+        window.removeEventListener(LINKUAL_NAVIGATION_EVENT$2, handleNavigationRefresh);
+        window.removeEventListener("pageshow", handleNavigationRefresh);
+      };
+    }, [isExpanded, measureWidgetHeight]);
+    const refreshSelection = reactExports.useCallback(() => {
+      if (!isExpanded) return;
+      setSelection(captureSelection(selectionMode));
+    }, [isExpanded, selectionMode]);
+    const scheduleSelectionRefresh = reactExports.useCallback((delay = 80) => {
+      if (!isExpanded) return;
+      if (selectionTimerRef.current !== null) {
+        window.clearTimeout(selectionTimerRef.current);
+      }
+      selectionTimerRef.current = window.setTimeout(() => {
+        selectionTimerRef.current = null;
+        refreshSelection();
+      }, delay);
+    }, [isExpanded, refreshSelection]);
+    reactExports.useEffect(() => {
+      if (!isExpanded) return void 0;
+      const handleSelectionChange = () => scheduleSelectionRefresh(90);
+      const handlePointerUp = () => scheduleSelectionRefresh(20);
+      const handleKeyUp = () => scheduleSelectionRefresh(20);
+      document.addEventListener("selectionchange", handleSelectionChange);
+      window.addEventListener("pointerup", handlePointerUp, true);
+      window.addEventListener("keyup", handleKeyUp, true);
+      return () => {
+        document.removeEventListener("selectionchange", handleSelectionChange);
+        window.removeEventListener("pointerup", handlePointerUp, true);
+        window.removeEventListener("keyup", handleKeyUp, true);
+        if (selectionTimerRef.current !== null) {
+          window.clearTimeout(selectionTimerRef.current);
+          selectionTimerRef.current = null;
+        }
+      };
+    }, [isExpanded, scheduleSelectionRefresh]);
+    const handleAddSelection = () => {
+      var _a;
+      if (!selection) return;
+      if (selectionMode === "word") {
+        setWord(selection.text);
+        setContext(selection.context);
+        setSelectionMode("context");
+      } else {
+        setContext(selection.text);
+      }
+      setSource(selection.source);
+      setSourceUrl(selection.url);
+      setStatus("filled");
+      setMessage("");
+      setSelection(null);
+      (_a = window.getSelection()) == null ? void 0 : _a.removeAllRanges();
+    };
+    const handleClear = () => {
+      setWord("");
+      setContext("");
+      setSource("");
+      setSourceUrl(getPageUrl());
+      setStatus("idle");
+      setMessage("");
+      setSelection(null);
+      setSelectionMode("word");
+    };
+    const handleAddToQueue = () => {
+      var _a;
+      const finalWord = word.trim();
+      const finalContext = context.trim();
+      if (!finalWord) {
+        setStatus("error");
+        setMessage("词块不能为空");
+        return;
+      }
+      try {
+        enqueueVocabTask({
+          word: finalWord,
+          context: finalContext,
+          source: source || getSourceTitle(),
+          source_url: sourceUrl || getPageUrl()
+        });
+      } catch (err) {
+        setStatus("error");
+        setMessage(err instanceof Error ? err.message : "加入失败");
+        return;
+      }
+      setStatus("success");
+      setMessage("已加入队列");
+      setSelectionMode("word");
+      setSelection(null);
+      (_a = window.getSelection()) == null ? void 0 : _a.removeAllRanges();
+    };
+    const handleModeChange = (mode) => {
+      setSelectionMode(mode);
+      setMessage("");
+      window.setTimeout(() => setSelection(captureSelection(mode)), 0);
+    };
+    const handleContextWheel = (event) => {
+      const input = event.currentTarget;
+      const maxScroll = input.scrollWidth - input.clientWidth;
+      if (maxScroll <= 0) return;
+      const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
+      if (!delta) return;
+      const nextScroll = Math.max(0, Math.min(maxScroll, input.scrollLeft + delta));
+      if (nextScroll !== input.scrollLeft) {
+        event.preventDefault();
+        input.scrollLeft = nextScroll;
+      }
+    };
+    const handleQueueToggle = () => {
+      window.dispatchEvent(new Event(QUEUE_TOGGLE_EVENT));
+      window.dispatchEvent(new Event(QUEUE_REQUEST_COUNT_EVENT));
+    };
+    const handleBubblePointerDown = (event) => {
+      var _a, _b, _c;
+      if (event.pointerType === "mouse" && event.button !== 0) return;
+      const rect = (_a = bubbleRef.current) == null ? void 0 : _a.getBoundingClientRect();
+      if (!rect) return;
+      bubbleSizeRef.current = { width: rect.width, height: rect.height };
+      bubbleMovedRef.current = false;
+      bubbleDragRef.current = {
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        left: rect.left,
+        top: rect.top
+      };
+      (_c = (_b = event.currentTarget).setPointerCapture) == null ? void 0 : _c.call(_b, event.pointerId);
+    };
+    const handleBubblePointerMove = (event) => {
+      const drag = bubbleDragRef.current;
+      if (!drag || drag.pointerId !== event.pointerId) return;
+      const deltaX = event.clientX - drag.startX;
+      const deltaY = event.clientY - drag.startY;
+      if (Math.abs(deltaX) > 3 || Math.abs(deltaY) > 3) bubbleMovedRef.current = true;
+      const nextPosition = getBubblePositionFromPoint(drag.left + deltaX, drag.top + deltaY, bubbleSizeRef.current);
+      bubblePositionRef.current = nextPosition;
+      setBubblePosition(nextPosition);
+    };
+    const handleBubblePointerUp = (event) => {
+      const drag = bubbleDragRef.current;
+      if (!drag || drag.pointerId !== event.pointerId) return;
+      const currentPosition = bubblePositionRef.current || getBubblePositionFromPoint(drag.left, drag.top, bubbleSizeRef.current);
+      const nextPosition = getBubblePositionFromDock(currentPosition.side, currentPosition.topRatio, bubbleSizeRef.current);
+      bubbleDragRef.current = null;
+      if (bubbleMovedRef.current) {
+        bubblePositionRef.current = nextPosition;
+        setBubblePosition(nextPosition);
+        saveBubblePosition(nextPosition);
+      }
+    };
+    reactExports.useEffect(() => {
+      var _a;
+      const refreshBubbleSize = () => {
+        var _a2;
+        const rect = (_a2 = bubbleRef.current) == null ? void 0 : _a2.getBoundingClientRect();
+        if (rect) bubbleSizeRef.current = { width: rect.width, height: rect.height };
+      };
+      const clampCurrentPosition = () => setBubblePosition((current) => {
+        refreshBubbleSize();
+        const nextPosition = getBubblePositionFromDock(current.side, current.topRatio, bubbleSizeRef.current);
+        bubblePositionRef.current = nextPosition;
+        return nextPosition;
+      });
+      clampCurrentPosition();
+      window.addEventListener("resize", clampCurrentPosition);
+      (_a = window.visualViewport) == null ? void 0 : _a.addEventListener("resize", clampCurrentPosition);
+      return () => {
+        var _a2;
+        window.removeEventListener("resize", clampCurrentPosition);
+        (_a2 = window.visualViewport) == null ? void 0 : _a2.removeEventListener("resize", clampCurrentPosition);
+      };
+    }, []);
+    reactExports.useEffect(() => {
+      const syncStoredBubblePosition = () => {
+        var _a;
+        if (isExpanded || bubbleDragRef.current || expandedDragRef.current) return;
+        const rect = (_a = bubbleRef.current) == null ? void 0 : _a.getBoundingClientRect();
+        if (rect) bubbleSizeRef.current = { width: rect.width, height: rect.height };
+        const nextPosition = readBubblePosition(bubbleSizeRef.current);
+        bubblePositionRef.current = nextPosition;
+        setBubblePosition(nextPosition);
+      };
+      const handleVisibilityChange = () => {
+        if (document.visibilityState === "visible") syncStoredBubblePosition();
+      };
+      const handleStorage = (event) => {
+        if (!event.key || !event.key.startsWith("linkual_universal_bubble_")) return;
+        syncStoredBubblePosition();
+      };
+      window.addEventListener("focus", syncStoredBubblePosition);
+      window.addEventListener("pageshow", syncStoredBubblePosition);
+      window.addEventListener("storage", handleStorage);
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+      return () => {
+        window.removeEventListener("focus", syncStoredBubblePosition);
+        window.removeEventListener("pageshow", syncStoredBubblePosition);
+        window.removeEventListener("storage", handleStorage);
+        document.removeEventListener("visibilitychange", handleVisibilityChange);
+      };
+    }, [isExpanded]);
+    const handleBubbleButtonPointerDown = (event) => {
+      event.stopPropagation();
+    };
+    const handleBubbleClick = (event) => {
+      if (bubbleMovedRef.current) {
+        event.preventDefault();
+        event.stopPropagation();
+        bubbleMovedRef.current = false;
+      }
+    };
+    const getBubbleSize = reactExports.useCallback(() => {
+      var _a;
+      const rect = (_a = bubbleRef.current) == null ? void 0 : _a.getBoundingClientRect();
+      if (rect) {
+        bubbleSizeRef.current = { width: rect.width, height: rect.height };
+        return bubbleSizeRef.current;
+      }
+      return bubbleSizeRef.current;
+    }, []);
+    const getBubbleAnchor = reactExports.useCallback(() => {
+      var _a;
+      const rect = (_a = bubbleRef.current) == null ? void 0 : _a.getBoundingClientRect();
+      const current = bubblePositionRef.current;
+      const side = (current == null ? void 0 : current.side) || "right";
+      if (rect) {
+        bubbleSizeRef.current = { width: rect.width, height: rect.height };
+        return {
+          side,
+          edge: side === "right" ? Math.max(getRightScrollbarInset(), getViewportWidth() - rect.right) : Math.max(0, rect.left),
+          top: rect.top
+        };
+      }
+      if (current) {
+        const size = getBubbleSize();
+        return {
+          side: current.side,
+          edge: current.side === "right" ? Math.max(getRightScrollbarInset(), getViewportWidth() - current.left - size.width) : Math.max(0, current.left),
+          top: current.top
+        };
+      }
+      return {
+        side: "right",
+        edge: BUBBLE_EDGE_OFFSET,
+        top: getBubblePositionFromDock("right", DEFAULT_BUBBLE_TOP_RATIO, {
+          width: DEFAULT_BUBBLE_WIDTH,
+          height: DEFAULT_BUBBLE_HEIGHT
+        }).top
+      };
+    }, [getBubbleSize]);
+    const clampExpandedAnchor = reactExports.useCallback((anchor) => {
+      const minEdge = anchor.side === "right" ? getRightScrollbarInset() : BUBBLE_EDGE_OFFSET;
+      const maxEdge = Math.max(minEdge, getViewportWidth() - BUBBLE_MARGIN);
+      const maxTop = Math.max(BUBBLE_MARGIN, getVisualViewportHeight() - BUBBLE_MARGIN);
+      return {
+        side: anchor.side,
+        edge: clampNumber(anchor.edge, minEdge, maxEdge),
+        top: clampNumber(anchor.top, BUBBLE_MARGIN, maxTop)
+      };
+    }, []);
+    const getExpandedWindowStyle = reactExports.useCallback((anchor) => {
+      if (!anchor) return {};
+      const baseStyle = {
+        top: anchor.top,
+        bottom: "auto"
+      };
+      return anchor.side === "left" ? {
+        ...baseStyle,
+        left: anchor.edge,
+        right: "auto"
+      } : {
+        ...baseStyle,
+        right: anchor.edge,
+        left: "auto"
+      };
+    }, []);
+    const persistBubblePosition = reactExports.useCallback((position) => {
+      const nextPosition = getBubblePositionFromDock(position.side, position.topRatio, getBubbleSize());
+      setBubblePosition(nextPosition);
+      bubblePositionRef.current = nextPosition;
+      saveBubblePosition(nextPosition);
+    }, [getBubbleSize]);
+    const persistBubblePositionFromAnchor = reactExports.useCallback((anchor) => {
+      const size = getBubbleSize();
+      const left = anchor.side === "right" ? getViewportWidth() - anchor.edge - size.width : anchor.edge;
+      persistBubblePosition(getBubblePositionFromPoint(left, anchor.top, size, anchor.side));
+    }, [getBubbleSize, persistBubblePosition]);
+    const handleExpandedPointerDown = (event) => {
+      var _a, _b;
+      const target = event.target;
+      if (target instanceof Element && target.closest('button, input, textarea, select, [contenteditable="true"]')) return;
+      const anchor = expandedAnchor || getBubbleAnchor();
+      expandedDragRef.current = {
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        side: anchor.side,
+        edge: anchor.edge,
+        top: anchor.top
+      };
+      (_b = (_a = event.currentTarget).setPointerCapture) == null ? void 0 : _b.call(_a, event.pointerId);
+    };
+    const handleExpandedPointerMove = (event) => {
+      const drag = expandedDragRef.current;
+      if (!drag || drag.pointerId !== event.pointerId) return;
+      const deltaX = event.clientX - drag.startX;
+      setExpandedAnchor(clampExpandedAnchor({
+        side: drag.side,
+        edge: drag.side === "right" ? drag.edge - deltaX : drag.edge + deltaX,
+        top: drag.top + event.clientY - drag.startY
+      }));
+    };
+    const handleExpandedPointerUp = (event) => {
+      const drag = expandedDragRef.current;
+      if (!drag || drag.pointerId !== event.pointerId) return;
+      expandedDragRef.current = null;
+      const deltaX = event.clientX - drag.startX;
+      const anchor = clampExpandedAnchor({
+        side: drag.side,
+        edge: drag.side === "right" ? drag.edge - deltaX : drag.edge + deltaX,
+        top: drag.top + event.clientY - drag.startY
+      });
+      setExpandedAnchor(anchor);
+      persistBubblePositionFromAnchor(anchor);
+    };
+    const handleCollapseWindow = () => {
+      setSelection(null);
+      setIsExpanded(false);
+      if (expandedAnchor) persistBubblePositionFromAnchor(expandedAnchor);
+    };
+    const handleBubbleExpand = () => {
+      setExpandedAnchor(clampExpandedAnchor(getBubbleAnchor()));
+      syncVisualViewportHeightProperty();
+      setIsExpanded(true);
+    };
+    reactExports.useEffect(() => {
+      if (!isExpanded) return void 0;
+      const clampExpandedAnchorToViewport = () => setExpandedAnchor((current) => {
+        if (!current) return current;
+        return clampExpandedAnchor(current);
+      });
+      const frameId = window.requestAnimationFrame(clampExpandedAnchorToViewport);
+      window.addEventListener("resize", clampExpandedAnchorToViewport);
+      return () => {
+        window.cancelAnimationFrame(frameId);
+        window.removeEventListener("resize", clampExpandedAnchorToViewport);
+      };
+    }, [clampExpandedAnchor, isExpanded, reservedHeight]);
+    if (!isExpanded) {
+      return /* @__PURE__ */ jsxRuntimeExports.jsxs(
+        "div",
+        {
+          ref: bubbleRef,
+          className: `linkual-universal-expand-bar is-side-${bubblePosition.side}`,
+          onPointerDown: handleBubblePointerDown,
+          onPointerMove: handleBubblePointerMove,
+          onPointerUp: handleBubblePointerUp,
+          onPointerCancel: handleBubblePointerUp,
+          onClick: handleBubbleClick,
+          style: {
+            "--linkual-theme": themeColor,
+            left: bubblePosition.left,
+            top: bubblePosition.top,
+            right: "auto",
+            bottom: "auto"
+          },
+          title: "Linkual",
+          children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx(GripVertical, { className: "linkual-universal-bubble-grip", size: 15, strokeWidth: 2.1, "aria-hidden": "true" }),
+            articleTranslation.isPageSupported && /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "button",
+              {
+                type: "button",
+                className: "linkual-universal-bubble-translate",
+                onPointerDown: handleBubbleButtonPointerDown,
+                onClick: () => void articleTranslation.translateAll(),
+                disabled: articleTranslation.isTranslatingAll,
+                "aria-label": "翻译页面",
+                title: "翻译页面",
+                children: /* @__PURE__ */ jsxRuntimeExports.jsx(ActionIcon, { name: "translate" })
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs(
+              "button",
+              {
+                type: "button",
+                className: "linkual-universal-icon-btn linkual-universal-window-toggle",
+                onPointerDown: handleBubbleButtonPointerDown,
+                onClick: handleBubbleExpand,
+                title: "展开 Linkual 工具栏",
+                "aria-label": "展开 Linkual 工具栏",
+                children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(ActionIcon, { name: "expand" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "linkual-universal-button-text", children: "展开" })
+                ]
+              }
+            )
+          ]
+        }
+      );
+    }
+    return /* @__PURE__ */ jsxRuntimeExports.jsxs(
+      "div",
+      {
+        ref: widgetRef,
+        className: "linkual-universal-widget linkual-universal-floating-window",
+        onPointerDown: handleExpandedPointerDown,
+        onPointerMove: handleExpandedPointerMove,
+        onPointerUp: handleExpandedPointerUp,
+        onPointerCancel: handleExpandedPointerUp,
+        style: {
+          "--linkual-theme": themeColor,
+          "--linkual-universal-widget-height": `${reservedHeight}px`,
+          ...getExpandedWindowStyle(expandedAnchor)
+        },
+        children: [
+          selection && /* @__PURE__ */ jsxRuntimeExports.jsxs(
+            "button",
+            {
+              type: "button",
+              className: "linkual-universal-floating-add",
+              onMouseDown: (event) => event.preventDefault(),
+              onPointerDown: (event) => event.preventDefault(),
+              onClick: handleAddSelection,
+              style: {
+                top: selection.top,
+                left: selection.left,
+                "--linkual-theme": themeColor
+              },
+              children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx(ActionIcon, { name: "add" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "填入" })
+              ]
+            }
+          ),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-universal-top", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "linkual-universal-selection", children: selection ? /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "linkual-universal-selection-label", children: "已选" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "linkual-universal-selection-text", children: selection.text }),
+              /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                "button",
+                {
+                  type: "button",
+                  className: "linkual-universal-add-btn",
+                  onMouseDown: (event) => event.preventDefault(),
+                  onPointerDown: (event) => event.preventDefault(),
+                  onClick: handleAddSelection,
+                  children: [
+                    /* @__PURE__ */ jsxRuntimeExports.jsx(ActionIcon, { name: "add" }),
+                    "填入"
+                  ]
+                }
+              )
+            ] }) : /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "linkual-universal-muted", children: "未选中文本" }) }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-universal-actions", children: [
+              statusText && /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: `linkual-universal-status status-${status}`, children: statusText }),
+              /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                "button",
+                {
+                  type: "button",
+                  className: "linkual-universal-icon-btn linkual-universal-window-toggle",
+                  onPointerDown: (event) => event.stopPropagation(),
+                  onClick: handleCollapseWindow,
+                  title: "收起 Linkual 工具栏",
+                  "aria-label": "收起 Linkual 工具栏",
+                  children: [
+                    /* @__PURE__ */ jsxRuntimeExports.jsx(ActionIcon, { name: "collapse" }),
+                    /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "linkual-universal-button-text", children: "收起" })
+                  ]
+                }
+              )
+            ] })
+          ] }),
+          articleTranslation.isPageSupported && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-universal-translation-row", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-universal-translation-summary", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { children: "网页翻译" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
+                articleTranslation.doneCount,
+                "/",
+                articleTranslation.paragraphs.length,
+                " 段 · 并发 ",
+                articleTranslation.translationConcurrency
+              ] })
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-universal-translation-actions", children: [
+              articleTranslation.isTranslatingAll ? /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", className: "primary", onClick: articleTranslation.stopTranslation, children: "停止翻译" }) : /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", className: "primary", onClick: () => void articleTranslation.translateAll(), children: "翻译页面" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", onClick: articleTranslation.rescan, children: "重新扫描" })
+            ] })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-universal-form", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("label", { className: "linkual-universal-field field-word", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "button",
+                {
+                  type: "button",
+                  className: `linkual-universal-mode-tab ${selectionMode === "word" ? "active" : ""}`,
+                  onMouseDown: (event) => event.preventDefault(),
+                  onClick: () => handleModeChange("word"),
+                  title: "词块",
+                  "aria-label": "词块",
+                  "aria-pressed": selectionMode === "word",
+                  children: /* @__PURE__ */ jsxRuntimeExports.jsx(ActionIcon, { name: "word" })
+                }
+              ),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "input",
+                {
+                  value: word,
+                  onChange: (event) => {
+                    setWord(event.target.value);
+                    setStatus(event.target.value.trim() ? "filled" : "idle");
+                    setMessage("");
+                  },
+                  placeholder: "word or phrase"
+                }
+              )
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("label", { className: "linkual-universal-field field-context", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "button",
+                {
+                  type: "button",
+                  className: `linkual-universal-mode-tab ${selectionMode === "context" ? "active" : ""}`,
+                  onMouseDown: (event) => event.preventDefault(),
+                  onClick: () => handleModeChange("context"),
+                  title: "上下文",
+                  "aria-label": "上下文",
+                  "aria-pressed": selectionMode === "context",
+                  children: /* @__PURE__ */ jsxRuntimeExports.jsx(ActionIcon, { name: "context" })
+                }
+              ),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "input",
+                {
+                  value: context,
+                  onChange: (event) => {
+                    setContext(event.target.value);
+                    if (word.trim()) setStatus("filled");
+                    setMessage("");
+                  },
+                  onWheel: handleContextWheel,
+                  placeholder: "context"
+                }
+              )
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", className: "linkual-universal-clear", onClick: handleClear, disabled: !hasPayload && !context, children: /* @__PURE__ */ jsxRuntimeExports.jsx(ActionIcon, { name: "clear" }) }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", className: "linkual-universal-send", onClick: handleAddToQueue, disabled: !canSend, title: "加入队列", "aria-label": "加入队列", children: /* @__PURE__ */ jsxRuntimeExports.jsx(ActionIcon, { name: "add" }) }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-universal-inline-actions", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsxs("button", { type: "button", className: "linkual-universal-icon-btn linkual-universal-queue-btn", onClick: handleQueueToggle, title: "制卡队列", "aria-label": `制卡队列${queueCount > 0 ? ` ${queueCount}` : ""}`, children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx(ActionIcon, { name: "queue" }),
+                queueCount > 0 && /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "linkual-universal-queue-count", children: queueCount })
+              ] }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", className: "linkual-universal-icon-btn", onClick: onOpenSettings, title: "设置", "aria-label": "设置", children: /* @__PURE__ */ jsxRuntimeExports.jsx(ActionIcon, { name: "settings" }) })
+            ] })
+          ] })
+        ]
+      }
+    );
   };
   const SOURCE_HIGHLIGHT_NAME = "linkual-article-source-active";
   let activeSourceHighlightOwner = null;
@@ -31531,7 +31767,7 @@ ${paragraph.text}`,
       showMobileFullscreenButton && /* @__PURE__ */ jsxRuntimeExports.jsx(MobileFullscreenButton, { adapter }),
       /* @__PURE__ */ jsxRuntimeExports.jsx(UpdateNotice, {}),
       /* @__PURE__ */ jsxRuntimeExports.jsx(VocabQueue, {}),
-      isSettingsOpen && /* @__PURE__ */ jsxRuntimeExports.jsx(Settings$1, { adapter, onClose: () => setIsSettingsOpen(false) })
+      isSettingsOpen && /* @__PURE__ */ jsxRuntimeExports.jsx(Settings2, { adapter, onClose: () => setIsSettingsOpen(false) })
     ] }) });
   };
   const PLAYER_RESPONSE_KEYS = [
@@ -33583,9 +33819,106 @@ html.linkual-mobile-fullscreen-fallback {
   margin-top: 8px;
   padding-top: 8px;
   font-size: 13px;
-  white-space: pre-wrap;
+  white-space: normal;
   line-height: 1.6;
   cursor: text;
+  overflow-wrap: anywhere;
+}
+
+#linkual-root .ai-box .linkual-markdown-paragraph,
+#linkual-root .ai-box .linkual-markdown-heading,
+#linkual-root .ai-box .linkual-markdown-list,
+#linkual-root .ai-box .linkual-markdown-quote,
+#linkual-root .ai-box .linkual-markdown-code-block,
+#linkual-root .ai-box .linkual-article-markdown-table-wrap {
+  margin-top: 0;
+  margin-bottom: 8px;
+}
+
+#linkual-root .ai-box .linkual-markdown-paragraph:last-child,
+#linkual-root .ai-box .linkual-markdown-heading:last-child,
+#linkual-root .ai-box .linkual-markdown-list:last-child,
+#linkual-root .ai-box .linkual-markdown-quote:last-child,
+#linkual-root .ai-box .linkual-markdown-code-block:last-child,
+#linkual-root .ai-box .linkual-article-markdown-table-wrap:last-child {
+  margin-bottom: 0;
+}
+
+#linkual-root .linkual-markdown-paragraph {
+  white-space: pre-wrap;
+}
+
+#linkual-root .linkual-markdown-heading {
+  color: inherit;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+#linkual-root .ai-box .linkual-markdown-heading-1,
+#linkual-root .ai-box .linkual-markdown-heading-2 {
+  font-size: 14px;
+}
+
+#linkual-root .ai-box .linkual-markdown-heading-3,
+#linkual-root .ai-box .linkual-markdown-heading-4,
+#linkual-root .ai-box .linkual-markdown-heading-5,
+#linkual-root .ai-box .linkual-markdown-heading-6 {
+  font-size: 13px;
+}
+
+#linkual-root .linkual-markdown-list {
+  padding-left: 20px;
+}
+
+#linkual-root .linkual-markdown-list li {
+  margin: 2px 0;
+  padding-left: 1px;
+  white-space: pre-wrap;
+}
+
+#linkual-root .linkual-markdown-quote {
+  padding: 6px 9px;
+  border-left: 3px solid rgba(106, 27, 154, 0.32);
+  border-radius: 4px;
+  background: rgba(106, 27, 154, 0.06);
+  white-space: pre-wrap;
+}
+
+#linkual-root .linkual-markdown-code-block {
+  max-width: 100%;
+  padding: 8px 9px;
+  overflow-x: auto;
+  border-radius: 6px;
+  background: #f5f5f5;
+  color: #222;
+  font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  white-space: pre;
+}
+
+#linkual-root .linkual-markdown-code-block code,
+#linkual-root .linkual-markdown-inline-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+#linkual-root .linkual-markdown-inline-code {
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.08);
+  color: inherit;
+  font-size: 0.92em;
+}
+
+#linkual-root .linkual-markdown-link {
+  color: var(--linkual-theme, #6a1b9a);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+#linkual-root .linkual-markdown-rule {
+  height: 1px;
+  margin: 9px 0;
+  border: 0;
+  background: rgba(0, 0, 0, 0.12);
 }
 
 #linkual-root .lan-sync-module {
