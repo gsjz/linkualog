@@ -23,12 +23,27 @@ const normalizeSelectedText = (value: string) => value.replace(/\s+/g, ' ').trim
 type SelectionInputType = 'mouse' | 'touch' | 'pen';
 type SelectionBoxPlacement = 'floating' | 'dock';
 type SelectionBox = { text: string, top: number, left: number, placement: SelectionBoxPlacement };
+type ShadowRootWithSelection = ShadowRoot & {
+  getSelection?: () => Selection | null;
+};
 
 const isNodeInside = (node: Node | null, container: HTMLElement | null) => {
   if (!node || !container) return false;
   const target = node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
   return !!target && container.contains(target);
 };
+
+const isShadowRoot = (root: Node): root is ShadowRoot => (
+  typeof ShadowRoot !== 'undefined' && root instanceof ShadowRoot
+);
+
+const isSelectionEventTarget = (target: Node | null | undefined): target is Document | ShadowRoot => (
+  !!target && (target instanceof Document || isShadowRoot(target))
+);
+
+const isRangeInside = (range: Range | StaticRange, container: HTMLElement) => (
+  isNodeInside(range.startContainer, container) && isNodeInside(range.endContainer, container)
+);
 
 const getVisibleRangeRect = (range: Range) => {
   const rects = Array.from(range.getClientRects()).filter((rect) => rect.width > 0 && rect.height > 0);
@@ -71,35 +86,60 @@ const staticRangeToRange = (staticRange: StaticRange) => {
   return range;
 };
 
+const getComposedSelectionRanges = (selection: Selection, root: ShadowRoot) => {
+  if (typeof selection.getComposedRanges !== 'function') return [];
+
+  try {
+    return selection.getComposedRanges({ shadowRoots: [root] });
+  } catch {}
+
+  try {
+    return (selection.getComposedRanges as unknown as (...shadowRoots: ShadowRoot[]) => StaticRange[])(root);
+  } catch {}
+
+  return [];
+};
+
+const getRootSelection = (root: Node) => {
+  if (isShadowRoot(root)) {
+    const shadowSelection = (root as ShadowRootWithSelection).getSelection?.();
+    if (shadowSelection && (shadowSelection.rangeCount > 0 || !shadowSelection.isCollapsed)) return shadowSelection;
+  }
+
+  return (typeof document.getSelection === 'function' ? document.getSelection() : window.getSelection()) ?? null;
+};
+
 const getSubtitleSelection = (textContainer: HTMLElement | null) => {
   if (!textContainer) return null;
 
-  const selection = typeof document.getSelection === 'function'
-    ? document.getSelection()
-    : window.getSelection();
+  const root = textContainer.getRootNode();
+  const selection = getRootSelection(root);
 
   if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
     return null;
   }
 
-  const range = selection.getRangeAt(0);
-  const root = textContainer.getRootNode();
-
-  if (root instanceof ShadowRoot) {
-    const composedRanges = typeof selection.getComposedRanges === 'function'
-      ? selection.getComposedRanges({ shadowRoots: [root] })
-      : [];
-    if (composedRanges.length > 0) {
-      const text = normalizeSelectedText(selection.toString() ?? '');
-      if (text && text.length <= MAX_SELECTION_LENGTH && isNodeInside(selection.anchorNode, textContainer) && isNodeInside(selection.focusNode, textContainer)) {
-        return { selection, range: staticRangeToRange(composedRanges[0]), text };
+  if (isShadowRoot(root)) {
+    const composedRanges = getComposedSelectionRanges(selection, root);
+    const composedRange = composedRanges.find((range) => isRangeInside(range, textContainer));
+    if (composedRange) {
+      const range = staticRangeToRange(composedRange);
+      const text = normalizeSelectedText(range.toString() || selection.toString() || '');
+      if (text && text.length <= MAX_SELECTION_LENGTH) {
+        return { selection, range, text };
       }
     }
   }
 
-  const text = normalizeSelectedText(selection.toString() ?? '');
+  const range = selection.getRangeAt(0);
+  const text = normalizeSelectedText(selection.toString() || range.toString() || '');
   if (!text || text.length > MAX_SELECTION_LENGTH) return null;
-  if (!isNodeInside(selection.anchorNode, textContainer) || !isNodeInside(selection.focusNode, textContainer)) return null;
+  if (
+    !isRangeInside(range, textContainer)
+    && (!isNodeInside(selection.anchorNode, textContainer) || !isNodeInside(selection.focusNode, textContainer))
+  ) {
+    return null;
+  }
 
   return { selection, range, text };
 };
@@ -231,6 +271,11 @@ const SubtitleItem: React.FC<SubtitleItemProps> = ({ data, index, allSubs, isAct
     scheduleSelectionRefresh(e.pointerType === 'touch' ? 180 : 0);
   };
 
+  const handleSelectionPointerCancel = (e: React.PointerEvent<HTMLDivElement>) => {
+    rememberSelectionInput(e.pointerType === 'touch' ? 'touch' : e.pointerType === 'pen' ? 'pen' : 'mouse');
+    scheduleSelectionRefresh(e.pointerType === 'touch' ? 180 : 0);
+  };
+
   const handleSelectionMouseDown = () => {
     lockSubtitleSelectionGesture();
     rememberSelectionInput('mouse');
@@ -255,10 +300,23 @@ const SubtitleItem: React.FC<SubtitleItemProps> = ({ data, index, allSubs, isAct
 
   useEffect(() => {
     const handleSelectionChange = () => scheduleSelectionRefresh(120);
-    document.addEventListener('selectionchange', handleSelectionChange);
+    const handleGlobalPointerUp = () => {
+      if (subtitleSelectionGestureActive) scheduleSelectionRefresh(20);
+    };
+    const selectionTargets = new Set<EventTarget>([document]);
+    const root = textRef.current?.getRootNode();
+    if (isSelectionEventTarget(root)) {
+      selectionTargets.add(root);
+    }
+
+    selectionTargets.forEach((target) => target.addEventListener('selectionchange', handleSelectionChange));
+    window.addEventListener('pointerup', handleGlobalPointerUp, true);
+    window.addEventListener('touchend', handleGlobalPointerUp, true);
 
     return () => {
-      document.removeEventListener('selectionchange', handleSelectionChange);
+      selectionTargets.forEach((target) => target.removeEventListener('selectionchange', handleSelectionChange));
+      window.removeEventListener('pointerup', handleGlobalPointerUp, true);
+      window.removeEventListener('touchend', handleGlobalPointerUp, true);
       if (selectionTimerRef.current !== null) {
         window.clearTimeout(selectionTimerRef.current);
       }
@@ -330,7 +388,12 @@ const SubtitleItem: React.FC<SubtitleItemProps> = ({ data, index, allSubs, isAct
     }
     
     setSelectionBox(null);
-    window.getSelection()?.removeAllRanges();
+    const root = textRef.current?.getRootNode();
+    if (root) {
+      getRootSelection(root)?.removeAllRanges();
+    } else {
+      window.getSelection()?.removeAllRanges();
+    }
   };
 
   const handleSelectionButtonPointerUp = (e: React.PointerEvent<HTMLButtonElement>) => {
@@ -481,6 +544,7 @@ const SubtitleItem: React.FC<SubtitleItemProps> = ({ data, index, allSubs, isAct
         ref={textRef}
         onPointerDown={handleSelectionPointerDown}
         onPointerUp={handleSelectionPointerUp}
+        onPointerCancel={handleSelectionPointerCancel}
         onMouseDown={handleSelectionMouseDown}
         onMouseUp={handleSelectionMouseUp}
         onTouchStart={handleSelectionTouchStart}

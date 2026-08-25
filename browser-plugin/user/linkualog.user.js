@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Linkual Log
 // @namespace    npm/vite-plugin-monkey
-// @version      0.0.50
+// @version      0.0.51
 // @author       Sergio Gao
 // @icon         https://vitejs.dev/logo.svg
 // @downloadURL  https://raw.githubusercontent.com/gsjz/linkualog/main/browser-plugin/user/linkualog.user.js
@@ -12967,6 +12967,9 @@
     const target = node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
     return !!target && container.contains(target);
   };
+  const isShadowRoot = (root2) => typeof ShadowRoot !== "undefined" && root2 instanceof ShadowRoot;
+  const isSelectionEventTarget = (target) => !!target && (target instanceof Document || isShadowRoot(target));
+  const isRangeInside = (range, container) => isNodeInside(range.startContainer, container) && isNodeInside(range.endContainer, container);
   const getVisibleRangeRect$1 = (range) => {
     const rects = Array.from(range.getClientRects()).filter((rect2) => rect2.width > 0 && rect2.height > 0);
     if (rects.length > 0) return rects[0];
@@ -12999,26 +13002,50 @@
     range.setEnd(staticRange.endContainer, staticRange.endOffset);
     return range;
   };
+  const getComposedSelectionRanges = (selection, root2) => {
+    if (typeof selection.getComposedRanges !== "function") return [];
+    try {
+      return selection.getComposedRanges({ shadowRoots: [root2] });
+    } catch {
+    }
+    try {
+      return selection.getComposedRanges(root2);
+    } catch {
+    }
+    return [];
+  };
+  const getRootSelection = (root2) => {
+    var _a;
+    if (isShadowRoot(root2)) {
+      const shadowSelection = (_a = root2.getSelection) == null ? void 0 : _a.call(root2);
+      if (shadowSelection && (shadowSelection.rangeCount > 0 || !shadowSelection.isCollapsed)) return shadowSelection;
+    }
+    return (typeof document.getSelection === "function" ? document.getSelection() : window.getSelection()) ?? null;
+  };
   const getSubtitleSelection = (textContainer) => {
     if (!textContainer) return null;
-    const selection = typeof document.getSelection === "function" ? document.getSelection() : window.getSelection();
+    const root2 = textContainer.getRootNode();
+    const selection = getRootSelection(root2);
     if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
       return null;
     }
-    const range = selection.getRangeAt(0);
-    const root2 = textContainer.getRootNode();
-    if (root2 instanceof ShadowRoot) {
-      const composedRanges = typeof selection.getComposedRanges === "function" ? selection.getComposedRanges({ shadowRoots: [root2] }) : [];
-      if (composedRanges.length > 0) {
-        const text22 = normalizeSelectedText(selection.toString() ?? "");
-        if (text22 && text22.length <= MAX_SELECTION_LENGTH && isNodeInside(selection.anchorNode, textContainer) && isNodeInside(selection.focusNode, textContainer)) {
-          return { selection, range: staticRangeToRange(composedRanges[0]), text: text22 };
+    if (isShadowRoot(root2)) {
+      const composedRanges = getComposedSelectionRanges(selection, root2);
+      const composedRange = composedRanges.find((range2) => isRangeInside(range2, textContainer));
+      if (composedRange) {
+        const range2 = staticRangeToRange(composedRange);
+        const text22 = normalizeSelectedText(range2.toString() || selection.toString() || "");
+        if (text22 && text22.length <= MAX_SELECTION_LENGTH) {
+          return { selection, range: range2, text: text22 };
         }
       }
     }
-    const text2 = normalizeSelectedText(selection.toString() ?? "");
+    const range = selection.getRangeAt(0);
+    const text2 = normalizeSelectedText(selection.toString() || range.toString() || "");
     if (!text2 || text2.length > MAX_SELECTION_LENGTH) return null;
-    if (!isNodeInside(selection.anchorNode, textContainer) || !isNodeInside(selection.focusNode, textContainer)) return null;
+    if (!isRangeInside(range, textContainer) && (!isNodeInside(selection.anchorNode, textContainer) || !isNodeInside(selection.focusNode, textContainer))) {
+      return null;
+    }
     return { selection, range, text: text2 };
   };
   let subtitleAutoScrollPausedUntil = 0;
@@ -13121,6 +13148,10 @@
       rememberSelectionInput(e.pointerType === "touch" ? "touch" : e.pointerType === "pen" ? "pen" : "mouse");
       scheduleSelectionRefresh(e.pointerType === "touch" ? 180 : 0);
     };
+    const handleSelectionPointerCancel = (e) => {
+      rememberSelectionInput(e.pointerType === "touch" ? "touch" : e.pointerType === "pen" ? "pen" : "mouse");
+      scheduleSelectionRefresh(e.pointerType === "touch" ? 180 : 0);
+    };
     const handleSelectionMouseDown = () => {
       lockSubtitleSelectionGesture();
       rememberSelectionInput("mouse");
@@ -13140,10 +13171,23 @@
       scheduleSelectionRefresh(180);
     };
     reactExports.useEffect(() => {
+      var _a;
       const handleSelectionChange = () => scheduleSelectionRefresh(120);
-      document.addEventListener("selectionchange", handleSelectionChange);
+      const handleGlobalPointerUp = () => {
+        if (subtitleSelectionGestureActive) scheduleSelectionRefresh(20);
+      };
+      const selectionTargets = /* @__PURE__ */ new Set([document]);
+      const root2 = (_a = textRef.current) == null ? void 0 : _a.getRootNode();
+      if (isSelectionEventTarget(root2)) {
+        selectionTargets.add(root2);
+      }
+      selectionTargets.forEach((target) => target.addEventListener("selectionchange", handleSelectionChange));
+      window.addEventListener("pointerup", handleGlobalPointerUp, true);
+      window.addEventListener("touchend", handleGlobalPointerUp, true);
       return () => {
-        document.removeEventListener("selectionchange", handleSelectionChange);
+        selectionTargets.forEach((target) => target.removeEventListener("selectionchange", handleSelectionChange));
+        window.removeEventListener("pointerup", handleGlobalPointerUp, true);
+        window.removeEventListener("touchend", handleGlobalPointerUp, true);
         if (selectionTimerRef.current !== null) {
           window.clearTimeout(selectionTimerRef.current);
         }
@@ -13175,7 +13219,7 @@
       };
     }, []);
     const handleAddVocab = (e, word) => {
-      var _a, _b;
+      var _a, _b, _c, _d;
       e.preventDefault();
       e.stopPropagation();
       let cleanUrl = window.location.href;
@@ -13207,7 +13251,12 @@
         console.error("[Linkual] 加入制卡队列失败:", err);
       }
       setSelectionBox(null);
-      (_b = window.getSelection()) == null ? void 0 : _b.removeAllRanges();
+      const root2 = (_b = textRef.current) == null ? void 0 : _b.getRootNode();
+      if (root2) {
+        (_c = getRootSelection(root2)) == null ? void 0 : _c.removeAllRanges();
+      } else {
+        (_d = window.getSelection()) == null ? void 0 : _d.removeAllRanges();
+      }
     };
     const handleSelectionButtonPointerUp = (e) => {
       e.stopPropagation();
@@ -13351,6 +13400,7 @@ ${contextBlock}`,
           ref: textRef,
           onPointerDown: handleSelectionPointerDown,
           onPointerUp: handleSelectionPointerUp,
+          onPointerCancel: handleSelectionPointerCancel,
           onMouseDown: handleSelectionMouseDown,
           onMouseUp: handleSelectionMouseUp,
           onTouchStart: handleSelectionTouchStart,
