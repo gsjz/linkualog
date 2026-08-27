@@ -57,6 +57,16 @@
       },
       "reason": "silt 常与河流、河岸、三角洲被侵蚀后产生或搬运的细泥沙一起出现；erosion 表示造成这些泥沙来源与地貌变化的过程。两词不是同义词，但在河流地貌和环境变化场景中联系紧密，适合建立场景跳转。",
       "source": "llm"
+    },
+    {
+      "type": "same_category",
+      "target": {
+        "category": "daily",
+        "file": "clay.json",
+        "word": "clay"
+      },
+      "reason": "clay 和 silt 都可指细颗粒的土壤/沉积物类型，但 clay 更偏黏土、陶土，silt 更偏淤泥、粉砂；二者属于地质、土壤材料中的同类词，且有区分价值。",
+      "source": "llm"
     }
   ]
 }

@@ -38,5 +38,17 @@
   "mergedFrom": [
     "fertilizers"
   ],
-  "marked": false
+  "marked": false,
+  "relations": [
+    {
+      "type": "variant",
+      "target": {
+        "category": "cet",
+        "file": "fertiliser.json",
+        "word": "fertiliser"
+      },
+      "reason": "fertiliser 是英式拼写，fertilizer 是美式拼写，二者表示同一个词义“肥料/化肥”，应作为拼写变体互相跳转。",
+      "source": "llm"
+    }
+  ]
 }

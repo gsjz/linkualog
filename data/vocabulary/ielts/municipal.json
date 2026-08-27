@@ -37,6 +37,16 @@
       },
       "reason": "当前词条例句是 dispose of waste，而 municipal 词条明确给出 municipal waste（市政垃圾）；两者在“城市垃圾处理”这一场景中紧密相关，能形成有学习价值的场景联想。",
       "source": "llm"
+    },
+    {
+      "type": "collocation",
+      "target": {
+        "category": "cet",
+        "file": "district.json",
+        "word": "district"
+      },
+      "reason": "district 表示城市或行政上的“区、辖区”，municipal 表示“市政的、城市管理的”，二者可形成 municipal district（市辖区/市政区）这类行政区划搭配，语义关联明确且有学习价值。",
+      "source": "llm"
     }
   ]
 }
