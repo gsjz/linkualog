@@ -37,5 +37,17 @@
   ],
   "mergedFrom": [
     "accomplices"
+  ],
+  "relations": [
+    {
+      "type": "related",
+      "target": {
+        "category": "daily",
+        "file": "ally.json",
+        "word": "ally"
+      },
+      "reason": "accomplice 和 ally 都可以指参与同一行动或支持某一方的人，但 accomplice 强调违法、阴谋中的“同伙/帮凶”，ally 更偏政治或利益上的“盟友/支持者”，对比学习价值高。",
+      "source": "llm"
+    }
   ]
 }

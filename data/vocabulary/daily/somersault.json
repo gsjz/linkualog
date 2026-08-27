@@ -1,12 +1,19 @@
 {
   "word": "somersault",
   "createdAt": "2026-06-12",
-  "reviews": [],
-  "definitions": [],
+  "reviews": [
+    {
+      "date": "2026-08-25",
+      "score": 1
+    }
+  ],
+  "definitions": [
+    "somersault：翻筋斗；翻滚；作动词时可表示“翻着筋斗移动/离开”。"
+  ],
   "examples": [
     {
-      "text": "Suddenly, the golden band tightened around Sun Wukong’s head, causing explosive pain. He became too weak to use his cudgel or somersault away. Only now did Tripitaka recognize the spell’s power. Until Sun Wukong could control himself,",
-      "explanation": "",
+      "text": "Suddenly, the golden band tightened around Sun Wukong’s head, causing explosive pain. He became too weak to use his cudgel or somersault away. Only now did Tripitaka recognize the spell’s power.",
+      "explanation": "这里 somersault 作动词，指孙悟空因为疼痛太虚弱，无法使用金箍棒，也无法翻筋斗逃走。",
       "focusWords": [
         "somersault"
       ],
@@ -21,7 +28,7 @@
     },
     {
       "text": "He began boasting of his many talents and demanded the Emperor's crown. Smiling, the Buddha declared he would grant that wish— if Sun Wukong could somersault out of his palm. The Monkey King gladly pranced onto the Buddha’s hand and shot into the air, landing in a far-off region",
-      "explanation": "",
+      "explanation": "这里 somersault 作动词，表示“翻筋斗”。Buddha 要求孙悟空如果能从他的手掌中翻筋斗出去，就满足他的愿望。",
       "focusWords": [
         "somersault"
       ],

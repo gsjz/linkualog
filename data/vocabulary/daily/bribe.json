@@ -37,5 +37,17 @@
   ],
   "mergedFrom": [
     "bribed"
+  ],
+  "relations": [
+    {
+      "type": "same_scene",
+      "target": {
+        "category": "cet",
+        "file": "incentive.json",
+        "word": "incentive"
+      },
+      "reason": "bribe 表示“贿赂、用好处收买”，与 incentive 都涉及“用利益影响他人行为”，但 bribe 带明显的非法和负面色彩，和 incentive 形成很有价值的对照。",
+      "source": "llm"
+    }
   ]
 }

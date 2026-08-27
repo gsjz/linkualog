@@ -1,0 +1,45 @@
+{
+  "word": "weave",
+  "createdAt": "2026-06-15",
+  "reviews": [
+    {
+      "date": "2026-08-25",
+      "score": 1
+    }
+  ],
+  "definitions": [
+    "weave：编织；织成。woven 表示“编织成的、织成的”。"
+  ],
+  "examples": [
+    {
+      "text": "What he is wearing, though, is still notable: a green Kiri tunic which seems to have been woven out of some kind of plant fiber like reeds or grass.",
+      "explanation": "这里 woven 是 weave 的过去分词，woven out of plant fiber 表示“用植物纤维编织而成”。",
+      "focusWords": [
+        "weave"
+      ],
+      "source": {
+        "text": "Ocarina of Time Remake Trailer Analysis",
+        "url": "https://www.youtube.com/watch?v=OgO9-cYv8yM"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=OgO9-cYv8yM",
+        "timestamp": 363
+      }
+    },
+    {
+      "text": "The trailer begins with a tapestry, a kind of woven textile art.",
+      "explanation": "这里 woven 修饰 textile art，意思是“编织成的纺织艺术”；woven 是 weave 的过去分词形式。",
+      "focusWords": [
+        "weave"
+      ],
+      "source": {
+        "text": "Ocarina of Time Remake Trailer Analysis",
+        "url": "https://www.youtube.com/watch?v=OgO9-cYv8yM"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=OgO9-cYv8yM",
+        "timestamp": 42
+      }
+    }
+  ]
+}

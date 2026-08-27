@@ -1,0 +1,25 @@
+{
+  "word": "trial",
+  "createdAt": "2026-06-15",
+  "reviews": [],
+  "definitions": [
+    "考验；试炼；审判；试用（trial）"
+  ],
+  "examples": [
+    {
+      "text": "You gained power by honing and tempering both yourself and your sword. And by overcoming the trials set before you by the goddess, you found true courage.",
+      "explanation": "这里的 trials 指女神设下的“考验”或“试炼”。overcome the trials 表示“克服这些考验”。",
+      "focusWords": [
+        "trial"
+      ],
+      "source": {
+        "text": "Ocarina of Time Remake Trailer Analysis",
+        "url": "https://www.youtube.com/watch?v=OgO9-cYv8yM"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=OgO9-cYv8yM",
+        "timestamp": 494
+      }
+    }
+  ]
+}

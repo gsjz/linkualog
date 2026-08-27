@@ -2,11 +2,14 @@
   "word": "seal",
   "createdAt": "2026-06-12",
   "reviews": [],
-  "definitions": [],
+  "definitions": [
+    "n. 封印；印章；封条（此处指用来镇压或封住某物的神圣封印）",
+    "海豹"
+  ],
   "examples": [
     {
       "text": "Suddenly, those five fingers transformed into a mountain range, which flipped and pinned Sun Wukong to the ground. Using a sacred seal, the Buddha secured the prison, trapping the Monkey King for good— unless he could learn to change. Seeing the mystical tag, Sun Wukong knew he couldn’t escape unaided.",
-      "explanation": "",
+      "explanation": "这里的 seal 指“封印、符印”，不是海豹；a sacred seal 表示一种神圣的封印，用来把孙悟空困住、让他无法逃脱。",
       "focusWords": [
         "seal"
       ],

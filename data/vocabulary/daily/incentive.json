@@ -2,11 +2,13 @@
   "word": "incentive",
   "createdAt": "2026-06-15",
   "reviews": [],
-  "definitions": [],
+  "definitions": [
+    "激励；刺激；诱因（促使某人做某事的原因或好处）"
+  ],
   "examples": [
     {
-      "text": "that timing and take you down it means there is a positioning Advantage for staying in cover and reacting to the opponent as they aren't in cover it provides an incentive for precise Crosshair placement deliberate thoughtful well- decided movement when you're forced to stop moving when you're forced to take into account that you will lose your aiming Point as you fire",
-      "explanation": "",
+      "text": "It provides an incentive for precise crosshair placement and deliberate, thoughtful movement.",
+      "explanation": "这里的 incentive 指“激励、诱因”：游戏机制让玩家更有理由去精准放置准星，并进行更谨慎、有计划的移动。",
       "focusWords": [
         "incentive"
       ],

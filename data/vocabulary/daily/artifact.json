@@ -55,5 +55,17 @@
       ],
       "missing_points": []
     }
+  ],
+  "relations": [
+    {
+      "type": "same_scene",
+      "target": {
+        "category": "daily",
+        "file": "clay.json",
+        "word": "clay"
+      },
+      "reason": "clay pots 这类陶土器物在考古语境中常作为 artifact（文物、人工制品）出现；当前例句也涉及古代证据和陶罐，适合作为考古/古代器物场景关联。",
+      "source": "llm"
+    }
   ]
 }

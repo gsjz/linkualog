@@ -2,11 +2,13 @@
   "word": "sacred",
   "createdAt": "2026-06-12",
   "reviews": [],
-  "definitions": [],
+  "definitions": [
+    "神圣的；宗教性的；受尊崇的（sacred）"
+  ],
   "examples": [
     {
       "text": "Suddenly, those five fingers transformed into a mountain range, which flipped and pinned Sun Wukong to the ground. Using a sacred seal, the Buddha secured the prison, trapping the Monkey King for good— unless he could learn to change. Seeing the mystical tag, Sun Wukong knew he couldn’t escape unaided.",
-      "explanation": "",
+      "explanation": "这里 sacred 修饰 seal，表示这枚封印带有神圣或宗教性的力量，能把孙悟空牢牢困住。",
       "focusWords": [
         "sacred"
       ],

@@ -2,11 +2,13 @@
   "word": "mend",
   "createdAt": "2026-06-12",
   "reviews": [],
-  "definitions": [],
+  "definitions": [
+    "修理，修补；改正、改善（尤指行为、习惯等）。常见搭配：mend one's ways（改过自新）。"
+  ],
   "examples": [
     {
       "text": "But it took centuries before he truly admitted defeat. After 500 years of imprisonment, he'd grown increasingly desperate, finally vowing to mend his ways. So when the Bodhisattva Guanyin happened by his prison on a sacred journey, he promised to pursue enlightenment if she would end his torment.",
-      "explanation": "",
+      "explanation": "这里的 “mend his ways” 是固定表达，意思是“改过自新、改正自己的行为”。句中说他被囚禁 500 年后终于承诺要改变自己的做法。",
       "focusWords": [
         "mend"
       ],

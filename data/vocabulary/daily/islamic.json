@@ -1,7 +1,12 @@
 {
   "word": "Islamic",
   "createdAt": "2026-07-08",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-08-25",
+      "score": 2
+    }
+  ],
   "definitions": [
     "伊斯兰教的；与伊斯兰教有关的"
   ],

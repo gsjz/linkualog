@@ -5,6 +5,10 @@
     {
       "date": "2026-07-09",
       "score": 2
+    },
+    {
+      "date": "2026-08-25",
+      "score": 2
     }
   ],
   "definitions": [
@@ -25,6 +29,38 @@
         "url": "https://www.youtube.com/watch?v=y5XEwTDlriE",
         "timestamp": 59
       }
+    }
+  ],
+  "relations": [
+    {
+      "type": "related",
+      "target": {
+        "category": "cet",
+        "file": "porcelain.json",
+        "word": "porcelain"
+      },
+      "reason": "clay 是制作陶器、瓷器等的原料；porcelain 指瓷器/瓷质器物，二者存在明确的材料与制品关系，适合学习陶土、陶器、瓷器语义场时互相跳转。",
+      "source": "llm"
+    },
+    {
+      "type": "same_category",
+      "target": {
+        "category": "ielts",
+        "file": "silt.json",
+        "word": "silt"
+      },
+      "reason": "clay 和 silt 都可指细颗粒的土壤/沉积物类型，但 clay 更偏黏土、陶土，silt 更偏淤泥、粉砂；二者属于地质、土壤材料中的同类词，且有区分价值。",
+      "source": "llm"
+    },
+    {
+      "type": "same_scene",
+      "target": {
+        "category": "daily",
+        "file": "artifact.json",
+        "word": "artifact"
+      },
+      "reason": "clay pots 这类陶土器物在考古语境中常作为 artifact（文物、人工制品）出现；当前例句也涉及古代证据和陶罐，适合作为考古/古代器物场景关联。",
+      "source": "llm"
     }
   ]
 }

@@ -29,5 +29,17 @@
   ],
   "mergedFrom": [
     "tracts"
+  ],
+  "relations": [
+    {
+      "type": "same_category",
+      "target": {
+        "category": "cet",
+        "file": "district.json",
+        "word": "district"
+      },
+      "reason": "district 和 tract 都可指某种“区域/地带”，但 district 强调行政、司法或城市划分，tract 强调大片土地或自然区域；建立同类词关系有助于区分不同类型的 area。",
+      "source": "llm"
+    }
   ]
 }

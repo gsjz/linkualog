@@ -2,11 +2,13 @@
   "word": "sentient",
   "createdAt": "2026-06-15",
   "reviews": [],
-  "definitions": [],
+  "definitions": [
+    "有感知能力的；有意识的（尤指能感觉、思考或体验的生物/存在）"
+  ],
   "examples": [
     {
       "text": "the theme of the Lost Woods. This ancient tree is the great deu tree, a sentient tree spirit, the guardian of the forest and the father of the kiri, childlike forest spirits who dwell in",
-      "explanation": "",
+      "explanation": "这里 sentient tree spirit 指“有意识、有感知能力的树精”，说明这棵古树不是普通植物，而是像生物一样能感知或具有意识。",
       "focusWords": [
         "sentient"
       ],

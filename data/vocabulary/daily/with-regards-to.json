@@ -2,11 +2,13 @@
   "word": "with regards to",
   "createdAt": "2026-06-15",
   "reviews": [],
-  "definitions": [],
+  "definitions": [
+    "关于；就……而言；在……方面（with regard(s) to）"
+  ],
   "examples": [
     {
-      "text": "because how the events of Ocarina of Time story are remembered in universe is actually very important with regards to the game's timeline placement. The narrator explains that a small forest",
-      "explanation": "",
+      "text": "How the events of Ocarina of Time's story are remembered in-universe is actually very important with regards to the game's timeline placement.",
+      "explanation": "这里 with regards to 表示“关于、就……而言”，说明“这些事件在游戏宇宙内如何被记住”这一点，对于讨论游戏时间线位置很重要。",
       "focusWords": [
         "with regards to"
       ],

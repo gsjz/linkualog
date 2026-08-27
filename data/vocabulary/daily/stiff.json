@@ -1,0 +1,25 @@
+{
+  "word": "stiff",
+  "createdAt": "2026-08-25",
+  "reviews": [],
+  "definitions": [
+    "僵硬的；不灵活的；紧绷不自然的（rigid, not relaxed）"
+  ],
+  "examples": [
+    {
+      "text": "If you can see me do this, it looks really stiff, so first of all we will slow down.",
+      "explanation": "这里的 stiff 形容动作看起来很僵硬、不自然，说明演奏时身体或手臂不够放松。",
+      "focusWords": [
+        "stiff"
+      ],
+      "source": {
+        "text": "Violin Techniques / A common problem in advanced string crossing",
+        "url": "https://www.youtube.com/watch?v=NgHviDqEV8c"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=NgHviDqEV8c",
+        "timestamp": 95
+      }
+    }
+  ]
+}

@@ -26,5 +26,17 @@
         "timestamp": 83
       }
     }
+  ],
+  "relations": [
+    {
+      "type": "related",
+      "target": {
+        "category": "ielts",
+        "file": "drastic.json",
+        "word": "drastic"
+      },
+      "reason": "drastic 常用来形容 changes/reforms/measures，强调力度大、影响深；sweeping reforms 指范围广、影响深远的改革，与 drastic reforms 在“重大改革/大幅改变”场景中语义接近，有助于学习表达替换。",
+      "source": "llm"
+    }
   ]
 }

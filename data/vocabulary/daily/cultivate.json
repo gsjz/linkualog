@@ -29,5 +29,17 @@
   ],
   "mergedFrom": [
     "cultivated"
+  ],
+  "relations": [
+    {
+      "type": "related",
+      "target": {
+        "category": "daily",
+        "file": "arable.json",
+        "word": "arable"
+      },
+      "reason": "arable 表示土地“适于耕作/种植”，而 cultivate 正是“耕作、栽培土地或作物”的动作；两者在语义上直接互补，适合互相跳转学习。",
+      "source": "llm"
+    }
   ]
 }

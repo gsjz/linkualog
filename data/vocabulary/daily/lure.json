@@ -29,5 +29,17 @@
   ],
   "mergedFrom": [
     "Lured"
+  ],
+  "relations": [
+    {
+      "type": "same_scene",
+      "target": {
+        "category": "cet",
+        "file": "incentive.json",
+        "word": "incentive"
+      },
+      "reason": "lure 表示“引诱、诱使、吸引”，和 incentive 都是在说“通过某种好处或吸引力促使人行动”的词，属于同一学习场景，适合互相跳转对比语义差别。",
+      "source": "llm"
+    }
   ]
 }

@@ -73,5 +73,17 @@
         "忽略了 unforgiving 在此处强调环境冷酷、艱难而非单指对人“残忍”"
       ]
     }
+  ],
+  "relations": [
+    {
+      "type": "synonym",
+      "target": {
+        "category": "cet",
+        "file": "bitter.json",
+        "word": "bitter"
+      },
+      "reason": "当前 bitter 表示“严酷的、令人痛苦的”，可形容 consequences 等难以承受的情况；unforgiving 也表示“严酷的、艰难的”，常形容环境或处境不宽容、难以承受，语义重合度高。",
+      "source": "llm"
+    }
   ]
 }

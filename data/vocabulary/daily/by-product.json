@@ -5,6 +5,10 @@
     {
       "date": "2026-07-09",
       "score": 3
+    },
+    {
+      "date": "2026-08-25",
+      "score": 3
     }
   ],
   "definitions": [
@@ -12,7 +16,7 @@
   ],
   "examples": [
     {
-      "text": "Ancient fermented beverages had relatively low alcohol content. At about 13% alcohol, the by-products wild yeasts generate during fermentation become toxic and kill them. When the yeasts die,",
+      "text": "At about 13% alcohol, the by-products wild yeasts generate during fermentation become toxic and kill them.",
       "explanation": "这里的 by-products 指野生酵母在发酵过程中产生的“副产物”。这些物质在酒精浓度达到约 13% 时会变得有毒，并杀死酵母。",
       "focusWords": [
         "by-product"

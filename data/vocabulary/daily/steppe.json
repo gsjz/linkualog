@@ -1,0 +1,25 @@
+{
+  "word": "steppe",
+  "createdAt": "2026-08-25",
+  "reviews": [],
+  "definitions": [
+    "steppe：大草原；干草原，尤指欧亚大陆上少树、适合游牧的广阔草原。"
+  ],
+  "examples": [
+    {
+      "text": "In the 12th century CE, before the Mongol Empire formed, the East Asian steppe was home to scattered groups of Mongol and Turkic pastoral nomads led by Khans. The people herded sheep, cattle, yaks and camels.",
+      "explanation": "steppe 指广阔、少树的草原或干草原。这里的 East Asian steppe 指东亚草原，曾是蒙古和突厥游牧群体生活、放牧的地区。",
+      "focusWords": [
+        "steppe"
+      ],
+      "source": {
+        "text": "The rise and fall of the Mongol Empire - Anne F. Broadbridge",
+        "url": "https://www.youtube.com/watch?v=wUVvTqvjUaM"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=wUVvTqvjUaM",
+        "timestamp": 24
+      }
+    }
+  ]
+}

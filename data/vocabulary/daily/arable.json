@@ -9,6 +9,10 @@
     {
       "date": "2026-05-26",
       "score": 2
+    },
+    {
+      "date": "2026-08-25",
+      "score": 1
     }
   ],
   "definitions": [
@@ -29,6 +33,18 @@
         "url": "https://www.youtube.com/watch?v=esvycD1O3cM",
         "timestamp": 143
       }
+    }
+  ],
+  "relations": [
+    {
+      "type": "related",
+      "target": {
+        "category": "daily",
+        "file": "cultivate.json",
+        "word": "cultivate"
+      },
+      "reason": "arable 表示土地“适于耕作/种植”，而 cultivate 正是“耕作、栽培土地或作物”的动作；两者在语义上直接互补，适合互相跳转学习。",
+      "source": "llm"
     }
   ]
 }

@@ -2,11 +2,13 @@
   "word": "hesitant",
   "createdAt": "2026-06-15",
   "reviews": [],
-  "definitions": [],
+  "definitions": [
+    "犹豫的；迟疑的；不愿马上做某事的（常用结构：be hesitant to do sth.）"
+  ],
   "examples": [
     {
-      "text": "though this remake has been heavily rumored for a long time, I've been hesitant to talk about it before an official confirmation. Well, that confirmation's here. It's real, and I",
-      "explanation": "",
+      "text": "Though this remake has been heavily rumored for a long time, I've been hesitant to talk about it before an official confirmation. Well, that confirmation's here.",
+      "explanation": "这里的 hesitant 表示“犹豫的、迟疑的”。说话者在官方确认之前一直不太愿意谈论这个重制版，因为消息还没有确定。",
       "focusWords": [
         "hesitant"
       ],
