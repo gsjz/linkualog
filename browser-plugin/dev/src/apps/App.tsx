@@ -9,7 +9,8 @@ import UniversalVocabWidget from '../components/UniversalVocabWidget';
 import ArticleTranslator from '../components/ArticleTranslator';
 import UpdateNotice from '../components/UpdateNotice';
 import { ArticleTranslationProvider } from '../components/ArticleTranslationContext';
-import { isArticleTranslationSupportedPage } from '../services/articleTranslator';
+import { isArticleTranslationEnabledForPage } from '../services/articleTranslator';
+import { injectLinkualPageStyles } from './styles';
 import { Subtitle } from '../types';
 import { IVideoAdapter } from '../adapters/BaseAdapter';
 import { ConfigService } from '../services/configService';
@@ -107,7 +108,7 @@ function clampSidebarHeight(height: number) {
 const App: React.FC<AppProps> = ({ adapter }) => {
   const [subs, setSubs] = useState<Subtitle[]>([]);
   const isVideoSite = isYouTubeHost();
-  const isArticleTranslationEnabled = isArticleTranslationSupportedPage();
+  const [isArticleTranslationEnabled, setIsArticleTranslationEnabled] = useState(isArticleTranslationEnabledForPage);
   
   const [inVideo, setInVideo] = useState(adapter.isVideoPage());
 
@@ -203,10 +204,35 @@ const App: React.FC<AppProps> = ({ adapter }) => {
       setLayout(getAdpCfg('layout_position') as string);
       setSidebarWidth(parseConfigNumber(getAdpCfg('sidebar_width'), parseConfigNumber(DEFAULTS.sidebar_width, 500)));
       setSidebarHeight(parseConfigNumber(getAdpCfg('sidebar_height'), parseConfigNumber(DEFAULTS.sidebar_height, 350)));
+      setIsArticleTranslationEnabled(isArticleTranslationEnabledForPage());
     };
     window.addEventListener('linkual_settings_updated', handleSettingsUpdate);
     return () => window.removeEventListener('linkual_settings_updated', handleSettingsUpdate);
   }, [adapter]);
+
+  useEffect(() => {
+    const refreshArticleTranslationState = () => {
+      setIsArticleTranslationEnabled(isArticleTranslationEnabledForPage());
+    };
+
+    const interval = window.setInterval(refreshArticleTranslationState, 1200);
+    window.addEventListener(LINKUAL_NAVIGATION_EVENT, refreshArticleTranslationState);
+    window.addEventListener('popstate', refreshArticleTranslationState);
+    window.addEventListener('hashchange', refreshArticleTranslationState);
+
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener(LINKUAL_NAVIGATION_EVENT, refreshArticleTranslationState);
+      window.removeEventListener('popstate', refreshArticleTranslationState);
+      window.removeEventListener('hashchange', refreshArticleTranslationState);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isArticleTranslationEnabled) {
+      injectLinkualPageStyles();
+    }
+  }, [isArticleTranslationEnabled]);
 
   useEffect(() => {
     if (activeIndex < 0 || subs.length === 0) return;

@@ -1,8 +1,13 @@
 import React, { useState } from 'react';
-import { Palette, PlugZap, SlidersHorizontal, X } from 'lucide-react';
+import { Languages, Palette, PlugZap, SlidersHorizontal, X } from 'lucide-react';
 import { ConfigService } from '../services/configService';
 import { IVideoAdapter } from '../adapters/BaseAdapter';
 import { DEFAULTS } from '../constants/defaults';
+import {
+  getCurrentArticleTranslationHost,
+  getCurrentArticleTranslationUrlPattern,
+  normalizeArticleTranslationUrlPatterns,
+} from '../services/articleTranslator';
 import {
   CACHE_UPDATED_EVENT,
   clearArticleTranslationCaches,
@@ -85,7 +90,7 @@ const buildLanSyncUrl = (prefix: string, protocol: UrlProtocol) => (
 const getLanPrefix = (url: string) => getUrlPrefixForPath(url, LAN_SYNC_API_PATH);
 
 const Settings: React.FC<SettingsProps> = ({ adapter, onClose }) => {
-  const [activeTab, setActiveTab] = useState<'api' | 'params' | 'ui'>('api');
+  const [activeTab, setActiveTab] = useState<'api' | 'params' | 'translate' | 'ui'>('api');
   const [translationCaches, setTranslationCaches] = useState(listArticleTranslationCaches);
 
   const getAdpCfg = (key: CfgKey) => {
@@ -101,6 +106,10 @@ const Settings: React.FC<SettingsProps> = ({ adapter, onClose }) => {
     key: ConfigService.get('api_key') as string,
     model: ConfigService.get('api_model') as string,
     prompt: ConfigService.get('api_prompt') as string,
+    webTranslationEnabled: ConfigService.get('web_translation_enabled') as string,
+    webTranslationUrlMode: ConfigService.get('web_translation_url_mode') as string,
+    webTranslationCurrentHost: ConfigService.get('web_translation_current_host') as string,
+    webTranslationUrlPatterns: ConfigService.get('web_translation_url_patterns') as string,
     webTargetLanguage: ConfigService.get('web_target_language') as string,
     webTranslationPrompt: ConfigService.get('web_translation_prompt') as string,
     timeout: ConfigService.get('api_timeout') as string,
@@ -123,6 +132,32 @@ const Settings: React.FC<SettingsProps> = ({ adapter, onClose }) => {
   const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, checked } = e.target;
     setCfg(prev => ({ ...prev, [name]: checked ? 'true' : 'false' }));
+  };
+
+  const handleWebTranslationModeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const mode = e.target.value;
+    setCfg(prev => ({
+      ...prev,
+      webTranslationUrlMode: mode,
+      webTranslationCurrentHost: mode === 'current-host'
+        ? getCurrentArticleTranslationHost()
+        : prev.webTranslationCurrentHost,
+    }));
+  };
+
+  const handleUseCurrentPagePattern = () => {
+    const pattern = getCurrentArticleTranslationUrlPattern();
+    setCfg(prev => {
+      const patterns = normalizeArticleTranslationUrlPatterns(prev.webTranslationUrlPatterns);
+      const list = patterns ? patterns.split('\n') : [];
+      return {
+        ...prev,
+        webTranslationUrlMode: 'custom',
+        webTranslationUrlPatterns: list.includes(pattern)
+          ? patterns
+          : normalizeArticleTranslationUrlPatterns([...list, pattern].join('\n')),
+      };
+    });
   };
 
   const handleApiPrefixChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -165,6 +200,12 @@ const Settings: React.FC<SettingsProps> = ({ adapter, onClose }) => {
     ConfigService.set('api_key', cfg.key);
     ConfigService.set('api_model', cfg.model);
     ConfigService.set('api_prompt', cfg.prompt);
+    ConfigService.set('web_translation_enabled', cfg.webTranslationEnabled);
+    ConfigService.set('web_translation_url_mode', cfg.webTranslationUrlMode);
+    ConfigService.set('web_translation_current_host', cfg.webTranslationUrlMode === 'current-host'
+      ? getCurrentArticleTranslationHost()
+      : cfg.webTranslationCurrentHost || getCurrentArticleTranslationHost());
+    ConfigService.set('web_translation_url_patterns', normalizeArticleTranslationUrlPatterns(cfg.webTranslationUrlPatterns));
     ConfigService.set('web_target_language', cfg.webTargetLanguage);
     ConfigService.set('web_translation_prompt', cfg.webTranslationPrompt);
     ConfigService.set('api_timeout', cfg.timeout);
@@ -209,6 +250,7 @@ const Settings: React.FC<SettingsProps> = ({ adapter, onClose }) => {
   const apiEndpointPath = getApiEndpointPath(cfg.url);
   const lanPrefix = getLanPrefix(cfg.lanUrl);
   const lanProtocol = getUrlProtocol(cfg.lanUrl);
+  const currentHost = getCurrentArticleTranslationHost();
 
   return (
     <div className="modal" onMouseDown={handleBackdropMouseDown}>
@@ -228,6 +270,10 @@ const Settings: React.FC<SettingsProps> = ({ adapter, onClose }) => {
           <div className={`tab ${activeTab === 'params' ? 'active' : ''}`} onClick={() => setActiveTab('params')}>
             <SlidersHorizontal size={15} strokeWidth={2.2} />
             <span>参数调整</span>
+          </div>
+          <div className={`tab ${activeTab === 'translate' ? 'active' : ''}`} onClick={() => setActiveTab('translate')}>
+            <Languages size={15} strokeWidth={2.2} />
+            <span>网页翻译</span>
           </div>
           <div className={`tab ${activeTab === 'ui' ? 'active' : ''}`} onClick={() => setActiveTab('ui')}>
             <Palette size={15} strokeWidth={2.2} />
@@ -301,6 +347,53 @@ const Settings: React.FC<SettingsProps> = ({ adapter, onClose }) => {
               <div className="setting-col">
                 <label>提示词 (Prompt)</label>
                 <textarea name="prompt" value={cfg.prompt} onChange={handleChange} placeholder="请输入系统提示词..." />
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'translate' && (
+            <div className="tab-pane fade-in">
+              <div className="setting-row setting-row-toggle">
+                <div>
+                  <label>启用网页翻译</label>
+                  <div className="setting-help">关闭后不会扫描正文、显示翻译按钮或插入段落译文。</div>
+                </div>
+                <input
+                  type="checkbox"
+                  name="webTranslationEnabled"
+                  checked={cfg.webTranslationEnabled !== 'false'}
+                  onChange={handleCheckboxChange}
+                />
+              </div>
+              <div className="setting-col">
+                <label>启用范围</label>
+                <select
+                  name="webTranslationUrlMode"
+                  value={cfg.webTranslationUrlMode}
+                  onChange={handleWebTranslationModeChange}
+                >
+                  <option value="supported">默认论文页（arXiv HTML / ar5iv / OpenReview）</option>
+                  <option value="current-host">仅当前站点（{currentHost}）</option>
+                  <option value="custom">自定义 URL 规则</option>
+                </select>
+                {cfg.webTranslationUrlMode === 'current-host' && (
+                  <div className="setting-help">保存后只在 {currentHost} 这个 host 上开启。</div>
+                )}
+              </div>
+              <div className="setting-col">
+                <div className="linkual-cache-manager-heading">
+                  <label>自定义 URL 规则</label>
+                  <button type="button" className="linkual-cache-clear-btn" onClick={handleUseCurrentPagePattern}>
+                    添加当前站点
+                  </button>
+                </div>
+                <textarea
+                  name="webTranslationUrlPatterns"
+                  value={cfg.webTranslationUrlPatterns}
+                  onChange={handleChange}
+                  placeholder={'每行一个规则，例如：\n*://arxiv.org/html/*\n*://ar5iv.labs.arxiv.org/*\nhttps://example.com/papers/*\n/\\/paper\\//'}
+                />
+                <div className="setting-help">只有选择“自定义 URL 规则”时生效；支持 * 通配符和 /正则/。匹配后仍需页面有可识别的正文区域。</div>
               </div>
               <div className="setting-col">
                 <label>网页翻译目标语言</label>

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Linkual Log
 // @namespace    npm/vite-plugin-monkey
-// @version      0.0.57
+// @version      0.0.58
 // @author       Sergio Gao
 // @icon         https://vitejs.dev/logo.svg
 // @downloadURL  https://raw.githubusercontent.com/gsjz/linkualog/main/browser-plugin/user/linkualog.user.js
@@ -13193,6 +13193,10 @@
     api_model: "qwen3.5-flash",
     api_ctxSize: "2",
     api_prompt: "请结合上下文，准确翻译并解释【目标字幕】这句话的含义。尽量简明扼要，帮助理解整个句子的语境。",
+    web_translation_enabled: "true",
+    web_translation_url_mode: "supported",
+    web_translation_current_host: "",
+    web_translation_url_patterns: "",
     web_target_language: "简体中文",
     web_translation_prompt: "你是专业学术翻译。请将输入内容准确翻译成简体中文。保留变量名、引用标记和段落语气；所有数学公式必须使用 LaTeX，行内公式用 $...$ 包裹，行间公式或独立成行的公式用 $$...$$ 包裹；如果输入包含表格或表格状数据，必须输出 GitHub Flavored Markdown 表格；只输出译文，不要解释，不要添加标题。",
     api_key: "",
@@ -28391,6 +28395,408 @@ ${contextBlock}`,
       isExpanded && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "ai-box", style: { color: isError ? "#c62828" : "#444" }, children: /* @__PURE__ */ jsxRuntimeExports.jsx(ArticleMarkdown, { text: aiContent, mode: "block" }) })
     ] });
   };
+  const MAX_PARAGRAPHS = 600;
+  const MIN_PARAGRAPH_LENGTH = 18;
+  const HOST_CLASS = "linkual-article-translation-host";
+  const EXCLUDED_SELECTOR = [
+    "nav",
+    "header",
+    "footer",
+    "aside",
+    "figure",
+    "table",
+    "pre",
+    "code",
+    "script",
+    "style",
+    "noscript",
+    ".ltx_bibliography",
+    ".ltx_biblist",
+    ".ltx_figure",
+    ".ltx_table",
+    ".ltx_caption",
+    ".ltx_equation",
+    ".ltx_title",
+    ".ltx_authors",
+    ".ltx_author_notes",
+    ".ltx_contact",
+    ".ltx_note",
+    ".ltx_page_header",
+    ".ltx_page_navbar"
+  ].join(",");
+  const BLOCKING_DESCENDANT_SELECTOR = [
+    "img",
+    "video",
+    "iframe",
+    "canvas",
+    "textarea",
+    "input",
+    "select",
+    "button",
+    "pre",
+    ".CodeMirror",
+    ".monaco-editor"
+  ].join(",");
+  const normalizeText$1 = (value) => value.replace(/\s+/g, " ").trim();
+  const normalizeMarkdownText = (value) => value.replace(/\r\n?/g, "\n").split("\n").map((line) => normalizeText$1(line)).join("\n").replace(/\n{3,}/g, "\n\n").trim();
+  const TRANSLATABLE_TABLE_SELECTOR = "table, .ltx_table";
+  const OPENREVIEW_VALUE_SELECTOR = ".note-content-value, .markdown-rendered";
+  const TABLE_EXCLUDED_ANCESTOR_SELECTOR = [
+    "[data-linkual-article-host]",
+    "nav",
+    "header",
+    "footer",
+    "aside",
+    "pre",
+    "code",
+    "script",
+    "style",
+    "noscript",
+    ".ltx_bibliography",
+    ".ltx_biblist",
+    ".ltx_figure",
+    ".ltx_caption",
+    ".ltx_equation",
+    ".ltx_title",
+    ".ltx_authors",
+    ".ltx_author_notes",
+    ".ltx_contact",
+    ".ltx_note",
+    ".ltx_page_header",
+    ".ltx_page_navbar"
+  ].join(",");
+  const ARXIV_HOSTNAMES = /* @__PURE__ */ new Set(["arxiv.org", "www.arxiv.org"]);
+  const AR5IV_HOSTNAMES = /* @__PURE__ */ new Set(["ar5iv.labs.arxiv.org", "www.ar5iv.labs.arxiv.org", "ar5iv.org", "www.ar5iv.org"]);
+  const OPENREVIEW_HOSTNAMES = /* @__PURE__ */ new Set(["openreview.net", "www.openreview.net"]);
+  const OPENREVIEW_EXCLUDED_FIELDS = /* @__PURE__ */ new Set([
+    "title",
+    "authors",
+    "authoremails",
+    "authorids",
+    "pdf",
+    "html",
+    "paperhash",
+    "ee",
+    "year",
+    "venue",
+    "venueid",
+    "submissionnumber",
+    "externalids"
+  ]);
+  function isOpenReviewHost() {
+    return OPENREVIEW_HOSTNAMES.has(window.location.hostname);
+  }
+  function isOpenReviewForumPage() {
+    const pathname = window.location.pathname.replace(/\/+$/, "") || "/";
+    return isOpenReviewHost() && (pathname === "/forum" || pathname.startsWith("/forum/"));
+  }
+  function isKnownArticleTranslationSupportedPage() {
+    return isArxivLikeHtmlPage() || isOpenReviewForumPage();
+  }
+  function isArticleTranslationSupportedPage() {
+    return isKnownArticleTranslationSupportedPage();
+  }
+  function isArticleTranslationFeatureEnabled() {
+    return String(ConfigService.get("web_translation_enabled")) !== "false";
+  }
+  function getArticleTranslationUrlMode() {
+    const mode = String(ConfigService.get("web_translation_url_mode") || "").trim();
+    return mode === "current-host" || mode === "custom" ? mode : "supported";
+  }
+  function getCurrentArticleTranslationUrlPattern() {
+    return `*://${window.location.hostname}/*`;
+  }
+  function getCurrentArticleTranslationHost() {
+    return window.location.hostname;
+  }
+  function normalizeArticleTranslationUrlPatterns(value) {
+    return value.split(/\r?\n|,/).map((pattern) => pattern.trim()).filter(Boolean).join("\n");
+  }
+  function isArticleTranslationAllowedByUrl(url = window.location.href) {
+    if (!isArticleTranslationFeatureEnabled()) return false;
+    const mode = getArticleTranslationUrlMode();
+    if (mode === "supported") return isKnownArticleTranslationSupportedPage();
+    if (mode === "current-host") return isSavedCurrentHostUrl(url);
+    return getCustomUrlPatterns().some((pattern) => matchArticleTranslationUrlPattern(url, pattern));
+  }
+  function isArticleTranslationEnabledForPage() {
+    return isArticleTranslationAllowedByUrl() && canDetectArticleDocument();
+  }
+  function escapeMarkdownTableCell(value) {
+    return normalizeText$1(value).replace(/\|/g, "\\|");
+  }
+  function getNormalizedPathname() {
+    return window.location.pathname.replace(/\/+$/, "") || "/";
+  }
+  function isArxivHost() {
+    return ARXIV_HOSTNAMES.has(window.location.hostname);
+  }
+  function isAr5ivHost() {
+    return AR5IV_HOSTNAMES.has(window.location.hostname);
+  }
+  function isArxivPaperId(value) {
+    const trimmed = value.trim().replace(/^\/+|\/+$/g, "");
+    return /^(\d{4}\.\d{4,5}|[a-z-]+(?:\.[A-Z]{2})?\/\d{7})(v\d+)?$/i.test(trimmed);
+  }
+  function hasLatexmlDocumentSignal() {
+    const root2 = document.querySelector(".ltx_document, article.ltx_document, .ltx_page_content .ltx_document");
+    if (!root2) return false;
+    return Boolean(root2.querySelector(".ltx_para, p.ltx_p, .ltx_section, .ltx_abstract, .ltx_theorem, .ltx_proof"));
+  }
+  function hasArxivHtmlAssetSignal() {
+    const ar5ivSiteName = document.querySelector('meta[property="og:site_name"][content="ar5iv"]');
+    if (ar5ivSiteName) return true;
+    return Array.from(document.querySelectorAll('link[rel~="stylesheet"][href], link[rel="canonical"][href]')).some((link) => /(?:arxiv-html-papers|ar5iv|\/html\/\d{4}\.\d{4,5})/i.test(link.href));
+  }
+  function isArxivLikeHtmlPath() {
+    const pathname = getNormalizedPathname();
+    const [, firstSegment = "", paperId = ""] = pathname.match(/^\/([^/]+)\/(.+)$/) || [];
+    if (isArxivHost()) return firstSegment === "html" && isArxivPaperId(paperId);
+    if (isAr5ivHost()) return (firstSegment === "html" || firstSegment === "abs") && isArxivPaperId(paperId);
+    return false;
+  }
+  function isArxivLikeHtmlPage() {
+    if (!isArxivHost() && !isAr5ivHost()) return false;
+    return isArxivLikeHtmlPath() || hasLatexmlDocumentSignal() && hasArxivHtmlAssetSignal();
+  }
+  function isLatexmlArticleDocument() {
+    return hasLatexmlDocumentSignal();
+  }
+  function isOpenReviewArticleDocument() {
+    return isOpenReviewForumPage() || Boolean(document.querySelector(".forum-container .note-content-value, .forum-container .markdown-rendered"));
+  }
+  function canDetectArticleDocument() {
+    return isKnownArticleTranslationSupportedPage() || Boolean(getArticleRoot());
+  }
+  function isSavedCurrentHostUrl(url) {
+    const savedHost = String(ConfigService.get("web_translation_current_host") || "").trim() || window.location.hostname;
+    if (!savedHost) return false;
+    try {
+      const parsed = new URL(url, window.location.href);
+      return parsed.hostname === savedHost;
+    } catch {
+      return false;
+    }
+  }
+  function getCustomUrlPatterns() {
+    return normalizeArticleTranslationUrlPatterns(String(ConfigService.get("web_translation_url_patterns") || "")).split("\n").filter(Boolean);
+  }
+  function escapeRegExp(value) {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+  function normalizeGlobUrlPattern(pattern) {
+    const trimmed = pattern.trim();
+    if (!trimmed || trimmed === "*") return trimmed;
+    if (!trimmed.includes("://")) {
+      return trimmed.includes("/") ? `*://${trimmed}` : `*://${trimmed}/*`;
+    }
+    const withoutProtocol = trimmed.replace(/^[a-z][a-z0-9+.-]*:\/\/|^\*:\/\/?/i, "");
+    return withoutProtocol.includes("/") ? trimmed : `${trimmed}/*`;
+  }
+  function matchArticleTranslationUrlPattern(url, rawPattern) {
+    const pattern = rawPattern.trim();
+    if (!pattern) return false;
+    if (pattern.startsWith("/") && pattern.endsWith("/") && pattern.length > 1) {
+      try {
+        return new RegExp(pattern.slice(1, -1)).test(url);
+      } catch {
+        return false;
+      }
+    }
+    const normalizedPattern = normalizeGlobUrlPattern(pattern);
+    const regex = new RegExp(`^${escapeRegExp(normalizedPattern).replace(/\\\*/g, ".*")}$`, "i");
+    return regex.test(url);
+  }
+  function tableElementToMarkdown(table) {
+    const rows = Array.from(table.rows).map((row) => Array.from(row.cells).map((cell) => escapeMarkdownTableCell(cell.innerText || cell.textContent || ""))).filter((row) => row.some(Boolean));
+    if (rows.length === 0) return "";
+    const columnCount = Math.max(...rows.map((row) => row.length));
+    const header = rows[0] || [];
+    const separator = Array.from({ length: columnCount }, () => "---");
+    const body = rows.slice(1);
+    const normalizeRow = (row) => Array.from({ length: columnCount }, (_, index2) => row[index2] || "");
+    const formatRow = (row) => `| ${normalizeRow(row).join(" | ")} |`;
+    return [formatRow(header), formatRow(separator), ...body.map(formatRow)].join("\n");
+  }
+  function getTableCaption(element, table) {
+    const caption = table.caption || element.querySelector(".ltx_caption");
+    return caption ? normalizeMarkdownText(caption.innerText || caption.textContent || "") : "";
+  }
+  function ltxTableToMarkdown(element) {
+    const table = element.matches("table") ? element : element.querySelector("table");
+    if (table instanceof HTMLTableElement) {
+      return [getTableCaption(element, table), tableElementToMarkdown(table)].filter(Boolean).join("\n\n");
+    }
+    return "";
+  }
+  function isTranslatableTableElement(element) {
+    return element.matches(TRANSLATABLE_TABLE_SELECTOR);
+  }
+  function getOpenReviewValueElement(element) {
+    const value = element.closest(OPENREVIEW_VALUE_SELECTOR);
+    return value instanceof HTMLElement ? value : null;
+  }
+  function elementToTranslatableText(element) {
+    if (isTranslatableTableElement(element)) {
+      return ltxTableToMarkdown(element) || normalizeMarkdownText(element.innerText || element.textContent || "");
+    }
+    const clone = element.cloneNode(true);
+    clone.querySelectorAll("table").forEach((table) => {
+      const markdown = tableElementToMarkdown(table);
+      if (!markdown) return;
+      const replacement = document.createElement("span");
+      replacement.textContent = `
+${markdown}
+`;
+      table.replaceWith(replacement);
+    });
+    return normalizeMarkdownText(clone.innerText || clone.textContent || "");
+  }
+  function hashText(value) {
+    let hash = 0;
+    for (let index2 = 0; index2 < value.length; index2 += 1) {
+      hash = (hash << 5) - hash + value.charCodeAt(index2) | 0;
+    }
+    return Math.abs(hash).toString(36);
+  }
+  function isExcluded(element) {
+    if (isTranslatableTableElement(element)) {
+      const tableWrapper = element.closest(".ltx_table");
+      if (element.matches("table") && tableWrapper && tableWrapper !== element) return true;
+      return Boolean(element.closest(TABLE_EXCLUDED_ANCESTOR_SELECTOR));
+    }
+    return Boolean(element.closest(EXCLUDED_SELECTOR)) || Boolean(element.closest("[data-linkual-article-host]"));
+  }
+  function getCandidateSelector() {
+    if (isOpenReviewArticleDocument()) {
+      return [
+        ".note-content .note-content-value > p",
+        ".note-content .note-content-value > ul > li",
+        ".note-content .note-content-value > ol > li",
+        ".note-content .note-content-value blockquote",
+        ".note-content .note-content-value table",
+        ".note-content .note-content-value",
+        ".note-content-value > p",
+        ".note-content-value > ul > li",
+        ".note-content-value > ol > li",
+        ".note-content-value blockquote",
+        ".note-content-value table",
+        ".note-content-value",
+        ".markdown-rendered > p",
+        ".markdown-rendered > ul > li",
+        ".markdown-rendered > ol > li",
+        ".markdown-rendered blockquote",
+        ".markdown-rendered table",
+        ".markdown-rendered"
+      ].join(",");
+    }
+    return [
+      ".ltx_document .ltx_abstract .ltx_para",
+      ".ltx_document .ltx_abstract p",
+      ".ltx_document .ltx_para",
+      ".ltx_document p.ltx_p",
+      ".ltx_document p",
+      ".ltx_document blockquote.ltx_quote",
+      ".ltx_document li.ltx_item",
+      ".ltx_document .ltx_item .ltx_para",
+      ".ltx_document .ltx_theorem",
+      ".ltx_document .ltx_theorem .ltx_para",
+      ".ltx_document .ltx_proof",
+      ".ltx_document .ltx_proof .ltx_para",
+      ".ltx_document .ltx_quote",
+      ".ltx_document .ltx_quote .ltx_para",
+      ".ltx_document .ltx_table",
+      ".ltx_document table"
+    ].join(",");
+  }
+  function getArticleRoot() {
+    const openReviewRoot = document.querySelector(".forum-container");
+    if (isOpenReviewArticleDocument() && openReviewRoot) {
+      return openReviewRoot;
+    }
+    return document.querySelector(".ltx_document") || openReviewRoot;
+  }
+  function getOpenReviewFieldName(element) {
+    var _a, _b;
+    const fieldAnchor = getOpenReviewValueElement(element) || element;
+    let sibling = fieldAnchor.previousSibling;
+    while (sibling) {
+      if (sibling instanceof HTMLElement && sibling.classList.contains("note-content-field")) {
+        return normalizeText$1(sibling.textContent || "").replace(/:$/, "").trim();
+      }
+      sibling = sibling.previousSibling;
+    }
+    const field = ((_a = fieldAnchor.parentElement) == null ? void 0 : _a.querySelector(".note-content-field")) || ((_b = fieldAnchor.closest(".note-content")) == null ? void 0 : _b.querySelector(".note-content-field"));
+    return field ? normalizeText$1(field.textContent || "").replace(/:$/, "").trim() : "";
+  }
+  function normalizeOpenReviewFieldName(fieldName) {
+    return fieldName.toLowerCase().replace(/[^a-z0-9]+/g, "");
+  }
+  function isOpenReviewFieldExcluded(element) {
+    if (!isOpenReviewArticleDocument()) return false;
+    const fieldName = getOpenReviewFieldName(element);
+    if (!fieldName) return false;
+    return OPENREVIEW_EXCLUDED_FIELDS.has(normalizeOpenReviewFieldName(fieldName));
+  }
+  function getOrCreateHost(element) {
+    const next = element.nextElementSibling;
+    if (next instanceof HTMLDivElement && next.dataset.linkualArticleHost === "true") {
+      return next;
+    }
+    const host = document.createElement("div");
+    host.className = HOST_CLASS;
+    host.dataset.linkualArticleHost = "true";
+    element.insertAdjacentElement("afterend", host);
+    return host;
+  }
+  function canonicalizeCandidateElement(element) {
+    if (isLatexmlArticleDocument()) {
+      const tableWrapper = element.closest(".ltx_table");
+      if (tableWrapper instanceof HTMLElement) return tableWrapper;
+      const paragraphWrapper = element.closest(".ltx_para");
+      if (paragraphWrapper instanceof HTMLElement) return paragraphWrapper;
+    }
+    return element;
+  }
+  function hasNestedTextCandidate(element, candidates) {
+    return candidates.some((candidate) => candidate !== element && element.contains(candidate) && !isTranslatableTableElement(candidate));
+  }
+  function shouldSkipNestedCandidate(element, candidates) {
+    if (isOpenReviewArticleDocument() && isTranslatableTableElement(element)) {
+      const value = getOpenReviewValueElement(element);
+      if (value && value !== element && candidates.includes(value) && !hasNestedTextCandidate(value, candidates)) {
+        return true;
+      }
+    }
+    return !isTranslatableTableElement(element) && hasNestedTextCandidate(element, candidates);
+  }
+  function collectCandidateElements(root2) {
+    const elements = Array.from(root2.querySelectorAll(getCandidateSelector())).map(canonicalizeCandidateElement);
+    const uniqueElements = Array.from(new Set(elements));
+    return uniqueElements.filter((element) => !shouldSkipNestedCandidate(element, uniqueElements));
+  }
+  function collectArticleParagraphs() {
+    if (!isArticleTranslationEnabledForPage()) return [];
+    const root2 = getArticleRoot();
+    if (!root2) return [];
+    const candidates = collectCandidateElements(root2).filter((element) => !isExcluded(element) && !isOpenReviewFieldExcluded(element)).map((element) => ({ element, text: elementToTranslatableText(element) })).filter(({ element, text: text2 }) => text2.length >= MIN_PARAGRAPH_LENGTH && (isTranslatableTableElement(element) || !element.querySelector(BLOCKING_DESCENDANT_SELECTOR)));
+    const seen = /* @__PURE__ */ new Set();
+    return candidates.slice(0, MAX_PARAGRAPHS).filter(({ element }) => {
+      if (seen.has(element)) return false;
+      seen.add(element);
+      return true;
+    }).map(({ element, text: text2 }, index2) => ({
+      id: `article-${index2}-${hashText(text2)}`,
+      element,
+      text: text2,
+      host: getOrCreateHost(element)
+    }));
+  }
+  function removeArticleTranslationHosts(keep = /* @__PURE__ */ new Set()) {
+    document.querySelectorAll(`[data-linkual-article-host="true"]`).forEach((host) => {
+      if (!keep.has(host)) host.remove();
+    });
+  }
   const STORAGE_KEY = "linkual_article_translation_cache";
   const CACHE_VERSION = 1;
   const CACHE_UPDATED_EVENT = "linkual_article_cache_updated";
@@ -28474,7 +28880,7 @@ ${targetLanguage.trim() || "简体中文"}`;
     delete store.pages[key];
     writeStore(store);
   }
-  const LINKUAL_CURRENT_VERSION = "0.0.57";
+  const LINKUAL_CURRENT_VERSION = "0.0.58";
   const LINKUAL_UPDATE_URL = "https://raw.githubusercontent.com/gsjz/linkualog/main/browser-plugin/user/linkualog.user.js";
   const LINKUAL_DOWNLOAD_URL = LINKUAL_UPDATE_URL;
   const CHECK_INTERVAL_MS = 24 * 60 * 60 * 1e3;
@@ -28628,6 +29034,10 @@ ${targetLanguage.trim() || "简体中文"}`;
       key: ConfigService.get("api_key"),
       model: ConfigService.get("api_model"),
       prompt: ConfigService.get("api_prompt"),
+      webTranslationEnabled: ConfigService.get("web_translation_enabled"),
+      webTranslationUrlMode: ConfigService.get("web_translation_url_mode"),
+      webTranslationCurrentHost: ConfigService.get("web_translation_current_host"),
+      webTranslationUrlPatterns: ConfigService.get("web_translation_url_patterns"),
       webTargetLanguage: ConfigService.get("web_target_language"),
       webTranslationPrompt: ConfigService.get("web_translation_prompt"),
       timeout: ConfigService.get("api_timeout"),
@@ -28647,6 +29057,26 @@ ${targetLanguage.trim() || "简体中文"}`;
     const handleCheckboxChange = (e) => {
       const { name, checked } = e.target;
       setCfg((prev) => ({ ...prev, [name]: checked ? "true" : "false" }));
+    };
+    const handleWebTranslationModeChange = (e) => {
+      const mode = e.target.value;
+      setCfg((prev) => ({
+        ...prev,
+        webTranslationUrlMode: mode,
+        webTranslationCurrentHost: mode === "current-host" ? getCurrentArticleTranslationHost() : prev.webTranslationCurrentHost
+      }));
+    };
+    const handleUseCurrentPagePattern = () => {
+      const pattern = getCurrentArticleTranslationUrlPattern();
+      setCfg((prev) => {
+        const patterns = normalizeArticleTranslationUrlPatterns(prev.webTranslationUrlPatterns);
+        const list = patterns ? patterns.split("\n") : [];
+        return {
+          ...prev,
+          webTranslationUrlMode: "custom",
+          webTranslationUrlPatterns: list.includes(pattern) ? patterns : normalizeArticleTranslationUrlPatterns([...list, pattern].join("\n"))
+        };
+      });
     };
     const handleApiPrefixChange = (e) => {
       setCfg((prev) => ({ ...prev, url: buildApiUrl(e.target.value, getUrlProtocol(prev.url, "https"), getApiEndpointPath(prev.url)) }));
@@ -28683,6 +29113,10 @@ ${targetLanguage.trim() || "简体中文"}`;
       ConfigService.set("api_key", cfg.key);
       ConfigService.set("api_model", cfg.model);
       ConfigService.set("api_prompt", cfg.prompt);
+      ConfigService.set("web_translation_enabled", cfg.webTranslationEnabled);
+      ConfigService.set("web_translation_url_mode", cfg.webTranslationUrlMode);
+      ConfigService.set("web_translation_current_host", cfg.webTranslationUrlMode === "current-host" ? getCurrentArticleTranslationHost() : cfg.webTranslationCurrentHost || getCurrentArticleTranslationHost());
+      ConfigService.set("web_translation_url_patterns", normalizeArticleTranslationUrlPatterns(cfg.webTranslationUrlPatterns));
       ConfigService.set("web_target_language", cfg.webTargetLanguage);
       ConfigService.set("web_translation_prompt", cfg.webTranslationPrompt);
       ConfigService.set("api_timeout", cfg.timeout);
@@ -28720,6 +29154,7 @@ ${targetLanguage.trim() || "简体中文"}`;
     const apiEndpointPath = getApiEndpointPath(cfg.url);
     const lanPrefix = getLanPrefix(cfg.lanUrl);
     const lanProtocol = getUrlProtocol(cfg.lanUrl);
+    const currentHost = getCurrentArticleTranslationHost();
     return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "modal", onMouseDown: handleBackdropMouseDown, children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "modal-box", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "modal-header", children: [
         /* @__PURE__ */ jsxRuntimeExports.jsx("h3", { children: "全局设置" }),
@@ -28733,6 +29168,10 @@ ${targetLanguage.trim() || "简体中文"}`;
         /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: `tab ${activeTab === "params" ? "active" : ""}`, onClick: () => setActiveTab("params"), children: [
           /* @__PURE__ */ jsxRuntimeExports.jsx(SlidersHorizontal, { size: 15, strokeWidth: 2.2 }),
           /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "参数调整" })
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: `tab ${activeTab === "translate" ? "active" : ""}`, onClick: () => setActiveTab("translate"), children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx(Languages, { size: 15, strokeWidth: 2.2 }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "网页翻译" })
         ] }),
         /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: `tab ${activeTab === "ui" ? "active" : ""}`, onClick: () => setActiveTab("ui"), children: [
           /* @__PURE__ */ jsxRuntimeExports.jsx(Palette, { size: 15, strokeWidth: 2.2 }),
@@ -28801,6 +29240,64 @@ ${targetLanguage.trim() || "简体中文"}`;
           /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-col", children: [
             /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "提示词 (Prompt)" }),
             /* @__PURE__ */ jsxRuntimeExports.jsx("textarea", { name: "prompt", value: cfg.prompt, onChange: handleChange, placeholder: "请输入系统提示词..." })
+          ] })
+        ] }),
+        activeTab === "translate" && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "tab-pane fade-in", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-row setting-row-toggle", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "启用网页翻译" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "setting-help", children: "关闭后不会扫描正文、显示翻译按钮或插入段落译文。" })
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "input",
+              {
+                type: "checkbox",
+                name: "webTranslationEnabled",
+                checked: cfg.webTranslationEnabled !== "false",
+                onChange: handleCheckboxChange
+              }
+            )
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-col", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "启用范围" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs(
+              "select",
+              {
+                name: "webTranslationUrlMode",
+                value: cfg.webTranslationUrlMode,
+                onChange: handleWebTranslationModeChange,
+                children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("option", { value: "supported", children: "默认论文页（arXiv HTML / ar5iv / OpenReview）" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsxs("option", { value: "current-host", children: [
+                    "仅当前站点（",
+                    currentHost,
+                    "）"
+                  ] }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("option", { value: "custom", children: "自定义 URL 规则" })
+                ]
+              }
+            ),
+            cfg.webTranslationUrlMode === "current-host" && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-help", children: [
+              "保存后只在 ",
+              currentHost,
+              " 这个 host 上开启。"
+            ] })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-col", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "linkual-cache-manager-heading", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "自定义 URL 规则" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", className: "linkual-cache-clear-btn", onClick: handleUseCurrentPagePattern, children: "添加当前站点" })
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "textarea",
+              {
+                name: "webTranslationUrlPatterns",
+                value: cfg.webTranslationUrlPatterns,
+                onChange: handleChange,
+                placeholder: "每行一个规则，例如：\n*://arxiv.org/html/*\n*://ar5iv.labs.arxiv.org/*\nhttps://example.com/papers/*\n/\\/paper\\//"
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "setting-help", children: "只有选择“自定义 URL 规则”时生效；支持 * 通配符和 /正则/。匹配后仍需页面有可识别的正文区域。" })
           ] }),
           /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-col", children: [
             /* @__PURE__ */ jsxRuntimeExports.jsx("label", { children: "网页翻译目标语言" }),
@@ -29675,284 +30172,6 @@ JSON 格式：
       ] })
     ] });
   };
-  const MAX_PARAGRAPHS = 600;
-  const MIN_PARAGRAPH_LENGTH = 18;
-  const HOST_CLASS = "linkual-article-translation-host";
-  const EXCLUDED_SELECTOR = [
-    "nav",
-    "header",
-    "footer",
-    "aside",
-    "figure",
-    "table",
-    "pre",
-    "code",
-    "script",
-    "style",
-    "noscript",
-    ".ltx_bibliography",
-    ".ltx_biblist",
-    ".ltx_figure",
-    ".ltx_table",
-    ".ltx_caption",
-    ".ltx_equation",
-    ".ltx_title",
-    ".ltx_authors",
-    ".ltx_note"
-  ].join(",");
-  const BLOCKING_DESCENDANT_SELECTOR = [
-    "img",
-    "video",
-    "iframe",
-    "canvas",
-    "textarea",
-    "input",
-    "select",
-    "button",
-    "pre",
-    ".CodeMirror",
-    ".monaco-editor"
-  ].join(",");
-  const normalizeText$1 = (value) => value.replace(/\s+/g, " ").trim();
-  const normalizeMarkdownText = (value) => value.replace(/\r\n?/g, "\n").split("\n").map((line) => normalizeText$1(line)).join("\n").replace(/\n{3,}/g, "\n\n").trim();
-  const TRANSLATABLE_TABLE_SELECTOR = "table, .ltx_table";
-  const OPENREVIEW_VALUE_SELECTOR = ".note-content-value, .markdown-rendered";
-  const TABLE_EXCLUDED_ANCESTOR_SELECTOR = [
-    "[data-linkual-article-host]",
-    "nav",
-    "header",
-    "footer",
-    "aside",
-    "pre",
-    "code",
-    "script",
-    "style",
-    "noscript",
-    ".ltx_bibliography",
-    ".ltx_biblist",
-    ".ltx_figure",
-    ".ltx_caption",
-    ".ltx_equation",
-    ".ltx_title",
-    ".ltx_authors",
-    ".ltx_note"
-  ].join(",");
-  const ARXIV_HOSTNAMES = /* @__PURE__ */ new Set(["arxiv.org", "www.arxiv.org"]);
-  const OPENREVIEW_HOSTNAMES = /* @__PURE__ */ new Set(["openreview.net", "www.openreview.net"]);
-  const OPENREVIEW_EXCLUDED_FIELDS = /* @__PURE__ */ new Set([
-    "title",
-    "authors",
-    "authoremails",
-    "authorids",
-    "pdf",
-    "html",
-    "paperhash",
-    "ee",
-    "year",
-    "venue",
-    "venueid",
-    "submissionnumber",
-    "externalids"
-  ]);
-  function isArxivHtmlPage() {
-    return ARXIV_HOSTNAMES.has(window.location.hostname) && window.location.pathname.startsWith("/html/");
-  }
-  function isOpenReviewHost() {
-    return OPENREVIEW_HOSTNAMES.has(window.location.hostname);
-  }
-  function isOpenReviewForumPage() {
-    const pathname = window.location.pathname.replace(/\/+$/, "") || "/";
-    return isOpenReviewHost() && (pathname === "/forum" || pathname.startsWith("/forum/"));
-  }
-  function isArticleTranslationSupportedPage() {
-    return isArxivHtmlPage() || isOpenReviewForumPage();
-  }
-  function escapeMarkdownTableCell(value) {
-    return normalizeText$1(value).replace(/\|/g, "\\|");
-  }
-  function tableElementToMarkdown(table) {
-    const rows = Array.from(table.rows).map((row) => Array.from(row.cells).map((cell) => escapeMarkdownTableCell(cell.innerText || cell.textContent || ""))).filter((row) => row.some(Boolean));
-    if (rows.length === 0) return "";
-    const columnCount = Math.max(...rows.map((row) => row.length));
-    const header = rows[0] || [];
-    const separator = Array.from({ length: columnCount }, () => "---");
-    const body = rows.slice(1);
-    const normalizeRow = (row) => Array.from({ length: columnCount }, (_, index2) => row[index2] || "");
-    const formatRow = (row) => `| ${normalizeRow(row).join(" | ")} |`;
-    return [formatRow(header), formatRow(separator), ...body.map(formatRow)].join("\n");
-  }
-  function getTableCaption(element, table) {
-    const caption = table.caption || element.querySelector(".ltx_caption");
-    return caption ? normalizeMarkdownText(caption.innerText || caption.textContent || "") : "";
-  }
-  function ltxTableToMarkdown(element) {
-    const table = element.matches("table") ? element : element.querySelector("table");
-    if (table instanceof HTMLTableElement) {
-      return [getTableCaption(element, table), tableElementToMarkdown(table)].filter(Boolean).join("\n\n");
-    }
-    return "";
-  }
-  function isTranslatableTableElement(element) {
-    return element.matches(TRANSLATABLE_TABLE_SELECTOR);
-  }
-  function getOpenReviewValueElement(element) {
-    const value = element.closest(OPENREVIEW_VALUE_SELECTOR);
-    return value instanceof HTMLElement ? value : null;
-  }
-  function elementToTranslatableText(element) {
-    if (isTranslatableTableElement(element)) {
-      return ltxTableToMarkdown(element) || normalizeMarkdownText(element.innerText || element.textContent || "");
-    }
-    const clone = element.cloneNode(true);
-    clone.querySelectorAll("table").forEach((table) => {
-      const markdown = tableElementToMarkdown(table);
-      if (!markdown) return;
-      const replacement = document.createElement("span");
-      replacement.textContent = `
-${markdown}
-`;
-      table.replaceWith(replacement);
-    });
-    return normalizeMarkdownText(clone.innerText || clone.textContent || "");
-  }
-  function hashText(value) {
-    let hash = 0;
-    for (let index2 = 0; index2 < value.length; index2 += 1) {
-      hash = (hash << 5) - hash + value.charCodeAt(index2) | 0;
-    }
-    return Math.abs(hash).toString(36);
-  }
-  function isExcluded(element) {
-    if (isTranslatableTableElement(element)) {
-      const tableWrapper = element.closest(".ltx_table");
-      if (element.matches("table") && tableWrapper && tableWrapper !== element) return true;
-      return Boolean(element.closest(TABLE_EXCLUDED_ANCESTOR_SELECTOR));
-    }
-    return Boolean(element.closest(EXCLUDED_SELECTOR)) || Boolean(element.closest("[data-linkual-article-host]"));
-  }
-  function getCandidateSelector() {
-    if (isOpenReviewForumPage()) {
-      return [
-        ".note-content .note-content-value > p",
-        ".note-content .note-content-value > ul > li",
-        ".note-content .note-content-value > ol > li",
-        ".note-content .note-content-value blockquote",
-        ".note-content .note-content-value table",
-        ".note-content .note-content-value",
-        ".note-content-value > p",
-        ".note-content-value > ul > li",
-        ".note-content-value > ol > li",
-        ".note-content-value blockquote",
-        ".note-content-value table",
-        ".note-content-value",
-        ".markdown-rendered > p",
-        ".markdown-rendered > ul > li",
-        ".markdown-rendered > ol > li",
-        ".markdown-rendered blockquote",
-        ".markdown-rendered table",
-        ".markdown-rendered"
-      ].join(",");
-    }
-    return [
-      ".ltx_document .ltx_para",
-      ".ltx_document p.ltx_p",
-      ".ltx_document p",
-      ".ltx_document blockquote.ltx_quote",
-      ".ltx_document li.ltx_item",
-      ".ltx_document .ltx_theorem",
-      ".ltx_document .ltx_proof",
-      ".ltx_document .ltx_quote",
-      ".ltx_document .ltx_table",
-      ".ltx_document table"
-    ].join(",");
-  }
-  function getArticleRoot() {
-    if (isOpenReviewForumPage()) {
-      return document.querySelector(".forum-container");
-    }
-    return document.querySelector(".ltx_document");
-  }
-  function getOpenReviewFieldName(element) {
-    var _a, _b;
-    const fieldAnchor = getOpenReviewValueElement(element) || element;
-    let sibling = fieldAnchor.previousSibling;
-    while (sibling) {
-      if (sibling instanceof HTMLElement && sibling.classList.contains("note-content-field")) {
-        return normalizeText$1(sibling.textContent || "").replace(/:$/, "").trim();
-      }
-      sibling = sibling.previousSibling;
-    }
-    const field = ((_a = fieldAnchor.parentElement) == null ? void 0 : _a.querySelector(".note-content-field")) || ((_b = fieldAnchor.closest(".note-content")) == null ? void 0 : _b.querySelector(".note-content-field"));
-    return field ? normalizeText$1(field.textContent || "").replace(/:$/, "").trim() : "";
-  }
-  function normalizeOpenReviewFieldName(fieldName) {
-    return fieldName.toLowerCase().replace(/[^a-z0-9]+/g, "");
-  }
-  function isOpenReviewFieldExcluded(element) {
-    if (!isOpenReviewForumPage()) return false;
-    const fieldName = getOpenReviewFieldName(element);
-    if (!fieldName) return false;
-    return OPENREVIEW_EXCLUDED_FIELDS.has(normalizeOpenReviewFieldName(fieldName));
-  }
-  function getOrCreateHost(element) {
-    const next = element.nextElementSibling;
-    if (next instanceof HTMLDivElement && next.dataset.linkualArticleHost === "true") {
-      return next;
-    }
-    const host = document.createElement("div");
-    host.className = HOST_CLASS;
-    host.dataset.linkualArticleHost = "true";
-    element.insertAdjacentElement("afterend", host);
-    return host;
-  }
-  function canonicalizeCandidateElement(element) {
-    if (isArxivHtmlPage()) {
-      const tableWrapper = element.closest(".ltx_table");
-      if (tableWrapper instanceof HTMLElement) return tableWrapper;
-      const paragraphWrapper = element.closest(".ltx_para");
-      if (paragraphWrapper instanceof HTMLElement) return paragraphWrapper;
-    }
-    return element;
-  }
-  function hasNestedTextCandidate(element, candidates) {
-    return candidates.some((candidate) => candidate !== element && element.contains(candidate) && !isTranslatableTableElement(candidate));
-  }
-  function shouldSkipNestedCandidate(element, candidates) {
-    if (isOpenReviewForumPage() && isTranslatableTableElement(element)) {
-      const value = getOpenReviewValueElement(element);
-      if (value && value !== element && candidates.includes(value) && !hasNestedTextCandidate(value, candidates)) {
-        return true;
-      }
-    }
-    return !isTranslatableTableElement(element) && hasNestedTextCandidate(element, candidates);
-  }
-  function collectCandidateElements(root2) {
-    const elements = Array.from(root2.querySelectorAll(getCandidateSelector())).map(canonicalizeCandidateElement);
-    const uniqueElements = Array.from(new Set(elements));
-    return uniqueElements.filter((element) => !shouldSkipNestedCandidate(element, uniqueElements));
-  }
-  function collectArticleParagraphs() {
-    if (!isArticleTranslationSupportedPage()) return [];
-    const root2 = getArticleRoot();
-    if (!root2) return [];
-    const candidates = collectCandidateElements(root2).filter((element) => !isExcluded(element) && !isOpenReviewFieldExcluded(element)).map((element) => ({ element, text: elementToTranslatableText(element) })).filter(({ element, text: text2 }) => text2.length >= MIN_PARAGRAPH_LENGTH && (isTranslatableTableElement(element) || !element.querySelector(BLOCKING_DESCENDANT_SELECTOR)));
-    const seen = /* @__PURE__ */ new Set();
-    return candidates.slice(0, MAX_PARAGRAPHS).filter(({ element }) => {
-      if (seen.has(element)) return false;
-      seen.add(element);
-      return true;
-    }).map(({ element, text: text2 }, index2) => ({
-      id: `article-${index2}-${hashText(text2)}`,
-      element,
-      text: text2,
-      host: getOrCreateHost(element)
-    }));
-  }
-  function removeArticleTranslationHosts(keep = /* @__PURE__ */ new Set()) {
-    document.querySelectorAll(`[data-linkual-article-host="true"]`).forEach((host) => {
-      if (!keep.has(host)) host.remove();
-    });
-  }
   const SENTENCE_PATTERN$1 = /[^.!?。！？]+[.!?。！？]+["'”’）)]*|[^.!?。！？]+$/g;
   function normalizeSentence(value) {
     return value.replace(/\s+/g, " ").trim();
@@ -31473,1601 +31692,6 @@ ${paragraph.text}`,
       ] })
     ] });
   };
-  const INITIAL_RENDER_LIMIT = 80;
-  const RENDER_BATCH_SIZE = 80;
-  const ACTIVE_RENDER_BUFFER = 20;
-  const LINKUAL_NAVIGATION_EVENT$1 = "linkual_navigation";
-  const MIN_SIDEBAR_WIDTH = 250;
-  const MIN_SIDEBAR_HEIGHT = 150;
-  const MIN_REMAINING_VIEWPORT = 80;
-  function isYouTubeHost$1() {
-    return /(^|\.)youtube(?:-nocookie)?\.com$/i.test(window.location.hostname);
-  }
-  function getBrowserFullscreenElement$2() {
-    const doc = document;
-    return document.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement || doc.msFullscreenElement || null;
-  }
-  function exitBrowserFullscreen$1() {
-    const doc = document;
-    if (document.exitFullscreen) return document.exitFullscreen();
-    if (doc.webkitExitFullscreen) return doc.webkitExitFullscreen();
-    if (doc.mozCancelFullScreen) return doc.mozCancelFullScreen();
-    if (doc.msExitFullscreen) return doc.msExitFullscreen();
-  }
-  function isPromiseLike$1(value) {
-    return Boolean(value && typeof value.then === "function");
-  }
-  function getVisualViewportSize() {
-    var _a, _b;
-    const reservedViewportHeight = Number.parseFloat(
-      getComputedStyle(document.documentElement).getPropertyValue("--linkual-visual-viewport-height")
-    );
-    const width = ((_a = window.visualViewport) == null ? void 0 : _a.width) || window.innerWidth || document.documentElement.clientWidth;
-    const height = Number.isFinite(reservedViewportHeight) && reservedViewportHeight > 0 ? reservedViewportHeight : ((_b = window.visualViewport) == null ? void 0 : _b.height) || window.innerHeight || document.documentElement.clientHeight;
-    return {
-      width: Number.isFinite(width) && width > 0 ? width : window.innerWidth,
-      height: Number.isFinite(height) && height > 0 ? height : window.innerHeight
-    };
-  }
-  function getReservedBottomHeight() {
-    const raw = getComputedStyle(document.documentElement).getPropertyValue("--linkual-universal-widget-height");
-    const parsed = Number.parseFloat(raw);
-    return Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
-  }
-  function parseConfigNumber(value, fallback) {
-    const parsed = Number.parseInt(String(value ?? ""), 10);
-    return Number.isFinite(parsed) ? parsed : fallback;
-  }
-  function clampSidebarWidth(width) {
-    const viewport = getVisualViewportSize();
-    const requestedWidth = Number.isFinite(width) ? width : MIN_SIDEBAR_WIDTH;
-    const maxWidth = Math.max(0, viewport.width - MIN_REMAINING_VIEWPORT);
-    const minWidth = Math.min(MIN_SIDEBAR_WIDTH, maxWidth || viewport.width);
-    return Math.max(0, Math.min(Math.max(requestedWidth, minWidth), maxWidth || viewport.width));
-  }
-  function clampSidebarHeight(height) {
-    const viewport = getVisualViewportSize();
-    const requestedHeight = Number.isFinite(height) ? height : MIN_SIDEBAR_HEIGHT;
-    const availableHeight = Math.max(0, viewport.height - getReservedBottomHeight());
-    const maxHeight = Math.max(0, availableHeight - MIN_REMAINING_VIEWPORT);
-    const minHeight = Math.min(MIN_SIDEBAR_HEIGHT, maxHeight || availableHeight);
-    return Math.max(0, Math.min(Math.max(requestedHeight, minHeight), maxHeight || availableHeight));
-  }
-  const App = ({ adapter }) => {
-    const [subs, setSubs] = reactExports.useState([]);
-    const isVideoSite = isYouTubeHost$1();
-    const isArticleTranslationEnabled = isArticleTranslationSupportedPage();
-    const [inVideo, setInVideo] = reactExports.useState(adapter.isVideoPage());
-    const getAdpCfg = (key) => {
-      const val = ConfigService.get(`${key}_${adapter.platformName}`);
-      return val !== null && val !== void 0 && val !== "" ? val : ConfigService.get(key);
-    };
-    const [layout, setLayout] = reactExports.useState(getAdpCfg("layout_position"));
-    const [sidebarWidth, setSidebarWidth] = reactExports.useState(parseConfigNumber(getAdpCfg("sidebar_width"), parseConfigNumber(DEFAULTS.sidebar_width, 500)));
-    const [sidebarHeight, setSidebarHeight] = reactExports.useState(parseConfigNumber(getAdpCfg("sidebar_height"), parseConfigNumber(DEFAULTS.sidebar_height, 350)));
-    const [themeColor, setThemeColor] = reactExports.useState(ConfigService.get("theme_color"));
-    const [doneColor, setDoneColor] = reactExports.useState(ConfigService.get("done_color"));
-    const [errorColor, setErrorColor] = reactExports.useState(ConfigService.get("error_color"));
-    const [mobileFullscreenMode, setMobileFullscreenMode] = reactExports.useState(ConfigService.get("mobile_fullscreen_mode"));
-    const [isSettingsOpen, setIsSettingsOpen] = reactExports.useState(false);
-    const [renderLimit, setRenderLimit] = reactExports.useState(INITIAL_RENDER_LIMIT);
-    const listRef = reactExports.useRef(null);
-    const lastHostLayoutRef = reactExports.useRef(null);
-    const activeIndex = useVideoSync(subs, adapter);
-    const resizeAdapterHost = reactExports.useCallback((force = false) => {
-      if (!adapter.resizeHost) return;
-      const nextLayout = inVideo ? {
-        adapter,
-        width: clampSidebarWidth(sidebarWidth),
-        height: clampSidebarHeight(sidebarHeight),
-        layout,
-        inVideo
-      } : {
-        adapter,
-        width: 0,
-        height: 0,
-        layout,
-        inVideo
-      };
-      const prevLayout = lastHostLayoutRef.current;
-      if (!force && prevLayout && prevLayout.adapter === nextLayout.adapter && prevLayout.width === nextLayout.width && prevLayout.height === nextLayout.height && prevLayout.layout === nextLayout.layout && prevLayout.inVideo === nextLayout.inVideo) {
-        return;
-      }
-      lastHostLayoutRef.current = nextLayout;
-      adapter.resizeHost(nextLayout.width, nextLayout.height, nextLayout.layout);
-    }, [adapter, inVideo, layout, sidebarHeight, sidebarWidth]);
-    reactExports.useEffect(() => {
-      if (!isVideoSite) return void 0;
-      const checkVideo = () => {
-        setInVideo((prev) => {
-          const isVid = adapter.isVideoPage();
-          return prev !== isVid ? isVid : prev;
-        });
-      };
-      const interval = setInterval(checkVideo, 500);
-      window.addEventListener("yt-navigate-finish", checkVideo);
-      window.addEventListener(LINKUAL_NAVIGATION_EVENT$1, checkVideo);
-      return () => {
-        clearInterval(interval);
-        window.removeEventListener("yt-navigate-finish", checkVideo);
-        window.removeEventListener(LINKUAL_NAVIGATION_EVENT$1, checkVideo);
-      };
-    }, [adapter, isVideoSite]);
-    reactExports.useEffect(() => {
-      adapter.onSubtitleDetected((newSubs) => {
-        setSubs(newSubs);
-        if (newSubs.length === 0) setRenderLimit(INITIAL_RENDER_LIMIT);
-      });
-      const handleSettingsUpdate = () => {
-        setThemeColor(ConfigService.get("theme_color"));
-        setDoneColor(ConfigService.get("done_color"));
-        setErrorColor(ConfigService.get("error_color"));
-        setMobileFullscreenMode(ConfigService.get("mobile_fullscreen_mode"));
-        setLayout(getAdpCfg("layout_position"));
-        setSidebarWidth(parseConfigNumber(getAdpCfg("sidebar_width"), parseConfigNumber(DEFAULTS.sidebar_width, 500)));
-        setSidebarHeight(parseConfigNumber(getAdpCfg("sidebar_height"), parseConfigNumber(DEFAULTS.sidebar_height, 350)));
-      };
-      window.addEventListener("linkual_settings_updated", handleSettingsUpdate);
-      return () => window.removeEventListener("linkual_settings_updated", handleSettingsUpdate);
-    }, [adapter]);
-    reactExports.useEffect(() => {
-      if (activeIndex < 0 || subs.length === 0) return;
-      if (activeIndex >= renderLimit - ACTIVE_RENDER_BUFFER) {
-        setRenderLimit((prev) => Math.min(subs.length, Math.max(prev, activeIndex + RENDER_BATCH_SIZE)));
-      }
-    }, [activeIndex, renderLimit, subs.length]);
-    reactExports.useEffect(() => {
-      if (!isVideoSite) return void 0;
-      const clearCustomFullscreenIfNeeded = () => {
-        var _a;
-        if (inVideo || !document.documentElement.classList.contains("linkual-custom-fullscreen")) return;
-        document.documentElement.classList.remove("linkual-custom-fullscreen");
-        try {
-          (_a = adapter.setCustomFullscreen) == null ? void 0 : _a.call(adapter, false);
-        } catch (error) {
-          console.warn("[Linkual] 自定义全屏状态清理失败", error);
-        }
-        window.dispatchEvent(new Event("linkual_custom_fullscreen_changed"));
-        window.dispatchEvent(new Event("linkual_custom_layout_refresh"));
-        window.dispatchEvent(new Event("resize"));
-        if (getBrowserFullscreenElement$2()) {
-          const browserFullscreenAction = exitBrowserFullscreen$1();
-          if (isPromiseLike$1(browserFullscreenAction)) {
-            browserFullscreenAction.catch((error) => console.warn("[Linkual] 浏览器全屏退出失败", error));
-          }
-        }
-      };
-      clearCustomFullscreenIfNeeded();
-      window.addEventListener("linkual_custom_fullscreen_changed", clearCustomFullscreenIfNeeded);
-      return () => window.removeEventListener("linkual_custom_fullscreen_changed", clearCustomFullscreenIfNeeded);
-    }, [adapter, inVideo, isVideoSite]);
-    reactExports.useEffect(() => {
-      if (!isVideoSite) return;
-      resizeAdapterHost();
-    }, [isVideoSite, resizeAdapterHost]);
-    reactExports.useEffect(() => {
-      if (!isVideoSite) return void 0;
-      const refreshCustomLayout = () => resizeAdapterHost(true);
-      window.addEventListener("linkual_custom_layout_refresh", refreshCustomLayout);
-      window.addEventListener(LINKUAL_NAVIGATION_EVENT$1, refreshCustomLayout);
-      return () => {
-        window.removeEventListener("linkual_custom_layout_refresh", refreshCustomLayout);
-        window.removeEventListener(LINKUAL_NAVIGATION_EVENT$1, refreshCustomLayout);
-      };
-    }, [isVideoSite, resizeAdapterHost]);
-    reactExports.useEffect(() => {
-      var _a;
-      if (!isVideoSite) return void 0;
-      const refreshViewportLayout = () => resizeAdapterHost();
-      window.addEventListener("orientationchange", refreshViewportLayout);
-      window.addEventListener("resize", refreshViewportLayout);
-      (_a = window.visualViewport) == null ? void 0 : _a.addEventListener("resize", refreshViewportLayout);
-      return () => {
-        var _a2;
-        window.removeEventListener("orientationchange", refreshViewportLayout);
-        window.removeEventListener("resize", refreshViewportLayout);
-        (_a2 = window.visualViewport) == null ? void 0 : _a2.removeEventListener("resize", refreshViewportLayout);
-      };
-    }, [isVideoSite, resizeAdapterHost]);
-    const startResize = (e) => {
-      e.preventDefault();
-      if (layout === "bottom") {
-        const startY = e.clientY;
-        const startHeight = sidebarHeight;
-        let currentHeight = startHeight;
-        const onMouseMove = (ev) => {
-          const viewport = getVisualViewportSize();
-          let newHeight = startHeight - (ev.clientY - startY);
-          if (newHeight < MIN_SIDEBAR_HEIGHT) newHeight = MIN_SIDEBAR_HEIGHT;
-          if (newHeight > viewport.height * 0.8) newHeight = viewport.height * 0.8;
-          newHeight = clampSidebarHeight(newHeight);
-          currentHeight = newHeight;
-          setSidebarHeight(newHeight);
-        };
-        const onMouseUp = () => {
-          document.removeEventListener("mousemove", onMouseMove);
-          document.removeEventListener("mouseup", onMouseUp);
-          ConfigService.set(`sidebar_height_${adapter.platformName}`, currentHeight.toString());
-          ConfigService.set("sidebar_height", currentHeight.toString());
-        };
-        document.addEventListener("mousemove", onMouseMove);
-        document.addEventListener("mouseup", onMouseUp);
-      } else {
-        const startX = e.clientX;
-        const startWidth = sidebarWidth;
-        let currentWidth = startWidth;
-        const onMouseMove = (ev) => {
-          const viewport = getVisualViewportSize();
-          let newWidth = startWidth - (ev.clientX - startX);
-          if (newWidth < MIN_SIDEBAR_WIDTH) newWidth = MIN_SIDEBAR_WIDTH;
-          if (newWidth > viewport.width * 0.8) newWidth = viewport.width * 0.8;
-          newWidth = clampSidebarWidth(newWidth);
-          currentWidth = newWidth;
-          setSidebarWidth(newWidth);
-        };
-        const onMouseUp = () => {
-          document.removeEventListener("mousemove", onMouseMove);
-          document.removeEventListener("mouseup", onMouseUp);
-          ConfigService.set(`sidebar_width_${adapter.platformName}`, currentWidth.toString());
-          ConfigService.set("sidebar_width", currentWidth.toString());
-        };
-        document.addEventListener("mousemove", onMouseMove);
-        document.addEventListener("mouseup", onMouseUp);
-      }
-    };
-    const wrapStyle = {
-      display: inVideo ? "flex" : "none",
-      width: layout === "right" ? clampSidebarWidth(sidebarWidth) : "100%",
-      height: layout === "bottom" ? clampSidebarHeight(sidebarHeight) : "calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom, 0px))",
-      pointerEvents: inVideo ? "auto" : "none",
-      "--linkual-theme": themeColor,
-      "--linkual-done": doneColor,
-      "--linkual-error": errorColor
-    };
-    const handleListScroll = () => {
-      const listEl = listRef.current;
-      if (!listEl || renderLimit >= subs.length) return;
-      const distanceToBottom = listEl.scrollHeight - listEl.scrollTop - listEl.clientHeight;
-      if (distanceToBottom < 160) {
-        setRenderLimit((prev) => Math.min(subs.length, prev + RENDER_BATCH_SIZE));
-      }
-    };
-    const visibleSubs = subs.slice(0, renderLimit);
-    const hasMoreSubs = visibleSubs.length < subs.length;
-    const showMobileFullscreenButton = isVideoSite && (mobileFullscreenMode === "always" || mobileFullscreenMode === "video" && inVideo);
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(ArticleTranslationProvider, { enabled: isArticleTranslationEnabled && !inVideo, children: /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: `linkual-wrap layout-${layout}`, style: wrapStyle, children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "resizer", onMouseDown: startResize, title: layout === "right" ? "左右拖拽调整宽度" : "上下拖拽调整高度" }),
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "header", children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
-            "Link-ual Log [",
-            adapter.platformName,
-            "]"
-          ] }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { children: /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", className: "settings-icon", onClick: () => setIsSettingsOpen(true), title: "全局设置", "aria-label": "全局设置", children: /* @__PURE__ */ jsxRuntimeExports.jsx(Settings$2, { size: 17, strokeWidth: 2.2 }) }) })
-        ] }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "list", ref: listRef, onScroll: handleListScroll, children: subs.length === 0 ? /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "empty-tip", children: "等待字幕数据..." }) : /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
-          visibleSubs.map((sub2, index2) => /* @__PURE__ */ jsxRuntimeExports.jsx(SubtitleItem, { data: sub2, index: index2, allSubs: subs, isActive: index2 === activeIndex, adapter }, index2)),
-          hasMoreSubs && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "load-more-tip", children: [
-            "向下滚动加载更多字幕（",
-            visibleSubs.length,
-            "/",
-            subs.length,
-            "）"
-          ] })
-        ] }) })
-      ] }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx(
-        UniversalVocabWidget,
-        {
-          onOpenSettings: () => setIsSettingsOpen(true)
-        }
-      ),
-      /* @__PURE__ */ jsxRuntimeExports.jsx(ArticleTranslator, {}),
-      showMobileFullscreenButton && /* @__PURE__ */ jsxRuntimeExports.jsx(MobileFullscreenButton, { adapter }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx(UpdateNotice, {}),
-      /* @__PURE__ */ jsxRuntimeExports.jsx(VocabQueue, {}),
-      isSettingsOpen && /* @__PURE__ */ jsxRuntimeExports.jsx(Settings2, { adapter, onClose: () => setIsSettingsOpen(false) })
-    ] }) });
-  };
-  const PLAYER_RESPONSE_KEYS = [
-    "playerResponse",
-    "player_response",
-    "captions",
-    "playerCaptionsTracklistRenderer",
-    "args",
-    "data",
-    "playerData",
-    "response"
-  ];
-  const TARGET_CAPTION_LANGUAGE = "en";
-  function cleanCaptionText(text2) {
-    return text2.replace(/\u00a0/g, " ").replace(/\s+/g, " ").trim();
-  }
-  function toNumber(value, fallback = 0) {
-    const num = Number(value);
-    return Number.isFinite(num) ? num : fallback;
-  }
-  function safeJsonParse(value) {
-    if (typeof value !== "string") return value;
-    try {
-      return JSON.parse(value);
-    } catch (error) {
-      return null;
-    }
-  }
-  function parseScriptString(value) {
-    try {
-      return JSON.parse(`"${value}"`);
-    } catch (error) {
-      return value;
-    }
-  }
-  function getScriptConfigValue(key) {
-    var _a;
-    const pattern = new RegExp(`"${key}"\\s*:\\s*"((?:\\\\.|[^"\\\\])*)"`);
-    const scripts = Array.from(document.scripts).reverse().slice(0, 60);
-    for (const script2 of scripts) {
-      const match = (_a = script2.textContent) == null ? void 0 : _a.match(pattern);
-      if (match) return parseScriptString(match[1]);
-    }
-    return null;
-  }
-  function getYtcfgValue(win, key) {
-    var _a, _b, _c, _d;
-    try {
-      const fromGetter = (_b = (_a = win == null ? void 0 : win.ytcfg) == null ? void 0 : _a.get) == null ? void 0 : _b.call(_a, key);
-      if (fromGetter !== void 0 && fromGetter !== null) return fromGetter;
-    } catch (error) {
-    }
-    try {
-      const fromData = (_d = (_c = win == null ? void 0 : win.ytcfg) == null ? void 0 : _c.data_) == null ? void 0 : _d[key];
-      if (fromData !== void 0 && fromData !== null) return fromData;
-    } catch (error) {
-    }
-    return getScriptConfigValue(key);
-  }
-  function parseJsonTimedText(data) {
-    const events = Array.isArray(data == null ? void 0 : data.events) ? data.events : [];
-    const subtitles = [];
-    events.forEach((event, index2) => {
-      var _a;
-      if (!(event == null ? void 0 : event.segs)) return;
-      const text2 = cleanCaptionText(event.segs.map((seg) => (seg == null ? void 0 : seg.utf8) || "").join(""));
-      if (!text2) return;
-      const start = toNumber(event.tStartMs) / 1e3;
-      const durationMs = toNumber(event.dDurationMs);
-      const nextStartMs = toNumber((_a = events[index2 + 1]) == null ? void 0 : _a.tStartMs, NaN);
-      const end = durationMs > 0 ? (toNumber(event.tStartMs) + durationMs) / 1e3 : Number.isFinite(nextStartMs) ? nextStartMs / 1e3 : start;
-      subtitles.push({ text: text2, start, end: Math.max(start, end) });
-    });
-    return subtitles;
-  }
-  function parseXmlTimedText(xmlText) {
-    const doc = new DOMParser().parseFromString(xmlText, "text/xml");
-    if (doc.querySelector("parsererror")) return [];
-    const transcriptNodes = Array.from(doc.querySelectorAll("transcript text"));
-    if (transcriptNodes.length > 0) {
-      return transcriptNodes.map((node) => {
-        const start = toNumber(node.getAttribute("start"));
-        const duration = toNumber(node.getAttribute("dur"));
-        return {
-          text: cleanCaptionText(node.textContent || ""),
-          start,
-          end: start + duration
-        };
-      }).filter((sub2) => sub2.text);
-    }
-    return Array.from(doc.querySelectorAll("p")).map((node) => {
-      const start = toNumber(node.getAttribute("t")) / 1e3;
-      const duration = toNumber(node.getAttribute("d")) / 1e3;
-      const segTexts = Array.from(node.querySelectorAll("s")).map((seg) => seg.textContent || "");
-      const text2 = cleanCaptionText(segTexts.length > 0 ? segTexts.join("") : node.textContent || "");
-      return { text: text2, start, end: start + duration };
-    }).filter((sub2) => sub2.text);
-  }
-  function parseYouTubeTimedTextPayload(payload) {
-    if (!payload) return [];
-    if (typeof payload === "string") {
-      const text2 = payload.trim();
-      if (!text2) return [];
-      if (text2.startsWith("{") || text2.startsWith("[")) {
-        const parsed = safeJsonParse(text2);
-        return parsed ? parseJsonTimedText(parsed) : [];
-      }
-      return parseXmlTimedText(text2);
-    }
-    if (typeof payload === "object") {
-      return parseJsonTimedText(payload);
-    }
-    return [];
-  }
-  function getTimedTextVideoId(url) {
-    try {
-      return new URL(url, window.location.href).searchParams.get("v");
-    } catch (error) {
-      const match = url.match(/[?&]v=([^&]+)/);
-      return match ? decodeURIComponent(match[1]) : null;
-    }
-  }
-  function isTargetLanguage(value) {
-    if (!value) return false;
-    const language = String(value).toLowerCase().replace("_", "-");
-    return language === TARGET_CAPTION_LANGUAGE || language.startsWith(`${TARGET_CAPTION_LANGUAGE}-`);
-  }
-  function getTimedTextLanguage(url, key) {
-    try {
-      return new URL(url, window.location.href).searchParams.get(key);
-    } catch (error) {
-      const match = url.match(new RegExp(`[?&]${key}=([^&]+)`));
-      return match ? decodeURIComponent(match[1]) : null;
-    }
-  }
-  function isEnglishTimedTextUrl(url) {
-    const translatedLanguage = getTimedTextLanguage(url, "tlang");
-    if (translatedLanguage) return isTargetLanguage(translatedLanguage);
-    return isTargetLanguage(getTimedTextLanguage(url, "lang"));
-  }
-  function isCaptionTrack(value) {
-    return Boolean(
-      value && typeof value === "object" && typeof value.baseUrl === "string" && value.baseUrl.includes("timedtext")
-    );
-  }
-  function addTracks(target, tracks) {
-    if (!Array.isArray(tracks)) return;
-    tracks.forEach((track2) => {
-      if (!isCaptionTrack(track2)) return;
-      const exists = target.some((item) => item.baseUrl === track2.baseUrl);
-      if (!exists) target.push(track2);
-    });
-  }
-  function collectCaptionTracks(value, target, seen = /* @__PURE__ */ new WeakSet(), depth = 0) {
-    var _a, _b, _c;
-    const data = safeJsonParse(value);
-    if (!data || typeof data !== "object") return;
-    if (depth > 6) return;
-    if (seen.has(data)) return;
-    seen.add(data);
-    addTracks(target, data.captionTracks);
-    addTracks(target, (_b = (_a = data == null ? void 0 : data.captions) == null ? void 0 : _a.playerCaptionsTracklistRenderer) == null ? void 0 : _b.captionTracks);
-    addTracks(target, (_c = data == null ? void 0 : data.playerCaptionsTracklistRenderer) == null ? void 0 : _c.captionTracks);
-    if (Array.isArray(data)) {
-      data.forEach((item) => collectCaptionTracks(item, target, seen, depth + 1));
-      return;
-    }
-    PLAYER_RESPONSE_KEYS.forEach((key) => {
-      if (key in data) collectCaptionTracks(data[key], target, seen, depth + 1);
-    });
-  }
-  function extractJsonObjectAfterMarker(text2, marker) {
-    const markerIndex = text2.indexOf(marker);
-    if (markerIndex < 0) return null;
-    const start = text2.indexOf("{", markerIndex);
-    if (start < 0) return null;
-    let depth = 0;
-    let inString = false;
-    let escaped = false;
-    for (let index2 = start; index2 < text2.length; index2++) {
-      const char = text2[index2];
-      if (inString) {
-        if (escaped) {
-          escaped = false;
-        } else if (char === "\\") {
-          escaped = true;
-        } else if (char === '"') {
-          inString = false;
-        }
-        continue;
-      }
-      if (char === '"') inString = true;
-      else if (char === "{") depth++;
-      else if (char === "}") {
-        depth--;
-        if (depth === 0) return text2.slice(start, index2 + 1);
-      }
-    }
-    return null;
-  }
-  function collectScriptCaptionTracks(target) {
-    const scripts = Array.from(document.scripts).reverse().slice(0, 40);
-    scripts.forEach((script2) => {
-      const text2 = script2.textContent || "";
-      if (!text2.includes("captionTracks") && !text2.includes("ytInitialPlayerResponse")) return;
-      const responseJson = extractJsonObjectAfterMarker(text2, "ytInitialPlayerResponse");
-      if (responseJson) collectCaptionTracks(responseJson, target);
-    });
-  }
-  function getActiveCaptionTrack(playerEl) {
-    const player = playerEl;
-    if (!player || typeof player.getOption !== "function") return null;
-    try {
-      return player.getOption("captions", "track");
-    } catch (error) {
-      return null;
-    }
-  }
-  function trackMatches(track2, activeTrack) {
-    if (!activeTrack) return false;
-    return Boolean(
-      track2.vssId && track2.vssId === activeTrack.vssId || track2.languageCode && track2.languageCode === activeTrack.languageCode
-    );
-  }
-  function selectCaptionTrack(tracks, playerEl) {
-    var _a;
-    const activeTrack = getActiveCaptionTrack(playerEl);
-    const activeMatch = tracks.find((track2) => trackMatches(track2, activeTrack));
-    if (activeMatch) return activeMatch;
-    return ((_a = tracks.map((track2, index2) => ({
-      track: track2,
-      score: (track2.kind === "asr" ? 0 : 10) + (track2.isTranslatable ? 0 : 1) - index2 / 100
-    })).sort((a, b) => b.score - a.score)[0]) == null ? void 0 : _a.track) || null;
-  }
-  function rankCaptionTracks(tracks, playerEl) {
-    const activeTrack = getActiveCaptionTrack(playerEl);
-    return tracks.map((track2, index2) => ({
-      track: track2,
-      score: (trackMatches(track2, activeTrack) ? 100 : 0) + (track2.kind === "asr" ? 0 : 10) + (track2.isTranslatable ? 0 : 1) - index2 / 100
-    })).sort((a, b) => b.score - a.score).map((item) => item.track);
-  }
-  function isEnglishOutputTrack(track2) {
-    if (track2.baseUrl && isEnglishTimedTextUrl(track2.baseUrl)) return true;
-    return isTargetLanguage(track2.languageCode);
-  }
-  function canTranslateTrackToEnglish(track2) {
-    return Boolean(track2.baseUrl && track2.isTranslatable && !isEnglishOutputTrack(track2));
-  }
-  function filterTracksForEnglish(tracks) {
-    const englishTracks = tracks.filter(isEnglishOutputTrack);
-    if (englishTracks.length > 0) return englishTracks;
-    return tracks.filter(canTranslateTrackToEnglish);
-  }
-  function buildTimedTextUrl(track2, videoId) {
-    const url = new URL(track2.baseUrl, window.location.href);
-    url.searchParams.set("fmt", "json3");
-    if (videoId && !url.searchParams.get("v")) url.searchParams.set("v", videoId);
-    if (!isEnglishOutputTrack(track2) && track2.isTranslatable) {
-      url.searchParams.set("tlang", TARGET_CAPTION_LANGUAGE);
-    }
-    return url.toString();
-  }
-  function filterTracksForVideo(tracks, videoId) {
-    if (!videoId) return tracks;
-    return tracks.filter((track2) => {
-      if (!track2.baseUrl) return false;
-      const trackVideoId = getTimedTextVideoId(track2.baseUrl);
-      return !trackVideoId || trackVideoId === videoId;
-    });
-  }
-  function extractYouTubeCaptionTracks(options = {}) {
-    var _a, _b, _c;
-    const win = options.win || window;
-    const tracks = [];
-    const playerEl = options.playerEl || document.querySelector(".html5-video-player");
-    const player = playerEl;
-    try {
-      if (player && typeof player.getPlayerResponse === "function") {
-        collectCaptionTracks(player.getPlayerResponse(), tracks);
-      }
-    } catch (error) {
-    }
-    try {
-      if (player && typeof player.getOption === "function") {
-        collectCaptionTracks(player.getOption("captions", "tracklist"), tracks);
-      }
-    } catch (error) {
-    }
-    collectCaptionTracks(win == null ? void 0 : win.ytInitialPlayerResponse, tracks);
-    collectCaptionTracks((_c = (_b = (_a = win == null ? void 0 : win.ytplayer) == null ? void 0 : _a.config) == null ? void 0 : _b.args) == null ? void 0 : _c.player_response, tracks);
-    [
-      options.playerEl,
-      document.querySelector("ytd-reel-video-renderer[is-active]"),
-      document.querySelector("ytd-watch-flexy"),
-      document.querySelector("ytd-player")
-    ].forEach((element) => {
-      if (!element) return;
-      ["data", "playerData", "playerResponse", "__data"].forEach((key) => {
-        collectCaptionTracks(element[key], tracks);
-      });
-    });
-    if (tracks.length === 0) collectScriptCaptionTracks(tracks);
-    return tracks;
-  }
-  function getInnertubeContext(win) {
-    const configuredContext = getYtcfgValue(win, "INNERTUBE_CONTEXT");
-    if (configuredContext && typeof configuredContext === "object") return configuredContext;
-    return {
-      client: {
-        clientName: getYtcfgValue(win, "INNERTUBE_CLIENT_NAME") || "WEB",
-        clientVersion: getYtcfgValue(win, "INNERTUBE_CLIENT_VERSION") || "2.20240101.00.00",
-        hl: getYtcfgValue(win, "HL") || document.documentElement.lang || "en",
-        gl: getYtcfgValue(win, "GL") || "US",
-        utcOffsetMinutes: -(/* @__PURE__ */ new Date()).getTimezoneOffset()
-      }
-    };
-  }
-  function getInnertubeEndpoint(win) {
-    const apiKey = getYtcfgValue(win, "INNERTUBE_API_KEY");
-    if (!apiKey) return null;
-    const endpoint = getYtcfgValue(win, "INNERTUBE_API_ENDPOINT") || "/youtubei/v1";
-    const url = new URL(`${String(endpoint).replace(/\/$/, "")}/player`, window.location.origin);
-    url.searchParams.set("key", String(apiKey));
-    url.searchParams.set("prettyPrint", "false");
-    return url.toString();
-  }
-  async function fetchInnertubeCaptionTracks(videoId, options = {}) {
-    const win = options.win || window;
-    const endpoint = getInnertubeEndpoint(win);
-    if (!endpoint) return [];
-    const context = getInnertubeContext(win);
-    const client2 = (context == null ? void 0 : context.client) || {};
-    const headers = {
-      "Content-Type": "application/json"
-    };
-    const headerClientName = getYtcfgValue(win, "INNERTUBE_CONTEXT_CLIENT_NAME");
-    const headerClientVersion = client2.clientVersion || getYtcfgValue(win, "INNERTUBE_CLIENT_VERSION");
-    const visitorId = getYtcfgValue(win, "VISITOR_DATA");
-    if (headerClientName) headers["X-YouTube-Client-Name"] = String(headerClientName);
-    if (headerClientVersion) headers["X-YouTube-Client-Version"] = String(headerClientVersion);
-    if (visitorId) headers["X-Goog-Visitor-Id"] = String(visitorId);
-    const response = await fetch(endpoint, {
-      method: "POST",
-      credentials: "include",
-      headers,
-      body: JSON.stringify({
-        context,
-        videoId,
-        contentCheckOk: true,
-        racyCheckOk: true,
-        playbackContext: {
-          contentPlaybackContext: {
-            html5Preference: "HTML5_PREF_WANTS"
-          }
-        }
-      })
-    });
-    if (!response.ok) return [];
-    const tracks = [];
-    collectCaptionTracks(await response.json(), tracks);
-    return tracks;
-  }
-  async function fetchYouTubeCaptionsFromPlayer(videoId, options = {}) {
-    const playerEl = options.playerEl || document.querySelector(".html5-video-player");
-    let tracks = filterTracksForEnglish(filterTracksForVideo(extractYouTubeCaptionTracks({ ...options, playerEl }), videoId));
-    if (tracks.length === 0 && videoId) {
-      tracks = filterTracksForEnglish(filterTracksForVideo(await fetchInnertubeCaptionTracks(videoId, { ...options }), videoId));
-    }
-    const selectedTrack = selectCaptionTrack(tracks, playerEl);
-    const rankedTracks = rankCaptionTracks(
-      selectedTrack ? [selectedTrack, ...tracks.filter((track2) => track2.baseUrl !== selectedTrack.baseUrl)] : tracks,
-      playerEl
-    );
-    for (const track2 of rankedTracks) {
-      if (!(track2 == null ? void 0 : track2.baseUrl)) continue;
-      const url = buildTimedTextUrl(track2, videoId);
-      if (!isEnglishTimedTextUrl(url)) continue;
-      const response = await fetch(url, { credentials: "include" });
-      if (!response.ok) continue;
-      const subtitles = parseYouTubeTimedTextPayload(await response.text());
-      if (subtitles.length === 0) continue;
-      const resultVideoId = getTimedTextVideoId(url) || videoId;
-      if (videoId && resultVideoId && resultVideoId !== videoId) continue;
-      return {
-        videoId: resultVideoId,
-        subtitles,
-        url
-      };
-    }
-    return null;
-  }
-  class YouTubeShortsAdapter {
-    constructor() {
-      __publicField(this, "platformName", "YouTube Shorts (Manual CC)");
-      __publicField(this, "cachedSubs", []);
-      __publicField(this, "listeners", []);
-      __publicField(this, "subsMap", /* @__PURE__ */ new Map());
-      __publicField(this, "resizeTimeout", null);
-      __publicField(this, "captionFetchTimeout", null);
-      __publicField(this, "captionFetchInFlight", null);
-      __publicField(this, "customFullscreenEnabled", false);
-      __publicField(this, "resumeOnCustomFullscreen", false);
-      this.initNetworkHook();
-      setInterval(() => this.syncSubsToCurrentVideo(), 500);
-      setInterval(() => this.requestCurrentCaptions(), 2e3);
-      window.addEventListener("yt-navigate-finish", () => {
-        if (this.match(window.location.href)) {
-          this.cachedSubs = [];
-          this.listeners.forEach((cb) => cb([]));
-          this.syncSubsToCurrentVideo();
-          this.requestCurrentCaptions(300);
-        }
-      });
-    }
-    match(url) {
-      return url.includes("youtube.com/shorts/");
-    }
-    isVideoPage() {
-      return window.location.pathname.startsWith("/shorts/");
-    }
-    onSubtitleDetected(callback) {
-      this.listeners = [callback];
-      if (this.cachedSubs.length > 0) callback(this.cachedSubs);
-    }
-    getCurrentVideoId() {
-      const match = window.location.pathname.match(/\/shorts\/([^/?]+)/);
-      return match ? match[1] : null;
-    }
-    getVideoEl() {
-      const activeRenderer = document.querySelector("ytd-reel-video-renderer[is-active]");
-      if (activeRenderer) {
-        const v = activeRenderer.querySelector("video");
-        if (v) return v;
-      }
-      const videos = Array.from(document.querySelectorAll("video"));
-      const playingVideo = videos.find((v) => !v.paused && v.readyState > 0 && v.getBoundingClientRect().height > 0);
-      if (playingVideo) return playingVideo;
-      let bestVideo = null;
-      let minDiff = Infinity;
-      const centerY = window.innerHeight / 2;
-      for (const v of videos) {
-        const rect = v.getBoundingClientRect();
-        if (rect.height === 0 || rect.width === 0) continue;
-        const vCenter = rect.top + rect.height / 2;
-        const diff = Math.abs(vCenter - centerY);
-        if (diff < minDiff) {
-          minDiff = diff;
-          bestVideo = v;
-        }
-      }
-      return bestVideo;
-    }
-    getPlayerEl() {
-      const activeRenderer = document.querySelector("ytd-reel-video-renderer[is-active]");
-      const activePlayer = activeRenderer == null ? void 0 : activeRenderer.querySelector(".html5-video-player");
-      if (activePlayer) return activePlayer;
-      return document.querySelector(".html5-video-player");
-    }
-    callPlayerMethod(methodName, ...args) {
-      const player = this.getPlayerEl();
-      if (player && typeof player[methodName] === "function") {
-        try {
-          player[methodName](...args);
-        } catch (error) {
-        }
-      }
-    }
-    playActiveVideo() {
-      var _a;
-      this.callPlayerMethod("playVideo");
-      const playResult = (_a = this.getVideoEl()) == null ? void 0 : _a.play();
-      if (playResult && typeof playResult.catch === "function") {
-        playResult.catch(() => {
-        });
-      }
-    }
-    resumeActiveVideoSoon() {
-      const resume = () => {
-        if (this.customFullscreenEnabled && this.resumeOnCustomFullscreen) {
-          this.playActiveVideo();
-        }
-      };
-      resume();
-      window.setTimeout(resume, 80);
-      window.setTimeout(resume, 250);
-    }
-    syncSubsToCurrentVideo() {
-      if (!this.match(window.location.href)) return;
-      const currentVid = this.getCurrentVideoId();
-      if (!currentVid) return;
-      const targetSubs = this.subsMap.get(currentVid) || [];
-      if (targetSubs.length > 0 && this.cachedSubs !== targetSubs) {
-        this.cachedSubs = targetSubs;
-        this.listeners.forEach((cb) => cb(targetSubs));
-      }
-    }
-    mergeSubs(vid, newSubs) {
-      if (!vid || newSubs.length === 0) return false;
-      const existing = this.subsMap.get(vid) || [];
-      const existingKeys = new Set(existing.map((s) => `${Math.round(s.start * 1e3)}:${s.text}`));
-      const toAdd = newSubs.filter((s) => !existingKeys.has(`${Math.round(s.start * 1e3)}:${s.text}`));
-      if (toAdd.length === 0) return false;
-      const updated = [...existing, ...toAdd].sort((a, b) => a.start - b.start);
-      this.subsMap.set(vid, updated);
-      this.syncSubsToCurrentVideo();
-      return true;
-    }
-    requestCurrentCaptions(delay = 0) {
-      var _a;
-      if (!this.match(window.location.href)) return;
-      const vid = this.getCurrentVideoId();
-      if (!vid || (((_a = this.subsMap.get(vid)) == null ? void 0 : _a.length) || 0) > 0) return;
-      if (this.captionFetchTimeout !== null) clearTimeout(this.captionFetchTimeout);
-      this.captionFetchTimeout = window.setTimeout(() => {
-        var _a2;
-        if (!this.match(window.location.href)) return;
-        const currentVid = this.getCurrentVideoId();
-        if (!currentVid || (((_a2 = this.subsMap.get(currentVid)) == null ? void 0 : _a2.length) || 0) > 0) return;
-        if (this.captionFetchInFlight === currentVid) return;
-        this.captionFetchInFlight = currentVid;
-        fetchYouTubeCaptionsFromPlayer(currentVid, { playerEl: this.getPlayerEl(), win: typeof unsafeWindow !== "undefined" ? unsafeWindow : window }).then((result) => {
-          if (result == null ? void 0 : result.subtitles.length) {
-            this.mergeSubs(result.videoId || currentVid, result.subtitles);
-          }
-        }).catch(() => {
-        }).finally(() => {
-          if (this.captionFetchInFlight === currentVid) this.captionFetchInFlight = null;
-        });
-      }, delay);
-    }
-    initNetworkHook() {
-      try {
-        const win = typeof unsafeWindow !== "undefined" ? unsafeWindow : window;
-        const rawFetch = win.fetch;
-        if (rawFetch) {
-          win.fetch = async (...args) => {
-            const urlStr = args[0] instanceof Request ? args[0].url : args[0];
-            if (typeof urlStr !== "string" || !urlStr.includes("/api/timedtext")) return rawFetch.apply(win, args);
-            const vid = getTimedTextVideoId(urlStr);
-            const response = await rawFetch.apply(win, args);
-            if (isEnglishTimedTextUrl(urlStr)) {
-              response.clone().text().then((text2) => this.processSubs(text2, vid)).catch(() => {
-              });
-            }
-            return response;
-          };
-        }
-        if (win.XMLHttpRequest) {
-          const rawXHR = win.XMLHttpRequest.prototype.open;
-          const self = this;
-          win.XMLHttpRequest.prototype.open = function(m, urlStr) {
-            if (typeof urlStr === "string" && urlStr.includes("/api/timedtext")) {
-              const vid = getTimedTextVideoId(urlStr);
-              if (isEnglishTimedTextUrl(urlStr)) {
-                this.addEventListener("load", () => {
-                  try {
-                    self.processSubs(this.responseText, vid);
-                  } catch (e) {
-                  }
-                });
-              }
-            }
-            return rawXHR.apply(this, arguments);
-          };
-        }
-      } catch (error) {
-      }
-    }
-    processSubs(data, vid) {
-      this.mergeSubs(vid, parseYouTubeTimedTextPayload(data));
-    }
-    refreshCustomFullscreenLayout() {
-      const dispatchResize = () => {
-        var _a;
-        const player = this.getPlayerEl();
-        window.dispatchEvent(new Event("resize"));
-        player == null ? void 0 : player.dispatchEvent(new Event("resize"));
-        (_a = this.getVideoEl()) == null ? void 0 : _a.dispatchEvent(new Event("resize"));
-      };
-      dispatchResize();
-      window.setTimeout(dispatchResize, 80);
-      window.setTimeout(dispatchResize, 250);
-    }
-    restoreRegularPlayerLayout() {
-      var _a;
-      const player = this.getPlayerEl();
-      window.dispatchEvent(new Event("resize"));
-      player == null ? void 0 : player.dispatchEvent(new Event("resize"));
-      (_a = this.getVideoEl()) == null ? void 0 : _a.dispatchEvent(new Event("resize"));
-      window.setTimeout(() => window.dispatchEvent(new Event("resize")), 120);
-    }
-    resizeHost(width, height, layout) {
-      let styleEl = document.getElementById("linkual-style-patch-shorts");
-      if (width === 0 && height === 0 && !this.customFullscreenEnabled) {
-        document.documentElement.style.removeProperty("--linkual-sidebar-width");
-        document.documentElement.style.removeProperty("--linkual-sidebar-height");
-        if (styleEl) styleEl.textContent = "";
-        if (this.resizeTimeout !== null) clearTimeout(this.resizeTimeout);
-        this.resizeTimeout = window.setTimeout(() => window.dispatchEvent(new Event("resize")), 150);
-        return;
-      }
-      document.documentElement.style.setProperty("--linkual-sidebar-width", layout === "right" ? `${width}px` : "0px");
-      document.documentElement.style.setProperty("--linkual-sidebar-height", layout === "bottom" ? `${height}px` : "0px");
-      if (!styleEl) {
-        styleEl = document.createElement("style");
-        styleEl.id = "linkual-style-patch-shorts";
-        document.head.appendChild(styleEl);
-      }
-      const customFullscreenCss = `
-      html.linkual-custom-fullscreen,
-      html.linkual-custom-fullscreen body {
-        overflow: hidden !important;
-        background: #000 !important;
-      }
-      html.linkual-custom-fullscreen #masthead-container,
-      html.linkual-custom-fullscreen ytd-guide-renderer,
-      html.linkual-custom-fullscreen ytd-mini-guide-renderer,
-      html.linkual-custom-fullscreen tp-yt-app-drawer {
-        display: none !important;
-      }
-      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active],
-      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] #player-container,
-      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] ytd-player,
-      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .html5-video-player {
-        position: fixed !important;
-        inset: 0 auto auto 0 !important;
-        width: calc(100vw - var(--linkual-sidebar-width, 0px)) !important;
-        max-width: calc(100vw - var(--linkual-sidebar-width, 0px)) !important;
-        height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px)) !important;
-        max-height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px)) !important;
-        min-height: 0 !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        transform: none !important;
-        background: #000 !important;
-      }
-      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] {
-        overflow: hidden !important;
-        z-index: 2147483001 !important;
-      }
-      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] #player-container,
-      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] ytd-player,
-      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .html5-video-player,
-      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .html5-video-container,
-      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .html5-video-player video {
-        opacity: 1 !important;
-        visibility: visible !important;
-        z-index: 2147483002 !important;
-      }
-      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .html5-video-container {
-        position: absolute !important;
-        inset: 0 !important;
-        background: #000 !important;
-      }
-      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .html5-video-player video {
-        display: block !important;
-        position: absolute !important;
-      }
-      html.linkual-custom-fullscreen ytd-reel-player-header-renderer,
-      html.linkual-custom-fullscreen ytd-shorts-engagement-panel,
-      html.linkual-custom-fullscreen ytd-engagement-panel-section-list-renderer,
-      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] #scrubber,
-      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] #actions,
-      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] #menu,
-      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .metadata-container,
-      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .actions,
-      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .pivot-button,
-      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .ytp-chrome-top,
-      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .ytp-chrome-bottom,
-      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .ytp-gradient-top,
-      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .ytp-gradient-bottom,
-      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .ytp-pause-overlay,
-      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .ytp-cards-teaser,
-      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .ytp-ce-element,
-      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .ytp-iv-player-content,
-      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .ytp-player-content,
-      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .ytp-caption-window-container {
-        pointer-events: none !important;
-        visibility: hidden !important;
-      }
-      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .html5-video-container,
-      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .html5-video-player video {
-        width: 100% !important;
-        height: 100% !important;
-        left: 0 !important;
-        top: 0 !important;
-        margin: 0 !important;
-        object-fit: contain !important;
-      }
-    `;
-      if (layout === "right") {
-        styleEl.textContent = `
-        html, body { overflow-x: hidden !important; }
-        ytd-app, #masthead-container { width: calc(100vw - var(--linkual-sidebar-width)) !important; max-width: calc(100vw - var(--linkual-sidebar-width)) !important; left: 0 !important; right: auto !important; margin-bottom: var(--linkual-universal-widget-height, 0px) !important; }
-        ytd-shorts { width: calc(100vw - var(--linkual-sidebar-width)) !important; position: relative !important; }
-        #shorts-container, #shorts-inner-container, ytd-reel-video-renderer { width: 100% !important; max-width: 100% !important; }
-        ${customFullscreenCss}
-      `;
-      } else {
-        styleEl.textContent = `
-        html, body { overflow-x: hidden !important; }
-        ytd-app, #masthead-container { width: 100vw !important; max-width: 100vw !important; left: 0 !important; right: auto !important; margin-bottom: calc(var(--linkual-sidebar-height) + var(--linkual-universal-widget-height, 0px)) !important; }
-        ytd-shorts { height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-sidebar-height) - var(--linkual-universal-widget-height, 0px)) !important; width: 100% !important; position: relative !important; }
-        #shorts-container, #shorts-inner-container, ytd-reel-video-renderer { width: 100% !important; max-width: 100% !important; height: 100% !important; }
-        ${customFullscreenCss}
-      `;
-      }
-      if (this.resizeTimeout !== null) clearTimeout(this.resizeTimeout);
-      this.resizeTimeout = window.setTimeout(() => {
-        if (this.customFullscreenEnabled) {
-          this.refreshCustomFullscreenLayout();
-          this.resumeActiveVideoSoon();
-        } else {
-          this.restoreRegularPlayerLayout();
-        }
-      }, 150);
-    }
-    setCustomFullscreen(enabled) {
-      const currentVideo = this.getVideoEl();
-      this.resumeOnCustomFullscreen = enabled ? Boolean(currentVideo && !currentVideo.paused) : false;
-      this.customFullscreenEnabled = enabled;
-      if (enabled) {
-        this.resumeActiveVideoSoon();
-      }
-      if (this.resizeTimeout !== null) clearTimeout(this.resizeTimeout);
-      this.resizeTimeout = window.setTimeout(() => {
-        if (enabled) {
-          this.refreshCustomFullscreenLayout();
-          this.resumeActiveVideoSoon();
-        } else {
-          this.restoreRegularPlayerLayout();
-        }
-      }, 150);
-    }
-    getCurrentTime() {
-      var _a;
-      return ((_a = this.getVideoEl()) == null ? void 0 : _a.currentTime) || 0;
-    }
-    getDuration() {
-      var _a;
-      const duration = ((_a = this.getVideoEl()) == null ? void 0 : _a.duration) || 0;
-      return Number.isFinite(duration) ? duration : 0;
-    }
-    isPaused() {
-      var _a;
-      return ((_a = this.getVideoEl()) == null ? void 0 : _a.paused) ?? true;
-    }
-    seekTo(time) {
-      this.callPlayerMethod("seekTo", time, true);
-      const v = this.getVideoEl();
-      if (v) v.currentTime = time;
-    }
-    play() {
-      this.resumeOnCustomFullscreen = true;
-      this.playActiveVideo();
-    }
-    pause() {
-      var _a;
-      this.resumeOnCustomFullscreen = false;
-      this.callPlayerMethod("pauseVideo");
-      (_a = this.getVideoEl()) == null ? void 0 : _a.pause();
-    }
-  }
-  const FULLSCREEN_CHANGE_EVENTS$1 = [
-    "fullscreenchange",
-    "webkitfullscreenchange",
-    "mozfullscreenchange",
-    "MSFullscreenChange"
-  ];
-  function getBrowserFullscreenElement$1() {
-    const doc = document;
-    return document.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement || doc.msFullscreenElement || null;
-  }
-  class YouTubeAdapter {
-    constructor() {
-      __publicField(this, "platformName", "YouTube");
-      __publicField(this, "cachedSubs", []);
-      __publicField(this, "listeners", []);
-      __publicField(this, "subsMap", /* @__PURE__ */ new Map());
-      __publicField(this, "resizeTimeout", null);
-      __publicField(this, "captionFetchTimeout", null);
-      __publicField(this, "captionFetchInFlight", null);
-      __publicField(this, "autoTurnedOn", false);
-      __publicField(this, "forceRefreshDone", false);
-      __publicField(this, "customFullscreenEnabled", false);
-      this.initNetworkHook();
-      this.initFullscreenHook();
-      this.initAutoHotkey();
-      setInterval(() => this.syncSubsToCurrentVideo(), 500);
-      setInterval(() => this.requestCurrentCaptions(), 2e3);
-    }
-    match(url) {
-      return url.includes("youtube.com") && !url.includes("/shorts/");
-    }
-    isVideoPage() {
-      return window.location.pathname === "/watch";
-    }
-    onSubtitleDetected(callback) {
-      this.listeners = [callback];
-      if (this.cachedSubs.length > 0) callback(this.cachedSubs);
-    }
-    getCurrentVideoId() {
-      const urlParams = new URLSearchParams(window.location.search);
-      return urlParams.get("v");
-    }
-    syncSubsToCurrentVideo() {
-      if (!this.match(window.location.href)) return;
-      const currentVid = this.getCurrentVideoId();
-      if (!currentVid) return;
-      const targetSubs = this.subsMap.get(currentVid) || [];
-      if (targetSubs.length > 0 && this.cachedSubs !== targetSubs) {
-        this.cachedSubs = targetSubs;
-        this.listeners.forEach((cb) => cb(targetSubs));
-      }
-    }
-    mergeSubs(vid, newSubs) {
-      if (!vid || newSubs.length === 0) return false;
-      const existing = this.subsMap.get(vid) || [];
-      const existingKeys = new Set(existing.map((s) => `${Math.round(s.start * 1e3)}:${s.text}`));
-      const toAdd = newSubs.filter((s) => !existingKeys.has(`${Math.round(s.start * 1e3)}:${s.text}`));
-      if (toAdd.length === 0) return false;
-      const updated = [...existing, ...toAdd].sort((a, b) => a.start - b.start);
-      this.subsMap.set(vid, updated);
-      this.syncSubsToCurrentVideo();
-      return true;
-    }
-    getPlayerEl() {
-      return document.getElementById("movie_player") || document.querySelector(".html5-video-player");
-    }
-    callPlayerMethod(methodName) {
-      const player = this.getPlayerEl();
-      if (!player || typeof player[methodName] !== "function") return false;
-      try {
-        player[methodName]();
-        return true;
-      } catch (error) {
-        console.warn(`[Linkual] YouTube player method failed: ${methodName}`, error);
-        return false;
-      }
-    }
-    requestCurrentCaptions(delay = 0) {
-      var _a;
-      if (!this.match(window.location.href)) return;
-      const vid = this.getCurrentVideoId();
-      if (!vid || (((_a = this.subsMap.get(vid)) == null ? void 0 : _a.length) || 0) > 0) return;
-      if (this.captionFetchTimeout !== null) clearTimeout(this.captionFetchTimeout);
-      this.captionFetchTimeout = window.setTimeout(() => {
-        var _a2;
-        if (!this.match(window.location.href)) return;
-        const currentVid = this.getCurrentVideoId();
-        if (!currentVid || (((_a2 = this.subsMap.get(currentVid)) == null ? void 0 : _a2.length) || 0) > 0) return;
-        if (this.captionFetchInFlight === currentVid) return;
-        this.captionFetchInFlight = currentVid;
-        fetchYouTubeCaptionsFromPlayer(currentVid, { playerEl: this.getPlayerEl(), win: typeof unsafeWindow !== "undefined" ? unsafeWindow : window }).then((result) => {
-          if (result == null ? void 0 : result.subtitles.length) {
-            this.mergeSubs(result.videoId || currentVid, result.subtitles);
-          }
-        }).catch(() => {
-        }).finally(() => {
-          if (this.captionFetchInFlight === currentVid) this.captionFetchInFlight = null;
-        });
-      }, delay);
-    }
-    setCaptionsState(state) {
-      this.callPlayerMethod(state === "on" ? "toggleSubtitlesOn" : "toggleSubtitlesOff");
-      setTimeout(() => {
-        try {
-          const ccButton = document.querySelector(".ytp-subtitles-button");
-          if (ccButton) {
-            const isCurrentlyOn = ccButton.getAttribute("aria-pressed") === "true";
-            if (state === "on" && !isCurrentlyOn) ccButton.click();
-            else if (state === "off" && isCurrentlyOn) ccButton.click();
-          }
-        } catch (error) {
-          console.warn("[Linkual] YouTube caption button toggle failed", error);
-        }
-      }, 150);
-    }
-    initAutoHotkey() {
-      const tryTriggerCC = () => {
-        let attempts = 0;
-        const interval = setInterval(() => {
-          if (!this.match(window.location.href)) {
-            clearInterval(interval);
-            return;
-          }
-          const vid = this.getCurrentVideoId();
-          if (!vid) return;
-          this.requestCurrentCaptions();
-          attempts++;
-          if (attempts > 30) {
-            clearInterval(interval);
-            return;
-          }
-          const video = this.getVideoEl();
-          if (!video || video.readyState === 0) return;
-          if (this.subsMap.has(vid) && this.subsMap.get(vid).length > 0) {
-            clearInterval(interval);
-            return;
-          }
-          const ccButton = document.querySelector(".ytp-subtitles-button");
-          if (ccButton && ccButton.style.display !== "none") {
-            const isPressed = ccButton.getAttribute("aria-pressed") === "true";
-            if (isPressed && !this.forceRefreshDone && attempts > 4) {
-              console.log("[Linkual] 字幕开启但错过了数据，强制拉取...");
-              this.forceRefreshDone = true;
-              this.setCaptionsState("off");
-              setTimeout(() => this.setCaptionsState("on"), 400);
-              return;
-            }
-            if (!isPressed) {
-              console.log("[Linkual] 模拟开启长视频字幕...");
-              this.autoTurnedOn = true;
-              this.setCaptionsState("on");
-              clearInterval(interval);
-            }
-          }
-        }, 500);
-      };
-      tryTriggerCC();
-      window.addEventListener("yt-navigate-finish", () => {
-        if (this.match(window.location.href)) {
-          this.cachedSubs = [];
-          this.listeners.forEach((cb) => cb([]));
-          this.autoTurnedOn = false;
-          this.forceRefreshDone = false;
-          this.syncSubsToCurrentVideo();
-          this.requestCurrentCaptions(300);
-          setTimeout(tryTriggerCC, 500);
-        }
-      });
-    }
-    initNetworkHook() {
-      try {
-        const win = typeof unsafeWindow !== "undefined" ? unsafeWindow : window;
-        const rawFetch = win.fetch;
-        if (rawFetch) {
-          win.fetch = async (...args) => {
-            const urlStr = args[0] instanceof Request ? args[0].url : args[0];
-            if (typeof urlStr !== "string" || !urlStr.includes("/api/timedtext")) return rawFetch.apply(win, args);
-            const vid = getTimedTextVideoId(urlStr);
-            const response = await rawFetch.apply(win, args);
-            if (isEnglishTimedTextUrl(urlStr)) {
-              response.clone().text().then((text2) => this.processSubs(text2, vid)).catch(() => {
-              });
-            }
-            return response;
-          };
-        }
-        if (win.XMLHttpRequest) {
-          const rawXHR = win.XMLHttpRequest.prototype.open;
-          const self = this;
-          win.XMLHttpRequest.prototype.open = function(m, urlStr) {
-            if (typeof urlStr === "string" && urlStr.includes("/api/timedtext")) {
-              const vid = getTimedTextVideoId(urlStr);
-              if (isEnglishTimedTextUrl(urlStr)) {
-                this.addEventListener("load", () => {
-                  try {
-                    self.processSubs(this.responseText, vid);
-                  } catch (e) {
-                  }
-                });
-              }
-            }
-            return rawXHR.apply(this, arguments);
-          };
-        }
-      } catch (error) {
-      }
-    }
-    processSubs(data, vid) {
-      const newSubs = parseYouTubeTimedTextPayload(data);
-      if (newSubs.length > 0) {
-        this.mergeSubs(vid, newSubs);
-        if (this.autoTurnedOn && this.match(window.location.href) && vid === this.getCurrentVideoId()) {
-          this.autoTurnedOn = false;
-          let closeAttempts = 0;
-          const closeInterval = setInterval(() => {
-            closeAttempts++;
-            if (closeAttempts > 8) {
-              clearInterval(closeInterval);
-              return;
-            }
-            const ccBtn = document.querySelector(".ytp-subtitles-button");
-            if (ccBtn && ccBtn.getAttribute("aria-pressed") === "true") {
-              console.log(`[Linkual] 正在静默关闭长视频原生字幕 (第 ${closeAttempts} 次尝试)...`);
-              this.setCaptionsState("off");
-            } else {
-              clearInterval(closeInterval);
-            }
-          }, 500);
-        }
-      }
-    }
-    initFullscreenHook() {
-      const handleFullscreenChange = () => {
-        const root2 = document.getElementById("linkual-root");
-        if (!root2) return;
-        const fsElement = getBrowserFullscreenElement$1();
-        if (fsElement && (fsElement.classList.contains("html5-video-player") || fsElement.tagName === "YTD-WATCH-FLEXY")) {
-          fsElement.appendChild(root2);
-        } else if (!fsElement) {
-          document.body.appendChild(root2);
-        }
-      };
-      FULLSCREEN_CHANGE_EVENTS$1.forEach((eventName) => {
-        document.addEventListener(eventName, handleFullscreenChange);
-      });
-    }
-    refreshCustomFullscreenLayout() {
-      const dispatchResize = () => {
-        var _a;
-        window.dispatchEvent(new Event("resize"));
-        (_a = document.getElementById("movie_player")) == null ? void 0 : _a.dispatchEvent(new Event("resize"));
-      };
-      dispatchResize();
-      window.setTimeout(dispatchResize, 80);
-      window.setTimeout(dispatchResize, 250);
-    }
-    restoreRegularPlayerLayout() {
-      var _a;
-      window.dispatchEvent(new Event("resize"));
-      (_a = document.getElementById("movie_player")) == null ? void 0 : _a.dispatchEvent(new Event("resize"));
-      window.setTimeout(() => window.dispatchEvent(new Event("resize")), 120);
-    }
-    resizeHost(width, height, layout) {
-      let styleEl = document.getElementById("linkual-style-patch");
-      if (width === 0 && height === 0 && !this.customFullscreenEnabled) {
-        document.documentElement.style.removeProperty("--linkual-sidebar-width");
-        document.documentElement.style.removeProperty("--linkual-sidebar-height");
-        if (styleEl) styleEl.textContent = "";
-        if (this.resizeTimeout !== null) clearTimeout(this.resizeTimeout);
-        this.resizeTimeout = window.setTimeout(() => window.dispatchEvent(new Event("resize")), 150);
-        return;
-      }
-      document.documentElement.style.setProperty("--linkual-sidebar-width", layout === "right" ? `${width}px` : "0px");
-      document.documentElement.style.setProperty("--linkual-sidebar-height", layout === "bottom" ? `${height}px` : "0px");
-      if (!styleEl) {
-        styleEl = document.createElement("style");
-        styleEl.id = "linkual-style-patch";
-        document.head.appendChild(styleEl);
-      }
-      const customFullscreenCss = `
-      html.linkual-custom-fullscreen,
-      html.linkual-custom-fullscreen body {
-        overflow: hidden !important;
-      }
-      html.linkual-custom-fullscreen ytd-app {
-        position: fixed !important;
-        inset: 0 !important;
-        width: calc(100vw - var(--linkual-sidebar-width, 0px)) !important;
-        max-width: calc(100vw - var(--linkual-sidebar-width, 0px)) !important;
-        height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px)) !important;
-        max-height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px)) !important;
-        margin: 0 !important;
-        background: #000 !important;
-        z-index: 2147483000 !important;
-      }
-      html.linkual-custom-fullscreen ytd-watch-flexy,
-      html.linkual-custom-fullscreen #columns,
-      html.linkual-custom-fullscreen #primary,
-      html.linkual-custom-fullscreen #primary-inner {
-        display: block !important;
-        position: static !important;
-        width: 100% !important;
-        max-width: 100% !important;
-        height: 100% !important;
-        min-height: 0 !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        transform: none !important;
-        background: #000 !important;
-      }
-      html.linkual-custom-fullscreen #masthead-container,
-      html.linkual-custom-fullscreen ytd-miniplayer,
-      html.linkual-custom-fullscreen ytd-guide-renderer,
-      html.linkual-custom-fullscreen #related,
-      html.linkual-custom-fullscreen #secondary,
-      html.linkual-custom-fullscreen #below,
-      html.linkual-custom-fullscreen #comments,
-      html.linkual-custom-fullscreen ytd-watch-metadata,
-      html.linkual-custom-fullscreen ytd-merch-shelf-renderer,
-      html.linkual-custom-fullscreen ytd-engagement-panel-section-list-renderer,
-      html.linkual-custom-fullscreen ytd-live-chat-frame {
-        display: none !important;
-      }
-      html.linkual-custom-fullscreen #player,
-      html.linkual-custom-fullscreen #player-container,
-      html.linkual-custom-fullscreen #player-container-inner,
-      html.linkual-custom-fullscreen #player-container-outer,
-      html.linkual-custom-fullscreen #player-theater-container,
-      html.linkual-custom-fullscreen #player-full-bleed-container,
-      html.linkual-custom-fullscreen #full-bleed-container,
-      html.linkual-custom-fullscreen ytd-player,
-      html.linkual-custom-fullscreen .html5-video-player {
-        position: absolute !important;
-        inset: 0 !important;
-        width: calc(100vw - var(--linkual-sidebar-width, 0px)) !important;
-        max-width: calc(100vw - var(--linkual-sidebar-width, 0px)) !important;
-        height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px)) !important;
-        max-height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px)) !important;
-        min-height: 0 !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        transform: none !important;
-        background: #000 !important;
-        overflow: hidden !important;
-      }
-      html.linkual-custom-fullscreen .html5-video-player .ytp-chrome-top,
-      html.linkual-custom-fullscreen .html5-video-player .ytp-chrome-bottom,
-      html.linkual-custom-fullscreen .html5-video-player .ytp-gradient-top,
-      html.linkual-custom-fullscreen .html5-video-player .ytp-gradient-bottom,
-      html.linkual-custom-fullscreen .html5-video-player .ytp-pause-overlay,
-      html.linkual-custom-fullscreen .html5-video-player .ytp-cards-teaser,
-      html.linkual-custom-fullscreen .html5-video-player .ytp-ce-element,
-      html.linkual-custom-fullscreen .html5-video-player .ytp-iv-player-content,
-      html.linkual-custom-fullscreen .html5-video-player .ytp-caption-window-container {
-        display: none !important;
-      }
-      html.linkual-custom-fullscreen .html5-video-container,
-      html.linkual-custom-fullscreen .html5-video-player video {
-        display: block !important;
-        opacity: 1 !important;
-        visibility: visible !important;
-        z-index: 2147483002 !important;
-      }
-      html.linkual-custom-fullscreen .html5-video-container {
-        position: absolute !important;
-        inset: 0 !important;
-        background: #000 !important;
-      }
-      html.linkual-custom-fullscreen .html5-video-container,
-      html.linkual-custom-fullscreen .html5-video-player video {
-        width: 100% !important;
-        height: 100% !important;
-        left: 0 !important;
-        top: 0 !important;
-        margin: 0 !important;
-        object-fit: contain !important;
-      }
-      html.linkual-custom-fullscreen .html5-video-player video {
-        position: absolute !important;
-        inset: 0 !important;
-        transform: none !important;
-      }
-    `;
-      if (layout === "right") {
-        styleEl.textContent = `
-        html, body { overflow-x: hidden !important; }
-        ytd-app, #masthead-container {
-          width: calc(100vw - var(--linkual-sidebar-width)) !important;
-          max-width: calc(100vw - var(--linkual-sidebar-width)) !important;
-          left: 0 !important; right: auto !important; margin-bottom: var(--linkual-universal-widget-height, 0px) !important;
-        }
-        ytd-watch-flexy[theater] #player-theater-container,
-        ytd-watch-flexy[theater] #player-full-bleed-container,
-        ytd-watch-flexy[theater] #full-bleed-container,
-        ytd-watch-flexy[theater] #cinematics-container,
-        ytd-watch-flexy[theater] #cinematics,
-        ytd-watch-flexy[theater] ytd-player,
-        ytd-watch-flexy[theater] .html5-video-player {
-          width: calc(100vw - var(--linkual-sidebar-width)) !important;
-          max-width: calc(100vw - var(--linkual-sidebar-width)) !important;
-          min-height: 0 !important;
-          height: calc((100vw - var(--linkual-sidebar-width)) * 9 / 16) !important;
-          max-height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - 56px) !important;
-          margin: 0 !important; transform: none !important;
-        }
-        ytd-watch-flexy[theater] .html5-video-player .html5-video-container,
-        ytd-watch-flexy[theater] .html5-video-player video {
-          width: 100% !important; height: 100% !important; left: 0 !important; top: 0 !important; margin: 0 !important; object-fit: contain !important;
-        }
-        ${customFullscreenCss}
-      `;
-      } else {
-        styleEl.textContent = `
-        html, body { overflow-x: hidden !important; }
-        ytd-app, #masthead-container {
-          width: 100vw !important; max-width: 100vw !important; left: 0 !important; right: auto !important;
-          margin-bottom: calc(var(--linkual-sidebar-height) + var(--linkual-universal-widget-height, 0px)) !important;
-        }
-        ytd-watch-flexy[theater] #player-theater-container,
-        ytd-watch-flexy[theater] #player-full-bleed-container,
-        ytd-watch-flexy[theater] #full-bleed-container,
-        ytd-watch-flexy[theater] #cinematics-container,
-        ytd-watch-flexy[theater] #cinematics,
-        ytd-watch-flexy[theater] ytd-player,
-        ytd-watch-flexy[theater] .html5-video-player {
-          width: 100vw !important; max-width: 100vw !important; min-height: 0 !important;
-          height: calc(100vw * 9 / 16) !important;
-          max-height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-sidebar-height) - var(--linkual-universal-widget-height, 0px) - 56px) !important;
-          margin: 0 auto !important; transform: none !important;
-        }
-        ytd-watch-flexy[theater] .html5-video-player .html5-video-container,
-        ytd-watch-flexy[theater] .html5-video-player video {
-          width: 100% !important; height: 100% !important; left: 0 !important; top: 0 !important; margin: 0 !important; object-fit: contain !important;
-        }
-        ${customFullscreenCss}
-      `;
-      }
-      if (this.resizeTimeout !== null) clearTimeout(this.resizeTimeout);
-      this.resizeTimeout = window.setTimeout(() => {
-        if (this.customFullscreenEnabled) {
-          this.refreshCustomFullscreenLayout();
-        } else {
-          this.restoreRegularPlayerLayout();
-        }
-      }, 150);
-    }
-    setCustomFullscreen(enabled) {
-      this.customFullscreenEnabled = enabled;
-      if (enabled) {
-        this.setCaptionsState("off");
-      }
-      if (this.resizeTimeout !== null) clearTimeout(this.resizeTimeout);
-      this.resizeTimeout = window.setTimeout(() => {
-        if (enabled) {
-          this.refreshCustomFullscreenLayout();
-        } else {
-          this.restoreRegularPlayerLayout();
-        }
-      }, 150);
-    }
-    getVideoEl() {
-      return document.querySelector("video");
-    }
-    getCurrentTime() {
-      var _a;
-      return ((_a = this.getVideoEl()) == null ? void 0 : _a.currentTime) || 0;
-    }
-    getDuration() {
-      var _a;
-      const duration = ((_a = this.getVideoEl()) == null ? void 0 : _a.duration) || 0;
-      return Number.isFinite(duration) ? duration : 0;
-    }
-    isPaused() {
-      var _a;
-      return ((_a = this.getVideoEl()) == null ? void 0 : _a.paused) ?? true;
-    }
-    seekTo(time) {
-      const v = this.getVideoEl();
-      if (v) v.currentTime = time;
-    }
-    play() {
-      var _a;
-      (_a = this.getVideoEl()) == null ? void 0 : _a.play();
-    }
-    pause() {
-      var _a;
-      (_a = this.getVideoEl()) == null ? void 0 : _a.pause();
-    }
-  }
-  class EmptyAdapter {
-    constructor() {
-      __publicField(this, "platformName", "Universal");
-    }
-    match() {
-      return true;
-    }
-    isVideoPage() {
-      return false;
-    }
-    onSubtitleDetected(callback) {
-      callback([]);
-    }
-    getCurrentTime() {
-      return 0;
-    }
-    seekTo() {
-    }
-    play() {
-    }
-    pause() {
-    }
-  }
-  const adapterCache = /* @__PURE__ */ new Map();
-  function getCachedAdapter(key, createAdapter) {
-    const cached = adapterCache.get(key);
-    if (cached) return cached;
-    const adapter = createAdapter();
-    adapterCache.set(key, adapter);
-    return adapter;
-  }
-  function isYouTubeUrl(url) {
-    try {
-      return /(^|\.)youtube(?:-nocookie)?\.com$/i.test(new URL(url).hostname);
-    } catch {
-      return false;
-    }
-  }
-  function getAdapter() {
-    const url = window.location.href;
-    if (isYouTubeUrl(url)) {
-      const shortsAdapter = getCachedAdapter("youtubeShorts", () => new YouTubeShortsAdapter());
-      const youtubeAdapter = getCachedAdapter("youtube", () => new YouTubeAdapter());
-      if (shortsAdapter.match(url)) return shortsAdapter;
-      if (youtubeAdapter.match(url)) return youtubeAdapter;
-    }
-    return getCachedAdapter("empty", () => new EmptyAdapter());
-  }
   const appCss = `::highlight(linkual-article-source-active) {
   background: rgba(104, 69, 154, 0.1);
   text-decoration: underline;
@@ -35007,6 +33631,1622 @@ ${appCss}`;
   }
   function injectLinkualPageStyles() {
     injectStyles(document);
+  }
+  const INITIAL_RENDER_LIMIT = 80;
+  const RENDER_BATCH_SIZE = 80;
+  const ACTIVE_RENDER_BUFFER = 20;
+  const LINKUAL_NAVIGATION_EVENT$1 = "linkual_navigation";
+  const MIN_SIDEBAR_WIDTH = 250;
+  const MIN_SIDEBAR_HEIGHT = 150;
+  const MIN_REMAINING_VIEWPORT = 80;
+  function isYouTubeHost$1() {
+    return /(^|\.)youtube(?:-nocookie)?\.com$/i.test(window.location.hostname);
+  }
+  function getBrowserFullscreenElement$2() {
+    const doc = document;
+    return document.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement || doc.msFullscreenElement || null;
+  }
+  function exitBrowserFullscreen$1() {
+    const doc = document;
+    if (document.exitFullscreen) return document.exitFullscreen();
+    if (doc.webkitExitFullscreen) return doc.webkitExitFullscreen();
+    if (doc.mozCancelFullScreen) return doc.mozCancelFullScreen();
+    if (doc.msExitFullscreen) return doc.msExitFullscreen();
+  }
+  function isPromiseLike$1(value) {
+    return Boolean(value && typeof value.then === "function");
+  }
+  function getVisualViewportSize() {
+    var _a, _b;
+    const reservedViewportHeight = Number.parseFloat(
+      getComputedStyle(document.documentElement).getPropertyValue("--linkual-visual-viewport-height")
+    );
+    const width = ((_a = window.visualViewport) == null ? void 0 : _a.width) || window.innerWidth || document.documentElement.clientWidth;
+    const height = Number.isFinite(reservedViewportHeight) && reservedViewportHeight > 0 ? reservedViewportHeight : ((_b = window.visualViewport) == null ? void 0 : _b.height) || window.innerHeight || document.documentElement.clientHeight;
+    return {
+      width: Number.isFinite(width) && width > 0 ? width : window.innerWidth,
+      height: Number.isFinite(height) && height > 0 ? height : window.innerHeight
+    };
+  }
+  function getReservedBottomHeight() {
+    const raw = getComputedStyle(document.documentElement).getPropertyValue("--linkual-universal-widget-height");
+    const parsed = Number.parseFloat(raw);
+    return Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
+  }
+  function parseConfigNumber(value, fallback) {
+    const parsed = Number.parseInt(String(value ?? ""), 10);
+    return Number.isFinite(parsed) ? parsed : fallback;
+  }
+  function clampSidebarWidth(width) {
+    const viewport = getVisualViewportSize();
+    const requestedWidth = Number.isFinite(width) ? width : MIN_SIDEBAR_WIDTH;
+    const maxWidth = Math.max(0, viewport.width - MIN_REMAINING_VIEWPORT);
+    const minWidth = Math.min(MIN_SIDEBAR_WIDTH, maxWidth || viewport.width);
+    return Math.max(0, Math.min(Math.max(requestedWidth, minWidth), maxWidth || viewport.width));
+  }
+  function clampSidebarHeight(height) {
+    const viewport = getVisualViewportSize();
+    const requestedHeight = Number.isFinite(height) ? height : MIN_SIDEBAR_HEIGHT;
+    const availableHeight = Math.max(0, viewport.height - getReservedBottomHeight());
+    const maxHeight = Math.max(0, availableHeight - MIN_REMAINING_VIEWPORT);
+    const minHeight = Math.min(MIN_SIDEBAR_HEIGHT, maxHeight || availableHeight);
+    return Math.max(0, Math.min(Math.max(requestedHeight, minHeight), maxHeight || availableHeight));
+  }
+  const App = ({ adapter }) => {
+    const [subs, setSubs] = reactExports.useState([]);
+    const isVideoSite = isYouTubeHost$1();
+    const [isArticleTranslationEnabled, setIsArticleTranslationEnabled] = reactExports.useState(isArticleTranslationEnabledForPage);
+    const [inVideo, setInVideo] = reactExports.useState(adapter.isVideoPage());
+    const getAdpCfg = (key) => {
+      const val = ConfigService.get(`${key}_${adapter.platformName}`);
+      return val !== null && val !== void 0 && val !== "" ? val : ConfigService.get(key);
+    };
+    const [layout, setLayout] = reactExports.useState(getAdpCfg("layout_position"));
+    const [sidebarWidth, setSidebarWidth] = reactExports.useState(parseConfigNumber(getAdpCfg("sidebar_width"), parseConfigNumber(DEFAULTS.sidebar_width, 500)));
+    const [sidebarHeight, setSidebarHeight] = reactExports.useState(parseConfigNumber(getAdpCfg("sidebar_height"), parseConfigNumber(DEFAULTS.sidebar_height, 350)));
+    const [themeColor, setThemeColor] = reactExports.useState(ConfigService.get("theme_color"));
+    const [doneColor, setDoneColor] = reactExports.useState(ConfigService.get("done_color"));
+    const [errorColor, setErrorColor] = reactExports.useState(ConfigService.get("error_color"));
+    const [mobileFullscreenMode, setMobileFullscreenMode] = reactExports.useState(ConfigService.get("mobile_fullscreen_mode"));
+    const [isSettingsOpen, setIsSettingsOpen] = reactExports.useState(false);
+    const [renderLimit, setRenderLimit] = reactExports.useState(INITIAL_RENDER_LIMIT);
+    const listRef = reactExports.useRef(null);
+    const lastHostLayoutRef = reactExports.useRef(null);
+    const activeIndex = useVideoSync(subs, adapter);
+    const resizeAdapterHost = reactExports.useCallback((force = false) => {
+      if (!adapter.resizeHost) return;
+      const nextLayout = inVideo ? {
+        adapter,
+        width: clampSidebarWidth(sidebarWidth),
+        height: clampSidebarHeight(sidebarHeight),
+        layout,
+        inVideo
+      } : {
+        adapter,
+        width: 0,
+        height: 0,
+        layout,
+        inVideo
+      };
+      const prevLayout = lastHostLayoutRef.current;
+      if (!force && prevLayout && prevLayout.adapter === nextLayout.adapter && prevLayout.width === nextLayout.width && prevLayout.height === nextLayout.height && prevLayout.layout === nextLayout.layout && prevLayout.inVideo === nextLayout.inVideo) {
+        return;
+      }
+      lastHostLayoutRef.current = nextLayout;
+      adapter.resizeHost(nextLayout.width, nextLayout.height, nextLayout.layout);
+    }, [adapter, inVideo, layout, sidebarHeight, sidebarWidth]);
+    reactExports.useEffect(() => {
+      if (!isVideoSite) return void 0;
+      const checkVideo = () => {
+        setInVideo((prev) => {
+          const isVid = adapter.isVideoPage();
+          return prev !== isVid ? isVid : prev;
+        });
+      };
+      const interval = setInterval(checkVideo, 500);
+      window.addEventListener("yt-navigate-finish", checkVideo);
+      window.addEventListener(LINKUAL_NAVIGATION_EVENT$1, checkVideo);
+      return () => {
+        clearInterval(interval);
+        window.removeEventListener("yt-navigate-finish", checkVideo);
+        window.removeEventListener(LINKUAL_NAVIGATION_EVENT$1, checkVideo);
+      };
+    }, [adapter, isVideoSite]);
+    reactExports.useEffect(() => {
+      adapter.onSubtitleDetected((newSubs) => {
+        setSubs(newSubs);
+        if (newSubs.length === 0) setRenderLimit(INITIAL_RENDER_LIMIT);
+      });
+      const handleSettingsUpdate = () => {
+        setThemeColor(ConfigService.get("theme_color"));
+        setDoneColor(ConfigService.get("done_color"));
+        setErrorColor(ConfigService.get("error_color"));
+        setMobileFullscreenMode(ConfigService.get("mobile_fullscreen_mode"));
+        setLayout(getAdpCfg("layout_position"));
+        setSidebarWidth(parseConfigNumber(getAdpCfg("sidebar_width"), parseConfigNumber(DEFAULTS.sidebar_width, 500)));
+        setSidebarHeight(parseConfigNumber(getAdpCfg("sidebar_height"), parseConfigNumber(DEFAULTS.sidebar_height, 350)));
+        setIsArticleTranslationEnabled(isArticleTranslationEnabledForPage());
+      };
+      window.addEventListener("linkual_settings_updated", handleSettingsUpdate);
+      return () => window.removeEventListener("linkual_settings_updated", handleSettingsUpdate);
+    }, [adapter]);
+    reactExports.useEffect(() => {
+      const refreshArticleTranslationState = () => {
+        setIsArticleTranslationEnabled(isArticleTranslationEnabledForPage());
+      };
+      const interval = window.setInterval(refreshArticleTranslationState, 1200);
+      window.addEventListener(LINKUAL_NAVIGATION_EVENT$1, refreshArticleTranslationState);
+      window.addEventListener("popstate", refreshArticleTranslationState);
+      window.addEventListener("hashchange", refreshArticleTranslationState);
+      return () => {
+        window.clearInterval(interval);
+        window.removeEventListener(LINKUAL_NAVIGATION_EVENT$1, refreshArticleTranslationState);
+        window.removeEventListener("popstate", refreshArticleTranslationState);
+        window.removeEventListener("hashchange", refreshArticleTranslationState);
+      };
+    }, []);
+    reactExports.useEffect(() => {
+      if (isArticleTranslationEnabled) {
+        injectLinkualPageStyles();
+      }
+    }, [isArticleTranslationEnabled]);
+    reactExports.useEffect(() => {
+      if (activeIndex < 0 || subs.length === 0) return;
+      if (activeIndex >= renderLimit - ACTIVE_RENDER_BUFFER) {
+        setRenderLimit((prev) => Math.min(subs.length, Math.max(prev, activeIndex + RENDER_BATCH_SIZE)));
+      }
+    }, [activeIndex, renderLimit, subs.length]);
+    reactExports.useEffect(() => {
+      if (!isVideoSite) return void 0;
+      const clearCustomFullscreenIfNeeded = () => {
+        var _a;
+        if (inVideo || !document.documentElement.classList.contains("linkual-custom-fullscreen")) return;
+        document.documentElement.classList.remove("linkual-custom-fullscreen");
+        try {
+          (_a = adapter.setCustomFullscreen) == null ? void 0 : _a.call(adapter, false);
+        } catch (error) {
+          console.warn("[Linkual] 自定义全屏状态清理失败", error);
+        }
+        window.dispatchEvent(new Event("linkual_custom_fullscreen_changed"));
+        window.dispatchEvent(new Event("linkual_custom_layout_refresh"));
+        window.dispatchEvent(new Event("resize"));
+        if (getBrowserFullscreenElement$2()) {
+          const browserFullscreenAction = exitBrowserFullscreen$1();
+          if (isPromiseLike$1(browserFullscreenAction)) {
+            browserFullscreenAction.catch((error) => console.warn("[Linkual] 浏览器全屏退出失败", error));
+          }
+        }
+      };
+      clearCustomFullscreenIfNeeded();
+      window.addEventListener("linkual_custom_fullscreen_changed", clearCustomFullscreenIfNeeded);
+      return () => window.removeEventListener("linkual_custom_fullscreen_changed", clearCustomFullscreenIfNeeded);
+    }, [adapter, inVideo, isVideoSite]);
+    reactExports.useEffect(() => {
+      if (!isVideoSite) return;
+      resizeAdapterHost();
+    }, [isVideoSite, resizeAdapterHost]);
+    reactExports.useEffect(() => {
+      if (!isVideoSite) return void 0;
+      const refreshCustomLayout = () => resizeAdapterHost(true);
+      window.addEventListener("linkual_custom_layout_refresh", refreshCustomLayout);
+      window.addEventListener(LINKUAL_NAVIGATION_EVENT$1, refreshCustomLayout);
+      return () => {
+        window.removeEventListener("linkual_custom_layout_refresh", refreshCustomLayout);
+        window.removeEventListener(LINKUAL_NAVIGATION_EVENT$1, refreshCustomLayout);
+      };
+    }, [isVideoSite, resizeAdapterHost]);
+    reactExports.useEffect(() => {
+      var _a;
+      if (!isVideoSite) return void 0;
+      const refreshViewportLayout = () => resizeAdapterHost();
+      window.addEventListener("orientationchange", refreshViewportLayout);
+      window.addEventListener("resize", refreshViewportLayout);
+      (_a = window.visualViewport) == null ? void 0 : _a.addEventListener("resize", refreshViewportLayout);
+      return () => {
+        var _a2;
+        window.removeEventListener("orientationchange", refreshViewportLayout);
+        window.removeEventListener("resize", refreshViewportLayout);
+        (_a2 = window.visualViewport) == null ? void 0 : _a2.removeEventListener("resize", refreshViewportLayout);
+      };
+    }, [isVideoSite, resizeAdapterHost]);
+    const startResize = (e) => {
+      e.preventDefault();
+      if (layout === "bottom") {
+        const startY = e.clientY;
+        const startHeight = sidebarHeight;
+        let currentHeight = startHeight;
+        const onMouseMove = (ev) => {
+          const viewport = getVisualViewportSize();
+          let newHeight = startHeight - (ev.clientY - startY);
+          if (newHeight < MIN_SIDEBAR_HEIGHT) newHeight = MIN_SIDEBAR_HEIGHT;
+          if (newHeight > viewport.height * 0.8) newHeight = viewport.height * 0.8;
+          newHeight = clampSidebarHeight(newHeight);
+          currentHeight = newHeight;
+          setSidebarHeight(newHeight);
+        };
+        const onMouseUp = () => {
+          document.removeEventListener("mousemove", onMouseMove);
+          document.removeEventListener("mouseup", onMouseUp);
+          ConfigService.set(`sidebar_height_${adapter.platformName}`, currentHeight.toString());
+          ConfigService.set("sidebar_height", currentHeight.toString());
+        };
+        document.addEventListener("mousemove", onMouseMove);
+        document.addEventListener("mouseup", onMouseUp);
+      } else {
+        const startX = e.clientX;
+        const startWidth = sidebarWidth;
+        let currentWidth = startWidth;
+        const onMouseMove = (ev) => {
+          const viewport = getVisualViewportSize();
+          let newWidth = startWidth - (ev.clientX - startX);
+          if (newWidth < MIN_SIDEBAR_WIDTH) newWidth = MIN_SIDEBAR_WIDTH;
+          if (newWidth > viewport.width * 0.8) newWidth = viewport.width * 0.8;
+          newWidth = clampSidebarWidth(newWidth);
+          currentWidth = newWidth;
+          setSidebarWidth(newWidth);
+        };
+        const onMouseUp = () => {
+          document.removeEventListener("mousemove", onMouseMove);
+          document.removeEventListener("mouseup", onMouseUp);
+          ConfigService.set(`sidebar_width_${adapter.platformName}`, currentWidth.toString());
+          ConfigService.set("sidebar_width", currentWidth.toString());
+        };
+        document.addEventListener("mousemove", onMouseMove);
+        document.addEventListener("mouseup", onMouseUp);
+      }
+    };
+    const wrapStyle = {
+      display: inVideo ? "flex" : "none",
+      width: layout === "right" ? clampSidebarWidth(sidebarWidth) : "100%",
+      height: layout === "bottom" ? clampSidebarHeight(sidebarHeight) : "calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - env(safe-area-inset-bottom, 0px))",
+      pointerEvents: inVideo ? "auto" : "none",
+      "--linkual-theme": themeColor,
+      "--linkual-done": doneColor,
+      "--linkual-error": errorColor
+    };
+    const handleListScroll = () => {
+      const listEl = listRef.current;
+      if (!listEl || renderLimit >= subs.length) return;
+      const distanceToBottom = listEl.scrollHeight - listEl.scrollTop - listEl.clientHeight;
+      if (distanceToBottom < 160) {
+        setRenderLimit((prev) => Math.min(subs.length, prev + RENDER_BATCH_SIZE));
+      }
+    };
+    const visibleSubs = subs.slice(0, renderLimit);
+    const hasMoreSubs = visibleSubs.length < subs.length;
+    const showMobileFullscreenButton = isVideoSite && (mobileFullscreenMode === "always" || mobileFullscreenMode === "video" && inVideo);
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(ArticleTranslationProvider, { enabled: isArticleTranslationEnabled && !inVideo, children: /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: `linkual-wrap layout-${layout}`, style: wrapStyle, children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "resizer", onMouseDown: startResize, title: layout === "right" ? "左右拖拽调整宽度" : "上下拖拽调整高度" }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "header", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
+            "Link-ual Log [",
+            adapter.platformName,
+            "]"
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { children: /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", className: "settings-icon", onClick: () => setIsSettingsOpen(true), title: "全局设置", "aria-label": "全局设置", children: /* @__PURE__ */ jsxRuntimeExports.jsx(Settings$2, { size: 17, strokeWidth: 2.2 }) }) })
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "list", ref: listRef, onScroll: handleListScroll, children: subs.length === 0 ? /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "empty-tip", children: "等待字幕数据..." }) : /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+          visibleSubs.map((sub2, index2) => /* @__PURE__ */ jsxRuntimeExports.jsx(SubtitleItem, { data: sub2, index: index2, allSubs: subs, isActive: index2 === activeIndex, adapter }, index2)),
+          hasMoreSubs && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "load-more-tip", children: [
+            "向下滚动加载更多字幕（",
+            visibleSubs.length,
+            "/",
+            subs.length,
+            "）"
+          ] })
+        ] }) })
+      ] }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx(
+        UniversalVocabWidget,
+        {
+          onOpenSettings: () => setIsSettingsOpen(true)
+        }
+      ),
+      /* @__PURE__ */ jsxRuntimeExports.jsx(ArticleTranslator, {}),
+      showMobileFullscreenButton && /* @__PURE__ */ jsxRuntimeExports.jsx(MobileFullscreenButton, { adapter }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx(UpdateNotice, {}),
+      /* @__PURE__ */ jsxRuntimeExports.jsx(VocabQueue, {}),
+      isSettingsOpen && /* @__PURE__ */ jsxRuntimeExports.jsx(Settings2, { adapter, onClose: () => setIsSettingsOpen(false) })
+    ] }) });
+  };
+  const PLAYER_RESPONSE_KEYS = [
+    "playerResponse",
+    "player_response",
+    "captions",
+    "playerCaptionsTracklistRenderer",
+    "args",
+    "data",
+    "playerData",
+    "response"
+  ];
+  const TARGET_CAPTION_LANGUAGE = "en";
+  function cleanCaptionText(text2) {
+    return text2.replace(/\u00a0/g, " ").replace(/\s+/g, " ").trim();
+  }
+  function toNumber(value, fallback = 0) {
+    const num = Number(value);
+    return Number.isFinite(num) ? num : fallback;
+  }
+  function safeJsonParse(value) {
+    if (typeof value !== "string") return value;
+    try {
+      return JSON.parse(value);
+    } catch (error) {
+      return null;
+    }
+  }
+  function parseScriptString(value) {
+    try {
+      return JSON.parse(`"${value}"`);
+    } catch (error) {
+      return value;
+    }
+  }
+  function getScriptConfigValue(key) {
+    var _a;
+    const pattern = new RegExp(`"${key}"\\s*:\\s*"((?:\\\\.|[^"\\\\])*)"`);
+    const scripts = Array.from(document.scripts).reverse().slice(0, 60);
+    for (const script2 of scripts) {
+      const match = (_a = script2.textContent) == null ? void 0 : _a.match(pattern);
+      if (match) return parseScriptString(match[1]);
+    }
+    return null;
+  }
+  function getYtcfgValue(win, key) {
+    var _a, _b, _c, _d;
+    try {
+      const fromGetter = (_b = (_a = win == null ? void 0 : win.ytcfg) == null ? void 0 : _a.get) == null ? void 0 : _b.call(_a, key);
+      if (fromGetter !== void 0 && fromGetter !== null) return fromGetter;
+    } catch (error) {
+    }
+    try {
+      const fromData = (_d = (_c = win == null ? void 0 : win.ytcfg) == null ? void 0 : _c.data_) == null ? void 0 : _d[key];
+      if (fromData !== void 0 && fromData !== null) return fromData;
+    } catch (error) {
+    }
+    return getScriptConfigValue(key);
+  }
+  function parseJsonTimedText(data) {
+    const events = Array.isArray(data == null ? void 0 : data.events) ? data.events : [];
+    const subtitles = [];
+    events.forEach((event, index2) => {
+      var _a;
+      if (!(event == null ? void 0 : event.segs)) return;
+      const text2 = cleanCaptionText(event.segs.map((seg) => (seg == null ? void 0 : seg.utf8) || "").join(""));
+      if (!text2) return;
+      const start = toNumber(event.tStartMs) / 1e3;
+      const durationMs = toNumber(event.dDurationMs);
+      const nextStartMs = toNumber((_a = events[index2 + 1]) == null ? void 0 : _a.tStartMs, NaN);
+      const end = durationMs > 0 ? (toNumber(event.tStartMs) + durationMs) / 1e3 : Number.isFinite(nextStartMs) ? nextStartMs / 1e3 : start;
+      subtitles.push({ text: text2, start, end: Math.max(start, end) });
+    });
+    return subtitles;
+  }
+  function parseXmlTimedText(xmlText) {
+    const doc = new DOMParser().parseFromString(xmlText, "text/xml");
+    if (doc.querySelector("parsererror")) return [];
+    const transcriptNodes = Array.from(doc.querySelectorAll("transcript text"));
+    if (transcriptNodes.length > 0) {
+      return transcriptNodes.map((node) => {
+        const start = toNumber(node.getAttribute("start"));
+        const duration = toNumber(node.getAttribute("dur"));
+        return {
+          text: cleanCaptionText(node.textContent || ""),
+          start,
+          end: start + duration
+        };
+      }).filter((sub2) => sub2.text);
+    }
+    return Array.from(doc.querySelectorAll("p")).map((node) => {
+      const start = toNumber(node.getAttribute("t")) / 1e3;
+      const duration = toNumber(node.getAttribute("d")) / 1e3;
+      const segTexts = Array.from(node.querySelectorAll("s")).map((seg) => seg.textContent || "");
+      const text2 = cleanCaptionText(segTexts.length > 0 ? segTexts.join("") : node.textContent || "");
+      return { text: text2, start, end: start + duration };
+    }).filter((sub2) => sub2.text);
+  }
+  function parseYouTubeTimedTextPayload(payload) {
+    if (!payload) return [];
+    if (typeof payload === "string") {
+      const text2 = payload.trim();
+      if (!text2) return [];
+      if (text2.startsWith("{") || text2.startsWith("[")) {
+        const parsed = safeJsonParse(text2);
+        return parsed ? parseJsonTimedText(parsed) : [];
+      }
+      return parseXmlTimedText(text2);
+    }
+    if (typeof payload === "object") {
+      return parseJsonTimedText(payload);
+    }
+    return [];
+  }
+  function getTimedTextVideoId(url) {
+    try {
+      return new URL(url, window.location.href).searchParams.get("v");
+    } catch (error) {
+      const match = url.match(/[?&]v=([^&]+)/);
+      return match ? decodeURIComponent(match[1]) : null;
+    }
+  }
+  function isTargetLanguage(value) {
+    if (!value) return false;
+    const language = String(value).toLowerCase().replace("_", "-");
+    return language === TARGET_CAPTION_LANGUAGE || language.startsWith(`${TARGET_CAPTION_LANGUAGE}-`);
+  }
+  function getTimedTextLanguage(url, key) {
+    try {
+      return new URL(url, window.location.href).searchParams.get(key);
+    } catch (error) {
+      const match = url.match(new RegExp(`[?&]${key}=([^&]+)`));
+      return match ? decodeURIComponent(match[1]) : null;
+    }
+  }
+  function isEnglishTimedTextUrl(url) {
+    const translatedLanguage = getTimedTextLanguage(url, "tlang");
+    if (translatedLanguage) return isTargetLanguage(translatedLanguage);
+    return isTargetLanguage(getTimedTextLanguage(url, "lang"));
+  }
+  function isCaptionTrack(value) {
+    return Boolean(
+      value && typeof value === "object" && typeof value.baseUrl === "string" && value.baseUrl.includes("timedtext")
+    );
+  }
+  function addTracks(target, tracks) {
+    if (!Array.isArray(tracks)) return;
+    tracks.forEach((track2) => {
+      if (!isCaptionTrack(track2)) return;
+      const exists = target.some((item) => item.baseUrl === track2.baseUrl);
+      if (!exists) target.push(track2);
+    });
+  }
+  function collectCaptionTracks(value, target, seen = /* @__PURE__ */ new WeakSet(), depth = 0) {
+    var _a, _b, _c;
+    const data = safeJsonParse(value);
+    if (!data || typeof data !== "object") return;
+    if (depth > 6) return;
+    if (seen.has(data)) return;
+    seen.add(data);
+    addTracks(target, data.captionTracks);
+    addTracks(target, (_b = (_a = data == null ? void 0 : data.captions) == null ? void 0 : _a.playerCaptionsTracklistRenderer) == null ? void 0 : _b.captionTracks);
+    addTracks(target, (_c = data == null ? void 0 : data.playerCaptionsTracklistRenderer) == null ? void 0 : _c.captionTracks);
+    if (Array.isArray(data)) {
+      data.forEach((item) => collectCaptionTracks(item, target, seen, depth + 1));
+      return;
+    }
+    PLAYER_RESPONSE_KEYS.forEach((key) => {
+      if (key in data) collectCaptionTracks(data[key], target, seen, depth + 1);
+    });
+  }
+  function extractJsonObjectAfterMarker(text2, marker) {
+    const markerIndex = text2.indexOf(marker);
+    if (markerIndex < 0) return null;
+    const start = text2.indexOf("{", markerIndex);
+    if (start < 0) return null;
+    let depth = 0;
+    let inString = false;
+    let escaped = false;
+    for (let index2 = start; index2 < text2.length; index2++) {
+      const char = text2[index2];
+      if (inString) {
+        if (escaped) {
+          escaped = false;
+        } else if (char === "\\") {
+          escaped = true;
+        } else if (char === '"') {
+          inString = false;
+        }
+        continue;
+      }
+      if (char === '"') inString = true;
+      else if (char === "{") depth++;
+      else if (char === "}") {
+        depth--;
+        if (depth === 0) return text2.slice(start, index2 + 1);
+      }
+    }
+    return null;
+  }
+  function collectScriptCaptionTracks(target) {
+    const scripts = Array.from(document.scripts).reverse().slice(0, 40);
+    scripts.forEach((script2) => {
+      const text2 = script2.textContent || "";
+      if (!text2.includes("captionTracks") && !text2.includes("ytInitialPlayerResponse")) return;
+      const responseJson = extractJsonObjectAfterMarker(text2, "ytInitialPlayerResponse");
+      if (responseJson) collectCaptionTracks(responseJson, target);
+    });
+  }
+  function getActiveCaptionTrack(playerEl) {
+    const player = playerEl;
+    if (!player || typeof player.getOption !== "function") return null;
+    try {
+      return player.getOption("captions", "track");
+    } catch (error) {
+      return null;
+    }
+  }
+  function trackMatches(track2, activeTrack) {
+    if (!activeTrack) return false;
+    return Boolean(
+      track2.vssId && track2.vssId === activeTrack.vssId || track2.languageCode && track2.languageCode === activeTrack.languageCode
+    );
+  }
+  function selectCaptionTrack(tracks, playerEl) {
+    var _a;
+    const activeTrack = getActiveCaptionTrack(playerEl);
+    const activeMatch = tracks.find((track2) => trackMatches(track2, activeTrack));
+    if (activeMatch) return activeMatch;
+    return ((_a = tracks.map((track2, index2) => ({
+      track: track2,
+      score: (track2.kind === "asr" ? 0 : 10) + (track2.isTranslatable ? 0 : 1) - index2 / 100
+    })).sort((a, b) => b.score - a.score)[0]) == null ? void 0 : _a.track) || null;
+  }
+  function rankCaptionTracks(tracks, playerEl) {
+    const activeTrack = getActiveCaptionTrack(playerEl);
+    return tracks.map((track2, index2) => ({
+      track: track2,
+      score: (trackMatches(track2, activeTrack) ? 100 : 0) + (track2.kind === "asr" ? 0 : 10) + (track2.isTranslatable ? 0 : 1) - index2 / 100
+    })).sort((a, b) => b.score - a.score).map((item) => item.track);
+  }
+  function isEnglishOutputTrack(track2) {
+    if (track2.baseUrl && isEnglishTimedTextUrl(track2.baseUrl)) return true;
+    return isTargetLanguage(track2.languageCode);
+  }
+  function canTranslateTrackToEnglish(track2) {
+    return Boolean(track2.baseUrl && track2.isTranslatable && !isEnglishOutputTrack(track2));
+  }
+  function filterTracksForEnglish(tracks) {
+    const englishTracks = tracks.filter(isEnglishOutputTrack);
+    if (englishTracks.length > 0) return englishTracks;
+    return tracks.filter(canTranslateTrackToEnglish);
+  }
+  function buildTimedTextUrl(track2, videoId) {
+    const url = new URL(track2.baseUrl, window.location.href);
+    url.searchParams.set("fmt", "json3");
+    if (videoId && !url.searchParams.get("v")) url.searchParams.set("v", videoId);
+    if (!isEnglishOutputTrack(track2) && track2.isTranslatable) {
+      url.searchParams.set("tlang", TARGET_CAPTION_LANGUAGE);
+    }
+    return url.toString();
+  }
+  function filterTracksForVideo(tracks, videoId) {
+    if (!videoId) return tracks;
+    return tracks.filter((track2) => {
+      if (!track2.baseUrl) return false;
+      const trackVideoId = getTimedTextVideoId(track2.baseUrl);
+      return !trackVideoId || trackVideoId === videoId;
+    });
+  }
+  function extractYouTubeCaptionTracks(options = {}) {
+    var _a, _b, _c;
+    const win = options.win || window;
+    const tracks = [];
+    const playerEl = options.playerEl || document.querySelector(".html5-video-player");
+    const player = playerEl;
+    try {
+      if (player && typeof player.getPlayerResponse === "function") {
+        collectCaptionTracks(player.getPlayerResponse(), tracks);
+      }
+    } catch (error) {
+    }
+    try {
+      if (player && typeof player.getOption === "function") {
+        collectCaptionTracks(player.getOption("captions", "tracklist"), tracks);
+      }
+    } catch (error) {
+    }
+    collectCaptionTracks(win == null ? void 0 : win.ytInitialPlayerResponse, tracks);
+    collectCaptionTracks((_c = (_b = (_a = win == null ? void 0 : win.ytplayer) == null ? void 0 : _a.config) == null ? void 0 : _b.args) == null ? void 0 : _c.player_response, tracks);
+    [
+      options.playerEl,
+      document.querySelector("ytd-reel-video-renderer[is-active]"),
+      document.querySelector("ytd-watch-flexy"),
+      document.querySelector("ytd-player")
+    ].forEach((element) => {
+      if (!element) return;
+      ["data", "playerData", "playerResponse", "__data"].forEach((key) => {
+        collectCaptionTracks(element[key], tracks);
+      });
+    });
+    if (tracks.length === 0) collectScriptCaptionTracks(tracks);
+    return tracks;
+  }
+  function getInnertubeContext(win) {
+    const configuredContext = getYtcfgValue(win, "INNERTUBE_CONTEXT");
+    if (configuredContext && typeof configuredContext === "object") return configuredContext;
+    return {
+      client: {
+        clientName: getYtcfgValue(win, "INNERTUBE_CLIENT_NAME") || "WEB",
+        clientVersion: getYtcfgValue(win, "INNERTUBE_CLIENT_VERSION") || "2.20240101.00.00",
+        hl: getYtcfgValue(win, "HL") || document.documentElement.lang || "en",
+        gl: getYtcfgValue(win, "GL") || "US",
+        utcOffsetMinutes: -(/* @__PURE__ */ new Date()).getTimezoneOffset()
+      }
+    };
+  }
+  function getInnertubeEndpoint(win) {
+    const apiKey = getYtcfgValue(win, "INNERTUBE_API_KEY");
+    if (!apiKey) return null;
+    const endpoint = getYtcfgValue(win, "INNERTUBE_API_ENDPOINT") || "/youtubei/v1";
+    const url = new URL(`${String(endpoint).replace(/\/$/, "")}/player`, window.location.origin);
+    url.searchParams.set("key", String(apiKey));
+    url.searchParams.set("prettyPrint", "false");
+    return url.toString();
+  }
+  async function fetchInnertubeCaptionTracks(videoId, options = {}) {
+    const win = options.win || window;
+    const endpoint = getInnertubeEndpoint(win);
+    if (!endpoint) return [];
+    const context = getInnertubeContext(win);
+    const client2 = (context == null ? void 0 : context.client) || {};
+    const headers = {
+      "Content-Type": "application/json"
+    };
+    const headerClientName = getYtcfgValue(win, "INNERTUBE_CONTEXT_CLIENT_NAME");
+    const headerClientVersion = client2.clientVersion || getYtcfgValue(win, "INNERTUBE_CLIENT_VERSION");
+    const visitorId = getYtcfgValue(win, "VISITOR_DATA");
+    if (headerClientName) headers["X-YouTube-Client-Name"] = String(headerClientName);
+    if (headerClientVersion) headers["X-YouTube-Client-Version"] = String(headerClientVersion);
+    if (visitorId) headers["X-Goog-Visitor-Id"] = String(visitorId);
+    const response = await fetch(endpoint, {
+      method: "POST",
+      credentials: "include",
+      headers,
+      body: JSON.stringify({
+        context,
+        videoId,
+        contentCheckOk: true,
+        racyCheckOk: true,
+        playbackContext: {
+          contentPlaybackContext: {
+            html5Preference: "HTML5_PREF_WANTS"
+          }
+        }
+      })
+    });
+    if (!response.ok) return [];
+    const tracks = [];
+    collectCaptionTracks(await response.json(), tracks);
+    return tracks;
+  }
+  async function fetchYouTubeCaptionsFromPlayer(videoId, options = {}) {
+    const playerEl = options.playerEl || document.querySelector(".html5-video-player");
+    let tracks = filterTracksForEnglish(filterTracksForVideo(extractYouTubeCaptionTracks({ ...options, playerEl }), videoId));
+    if (tracks.length === 0 && videoId) {
+      tracks = filterTracksForEnglish(filterTracksForVideo(await fetchInnertubeCaptionTracks(videoId, { ...options }), videoId));
+    }
+    const selectedTrack = selectCaptionTrack(tracks, playerEl);
+    const rankedTracks = rankCaptionTracks(
+      selectedTrack ? [selectedTrack, ...tracks.filter((track2) => track2.baseUrl !== selectedTrack.baseUrl)] : tracks,
+      playerEl
+    );
+    for (const track2 of rankedTracks) {
+      if (!(track2 == null ? void 0 : track2.baseUrl)) continue;
+      const url = buildTimedTextUrl(track2, videoId);
+      if (!isEnglishTimedTextUrl(url)) continue;
+      const response = await fetch(url, { credentials: "include" });
+      if (!response.ok) continue;
+      const subtitles = parseYouTubeTimedTextPayload(await response.text());
+      if (subtitles.length === 0) continue;
+      const resultVideoId = getTimedTextVideoId(url) || videoId;
+      if (videoId && resultVideoId && resultVideoId !== videoId) continue;
+      return {
+        videoId: resultVideoId,
+        subtitles,
+        url
+      };
+    }
+    return null;
+  }
+  class YouTubeShortsAdapter {
+    constructor() {
+      __publicField(this, "platformName", "YouTube Shorts (Manual CC)");
+      __publicField(this, "cachedSubs", []);
+      __publicField(this, "listeners", []);
+      __publicField(this, "subsMap", /* @__PURE__ */ new Map());
+      __publicField(this, "resizeTimeout", null);
+      __publicField(this, "captionFetchTimeout", null);
+      __publicField(this, "captionFetchInFlight", null);
+      __publicField(this, "customFullscreenEnabled", false);
+      __publicField(this, "resumeOnCustomFullscreen", false);
+      this.initNetworkHook();
+      setInterval(() => this.syncSubsToCurrentVideo(), 500);
+      setInterval(() => this.requestCurrentCaptions(), 2e3);
+      window.addEventListener("yt-navigate-finish", () => {
+        if (this.match(window.location.href)) {
+          this.cachedSubs = [];
+          this.listeners.forEach((cb) => cb([]));
+          this.syncSubsToCurrentVideo();
+          this.requestCurrentCaptions(300);
+        }
+      });
+    }
+    match(url) {
+      return url.includes("youtube.com/shorts/");
+    }
+    isVideoPage() {
+      return window.location.pathname.startsWith("/shorts/");
+    }
+    onSubtitleDetected(callback) {
+      this.listeners = [callback];
+      if (this.cachedSubs.length > 0) callback(this.cachedSubs);
+    }
+    getCurrentVideoId() {
+      const match = window.location.pathname.match(/\/shorts\/([^/?]+)/);
+      return match ? match[1] : null;
+    }
+    getVideoEl() {
+      const activeRenderer = document.querySelector("ytd-reel-video-renderer[is-active]");
+      if (activeRenderer) {
+        const v = activeRenderer.querySelector("video");
+        if (v) return v;
+      }
+      const videos = Array.from(document.querySelectorAll("video"));
+      const playingVideo = videos.find((v) => !v.paused && v.readyState > 0 && v.getBoundingClientRect().height > 0);
+      if (playingVideo) return playingVideo;
+      let bestVideo = null;
+      let minDiff = Infinity;
+      const centerY = window.innerHeight / 2;
+      for (const v of videos) {
+        const rect = v.getBoundingClientRect();
+        if (rect.height === 0 || rect.width === 0) continue;
+        const vCenter = rect.top + rect.height / 2;
+        const diff = Math.abs(vCenter - centerY);
+        if (diff < minDiff) {
+          minDiff = diff;
+          bestVideo = v;
+        }
+      }
+      return bestVideo;
+    }
+    getPlayerEl() {
+      const activeRenderer = document.querySelector("ytd-reel-video-renderer[is-active]");
+      const activePlayer = activeRenderer == null ? void 0 : activeRenderer.querySelector(".html5-video-player");
+      if (activePlayer) return activePlayer;
+      return document.querySelector(".html5-video-player");
+    }
+    callPlayerMethod(methodName, ...args) {
+      const player = this.getPlayerEl();
+      if (player && typeof player[methodName] === "function") {
+        try {
+          player[methodName](...args);
+        } catch (error) {
+        }
+      }
+    }
+    playActiveVideo() {
+      var _a;
+      this.callPlayerMethod("playVideo");
+      const playResult = (_a = this.getVideoEl()) == null ? void 0 : _a.play();
+      if (playResult && typeof playResult.catch === "function") {
+        playResult.catch(() => {
+        });
+      }
+    }
+    resumeActiveVideoSoon() {
+      const resume = () => {
+        if (this.customFullscreenEnabled && this.resumeOnCustomFullscreen) {
+          this.playActiveVideo();
+        }
+      };
+      resume();
+      window.setTimeout(resume, 80);
+      window.setTimeout(resume, 250);
+    }
+    syncSubsToCurrentVideo() {
+      if (!this.match(window.location.href)) return;
+      const currentVid = this.getCurrentVideoId();
+      if (!currentVid) return;
+      const targetSubs = this.subsMap.get(currentVid) || [];
+      if (targetSubs.length > 0 && this.cachedSubs !== targetSubs) {
+        this.cachedSubs = targetSubs;
+        this.listeners.forEach((cb) => cb(targetSubs));
+      }
+    }
+    mergeSubs(vid, newSubs) {
+      if (!vid || newSubs.length === 0) return false;
+      const existing = this.subsMap.get(vid) || [];
+      const existingKeys = new Set(existing.map((s) => `${Math.round(s.start * 1e3)}:${s.text}`));
+      const toAdd = newSubs.filter((s) => !existingKeys.has(`${Math.round(s.start * 1e3)}:${s.text}`));
+      if (toAdd.length === 0) return false;
+      const updated = [...existing, ...toAdd].sort((a, b) => a.start - b.start);
+      this.subsMap.set(vid, updated);
+      this.syncSubsToCurrentVideo();
+      return true;
+    }
+    requestCurrentCaptions(delay = 0) {
+      var _a;
+      if (!this.match(window.location.href)) return;
+      const vid = this.getCurrentVideoId();
+      if (!vid || (((_a = this.subsMap.get(vid)) == null ? void 0 : _a.length) || 0) > 0) return;
+      if (this.captionFetchTimeout !== null) clearTimeout(this.captionFetchTimeout);
+      this.captionFetchTimeout = window.setTimeout(() => {
+        var _a2;
+        if (!this.match(window.location.href)) return;
+        const currentVid = this.getCurrentVideoId();
+        if (!currentVid || (((_a2 = this.subsMap.get(currentVid)) == null ? void 0 : _a2.length) || 0) > 0) return;
+        if (this.captionFetchInFlight === currentVid) return;
+        this.captionFetchInFlight = currentVid;
+        fetchYouTubeCaptionsFromPlayer(currentVid, { playerEl: this.getPlayerEl(), win: typeof unsafeWindow !== "undefined" ? unsafeWindow : window }).then((result) => {
+          if (result == null ? void 0 : result.subtitles.length) {
+            this.mergeSubs(result.videoId || currentVid, result.subtitles);
+          }
+        }).catch(() => {
+        }).finally(() => {
+          if (this.captionFetchInFlight === currentVid) this.captionFetchInFlight = null;
+        });
+      }, delay);
+    }
+    initNetworkHook() {
+      try {
+        const win = typeof unsafeWindow !== "undefined" ? unsafeWindow : window;
+        const rawFetch = win.fetch;
+        if (rawFetch) {
+          win.fetch = async (...args) => {
+            const urlStr = args[0] instanceof Request ? args[0].url : args[0];
+            if (typeof urlStr !== "string" || !urlStr.includes("/api/timedtext")) return rawFetch.apply(win, args);
+            const vid = getTimedTextVideoId(urlStr);
+            const response = await rawFetch.apply(win, args);
+            if (isEnglishTimedTextUrl(urlStr)) {
+              response.clone().text().then((text2) => this.processSubs(text2, vid)).catch(() => {
+              });
+            }
+            return response;
+          };
+        }
+        if (win.XMLHttpRequest) {
+          const rawXHR = win.XMLHttpRequest.prototype.open;
+          const self = this;
+          win.XMLHttpRequest.prototype.open = function(m, urlStr) {
+            if (typeof urlStr === "string" && urlStr.includes("/api/timedtext")) {
+              const vid = getTimedTextVideoId(urlStr);
+              if (isEnglishTimedTextUrl(urlStr)) {
+                this.addEventListener("load", () => {
+                  try {
+                    self.processSubs(this.responseText, vid);
+                  } catch (e) {
+                  }
+                });
+              }
+            }
+            return rawXHR.apply(this, arguments);
+          };
+        }
+      } catch (error) {
+      }
+    }
+    processSubs(data, vid) {
+      this.mergeSubs(vid, parseYouTubeTimedTextPayload(data));
+    }
+    refreshCustomFullscreenLayout() {
+      const dispatchResize = () => {
+        var _a;
+        const player = this.getPlayerEl();
+        window.dispatchEvent(new Event("resize"));
+        player == null ? void 0 : player.dispatchEvent(new Event("resize"));
+        (_a = this.getVideoEl()) == null ? void 0 : _a.dispatchEvent(new Event("resize"));
+      };
+      dispatchResize();
+      window.setTimeout(dispatchResize, 80);
+      window.setTimeout(dispatchResize, 250);
+    }
+    restoreRegularPlayerLayout() {
+      var _a;
+      const player = this.getPlayerEl();
+      window.dispatchEvent(new Event("resize"));
+      player == null ? void 0 : player.dispatchEvent(new Event("resize"));
+      (_a = this.getVideoEl()) == null ? void 0 : _a.dispatchEvent(new Event("resize"));
+      window.setTimeout(() => window.dispatchEvent(new Event("resize")), 120);
+    }
+    resizeHost(width, height, layout) {
+      let styleEl = document.getElementById("linkual-style-patch-shorts");
+      if (width === 0 && height === 0 && !this.customFullscreenEnabled) {
+        document.documentElement.style.removeProperty("--linkual-sidebar-width");
+        document.documentElement.style.removeProperty("--linkual-sidebar-height");
+        if (styleEl) styleEl.textContent = "";
+        if (this.resizeTimeout !== null) clearTimeout(this.resizeTimeout);
+        this.resizeTimeout = window.setTimeout(() => window.dispatchEvent(new Event("resize")), 150);
+        return;
+      }
+      document.documentElement.style.setProperty("--linkual-sidebar-width", layout === "right" ? `${width}px` : "0px");
+      document.documentElement.style.setProperty("--linkual-sidebar-height", layout === "bottom" ? `${height}px` : "0px");
+      if (!styleEl) {
+        styleEl = document.createElement("style");
+        styleEl.id = "linkual-style-patch-shorts";
+        document.head.appendChild(styleEl);
+      }
+      const customFullscreenCss = `
+      html.linkual-custom-fullscreen,
+      html.linkual-custom-fullscreen body {
+        overflow: hidden !important;
+        background: #000 !important;
+      }
+      html.linkual-custom-fullscreen #masthead-container,
+      html.linkual-custom-fullscreen ytd-guide-renderer,
+      html.linkual-custom-fullscreen ytd-mini-guide-renderer,
+      html.linkual-custom-fullscreen tp-yt-app-drawer {
+        display: none !important;
+      }
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active],
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] #player-container,
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] ytd-player,
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .html5-video-player {
+        position: fixed !important;
+        inset: 0 auto auto 0 !important;
+        width: calc(100vw - var(--linkual-sidebar-width, 0px)) !important;
+        max-width: calc(100vw - var(--linkual-sidebar-width, 0px)) !important;
+        height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px)) !important;
+        max-height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px)) !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        transform: none !important;
+        background: #000 !important;
+      }
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] {
+        overflow: hidden !important;
+        z-index: 2147483001 !important;
+      }
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] #player-container,
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] ytd-player,
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .html5-video-player,
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .html5-video-container,
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .html5-video-player video {
+        opacity: 1 !important;
+        visibility: visible !important;
+        z-index: 2147483002 !important;
+      }
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .html5-video-container {
+        position: absolute !important;
+        inset: 0 !important;
+        background: #000 !important;
+      }
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .html5-video-player video {
+        display: block !important;
+        position: absolute !important;
+      }
+      html.linkual-custom-fullscreen ytd-reel-player-header-renderer,
+      html.linkual-custom-fullscreen ytd-shorts-engagement-panel,
+      html.linkual-custom-fullscreen ytd-engagement-panel-section-list-renderer,
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] #scrubber,
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] #actions,
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] #menu,
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .metadata-container,
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .actions,
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .pivot-button,
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .ytp-chrome-top,
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .ytp-chrome-bottom,
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .ytp-gradient-top,
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .ytp-gradient-bottom,
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .ytp-pause-overlay,
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .ytp-cards-teaser,
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .ytp-ce-element,
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .ytp-iv-player-content,
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .ytp-player-content,
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .ytp-caption-window-container {
+        pointer-events: none !important;
+        visibility: hidden !important;
+      }
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .html5-video-container,
+      html.linkual-custom-fullscreen ytd-reel-video-renderer[is-active] .html5-video-player video {
+        width: 100% !important;
+        height: 100% !important;
+        left: 0 !important;
+        top: 0 !important;
+        margin: 0 !important;
+        object-fit: contain !important;
+      }
+    `;
+      if (layout === "right") {
+        styleEl.textContent = `
+        html, body { overflow-x: hidden !important; }
+        ytd-app, #masthead-container { width: calc(100vw - var(--linkual-sidebar-width)) !important; max-width: calc(100vw - var(--linkual-sidebar-width)) !important; left: 0 !important; right: auto !important; margin-bottom: var(--linkual-universal-widget-height, 0px) !important; }
+        ytd-shorts { width: calc(100vw - var(--linkual-sidebar-width)) !important; position: relative !important; }
+        #shorts-container, #shorts-inner-container, ytd-reel-video-renderer { width: 100% !important; max-width: 100% !important; }
+        ${customFullscreenCss}
+      `;
+      } else {
+        styleEl.textContent = `
+        html, body { overflow-x: hidden !important; }
+        ytd-app, #masthead-container { width: 100vw !important; max-width: 100vw !important; left: 0 !important; right: auto !important; margin-bottom: calc(var(--linkual-sidebar-height) + var(--linkual-universal-widget-height, 0px)) !important; }
+        ytd-shorts { height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-sidebar-height) - var(--linkual-universal-widget-height, 0px)) !important; width: 100% !important; position: relative !important; }
+        #shorts-container, #shorts-inner-container, ytd-reel-video-renderer { width: 100% !important; max-width: 100% !important; height: 100% !important; }
+        ${customFullscreenCss}
+      `;
+      }
+      if (this.resizeTimeout !== null) clearTimeout(this.resizeTimeout);
+      this.resizeTimeout = window.setTimeout(() => {
+        if (this.customFullscreenEnabled) {
+          this.refreshCustomFullscreenLayout();
+          this.resumeActiveVideoSoon();
+        } else {
+          this.restoreRegularPlayerLayout();
+        }
+      }, 150);
+    }
+    setCustomFullscreen(enabled) {
+      const currentVideo = this.getVideoEl();
+      this.resumeOnCustomFullscreen = enabled ? Boolean(currentVideo && !currentVideo.paused) : false;
+      this.customFullscreenEnabled = enabled;
+      if (enabled) {
+        this.resumeActiveVideoSoon();
+      }
+      if (this.resizeTimeout !== null) clearTimeout(this.resizeTimeout);
+      this.resizeTimeout = window.setTimeout(() => {
+        if (enabled) {
+          this.refreshCustomFullscreenLayout();
+          this.resumeActiveVideoSoon();
+        } else {
+          this.restoreRegularPlayerLayout();
+        }
+      }, 150);
+    }
+    getCurrentTime() {
+      var _a;
+      return ((_a = this.getVideoEl()) == null ? void 0 : _a.currentTime) || 0;
+    }
+    getDuration() {
+      var _a;
+      const duration = ((_a = this.getVideoEl()) == null ? void 0 : _a.duration) || 0;
+      return Number.isFinite(duration) ? duration : 0;
+    }
+    isPaused() {
+      var _a;
+      return ((_a = this.getVideoEl()) == null ? void 0 : _a.paused) ?? true;
+    }
+    seekTo(time) {
+      this.callPlayerMethod("seekTo", time, true);
+      const v = this.getVideoEl();
+      if (v) v.currentTime = time;
+    }
+    play() {
+      this.resumeOnCustomFullscreen = true;
+      this.playActiveVideo();
+    }
+    pause() {
+      var _a;
+      this.resumeOnCustomFullscreen = false;
+      this.callPlayerMethod("pauseVideo");
+      (_a = this.getVideoEl()) == null ? void 0 : _a.pause();
+    }
+  }
+  const FULLSCREEN_CHANGE_EVENTS$1 = [
+    "fullscreenchange",
+    "webkitfullscreenchange",
+    "mozfullscreenchange",
+    "MSFullscreenChange"
+  ];
+  function getBrowserFullscreenElement$1() {
+    const doc = document;
+    return document.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement || doc.msFullscreenElement || null;
+  }
+  class YouTubeAdapter {
+    constructor() {
+      __publicField(this, "platformName", "YouTube");
+      __publicField(this, "cachedSubs", []);
+      __publicField(this, "listeners", []);
+      __publicField(this, "subsMap", /* @__PURE__ */ new Map());
+      __publicField(this, "resizeTimeout", null);
+      __publicField(this, "captionFetchTimeout", null);
+      __publicField(this, "captionFetchInFlight", null);
+      __publicField(this, "autoTurnedOn", false);
+      __publicField(this, "forceRefreshDone", false);
+      __publicField(this, "customFullscreenEnabled", false);
+      this.initNetworkHook();
+      this.initFullscreenHook();
+      this.initAutoHotkey();
+      setInterval(() => this.syncSubsToCurrentVideo(), 500);
+      setInterval(() => this.requestCurrentCaptions(), 2e3);
+    }
+    match(url) {
+      return url.includes("youtube.com") && !url.includes("/shorts/");
+    }
+    isVideoPage() {
+      return window.location.pathname === "/watch";
+    }
+    onSubtitleDetected(callback) {
+      this.listeners = [callback];
+      if (this.cachedSubs.length > 0) callback(this.cachedSubs);
+    }
+    getCurrentVideoId() {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get("v");
+    }
+    syncSubsToCurrentVideo() {
+      if (!this.match(window.location.href)) return;
+      const currentVid = this.getCurrentVideoId();
+      if (!currentVid) return;
+      const targetSubs = this.subsMap.get(currentVid) || [];
+      if (targetSubs.length > 0 && this.cachedSubs !== targetSubs) {
+        this.cachedSubs = targetSubs;
+        this.listeners.forEach((cb) => cb(targetSubs));
+      }
+    }
+    mergeSubs(vid, newSubs) {
+      if (!vid || newSubs.length === 0) return false;
+      const existing = this.subsMap.get(vid) || [];
+      const existingKeys = new Set(existing.map((s) => `${Math.round(s.start * 1e3)}:${s.text}`));
+      const toAdd = newSubs.filter((s) => !existingKeys.has(`${Math.round(s.start * 1e3)}:${s.text}`));
+      if (toAdd.length === 0) return false;
+      const updated = [...existing, ...toAdd].sort((a, b) => a.start - b.start);
+      this.subsMap.set(vid, updated);
+      this.syncSubsToCurrentVideo();
+      return true;
+    }
+    getPlayerEl() {
+      return document.getElementById("movie_player") || document.querySelector(".html5-video-player");
+    }
+    callPlayerMethod(methodName) {
+      const player = this.getPlayerEl();
+      if (!player || typeof player[methodName] !== "function") return false;
+      try {
+        player[methodName]();
+        return true;
+      } catch (error) {
+        console.warn(`[Linkual] YouTube player method failed: ${methodName}`, error);
+        return false;
+      }
+    }
+    requestCurrentCaptions(delay = 0) {
+      var _a;
+      if (!this.match(window.location.href)) return;
+      const vid = this.getCurrentVideoId();
+      if (!vid || (((_a = this.subsMap.get(vid)) == null ? void 0 : _a.length) || 0) > 0) return;
+      if (this.captionFetchTimeout !== null) clearTimeout(this.captionFetchTimeout);
+      this.captionFetchTimeout = window.setTimeout(() => {
+        var _a2;
+        if (!this.match(window.location.href)) return;
+        const currentVid = this.getCurrentVideoId();
+        if (!currentVid || (((_a2 = this.subsMap.get(currentVid)) == null ? void 0 : _a2.length) || 0) > 0) return;
+        if (this.captionFetchInFlight === currentVid) return;
+        this.captionFetchInFlight = currentVid;
+        fetchYouTubeCaptionsFromPlayer(currentVid, { playerEl: this.getPlayerEl(), win: typeof unsafeWindow !== "undefined" ? unsafeWindow : window }).then((result) => {
+          if (result == null ? void 0 : result.subtitles.length) {
+            this.mergeSubs(result.videoId || currentVid, result.subtitles);
+          }
+        }).catch(() => {
+        }).finally(() => {
+          if (this.captionFetchInFlight === currentVid) this.captionFetchInFlight = null;
+        });
+      }, delay);
+    }
+    setCaptionsState(state) {
+      this.callPlayerMethod(state === "on" ? "toggleSubtitlesOn" : "toggleSubtitlesOff");
+      setTimeout(() => {
+        try {
+          const ccButton = document.querySelector(".ytp-subtitles-button");
+          if (ccButton) {
+            const isCurrentlyOn = ccButton.getAttribute("aria-pressed") === "true";
+            if (state === "on" && !isCurrentlyOn) ccButton.click();
+            else if (state === "off" && isCurrentlyOn) ccButton.click();
+          }
+        } catch (error) {
+          console.warn("[Linkual] YouTube caption button toggle failed", error);
+        }
+      }, 150);
+    }
+    initAutoHotkey() {
+      const tryTriggerCC = () => {
+        let attempts = 0;
+        const interval = setInterval(() => {
+          if (!this.match(window.location.href)) {
+            clearInterval(interval);
+            return;
+          }
+          const vid = this.getCurrentVideoId();
+          if (!vid) return;
+          this.requestCurrentCaptions();
+          attempts++;
+          if (attempts > 30) {
+            clearInterval(interval);
+            return;
+          }
+          const video = this.getVideoEl();
+          if (!video || video.readyState === 0) return;
+          if (this.subsMap.has(vid) && this.subsMap.get(vid).length > 0) {
+            clearInterval(interval);
+            return;
+          }
+          const ccButton = document.querySelector(".ytp-subtitles-button");
+          if (ccButton && ccButton.style.display !== "none") {
+            const isPressed = ccButton.getAttribute("aria-pressed") === "true";
+            if (isPressed && !this.forceRefreshDone && attempts > 4) {
+              console.log("[Linkual] 字幕开启但错过了数据，强制拉取...");
+              this.forceRefreshDone = true;
+              this.setCaptionsState("off");
+              setTimeout(() => this.setCaptionsState("on"), 400);
+              return;
+            }
+            if (!isPressed) {
+              console.log("[Linkual] 模拟开启长视频字幕...");
+              this.autoTurnedOn = true;
+              this.setCaptionsState("on");
+              clearInterval(interval);
+            }
+          }
+        }, 500);
+      };
+      tryTriggerCC();
+      window.addEventListener("yt-navigate-finish", () => {
+        if (this.match(window.location.href)) {
+          this.cachedSubs = [];
+          this.listeners.forEach((cb) => cb([]));
+          this.autoTurnedOn = false;
+          this.forceRefreshDone = false;
+          this.syncSubsToCurrentVideo();
+          this.requestCurrentCaptions(300);
+          setTimeout(tryTriggerCC, 500);
+        }
+      });
+    }
+    initNetworkHook() {
+      try {
+        const win = typeof unsafeWindow !== "undefined" ? unsafeWindow : window;
+        const rawFetch = win.fetch;
+        if (rawFetch) {
+          win.fetch = async (...args) => {
+            const urlStr = args[0] instanceof Request ? args[0].url : args[0];
+            if (typeof urlStr !== "string" || !urlStr.includes("/api/timedtext")) return rawFetch.apply(win, args);
+            const vid = getTimedTextVideoId(urlStr);
+            const response = await rawFetch.apply(win, args);
+            if (isEnglishTimedTextUrl(urlStr)) {
+              response.clone().text().then((text2) => this.processSubs(text2, vid)).catch(() => {
+              });
+            }
+            return response;
+          };
+        }
+        if (win.XMLHttpRequest) {
+          const rawXHR = win.XMLHttpRequest.prototype.open;
+          const self = this;
+          win.XMLHttpRequest.prototype.open = function(m, urlStr) {
+            if (typeof urlStr === "string" && urlStr.includes("/api/timedtext")) {
+              const vid = getTimedTextVideoId(urlStr);
+              if (isEnglishTimedTextUrl(urlStr)) {
+                this.addEventListener("load", () => {
+                  try {
+                    self.processSubs(this.responseText, vid);
+                  } catch (e) {
+                  }
+                });
+              }
+            }
+            return rawXHR.apply(this, arguments);
+          };
+        }
+      } catch (error) {
+      }
+    }
+    processSubs(data, vid) {
+      const newSubs = parseYouTubeTimedTextPayload(data);
+      if (newSubs.length > 0) {
+        this.mergeSubs(vid, newSubs);
+        if (this.autoTurnedOn && this.match(window.location.href) && vid === this.getCurrentVideoId()) {
+          this.autoTurnedOn = false;
+          let closeAttempts = 0;
+          const closeInterval = setInterval(() => {
+            closeAttempts++;
+            if (closeAttempts > 8) {
+              clearInterval(closeInterval);
+              return;
+            }
+            const ccBtn = document.querySelector(".ytp-subtitles-button");
+            if (ccBtn && ccBtn.getAttribute("aria-pressed") === "true") {
+              console.log(`[Linkual] 正在静默关闭长视频原生字幕 (第 ${closeAttempts} 次尝试)...`);
+              this.setCaptionsState("off");
+            } else {
+              clearInterval(closeInterval);
+            }
+          }, 500);
+        }
+      }
+    }
+    initFullscreenHook() {
+      const handleFullscreenChange = () => {
+        const root2 = document.getElementById("linkual-root");
+        if (!root2) return;
+        const fsElement = getBrowserFullscreenElement$1();
+        if (fsElement && (fsElement.classList.contains("html5-video-player") || fsElement.tagName === "YTD-WATCH-FLEXY")) {
+          fsElement.appendChild(root2);
+        } else if (!fsElement) {
+          document.body.appendChild(root2);
+        }
+      };
+      FULLSCREEN_CHANGE_EVENTS$1.forEach((eventName) => {
+        document.addEventListener(eventName, handleFullscreenChange);
+      });
+    }
+    refreshCustomFullscreenLayout() {
+      const dispatchResize = () => {
+        var _a;
+        window.dispatchEvent(new Event("resize"));
+        (_a = document.getElementById("movie_player")) == null ? void 0 : _a.dispatchEvent(new Event("resize"));
+      };
+      dispatchResize();
+      window.setTimeout(dispatchResize, 80);
+      window.setTimeout(dispatchResize, 250);
+    }
+    restoreRegularPlayerLayout() {
+      var _a;
+      window.dispatchEvent(new Event("resize"));
+      (_a = document.getElementById("movie_player")) == null ? void 0 : _a.dispatchEvent(new Event("resize"));
+      window.setTimeout(() => window.dispatchEvent(new Event("resize")), 120);
+    }
+    resizeHost(width, height, layout) {
+      let styleEl = document.getElementById("linkual-style-patch");
+      if (width === 0 && height === 0 && !this.customFullscreenEnabled) {
+        document.documentElement.style.removeProperty("--linkual-sidebar-width");
+        document.documentElement.style.removeProperty("--linkual-sidebar-height");
+        if (styleEl) styleEl.textContent = "";
+        if (this.resizeTimeout !== null) clearTimeout(this.resizeTimeout);
+        this.resizeTimeout = window.setTimeout(() => window.dispatchEvent(new Event("resize")), 150);
+        return;
+      }
+      document.documentElement.style.setProperty("--linkual-sidebar-width", layout === "right" ? `${width}px` : "0px");
+      document.documentElement.style.setProperty("--linkual-sidebar-height", layout === "bottom" ? `${height}px` : "0px");
+      if (!styleEl) {
+        styleEl = document.createElement("style");
+        styleEl.id = "linkual-style-patch";
+        document.head.appendChild(styleEl);
+      }
+      const customFullscreenCss = `
+      html.linkual-custom-fullscreen,
+      html.linkual-custom-fullscreen body {
+        overflow: hidden !important;
+      }
+      html.linkual-custom-fullscreen ytd-app {
+        position: fixed !important;
+        inset: 0 !important;
+        width: calc(100vw - var(--linkual-sidebar-width, 0px)) !important;
+        max-width: calc(100vw - var(--linkual-sidebar-width, 0px)) !important;
+        height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px)) !important;
+        max-height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px)) !important;
+        margin: 0 !important;
+        background: #000 !important;
+        z-index: 2147483000 !important;
+      }
+      html.linkual-custom-fullscreen ytd-watch-flexy,
+      html.linkual-custom-fullscreen #columns,
+      html.linkual-custom-fullscreen #primary,
+      html.linkual-custom-fullscreen #primary-inner {
+        display: block !important;
+        position: static !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 100% !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        transform: none !important;
+        background: #000 !important;
+      }
+      html.linkual-custom-fullscreen #masthead-container,
+      html.linkual-custom-fullscreen ytd-miniplayer,
+      html.linkual-custom-fullscreen ytd-guide-renderer,
+      html.linkual-custom-fullscreen #related,
+      html.linkual-custom-fullscreen #secondary,
+      html.linkual-custom-fullscreen #below,
+      html.linkual-custom-fullscreen #comments,
+      html.linkual-custom-fullscreen ytd-watch-metadata,
+      html.linkual-custom-fullscreen ytd-merch-shelf-renderer,
+      html.linkual-custom-fullscreen ytd-engagement-panel-section-list-renderer,
+      html.linkual-custom-fullscreen ytd-live-chat-frame {
+        display: none !important;
+      }
+      html.linkual-custom-fullscreen #player,
+      html.linkual-custom-fullscreen #player-container,
+      html.linkual-custom-fullscreen #player-container-inner,
+      html.linkual-custom-fullscreen #player-container-outer,
+      html.linkual-custom-fullscreen #player-theater-container,
+      html.linkual-custom-fullscreen #player-full-bleed-container,
+      html.linkual-custom-fullscreen #full-bleed-container,
+      html.linkual-custom-fullscreen ytd-player,
+      html.linkual-custom-fullscreen .html5-video-player {
+        position: absolute !important;
+        inset: 0 !important;
+        width: calc(100vw - var(--linkual-sidebar-width, 0px)) !important;
+        max-width: calc(100vw - var(--linkual-sidebar-width, 0px)) !important;
+        height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px)) !important;
+        max-height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-sidebar-height, 0px) - var(--linkual-universal-widget-height, 0px)) !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        transform: none !important;
+        background: #000 !important;
+        overflow: hidden !important;
+      }
+      html.linkual-custom-fullscreen .html5-video-player .ytp-chrome-top,
+      html.linkual-custom-fullscreen .html5-video-player .ytp-chrome-bottom,
+      html.linkual-custom-fullscreen .html5-video-player .ytp-gradient-top,
+      html.linkual-custom-fullscreen .html5-video-player .ytp-gradient-bottom,
+      html.linkual-custom-fullscreen .html5-video-player .ytp-pause-overlay,
+      html.linkual-custom-fullscreen .html5-video-player .ytp-cards-teaser,
+      html.linkual-custom-fullscreen .html5-video-player .ytp-ce-element,
+      html.linkual-custom-fullscreen .html5-video-player .ytp-iv-player-content,
+      html.linkual-custom-fullscreen .html5-video-player .ytp-caption-window-container {
+        display: none !important;
+      }
+      html.linkual-custom-fullscreen .html5-video-container,
+      html.linkual-custom-fullscreen .html5-video-player video {
+        display: block !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        z-index: 2147483002 !important;
+      }
+      html.linkual-custom-fullscreen .html5-video-container {
+        position: absolute !important;
+        inset: 0 !important;
+        background: #000 !important;
+      }
+      html.linkual-custom-fullscreen .html5-video-container,
+      html.linkual-custom-fullscreen .html5-video-player video {
+        width: 100% !important;
+        height: 100% !important;
+        left: 0 !important;
+        top: 0 !important;
+        margin: 0 !important;
+        object-fit: contain !important;
+      }
+      html.linkual-custom-fullscreen .html5-video-player video {
+        position: absolute !important;
+        inset: 0 !important;
+        transform: none !important;
+      }
+    `;
+      if (layout === "right") {
+        styleEl.textContent = `
+        html, body { overflow-x: hidden !important; }
+        ytd-app, #masthead-container {
+          width: calc(100vw - var(--linkual-sidebar-width)) !important;
+          max-width: calc(100vw - var(--linkual-sidebar-width)) !important;
+          left: 0 !important; right: auto !important; margin-bottom: var(--linkual-universal-widget-height, 0px) !important;
+        }
+        ytd-watch-flexy[theater] #player-theater-container,
+        ytd-watch-flexy[theater] #player-full-bleed-container,
+        ytd-watch-flexy[theater] #full-bleed-container,
+        ytd-watch-flexy[theater] #cinematics-container,
+        ytd-watch-flexy[theater] #cinematics,
+        ytd-watch-flexy[theater] ytd-player,
+        ytd-watch-flexy[theater] .html5-video-player {
+          width: calc(100vw - var(--linkual-sidebar-width)) !important;
+          max-width: calc(100vw - var(--linkual-sidebar-width)) !important;
+          min-height: 0 !important;
+          height: calc((100vw - var(--linkual-sidebar-width)) * 9 / 16) !important;
+          max-height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-universal-widget-height, 0px) - 56px) !important;
+          margin: 0 !important; transform: none !important;
+        }
+        ytd-watch-flexy[theater] .html5-video-player .html5-video-container,
+        ytd-watch-flexy[theater] .html5-video-player video {
+          width: 100% !important; height: 100% !important; left: 0 !important; top: 0 !important; margin: 0 !important; object-fit: contain !important;
+        }
+        ${customFullscreenCss}
+      `;
+      } else {
+        styleEl.textContent = `
+        html, body { overflow-x: hidden !important; }
+        ytd-app, #masthead-container {
+          width: 100vw !important; max-width: 100vw !important; left: 0 !important; right: auto !important;
+          margin-bottom: calc(var(--linkual-sidebar-height) + var(--linkual-universal-widget-height, 0px)) !important;
+        }
+        ytd-watch-flexy[theater] #player-theater-container,
+        ytd-watch-flexy[theater] #player-full-bleed-container,
+        ytd-watch-flexy[theater] #full-bleed-container,
+        ytd-watch-flexy[theater] #cinematics-container,
+        ytd-watch-flexy[theater] #cinematics,
+        ytd-watch-flexy[theater] ytd-player,
+        ytd-watch-flexy[theater] .html5-video-player {
+          width: 100vw !important; max-width: 100vw !important; min-height: 0 !important;
+          height: calc(100vw * 9 / 16) !important;
+          max-height: calc(var(--linkual-visual-viewport-height, 100vh) - var(--linkual-sidebar-height) - var(--linkual-universal-widget-height, 0px) - 56px) !important;
+          margin: 0 auto !important; transform: none !important;
+        }
+        ytd-watch-flexy[theater] .html5-video-player .html5-video-container,
+        ytd-watch-flexy[theater] .html5-video-player video {
+          width: 100% !important; height: 100% !important; left: 0 !important; top: 0 !important; margin: 0 !important; object-fit: contain !important;
+        }
+        ${customFullscreenCss}
+      `;
+      }
+      if (this.resizeTimeout !== null) clearTimeout(this.resizeTimeout);
+      this.resizeTimeout = window.setTimeout(() => {
+        if (this.customFullscreenEnabled) {
+          this.refreshCustomFullscreenLayout();
+        } else {
+          this.restoreRegularPlayerLayout();
+        }
+      }, 150);
+    }
+    setCustomFullscreen(enabled) {
+      this.customFullscreenEnabled = enabled;
+      if (enabled) {
+        this.setCaptionsState("off");
+      }
+      if (this.resizeTimeout !== null) clearTimeout(this.resizeTimeout);
+      this.resizeTimeout = window.setTimeout(() => {
+        if (enabled) {
+          this.refreshCustomFullscreenLayout();
+        } else {
+          this.restoreRegularPlayerLayout();
+        }
+      }, 150);
+    }
+    getVideoEl() {
+      return document.querySelector("video");
+    }
+    getCurrentTime() {
+      var _a;
+      return ((_a = this.getVideoEl()) == null ? void 0 : _a.currentTime) || 0;
+    }
+    getDuration() {
+      var _a;
+      const duration = ((_a = this.getVideoEl()) == null ? void 0 : _a.duration) || 0;
+      return Number.isFinite(duration) ? duration : 0;
+    }
+    isPaused() {
+      var _a;
+      return ((_a = this.getVideoEl()) == null ? void 0 : _a.paused) ?? true;
+    }
+    seekTo(time) {
+      const v = this.getVideoEl();
+      if (v) v.currentTime = time;
+    }
+    play() {
+      var _a;
+      (_a = this.getVideoEl()) == null ? void 0 : _a.play();
+    }
+    pause() {
+      var _a;
+      (_a = this.getVideoEl()) == null ? void 0 : _a.pause();
+    }
+  }
+  class EmptyAdapter {
+    constructor() {
+      __publicField(this, "platformName", "Universal");
+    }
+    match() {
+      return true;
+    }
+    isVideoPage() {
+      return false;
+    }
+    onSubtitleDetected(callback) {
+      callback([]);
+    }
+    getCurrentTime() {
+      return 0;
+    }
+    seekTo() {
+    }
+    play() {
+    }
+    pause() {
+    }
+  }
+  const adapterCache = /* @__PURE__ */ new Map();
+  function getCachedAdapter(key, createAdapter) {
+    const cached = adapterCache.get(key);
+    if (cached) return cached;
+    const adapter = createAdapter();
+    adapterCache.set(key, adapter);
+    return adapter;
+  }
+  function isYouTubeUrl(url) {
+    try {
+      return /(^|\.)youtube(?:-nocookie)?\.com$/i.test(new URL(url).hostname);
+    } catch {
+      return false;
+    }
+  }
+  function getAdapter() {
+    const url = window.location.href;
+    if (isYouTubeUrl(url)) {
+      const shortsAdapter = getCachedAdapter("youtubeShorts", () => new YouTubeShortsAdapter());
+      const youtubeAdapter = getCachedAdapter("youtube", () => new YouTubeAdapter());
+      if (shortsAdapter.match(url)) return shortsAdapter;
+      if (youtubeAdapter.match(url)) return youtubeAdapter;
+    }
+    return getCachedAdapter("empty", () => new EmptyAdapter());
   }
   let rootInstance = null;
   let reactMountNode = null;

@@ -1,3 +1,5 @@
+import { ConfigService } from './configService';
+
 export interface ArticleParagraph {
   id: string;
   element: HTMLElement;
@@ -29,7 +31,11 @@ const EXCLUDED_SELECTOR = [
   '.ltx_equation',
   '.ltx_title',
   '.ltx_authors',
+  '.ltx_author_notes',
+  '.ltx_contact',
   '.ltx_note',
+  '.ltx_page_header',
+  '.ltx_page_navbar',
 ].join(',');
 
 const BLOCKING_DESCENDANT_SELECTOR = [
@@ -74,10 +80,15 @@ const TABLE_EXCLUDED_ANCESTOR_SELECTOR = [
   '.ltx_equation',
   '.ltx_title',
   '.ltx_authors',
+  '.ltx_author_notes',
+  '.ltx_contact',
   '.ltx_note',
+  '.ltx_page_header',
+  '.ltx_page_navbar',
 ].join(',');
 
 const ARXIV_HOSTNAMES = new Set(['arxiv.org', 'www.arxiv.org']);
+const AR5IV_HOSTNAMES = new Set(['ar5iv.labs.arxiv.org', 'www.ar5iv.labs.arxiv.org', 'ar5iv.org', 'www.ar5iv.org']);
 const OPENREVIEW_HOSTNAMES = new Set(['openreview.net', 'www.openreview.net']);
 const OPENREVIEW_EXCLUDED_FIELDS = new Set([
   'title',
@@ -95,8 +106,10 @@ const OPENREVIEW_EXCLUDED_FIELDS = new Set([
   'externalids',
 ]);
 
+export type ArticleTranslationUrlMode = 'supported' | 'current-host' | 'custom';
+
 export function isArxivHtmlPage() {
-  return ARXIV_HOSTNAMES.has(window.location.hostname) && window.location.pathname.startsWith('/html/');
+  return isArxivLikeHtmlPage();
 }
 
 export function isOpenReviewHost() {
@@ -108,12 +121,161 @@ export function isOpenReviewForumPage() {
   return isOpenReviewHost() && (pathname === '/forum' || pathname.startsWith('/forum/'));
 }
 
+export function isKnownArticleTranslationSupportedPage() {
+  return isArxivLikeHtmlPage() || isOpenReviewForumPage();
+}
+
 export function isArticleTranslationSupportedPage() {
-  return isArxivHtmlPage() || isOpenReviewForumPage();
+  return isKnownArticleTranslationSupportedPage();
+}
+
+export function isArticleTranslationFeatureEnabled() {
+  return String(ConfigService.get('web_translation_enabled')) !== 'false';
+}
+
+export function getArticleTranslationUrlMode(): ArticleTranslationUrlMode {
+  const mode = String(ConfigService.get('web_translation_url_mode') || '').trim();
+  return mode === 'current-host' || mode === 'custom' ? mode : 'supported';
+}
+
+export function getCurrentArticleTranslationUrlPattern() {
+  return `*://${window.location.hostname}/*`;
+}
+
+export function getCurrentArticleTranslationHost() {
+  return window.location.hostname;
+}
+
+export function normalizeArticleTranslationUrlPatterns(value: string) {
+  return value
+    .split(/\r?\n|,/)
+    .map((pattern) => pattern.trim())
+    .filter(Boolean)
+    .join('\n');
+}
+
+export function isArticleTranslationAllowedByUrl(url = window.location.href) {
+  if (!isArticleTranslationFeatureEnabled()) return false;
+
+  const mode = getArticleTranslationUrlMode();
+  if (mode === 'supported') return isKnownArticleTranslationSupportedPage();
+  if (mode === 'current-host') return isSavedCurrentHostUrl(url);
+  return getCustomUrlPatterns().some((pattern) => matchArticleTranslationUrlPattern(url, pattern));
+}
+
+export function isArticleTranslationEnabledForPage() {
+  return isArticleTranslationAllowedByUrl() && canDetectArticleDocument();
 }
 
 function escapeMarkdownTableCell(value: string) {
   return normalizeText(value).replace(/\|/g, '\\|');
+}
+
+function getNormalizedPathname() {
+  return window.location.pathname.replace(/\/+$/, '') || '/';
+}
+
+function isArxivHost() {
+  return ARXIV_HOSTNAMES.has(window.location.hostname);
+}
+
+function isAr5ivHost() {
+  return AR5IV_HOSTNAMES.has(window.location.hostname);
+}
+
+function isArxivPaperId(value: string) {
+  const trimmed = value.trim().replace(/^\/+|\/+$/g, '');
+  return /^(\d{4}\.\d{4,5}|[a-z-]+(?:\.[A-Z]{2})?\/\d{7})(v\d+)?$/i.test(trimmed);
+}
+
+function hasLatexmlDocumentSignal() {
+  const root = document.querySelector('.ltx_document, article.ltx_document, .ltx_page_content .ltx_document');
+  if (!root) return false;
+
+  return Boolean(root.querySelector('.ltx_para, p.ltx_p, .ltx_section, .ltx_abstract, .ltx_theorem, .ltx_proof'));
+}
+
+function hasArxivHtmlAssetSignal() {
+  const ar5ivSiteName = document.querySelector<HTMLMetaElement>('meta[property="og:site_name"][content="ar5iv"]');
+  if (ar5ivSiteName) return true;
+
+  return Array.from(document.querySelectorAll<HTMLLinkElement>('link[rel~="stylesheet"][href], link[rel="canonical"][href]'))
+    .some((link) => /(?:arxiv-html-papers|ar5iv|\/html\/\d{4}\.\d{4,5})/i.test(link.href));
+}
+
+function isArxivLikeHtmlPath() {
+  const pathname = getNormalizedPathname();
+  const [, firstSegment = '', paperId = ''] = pathname.match(/^\/([^/]+)\/(.+)$/) || [];
+  if (isArxivHost()) return firstSegment === 'html' && isArxivPaperId(paperId);
+  if (isAr5ivHost()) return (firstSegment === 'html' || firstSegment === 'abs') && isArxivPaperId(paperId);
+  return false;
+}
+
+function isArxivLikeHtmlPage() {
+  if (!isArxivHost() && !isAr5ivHost()) return false;
+  return isArxivLikeHtmlPath() || (hasLatexmlDocumentSignal() && hasArxivHtmlAssetSignal());
+}
+
+function isLatexmlArticleDocument() {
+  return hasLatexmlDocumentSignal();
+}
+
+function isOpenReviewArticleDocument() {
+  return isOpenReviewForumPage() || Boolean(document.querySelector('.forum-container .note-content-value, .forum-container .markdown-rendered'));
+}
+
+function canDetectArticleDocument() {
+  return isKnownArticleTranslationSupportedPage() || Boolean(getArticleRoot());
+}
+
+function isSavedCurrentHostUrl(url: string) {
+  const savedHost = String(ConfigService.get('web_translation_current_host') || '').trim() || window.location.hostname;
+  if (!savedHost) return false;
+
+  try {
+    const parsed = new URL(url, window.location.href);
+    return parsed.hostname === savedHost;
+  } catch {
+    return false;
+  }
+}
+
+function getCustomUrlPatterns() {
+  return normalizeArticleTranslationUrlPatterns(String(ConfigService.get('web_translation_url_patterns') || ''))
+    .split('\n')
+    .filter(Boolean);
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function normalizeGlobUrlPattern(pattern: string) {
+  const trimmed = pattern.trim();
+  if (!trimmed || trimmed === '*') return trimmed;
+  if (!trimmed.includes('://')) {
+    return trimmed.includes('/') ? `*://${trimmed}` : `*://${trimmed}/*`;
+  }
+
+  const withoutProtocol = trimmed.replace(/^[a-z][a-z0-9+.-]*:\/\/|^\*:\/\/?/i, '');
+  return withoutProtocol.includes('/') ? trimmed : `${trimmed}/*`;
+}
+
+function matchArticleTranslationUrlPattern(url: string, rawPattern: string) {
+  const pattern = rawPattern.trim();
+  if (!pattern) return false;
+
+  if (pattern.startsWith('/') && pattern.endsWith('/') && pattern.length > 1) {
+    try {
+      return new RegExp(pattern.slice(1, -1)).test(url);
+    } catch {
+      return false;
+    }
+  }
+
+  const normalizedPattern = normalizeGlobUrlPattern(pattern);
+  const regex = new RegExp(`^${escapeRegExp(normalizedPattern).replace(/\\\*/g, '.*')}$`, 'i');
+  return regex.test(url);
 }
 
 function tableElementToMarkdown(table: HTMLTableElement) {
@@ -192,7 +354,7 @@ function isExcluded(element: HTMLElement) {
 }
 
 function getCandidateSelector() {
-  if (isOpenReviewForumPage()) {
+  if (isOpenReviewArticleDocument()) {
     return [
       '.note-content .note-content-value > p',
       '.note-content .note-content-value > ul > li',
@@ -216,25 +378,32 @@ function getCandidateSelector() {
   }
 
   return [
+    '.ltx_document .ltx_abstract .ltx_para',
+    '.ltx_document .ltx_abstract p',
     '.ltx_document .ltx_para',
     '.ltx_document p.ltx_p',
     '.ltx_document p',
     '.ltx_document blockquote.ltx_quote',
     '.ltx_document li.ltx_item',
+    '.ltx_document .ltx_item .ltx_para',
     '.ltx_document .ltx_theorem',
+    '.ltx_document .ltx_theorem .ltx_para',
     '.ltx_document .ltx_proof',
+    '.ltx_document .ltx_proof .ltx_para',
     '.ltx_document .ltx_quote',
+    '.ltx_document .ltx_quote .ltx_para',
     '.ltx_document .ltx_table',
     '.ltx_document table',
   ].join(',');
 }
 
 function getArticleRoot() {
-  if (isOpenReviewForumPage()) {
-    return document.querySelector('.forum-container');
+  const openReviewRoot = document.querySelector('.forum-container');
+  if (isOpenReviewArticleDocument() && openReviewRoot) {
+    return openReviewRoot;
   }
 
-  return document.querySelector('.ltx_document');
+  return document.querySelector('.ltx_document') || openReviewRoot;
 }
 
 function getOpenReviewFieldName(element: HTMLElement) {
@@ -257,7 +426,7 @@ function normalizeOpenReviewFieldName(fieldName: string) {
 }
 
 function isOpenReviewFieldExcluded(element: HTMLElement) {
-  if (!isOpenReviewForumPage()) return false;
+  if (!isOpenReviewArticleDocument()) return false;
 
   const fieldName = getOpenReviewFieldName(element);
   if (!fieldName) return false;
@@ -278,7 +447,7 @@ function getOrCreateHost(element: HTMLElement) {
 }
 
 function canonicalizeCandidateElement(element: HTMLElement) {
-  if (isArxivHtmlPage()) {
+  if (isLatexmlArticleDocument()) {
     const tableWrapper = element.closest('.ltx_table');
     if (tableWrapper instanceof HTMLElement) return tableWrapper;
 
@@ -298,7 +467,7 @@ function hasNestedTextCandidate(element: HTMLElement, candidates: HTMLElement[])
 }
 
 function shouldSkipNestedCandidate(element: HTMLElement, candidates: HTMLElement[]) {
-  if (isOpenReviewForumPage() && isTranslatableTableElement(element)) {
+  if (isOpenReviewArticleDocument() && isTranslatableTableElement(element)) {
     const value = getOpenReviewValueElement(element);
     if (value && value !== element && candidates.includes(value) && !hasNestedTextCandidate(value, candidates)) {
       return true;
@@ -316,7 +485,7 @@ function collectCandidateElements(root: Element) {
 }
 
 export function collectArticleParagraphs(): ArticleParagraph[] {
-  if (!isArticleTranslationSupportedPage()) return [];
+  if (!isArticleTranslationEnabledForPage()) return [];
 
   const root = getArticleRoot();
   if (!root) return [];
