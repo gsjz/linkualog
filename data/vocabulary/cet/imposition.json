@@ -22,5 +22,17 @@
         "url": ""
       }
     }
+  ],
+  "relations": [
+    {
+      "type": "related",
+      "target": {
+        "category": "cet",
+        "file": "mandate.json",
+        "word": "mandate"
+      },
+      "reason": "imposition 指“把规则、意志或要求强加给别人”，而 mandate 是“必然要求/命令式要求”，两者都属于“要求被施加”的概念场景，适合互相跳转帮助理解。",
+      "source": "llm"
+    }
   ]
 }

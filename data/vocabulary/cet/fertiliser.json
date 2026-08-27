@@ -9,6 +9,10 @@
     {
       "date": "2026-05-29",
       "score": 4
+    },
+    {
+      "date": "2026-08-25",
+      "score": 4
     }
   ],
   "definitions": [
@@ -25,6 +29,18 @@
         "text": "cet6 23 12 1 匹配",
         "url": ""
       }
+    }
+  ],
+  "relations": [
+    {
+      "type": "variant",
+      "target": {
+        "category": "ielts",
+        "file": "fertilizer.json",
+        "word": "fertilizer"
+      },
+      "reason": "fertiliser 是英式拼写，fertilizer 是美式拼写，二者表示同一个词义“肥料/化肥”，应作为拼写变体互相跳转。",
+      "source": "llm"
     }
   ]
 }

@@ -17,6 +17,10 @@
     {
       "date": "2026-05-25",
       "score": 4
+    },
+    {
+      "date": "2026-08-25",
+      "score": 3
     }
   ],
   "definitions": [
@@ -62,6 +66,28 @@
         "行政区",
         "城市或城镇的辖区"
       ]
+    }
+  ],
+  "relations": [
+    {
+      "type": "collocation",
+      "target": {
+        "category": "ielts",
+        "file": "municipal.json",
+        "word": "municipal"
+      },
+      "reason": "district 表示城市或行政上的“区、辖区”，municipal 表示“市政的、城市管理的”，二者可形成 municipal district（市辖区/市政区）这类行政区划搭配，语义关联明确且有学习价值。",
+      "source": "llm"
+    },
+    {
+      "type": "same_category",
+      "target": {
+        "category": "daily",
+        "file": "tract.json",
+        "word": "tract"
+      },
+      "reason": "district 和 tract 都可指某种“区域/地带”，但 district 强调行政、司法或城市划分，tract 强调大片土地或自然区域；建立同类词关系有助于区分不同类型的 area。",
+      "source": "llm"
     }
   ]
 }

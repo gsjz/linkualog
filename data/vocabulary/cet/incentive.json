@@ -1,7 +1,12 @@
 {
   "word": "incentive",
   "createdAt": "2026-06-01",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-08-25",
+      "score": 2
+    }
+  ],
   "definitions": [
     "激励；刺激；诱因（如：financial incentive 指“经济上的激励/诱因”）"
   ],
@@ -16,6 +21,28 @@
         "text": "CET6 23 12 2 听力",
         "url": ""
       }
+    }
+  ],
+  "relations": [
+    {
+      "type": "same_scene",
+      "target": {
+        "category": "daily",
+        "file": "lure.json",
+        "word": "lure"
+      },
+      "reason": "lure 表示“引诱、诱使、吸引”，和 incentive 都是在说“通过某种好处或吸引力促使人行动”的词，属于同一学习场景，适合互相跳转对比语义差别。",
+      "source": "llm"
+    },
+    {
+      "type": "same_scene",
+      "target": {
+        "category": "daily",
+        "file": "bribe.json",
+        "word": "bribe"
+      },
+      "reason": "bribe 表示“贿赂、用好处收买”，与 incentive 都涉及“用利益影响他人行为”，但 bribe 带明显的非法和负面色彩，和 incentive 形成很有价值的对照。",
+      "source": "llm"
     }
   ]
 }

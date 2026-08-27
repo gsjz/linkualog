@@ -21,6 +21,10 @@
     {
       "date": "2026-05-31",
       "score": 4
+    },
+    {
+      "date": "2026-08-25",
+      "score": 3
     }
   ],
   "definitions": [
@@ -60,6 +64,18 @@
         "整体含义与“测量磁场的设备/磁力计”一致"
       ],
       "missing_points": []
+    }
+  ],
+  "relations": [
+    {
+      "type": "same_scene",
+      "target": {
+        "category": "cet",
+        "file": "expedition-vessel.json",
+        "word": "expedition-vessel"
+      },
+      "reason": "当前词条例句提到从探险船上拖拽传感器；magnetometer 是海洋/水下考察中常用的探测设备，常与考察船在同一科研探测场景中出现。",
+      "source": "llm"
     }
   ]
 }

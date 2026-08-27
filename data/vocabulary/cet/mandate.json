@@ -61,5 +61,17 @@
         "整体句意与创造力是人类/生物层面的要求有关"
       ]
     }
+  ],
+  "relations": [
+    {
+      "type": "related",
+      "target": {
+        "category": "cet",
+        "file": "imposition.json",
+        "word": "imposition"
+      },
+      "reason": "imposition 指“把规则、意志或要求强加给别人”，而 mandate 是“必然要求/命令式要求”，两者都属于“要求被施加”的概念场景，适合互相跳转帮助理解。",
+      "source": "llm"
+    }
   ]
 }

@@ -27,5 +27,17 @@
         "url": ""
       }
     }
+  ],
+  "relations": [
+    {
+      "type": "same_scene",
+      "target": {
+        "category": "cet",
+        "file": "expedition-vessel.json",
+        "word": "expedition-vessel"
+      },
+      "reason": "shipwreck 指沉船/海难遗址，常是海洋考古或水下考察的目标；expedition vessel 常用于前往、勘探或研究这类地点，语义场景关联明确。",
+      "source": "llm"
+    }
   ]
 }

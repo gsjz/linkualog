@@ -38,5 +38,17 @@
         "url": ""
       }
     }
+  ],
+  "relations": [
+    {
+      "type": "related",
+      "target": {
+        "category": "daily",
+        "file": "clay.json",
+        "word": "clay"
+      },
+      "reason": "clay 是制作陶器、瓷器等的原料；porcelain 指瓷器/瓷质器物，二者存在明确的材料与制品关系，适合学习陶土、陶器、瓷器语义场时互相跳转。",
+      "source": "llm"
+    }
   ]
 }

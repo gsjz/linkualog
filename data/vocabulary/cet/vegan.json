@@ -1,7 +1,12 @@
 {
   "word": "vegan",
   "createdAt": "2026-06-01",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-08-25",
+      "score": 3
+    }
+  ],
   "definitions": [
     "素食主义者；严格素食的（不食用任何动物制品的）"
   ],

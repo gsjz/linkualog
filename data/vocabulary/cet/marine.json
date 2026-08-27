@@ -26,5 +26,17 @@
         "url": ""
       }
     }
+  ],
+  "relations": [
+    {
+      "type": "related",
+      "target": {
+        "category": "cet",
+        "file": "expedition-vessel.json",
+        "word": "expedition-vessel"
+      },
+      "reason": "marine 表示“海洋的”，可修饰与海洋相关的科学、考察和船只；expedition vessel 属于海洋考察语境中的船只，二者有明确领域关联。",
+      "source": "llm"
+    }
   ]
 }

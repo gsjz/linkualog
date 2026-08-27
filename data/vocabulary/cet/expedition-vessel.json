@@ -61,6 +61,36 @@
       },
       "reason": "marine 与 maritime 都表示“海洋的/海事的”，词义高度接近，属于可对照学习的一组近义形容词。",
       "source": "llm"
+    },
+    {
+      "type": "same_scene",
+      "target": {
+        "category": "cet",
+        "file": "magnetometer.json",
+        "word": "magnetometer"
+      },
+      "reason": "当前词条例句提到从探险船上拖拽传感器；magnetometer 是海洋/水下考察中常用的探测设备，常与考察船在同一科研探测场景中出现。",
+      "source": "llm"
+    },
+    {
+      "type": "same_scene",
+      "target": {
+        "category": "cet",
+        "file": "shipwreck.json",
+        "word": "shipwreck"
+      },
+      "reason": "shipwreck 指沉船/海难遗址，常是海洋考古或水下考察的目标；expedition vessel 常用于前往、勘探或研究这类地点，语义场景关联明确。",
+      "source": "llm"
+    },
+    {
+      "type": "related",
+      "target": {
+        "category": "cet",
+        "file": "marine.json",
+        "word": "marine"
+      },
+      "reason": "marine 表示“海洋的”，可修饰与海洋相关的科学、考察和船只；expedition vessel 属于海洋考察语境中的船只，二者有明确领域关联。",
+      "source": "llm"
     }
   ]
 }
