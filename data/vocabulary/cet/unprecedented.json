@@ -15,5 +15,16 @@
         "url": ""
       }
     }
+  ],
+  "relations": [
+    {
+      "type": "related",
+      "target": {
+        "category": "cet",
+        "file": "precedent.json",
+        "word": "precedent"
+      },
+      "source": "manual"
+    }
   ]
 }

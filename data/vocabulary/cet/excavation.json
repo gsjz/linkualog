@@ -9,6 +9,10 @@
     {
       "date": "2026-05-30",
       "score": 3
+    },
+    {
+      "date": "2026-08-28",
+      "score": 2
     }
   ],
   "definitions": [
@@ -40,5 +44,17 @@
   ],
   "mergedFrom": [
     "excavations"
+  ],
+  "relations": [
+    {
+      "type": "same_scene",
+      "target": {
+        "category": "cet",
+        "file": "artifact.json",
+        "word": "artifact"
+      },
+      "reason": "artifact 常是考古 excavation 的发现对象；候选词条例句也涉及“发掘与保护”“excavations and finds”，与文物出土/发现语境紧密相关。",
+      "source": "llm"
+    }
   ]
 }

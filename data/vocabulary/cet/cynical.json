@@ -17,6 +17,10 @@
     {
       "date": "2026-05-09",
       "score": 3
+    },
+    {
+      "date": "2026-08-27",
+      "score": 1
     }
   ],
   "definitions": [
@@ -60,6 +64,28 @@
       "missing_points": [
         "未体现“A bit”带来的“略带、稍微”语气"
       ]
+    }
+  ],
+  "relations": [
+    {
+      "type": "related",
+      "target": {
+        "category": "ielts",
+        "file": "scepticism.json",
+        "word": "scepticism"
+      },
+      "reason": "cynical 常表示对他人动机或社会现象持怀疑、不信任的态度，与 scepticism“怀疑态度”在语义上紧密相关，适合互相跳转学习。",
+      "source": "llm"
+    },
+    {
+      "type": "related",
+      "target": {
+        "category": "cet",
+        "file": "contemptuous.json",
+        "word": "contemptuous"
+      },
+      "reason": "两者都可描述负面态度或语气：contemptuous 强调“轻蔑、鄙夷”，cynical/cynically 强调“讽刺、怀疑、犬儒式不信任”，语义相近但不等同，适合互相辨析。",
+      "source": "llm"
     }
   ]
 }

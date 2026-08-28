@@ -25,6 +25,10 @@
     {
       "date": "2026-05-30",
       "score": 3
+    },
+    {
+      "date": "2026-08-28",
+      "score": 2
     }
   ],
   "definitions": [
@@ -64,6 +68,18 @@
         "鄙夷的",
         "形容带有看不起、蔑视态度"
       ]
+    }
+  ],
+  "relations": [
+    {
+      "type": "related",
+      "target": {
+        "category": "cet",
+        "file": "cynical.json",
+        "word": "cynical"
+      },
+      "reason": "两者都可描述负面态度或语气：contemptuous 强调“轻蔑、鄙夷”，cynical/cynically 强调“讽刺、怀疑、犬儒式不信任”，语义相近但不等同，适合互相辨析。",
+      "source": "llm"
     }
   ]
 }

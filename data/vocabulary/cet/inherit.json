@@ -9,6 +9,10 @@
     {
       "date": "2026-05-29",
       "score": 3
+    },
+    {
+      "date": "2026-08-28",
+      "score": 2
     }
   ],
   "definitions": [
@@ -26,6 +30,18 @@
         "text": "CET6 23 12 1 听力",
         "url": ""
       }
+    }
+  ],
+  "relations": [
+    {
+      "type": "related",
+      "target": {
+        "category": "daily",
+        "file": "succession.json",
+        "word": "Succession"
+      },
+      "reason": "继承",
+      "source": "manual"
     }
   ]
 }

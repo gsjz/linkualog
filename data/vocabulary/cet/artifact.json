@@ -16,7 +16,8 @@
     }
   ],
   "definitions": [
-    "n. 文物；人工制品"
+    "n. 文物；人工制品",
+    "杀戮尖塔里有这个词，好像是一个用于免疫 debuff 的 buff"
   ],
   "examples": [
     {
@@ -57,6 +58,18 @@
         "“工艺品”范围较窄，不完全等同于 artifact",
         "结合例句语境，更应理解为“文物”"
       ]
+    }
+  ],
+  "relations": [
+    {
+      "type": "same_scene",
+      "target": {
+        "category": "cet",
+        "file": "excavation.json",
+        "word": "excavation"
+      },
+      "reason": "artifact 常是考古 excavation 的发现对象；候选词条例句也涉及“发掘与保护”“excavations and finds”，与文物出土/发现语境紧密相关。",
+      "source": "llm"
     }
   ]
 }

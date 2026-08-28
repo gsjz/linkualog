@@ -56,5 +56,17 @@
       ]
     }
   ],
-  "marked": false
+  "marked": false,
+  "relations": [
+    {
+      "type": "synonym",
+      "target": {
+        "category": "ielts",
+        "file": "astound.json",
+        "word": "astound"
+      },
+      "reason": "astound 表示“使震惊、使惊愕”，stun by 在例句中也是“因某事使某人震惊”，语义高度接近，且可帮助学习 astounded/stunned by 这类表达。",
+      "source": "llm"
+    }
+  ]
 }
