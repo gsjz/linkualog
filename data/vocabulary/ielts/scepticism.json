@@ -13,6 +13,10 @@
     {
       "date": "2026-06-07",
       "score": 3
+    },
+    {
+      "date": "2026-08-28",
+      "score": 3
     }
   ],
   "definitions": [
@@ -29,6 +33,18 @@
         "text": "剑桥 5 1 阅读3",
         "url": ""
       }
+    }
+  ],
+  "relations": [
+    {
+      "type": "related",
+      "target": {
+        "category": "cet",
+        "file": "cynical.json",
+        "word": "cynical"
+      },
+      "reason": "cynical 常表示对他人动机或社会现象持怀疑、不信任的态度，与 scepticism“怀疑态度”在语义上紧密相关，适合互相跳转学习。",
+      "source": "llm"
     }
   ]
 }

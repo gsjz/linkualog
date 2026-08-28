@@ -21,6 +21,10 @@
     {
       "date": "2026-05-30",
       "score": 3
+    },
+    {
+      "date": "2026-08-27",
+      "score": 3
     }
   ],
   "definitions": [
@@ -41,5 +45,17 @@
   ],
   "mergedFrom": [
     "astounding"
+  ],
+  "relations": [
+    {
+      "type": "synonym",
+      "target": {
+        "category": "cet",
+        "file": "stun-by.json",
+        "word": "stun by"
+      },
+      "reason": "astound 表示“使震惊、使惊愕”，stun by 在例句中也是“因某事使某人震惊”，语义高度接近，且可帮助学习 astounded/stunned by 这类表达。",
+      "source": "llm"
+    }
   ]
 }
