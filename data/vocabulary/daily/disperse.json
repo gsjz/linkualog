@@ -26,5 +26,17 @@
         "timestamp": 63
       }
     }
+  ],
+  "relations": [
+    {
+      "type": "synonym",
+      "target": {
+        "category": "daily",
+        "file": "scatter.json",
+        "word": "scatter"
+      },
+      "reason": "disperse 和 scatter 都可表示“使分散、散开”，并且两者都可用于光向不同方向散射的语境，是明确的近义关系。",
+      "source": "llm"
+    }
   ]
 }

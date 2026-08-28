@@ -1,7 +1,12 @@
 {
   "word": "ethanol",
   "createdAt": "2026-07-08",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-08-28",
+      "score": 2
+    }
+  ],
   "definitions": [],
   "examples": [
     {
@@ -18,6 +23,28 @@
         "url": "https://www.youtube.com/watch?v=y5XEwTDlriE",
         "timestamp": 38
       }
+    }
+  ],
+  "relations": [
+    {
+      "type": "related",
+      "target": {
+        "category": "daily",
+        "file": "fermentation.json",
+        "word": "fermentation"
+      },
+      "reason": "例句明确说明酵母分解糖会产生 ethanol，而这个过程叫 fermentation；两者是“产物—过程”的核心关系。",
+      "source": "llm"
+    },
+    {
+      "type": "related",
+      "target": {
+        "category": "daily",
+        "file": "yeasts.json",
+        "word": "yeasts"
+      },
+      "reason": "例句中 yeasts 是产生 ethanol 的微生物来源，学习 ethanol 时跳转到 yeasts 有助于理解其生物生成机制。",
+      "source": "llm"
     }
   ]
 }

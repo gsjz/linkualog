@@ -36,5 +36,17 @@
         "timestamp": 54
       }
     }
+  ],
+  "relations": [
+    {
+      "type": "related",
+      "target": {
+        "category": "daily",
+        "file": "almighty.json",
+        "word": "almighty"
+      },
+      "reason": "almighty 表示“全能的、拥有无上力量的”，常用于神或神圣存在；divinity 指“神性、神圣力量”，两者都围绕 divine power/神圣权能，语义关联明确。",
+      "source": "llm"
+    }
   ]
 }

@@ -1,7 +1,12 @@
 {
   "word": "enslaved",
   "createdAt": "2026-07-08",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-08-28",
+      "score": 2
+    }
+  ],
   "definitions": [],
   "examples": [
     {
@@ -18,6 +23,18 @@
         "url": "https://www.youtube.com/watch?v=y5XEwTDlriE",
         "timestamp": 246
       }
+    }
+  ],
+  "relations": [
+    {
+      "type": "synonym",
+      "target": {
+        "category": "daily",
+        "file": "captive.json",
+        "word": "captive"
+      },
+      "reason": "enslaved 表示被奴役、失去自由的人；captive 表示俘虏或被囚禁、被控制的人。两者都涉及人身自由被剥夺，语义接近，适合互相跳转区分“奴役”和“囚禁/俘虏”。",
+      "source": "llm"
     }
   ]
 }

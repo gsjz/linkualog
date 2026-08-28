@@ -1,7 +1,12 @@
 {
   "word": "merit",
   "createdAt": "2026-08-26",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-08-27",
+      "score": 1
+    }
+  ],
   "definitions": [],
   "examples": [
     {

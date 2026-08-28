@@ -1,7 +1,12 @@
 {
   "word": "silhouette",
   "createdAt": "2026-06-15",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-08-27",
+      "score": 1
+    }
+  ],
   "definitions": [],
   "examples": [
     {

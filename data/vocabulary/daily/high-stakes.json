@@ -34,5 +34,17 @@
         42
       ]
     }
+  ],
+  "relations": [
+    {
+      "type": "same_scene",
+      "target": {
+        "category": "daily",
+        "file": "casino.json",
+        "word": "casino"
+      },
+      "reason": "casino 的例句场景是赌场里的生死扑克局，high-stakes 表示“高赌注/高风险的”，常用于描述赌场、扑克等博彩场景中的对局，语义上有明确场景关联。",
+      "source": "llm"
+    }
   ]
 }

@@ -1,7 +1,12 @@
 {
   "word": "rations",
   "createdAt": "2026-07-08",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-08-28",
+      "score": 2
+    }
+  ],
   "definitions": [],
   "examples": [
     {

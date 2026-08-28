@@ -13,6 +13,10 @@
     {
       "date": "2026-05-29",
       "score": 2
+    },
+    {
+      "date": "2026-08-27",
+      "score": 1
     }
   ],
   "definitions": [
@@ -33,6 +37,18 @@
         "url": "https://www.youtube.com/watch?v=9GMbRG9CZJw",
         "timestamp": 17
       }
+    }
+  ],
+  "relations": [
+    {
+      "type": "same_scene",
+      "target": {
+        "category": "daily",
+        "file": "tusk.json",
+        "word": "tusk"
+      },
+      "reason": "两个词条出现在同一句历史语境中：早期 billiard balls 由 elephant tusks 中的象牙制成，体现“制品”和“原材料来源”的具体场景关联，适合互相跳转理解背景。",
+      "source": "llm"
     }
   ]
 }

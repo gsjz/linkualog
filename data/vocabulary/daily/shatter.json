@@ -1,0 +1,30 @@
+{
+  "word": "shatter",
+  "createdAt": "2026-06-15",
+  "reviews": [
+    {
+      "date": "2026-08-27",
+      "score": 1
+    }
+  ],
+  "definitions": [
+    "打碎；粉碎；彻底破坏；（纪录等）大幅打破"
+  ],
+  "examples": [
+    {
+      "text": "Counter-Strike 2 breaks player records regularly and routinely shatters viewership records.",
+      "explanation": "这里 shatters 是 shatter 的第三人称单数形式，意思是“打破、粉碎”。shatters viewership records 指“屡次打破观看人数纪录”，强调打破纪录的程度很强。",
+      "focusWords": [
+        "shatter"
+      ],
+      "source": {
+        "text": "How Counter-Strike Solved FPS Games",
+        "url": "https://www.youtube.com/watch?v=-x_uiZ-86Ps"
+      },
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=-x_uiZ-86Ps",
+        "timestamp": 8
+      }
+    }
+  ]
+}

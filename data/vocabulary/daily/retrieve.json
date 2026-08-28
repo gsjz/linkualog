@@ -1,7 +1,12 @@
 {
   "word": "retrieve",
   "createdAt": "2026-06-12",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-08-27",
+      "score": 3
+    }
+  ],
   "definitions": [],
   "examples": [
     {

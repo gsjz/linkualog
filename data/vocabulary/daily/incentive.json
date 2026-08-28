@@ -1,7 +1,16 @@
 {
   "word": "incentive",
   "createdAt": "2026-06-15",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-08-27",
+      "score": 1
+    },
+    {
+      "date": "2026-08-28",
+      "score": 3
+    }
+  ],
   "definitions": [
     "激励；刺激；诱因（促使某人做某事的原因或好处）"
   ],

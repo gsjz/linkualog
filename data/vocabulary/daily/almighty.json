@@ -5,6 +5,10 @@
     {
       "date": "2026-08-14",
       "score": 2
+    },
+    {
+      "date": "2026-08-28",
+      "score": 3
     }
   ],
   "definitions": [
@@ -25,6 +29,28 @@
         "url": "https://www.youtube.com/watch?v=A-oxDZ3AO74",
         "timestamp": 49
       }
+    }
+  ],
+  "relations": [
+    {
+      "type": "related",
+      "target": {
+        "category": "daily",
+        "file": "divinity.json",
+        "word": "divinity"
+      },
+      "reason": "almighty 表示“全能的、拥有无上力量的”，常用于神或神圣存在；divinity 指“神性、神圣力量”，两者都围绕 divine power/神圣权能，语义关联明确。",
+      "source": "llm"
+    },
+    {
+      "type": "same_scene",
+      "target": {
+        "category": "daily",
+        "file": "sacred.json",
+        "word": "sacred"
+      },
+      "reason": "almighty 在例句中修饰佛祖这样的强大神圣存在，sacred 则用于 sacred seal，二者同属宗教/神话/神圣力量场景，适合互相跳转学习。",
+      "source": "llm"
     }
   ]
 }

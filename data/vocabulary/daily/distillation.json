@@ -1,7 +1,12 @@
 {
   "word": "distillation",
   "createdAt": "2026-07-08",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-08-28",
+      "score": 2
+    }
+  ],
   "definitions": [
     "蒸馏；通过加热使液体中的成分汽化，再冷凝收集，以分离或提纯物质的过程。"
   ],

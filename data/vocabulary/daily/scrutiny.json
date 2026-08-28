@@ -1,7 +1,12 @@
 {
   "word": "scrutiny",
   "createdAt": "2026-07-08",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-08-28",
+      "score": 1
+    }
+  ],
   "definitions": [],
   "examples": [
     {

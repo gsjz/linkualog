@@ -1,8 +1,15 @@
 {
   "word": "rituals",
   "createdAt": "2026-07-08",
-  "reviews": [],
-  "definitions": [],
+  "reviews": [
+    {
+      "date": "2026-08-27",
+      "score": 2
+    }
+  ],
+  "definitions": [
+    "杀戮尖塔里有这个词"
+  ],
   "examples": [
     {
       "text": "Others were more concerned about alcohol’s potential for abuse. Greek philosophers promoted temperance. Early Jewish and Christian writers in Europe integrated wine into rituals but considered excessive intoxication a sin. And in the middle east, Africa, and Spain,",

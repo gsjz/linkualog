@@ -1,7 +1,12 @@
 {
   "word": "solitary",
   "createdAt": "2026-06-12",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-08-27",
+      "score": 1
+    }
+  ],
   "definitions": [
     "孤独的；独自的；单独存在的（alone, single）"
   ],
@@ -20,6 +25,18 @@
         "url": "https://www.youtube.com/watch?v=r8eMoxo4ipE",
         "timestamp": 22
       }
+    }
+  ],
+  "relations": [
+    {
+      "type": "related",
+      "target": {
+        "category": "daily",
+        "file": "solidified.json",
+        "word": "solidified"
+      },
+      "reason": "长得有点像",
+      "source": "manual"
     }
   ]
 }

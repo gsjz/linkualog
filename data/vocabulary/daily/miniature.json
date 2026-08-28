@@ -1,7 +1,12 @@
 {
   "word": "miniature",
   "createdAt": "2026-08-26",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-08-27",
+      "score": 2
+    }
+  ],
   "definitions": [],
   "examples": [
     {

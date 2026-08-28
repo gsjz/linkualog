@@ -1,12 +1,19 @@
 {
   "word": "strafe",
   "createdAt": "2026-06-15",
-  "reviews": [],
-  "definitions": [],
+  "reviews": [
+    {
+      "date": "2026-08-28",
+      "score": 1
+    }
+  ],
+  "definitions": [
+    "横向移动；（尤指从低空）扫射、 strafing attack 中的扫射"
+  ],
   "examples": [
     {
-      "text": "akin to a competitive sport before Counter-Strike started getting popular just about every FPS game you played at least the ones a part of the so-called Boomer shooter era gave even encouraged the ability to strafe shoot and whip around the map with Big Pitch Perfect accurate guns at light speed we had Arena multiplayer shooters games like Quake games like Unreal Tournament this",
-      "explanation": "",
+      "text": "Just about every FPS game you played gave, even encouraged, the ability to strafe, shoot, and whip around the map at light speed.",
+      "explanation": "这里的 strafe 用在 FPS 游戏语境中，表示玩家一边横向移动、一边射击，以便快速躲避或调整位置。",
       "focusWords": [
         "strafe"
       ],

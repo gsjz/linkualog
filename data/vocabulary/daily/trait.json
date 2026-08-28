@@ -1,7 +1,12 @@
 {
   "word": "trait",
   "createdAt": "2026-06-02",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-08-28",
+      "score": 5
+    }
+  ],
   "definitions": [
     "特征；特性（尤指人、事物或生物体的典型性质）"
   ],
@@ -20,6 +25,18 @@
         "url": "https://www.youtube.com/watch?v=GASaqPv0t0g",
         "timestamp": 91
       }
+    }
+  ],
+  "relations": [
+    {
+      "type": "related",
+      "target": {
+        "category": "daily",
+        "file": "tract.json",
+        "word": "tract"
+      },
+      "reason": "长得有点像",
+      "source": "manual"
     }
   ]
 }

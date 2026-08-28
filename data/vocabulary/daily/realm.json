@@ -1,12 +1,19 @@
 {
   "word": "realm",
   "createdAt": "2026-06-15",
-  "reviews": [],
-  "definitions": [],
+  "reviews": [
+    {
+      "date": "2026-08-28",
+      "score": 1
+    }
+  ],
+  "definitions": [
+    "领域；范围；王国；界（常指抽象领域或文学/奇幻语境中的地域）"
+  ],
   "examples": [
     {
       "text": "Ocarina of Time, the Triforce, all three pieces, power, wisdom, and courage lay in the sacred realm. Ganondorf breaks into this place and tries to take the Triforce for himself. But as he does not",
-      "explanation": "",
+      "explanation": "这里的 realm 指一个特殊的地方或领域，sacred realm 可理解为“神圣领域”或“圣域”。realm 也常用于抽象意义，如“知识领域、艺术领域”等。",
       "focusWords": [
         "realm"
       ],

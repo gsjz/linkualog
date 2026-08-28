@@ -1,7 +1,12 @@
 {
   "word": "Succession",
   "createdAt": "2026-08-26",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-08-28",
+      "score": 1
+    }
+  ],
   "definitions": [],
   "examples": [
     {
@@ -18,6 +23,18 @@
         "url": "https://www.youtube.com/watch?v=wUVvTqvjUaM",
         "timestamp": 224
       }
+    }
+  ],
+  "relations": [
+    {
+      "type": "related",
+      "target": {
+        "category": "cet",
+        "file": "inherit.json",
+        "word": "inherit"
+      },
+      "reason": "继承",
+      "source": "manual"
     }
   ]
 }

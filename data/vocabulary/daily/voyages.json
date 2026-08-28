@@ -1,7 +1,12 @@
 {
   "word": "voyages",
   "createdAt": "2026-07-08",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-08-28",
+      "score": 1
+    }
+  ],
   "definitions": [],
   "examples": [
     {
@@ -18,6 +23,17 @@
         "url": "https://www.youtube.com/watch?v=y5XEwTDlriE",
         "timestamp": 257
       }
+    }
+  ],
+  "relations": [
+    {
+      "type": "related",
+      "target": {
+        "category": "cet",
+        "file": "marine.json",
+        "word": "marine"
+      },
+      "source": "manual"
     }
   ]
 }

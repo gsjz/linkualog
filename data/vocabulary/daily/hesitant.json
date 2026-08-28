@@ -1,7 +1,12 @@
 {
   "word": "hesitant",
   "createdAt": "2026-06-15",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-08-28",
+      "score": 3
+    }
+  ],
   "definitions": [
     "犹豫的；迟疑的；不愿马上做某事的（常用结构：be hesitant to do sth.）"
   ],

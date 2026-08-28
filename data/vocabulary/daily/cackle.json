@@ -1,7 +1,12 @@
 {
   "word": "cackle",
   "createdAt": "2026-06-12",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-08-27",
+      "score": 1
+    }
+  ],
   "definitions": [
     "咯咯地笑；发出刺耳的笑声（cackle）"
   ],
@@ -20,6 +25,18 @@
         "url": "https://www.youtube.com/watch?v=A-oxDZ3AO74",
         "timestamp": 80
       }
+    }
+  ],
+  "relations": [
+    {
+      "type": "collocation",
+      "target": {
+        "category": "daily",
+        "file": "glee.json",
+        "word": "glee"
+      },
+      "reason": "当前例句中直接出现固定搭配式表达 “cackling with glee”，表示因高兴、得意而咯咯笑或怪笑；cackle 描述笑声，glee 描述情绪来源，适合互相跳转学习。",
+      "source": "llm"
     }
   ]
 }

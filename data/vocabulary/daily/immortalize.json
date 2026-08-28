@@ -1,7 +1,12 @@
 {
   "word": "immortalize",
   "createdAt": "2026-06-15",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-08-28",
+      "score": 2
+    }
+  ],
   "definitions": [
     "使永存；使不朽；把……永远记录下来"
   ],

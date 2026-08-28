@@ -19,5 +19,17 @@
         "timestamp": 80
       }
     }
+  ],
+  "relations": [
+    {
+      "type": "collocation",
+      "target": {
+        "category": "daily",
+        "file": "cackle.json",
+        "word": "cackle"
+      },
+      "reason": "当前例句中直接出现固定搭配式表达 “cackling with glee”，表示因高兴、得意而咯咯笑或怪笑；cackle 描述笑声，glee 描述情绪来源，适合互相跳转学习。",
+      "source": "llm"
+    }
   ]
 }

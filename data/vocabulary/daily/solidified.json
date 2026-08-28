@@ -1,7 +1,12 @@
 {
   "word": "solidified",
   "createdAt": "2026-07-08",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-08-28",
+      "score": 3
+    }
+  ],
   "definitions": [],
   "examples": [
     {
@@ -18,6 +23,18 @@
         "url": "https://www.youtube.com/watch?v=y5XEwTDlriE",
         "timestamp": 172
       }
+    }
+  ],
+  "relations": [
+    {
+      "type": "related",
+      "target": {
+        "category": "daily",
+        "file": "solitary.json",
+        "word": "solitary"
+      },
+      "reason": "长得有点像",
+      "source": "manual"
     }
   ]
 }

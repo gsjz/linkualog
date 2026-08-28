@@ -1,7 +1,12 @@
 {
   "word": "steppe",
   "createdAt": "2026-08-25",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-08-27",
+      "score": 1
+    }
+  ],
   "definitions": [
     "steppe：大草原；干草原，尤指欧亚大陆上少树、适合游牧的广阔草原。"
   ],

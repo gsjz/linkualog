@@ -21,5 +21,17 @@
         "timestamp": 108
       }
     }
+  ],
+  "relations": [
+    {
+      "type": "same_scene",
+      "target": {
+        "category": "daily",
+        "file": "almighty.json",
+        "word": "almighty"
+      },
+      "reason": "almighty 在例句中修饰佛祖这样的强大神圣存在，sacred 则用于 sacred seal，二者同属宗教/神话/神圣力量场景，适合互相跳转学习。",
+      "source": "llm"
+    }
   ]
 }
