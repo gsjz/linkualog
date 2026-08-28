@@ -324,6 +324,14 @@ function App() {
     const nextCategory = normalizeUrlPart(selection?.category);
     const nextWord = normalizeUrlWord(selection?.word || selection?.fileKey || selection?.filename);
     const nextQueueSource = String(selection?.queueSource || selection?.sourceQueue || '').trim();
+    if (!nextCategory && !nextWord) {
+      setVocabularyLaunchRequest(null);
+      setVocabularyRouteState({
+        category: '',
+        word: '',
+      });
+      return;
+    }
     setVocabularyLaunchRequest((current) => {
       if (!nextQueueSource) return current;
       if (

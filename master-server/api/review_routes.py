@@ -5559,7 +5559,17 @@ def start_file_refine_prefetch_job(req: FileRefinePrefetchRequest):
 def review_suggest(req: ReviewSuggestRequest):
     try:
         category = _require_category(req.category)
-        path, payload = load_vocab_entry(category, req.filename)
+        redirect = None
+        try:
+            path, payload = load_vocab_entry(category, req.filename)
+        except FileNotFoundError:
+            resolved = resolve_redirect(category, req.filename)
+            target = resolved.get("resolved") if isinstance(resolved.get("resolved"), dict) else None
+            if resolved.get("status") != "redirected" or not target:
+                raise
+            category = _require_category(str(target.get("category") or ""))
+            path, payload = load_vocab_entry(category, str(target.get("file") or ""))
+            redirect = resolved
         reviews = payload.get("reviews") if isinstance(payload.get("reviews"), list) else []
 
         before = build_review_advice(reviews)
@@ -5606,6 +5616,7 @@ def review_suggest(req: ReviewSuggestRequest):
             "after": after,
             "review_suppression": _entry_review_suppression(payload),
             "auto_saved": bool((req.score is not None or suppression_updated) and req.auto_save),
+            "redirect": redirect,
         }
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc))

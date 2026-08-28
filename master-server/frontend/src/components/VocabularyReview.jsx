@@ -16,6 +16,12 @@ import {
   submitReviewScore,
 } from '../api/client';
 import { RelationGraphPanel } from './VisualizationDashboard.jsx';
+import {
+  DEFAULT_TTS_CONFIG,
+  normalizeTtsConfig,
+  pickPreferredVoice,
+  warmSpeechVoices,
+} from '../utils/tts.js';
 
 const REVIEW_CATEGORY_KEY = 'vocabReviewCategory';
 const DESKTOP_CONTENT_COLLAPSED_KEY = 'vocabReviewDesktopContentDefaultCollapsed';
@@ -595,6 +601,7 @@ const buildQueueSnapshotKey = ({
   limit = '',
   seed = '',
   preferences = '',
+  sort = '',
   entries = [],
 } = {}) => {
   const pool = Array.isArray(entries) ? entries : [];
@@ -608,6 +615,7 @@ const buildQueueSnapshotKey = ({
     String(limit || ''),
     String(seed || ''),
     String(preferences || ''),
+    String(sort || '').trim(),
     pool.length,
     first,
     last,
@@ -1292,6 +1300,7 @@ export default function VocabularyReview({
   const [recommendFineTuneOpen, setRecommendFineTuneOpen] = useState(false);
   const [recommendPreferenceHydrated, setRecommendPreferenceHydrated] = useState(false);
   const [recommendPreferenceDirty, setRecommendPreferenceDirty] = useState(false);
+  const [ttsConfig, setTtsConfig] = useState(() => normalizeTtsConfig(DEFAULT_TTS_CONFIG));
   const pendingLaunchRef = useRef(null);
   const selectedCategoryRef = useRef(selectedCategory);
   const entriesRequestRef = useRef(0);
@@ -1303,6 +1312,7 @@ export default function VocabularyReview({
   const recommendPreferenceHydratedRef = useRef(false);
   const recommendPreferenceDirtyRef = useRef(false);
   const recommendPreferencesRef = useRef(normalizeRecommendationPreferences(DEFAULT_RECOMMENDATION_PREFERENCES));
+  const ttsConfigRef = useRef(normalizeTtsConfig(DEFAULT_TTS_CONFIG));
   const savedRecommendPreferenceKeyRef = useRef(recommendationPreferencesKey(DEFAULT_RECOMMENDATION_PREFERENCES));
   const recommendPreferenceSaveRequestRef = useRef(0);
   const recommendationQueueRequestRef = useRef(0);
@@ -1312,10 +1322,12 @@ export default function VocabularyReview({
   const lastStableRelationGraphRef = useRef(null);
   const autoRecommendationPoolKeyRef = useRef('');
   const keepSelectionEntryIdRef = useRef('');
+  const queueSourceByEntryIdRef = useRef(new Map());
   const randomSelectionModeRef = useRef(randomSelectionMode);
   const infoButtonRef = useRef(null);
   const sidebarWordListRef = useRef(null);
   const detailDataRef = useRef(null);
+  const speechPrimedRef = useRef(false);
   const [mobileInfoPanelPosition, setMobileInfoPanelPosition] = useState(null);
   const desktopOverviewLeftRef = useRef(null);
   const [desktopOverviewLeftHeight, setDesktopOverviewLeftHeight] = useState(0);
@@ -1389,6 +1401,10 @@ export default function VocabularyReview({
     recommendPreferencesRef.current = normalizeRecommendationPreferences(recommendPreferences);
   }, [recommendPreferences]);
 
+  useEffect(() => {
+    ttsConfigRef.current = normalizeTtsConfig(ttsConfig);
+  }, [ttsConfig]);
+
   const resetCurrentEntry = useCallback((nextEntries = []) => {
     detailRequestRef.current += 1;
     keepSelectionEntryIdRef.current = '';
@@ -1404,14 +1420,16 @@ export default function VocabularyReview({
     setDetailCategory('');
   }, []);
 
-  const invalidateRecommendationQueue = useCallback(({ loading = false } = {}) => {
+  const invalidateRecommendationQueue = useCallback(({ loading = false, reseed = true } = {}) => {
     recommendationRefreshRequestRef.current += 1;
     recommendationQueueRequestRef.current += 1;
     autoRecommendationPoolKeyRef.current = '';
     setRecommendExcludeKeys([]);
     setRecommendation(null);
     setRecommendationQueue([]);
-    setRandomQueueSeed(`${Date.now()}-${Math.random().toString(36).slice(2)}`);
+    if (reseed) {
+      setRandomQueueSeed(`${Date.now()}-${Math.random().toString(36).slice(2)}`);
+    }
     setLoadingRecommendation(false);
     setLoadingRecommendationQueue(Boolean(loading && randomSelectionModeRef.current));
   }, []);
@@ -1462,6 +1480,91 @@ export default function VocabularyReview({
     const entryCategory = String(entryLike?.category || '').trim();
     return isAllCategoriesValue(entryCategory) ? '' : entryCategory;
   }, [selectedCategory]);
+
+  const resolveStickyQueueSource = useCallback((entryId, requestedSource = '') => {
+    const normalizedEntryId = String(entryId || '').trim();
+    const normalizedRequestedSource = QUEUE_SOURCE_NAMES.has(String(requestedSource || '').trim())
+      ? String(requestedSource || '').trim()
+      : '';
+    const rememberedSource = normalizedEntryId
+      ? String(queueSourceByEntryIdRef.current.get(normalizedEntryId) || '').trim()
+      : '';
+
+    if (normalizedRequestedSource && normalizedRequestedSource !== 'manual') {
+      if (normalizedEntryId) {
+        queueSourceByEntryIdRef.current.set(normalizedEntryId, normalizedRequestedSource);
+      }
+      return normalizedRequestedSource;
+    }
+
+    if (rememberedSource) {
+      return rememberedSource;
+    }
+
+    return normalizedRequestedSource;
+  }, []);
+
+  const transferStickyQueueSource = useCallback((sourceEntryId, targetEntryId, requestedSource = '') => {
+    const normalizedTargetId = String(targetEntryId || '').trim();
+    const stickySource = resolveStickyQueueSource(sourceEntryId, requestedSource);
+    if (normalizedTargetId && stickySource && stickySource !== 'manual') {
+      queueSourceByEntryIdRef.current.set(normalizedTargetId, stickySource);
+    }
+    return stickySource;
+  }, [resolveStickyQueueSource]);
+
+  const resolveCurrentActionQueueSource = useCallback((entryId, fallbackSource = '') => {
+    const normalizedEntryId = String(entryId || '').trim();
+    const rememberedSource = normalizedEntryId
+      ? String(queueSourceByEntryIdRef.current.get(normalizedEntryId) || '').trim()
+      : '';
+    return rememberedSource || String(fallbackSource || '').trim();
+  }, []);
+
+  const applyDetailResponse = useCallback((res, fallbackEntry, fallbackCategory, queueSource = '') => {
+    if (!res?.data || !fallbackEntry) return null;
+
+    const redirectTarget = res?.redirect?.resolved && typeof res.redirect.resolved === 'object'
+      ? res.redirect.resolved
+      : null;
+    const responseCategory = String(res.category || redirectTarget?.category || fallbackCategory).trim();
+    const responseFile = normalizeVocabularyLaunchWord(res.file || redirectTarget?.file || fallbackEntry.file);
+    const responseWord = String(res.data?.word || redirectTarget?.word || res.word || responseFile || fallbackEntry.word || '').trim();
+    const responseEntry = normalizeVocabularyEntry({
+      ...fallbackEntry,
+      category: responseCategory,
+      file: responseFile.endsWith('.json') ? responseFile : `${responseFile}.json`,
+      key: responseFile,
+      word: responseWord,
+      marked: Boolean(res.data?.marked),
+      needsProcessing: fallbackEntry.needsProcessing,
+      refineCached: fallbackEntry.refineCached,
+      relationCached: fallbackEntry.relationCached,
+    }, responseCategory);
+
+    setSelectedEntryId(responseEntry.id);
+    setSelectedEntrySnapshot(responseEntry);
+    setDetailData(res.data);
+    setDetailEntry(responseEntry);
+    setDetailCategory(responseCategory);
+    const resolvedQueueSource = transferStickyQueueSource(fallbackEntry.id, responseEntry.id, queueSource);
+    setSelectedQueueSource(resolvedQueueSource);
+
+    if (
+      redirectTarget
+      && typeof onSelectionChange === 'function'
+      && (responseCategory !== fallbackCategory || responseEntry.id !== fallbackEntry.id)
+    ) {
+      onSelectionChange({
+        category: responseCategory,
+        word: responseEntry.key || responseEntry.file || responseEntry.word,
+        fileKey: responseEntry.file || responseEntry.key || responseEntry.word,
+        queueSource: resolvedQueueSource,
+      });
+    }
+
+    return responseEntry;
+  }, [onSelectionChange, transferStickyQueueSource]);
 
   const loadCategories = useCallback(async () => {
     try {
@@ -1529,9 +1632,9 @@ export default function VocabularyReview({
     }
   }, [categories]);
 
-  const refreshVocabularyPool = useCallback(async ({ refreshCategories = false, resetQueue = true } = {}) => {
+  const refreshVocabularyPool = useCallback(async ({ refreshCategories = false, resetQueue = true, reseed = true } = {}) => {
     if (resetQueue) {
-      invalidateRecommendationQueue({ loading: true });
+      invalidateRecommendationQueue({ loading: true, reseed });
     }
     if (refreshCategories) {
       await loadCategories();
@@ -1554,9 +1657,7 @@ export default function VocabularyReview({
     const keepDetailWhileLoading = Boolean(options?.keepDetailWhileLoading);
     const hasPreviousDetail = Boolean(detailDataRef.current);
     const shouldKeepDetailWhileLoading = keepDetailWhileLoading || hasPreviousDetail;
-    const normalizedQueueSource = QUEUE_SOURCE_NAMES.has(options?.queueSource)
-      ? options.queueSource
-      : '';
+    const normalizedQueueSource = resolveStickyQueueSource(resolvedEntry.id, options?.queueSource);
     const requestId = detailRequestRef.current + 1;
     detailRequestRef.current = requestId;
     keepSelectionEntryIdRef.current = '';
@@ -1580,18 +1681,13 @@ export default function VocabularyReview({
     try {
       const res = await getVocabularyDetail(resolvedEntry.key || resolvedEntry.file || resolvedEntry.word, requestCategory);
       if (detailRequestRef.current !== requestId) return;
-      if (res.data) {
-        setDetailData(res.data);
-        setDetailEntry(normalizeVocabularyEntry({
-          ...resolvedEntry,
-          category: requestCategory,
-        }, requestCategory));
-      }
+      applyDetailResponse(res, resolvedEntry, requestCategory, normalizedQueueSource);
       setDetailLoading(false);
       setDetailLoadingEntry(null);
     } catch (error) {
       if (detailRequestRef.current !== requestId) return;
-      if (selectedCategoryRef.current !== normalizedCategory) return;
+      const categoryChanged = selectedCategoryRef.current !== normalizedCategory
+        && !isAllCategoriesValue(selectedCategoryRef.current);
       if (!shouldKeepDetailWhileLoading) {
         setDetailCategory('');
         setDetailData(null);
@@ -1599,10 +1695,11 @@ export default function VocabularyReview({
       }
       setDetailLoading(false);
       setDetailLoadingEntry(null);
+      if (categoryChanged) return;
       console.error('加载详情失败', error);
       alert('加载详情失败');
     }
-  }, [entries, onSelectionChange, resolveEntryCandidate, resolveEntryCategory, selectedCategory]);
+  }, [applyDetailResponse, entries, onSelectionChange, resolveEntryCandidate, resolveEntryCategory, resolveStickyQueueSource, selectedCategory]);
 
   useEffect(() => {
     detailDataRef.current = detailData;
@@ -1613,10 +1710,29 @@ export default function VocabularyReview({
   }, [selectedCategory]);
 
   useEffect(() => {
+    const synth = typeof window !== 'undefined' ? window.speechSynthesis : null;
+    if (!synth) return undefined;
+
+    warmSpeechVoices(synth);
+    const handleVoicesChanged = () => warmSpeechVoices(synth);
+    if (typeof synth.addEventListener === 'function') {
+      synth.addEventListener('voiceschanged', handleVoicesChanged);
+      return () => synth.removeEventListener('voiceschanged', handleVoicesChanged);
+    }
+    synth.onvoiceschanged = handleVoicesChanged;
+    return () => {
+      if (synth.onvoiceschanged === handleVoicesChanged) {
+        synth.onvoiceschanged = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     let cancelled = false;
     fetchConfig()
       .then((config) => {
         if (cancelled) return;
+        setTtsConfig(normalizeTtsConfig(config || {}));
         const nextPreferences = recommendationPreferencesFromConfig(config || {});
         const nextKey = recommendationPreferencesKey(nextPreferences);
         savedRecommendPreferenceKeyRef.current = nextKey;
@@ -1641,6 +1757,21 @@ export default function VocabularyReview({
     return () => {
       cancelled = true;
     };
+  }, []);
+
+  useEffect(() => {
+    const handleTtsConfigUpdate = () => {
+      fetchConfig()
+        .then((config) => {
+          setTtsConfig(normalizeTtsConfig(config || {}));
+        })
+        .catch((error) => {
+          console.error('读取语音偏好失败', error);
+        });
+    };
+
+    window.addEventListener('config-updated', handleTtsConfigUpdate);
+    return () => window.removeEventListener('config-updated', handleTtsConfigUpdate);
   }, []);
 
   useEffect(() => {
@@ -1745,7 +1876,7 @@ export default function VocabularyReview({
     }
 
     queueMicrotask(() => {
-      void refreshVocabularyPool({ resetQueue: true });
+      void refreshVocabularyPool({ resetQueue: true, reseed: false });
     });
   }, [refreshVocabularyPool, resetCurrentEntry, selectedCategory]);
 
@@ -1770,8 +1901,17 @@ export default function VocabularyReview({
       && (!targetCategory || targetCategory === currentEntryCategory);
     const launchQueueSource = QUEUE_SOURCE_NAMES.has(launchRequest?.queueSource) ? launchRequest.queueSource : '';
     if (sameEntry) {
-      if (launchQueueSource && selectedQueueSource !== launchQueueSource) {
-        setSelectedQueueSource(launchQueueSource);
+      const nextQueueSource = resolveStickyQueueSource(currentEntry?.id, launchQueueSource || selectedQueueSource);
+      if (nextQueueSource && selectedQueueSource !== nextQueueSource) {
+        setSelectedQueueSource(nextQueueSource);
+        if (typeof onSelectionChange === 'function') {
+          onSelectionChange({
+            category: currentEntryCategory,
+            word: currentEntry.key || currentEntry.file || currentEntry.word,
+            fileKey: currentEntry.file || currentEntry.key || currentEntry.word,
+            queueSource: nextQueueSource,
+          });
+        }
       }
       return;
     }
@@ -1802,7 +1942,7 @@ export default function VocabularyReview({
         { queueSource: launchQueueSource || 'manual' },
       );
     });
-  }, [applySelectedCategory, detailCategory, entries, handleSelectEntry, launchRequest, resolveEntryCandidate, resolveEntryCategory, selectedCategory, selectedEntryId, selectedQueueSource]);
+  }, [applySelectedCategory, detailCategory, entries, handleSelectEntry, launchRequest, onSelectionChange, resolveEntryCandidate, resolveEntryCategory, resolveStickyQueueSource, selectedCategory, selectedEntryId, selectedQueueSource]);
 
   useEffect(() => {
     const pendingLaunch = pendingLaunchRef.current;
@@ -1838,10 +1978,21 @@ export default function VocabularyReview({
       || entryUpdateRequest.word,
     );
     if (!targetCategory || !targetFile) return;
+    const sourceCategory = String(entryUpdateRequest.source_category || entryUpdateRequest.sourceCategory || targetCategory).trim();
+    const sourceFile = normalizeVocabularyLaunchWord(
+      entryUpdateRequest.source_file
+      || entryUpdateRequest.sourceFile
+      || entryUpdateRequest.source_filename
+      || entryUpdateRequest.sourceFilename
+      || '',
+    );
+    const sourceEntryId = sourceCategory && sourceFile
+      ? buildVocabularyEntryId(sourceCategory, sourceFile)
+      : '';
 
     if (entryUpdateRequest.deleted) {
       const targetId = buildVocabularyEntryId(targetCategory, targetFile);
-      invalidateRecommendationQueue({ loading: true });
+      invalidateRecommendationQueue({ loading: true, reseed: false });
       setEntries((prev) => prev.filter((item) => item.id !== targetId));
       if (selectedEntryId === targetId) {
         detailRequestRef.current += 1;
@@ -1864,7 +2015,7 @@ export default function VocabularyReview({
           : current
       ));
       queueMicrotask(() => {
-        void refreshVocabularyPool({ resetQueue: true });
+        void refreshVocabularyPool({ resetQueue: true, reseed: false });
       });
       return;
     }
@@ -1883,12 +2034,15 @@ export default function VocabularyReview({
     const browsingAllCategories = isAllCategoriesValue(selectedCategory);
     const shouldSelectUpdatedEntry = browsingAllCategories || selectedCategory === targetCategory;
     const keepSelection = Boolean(entryUpdateRequest.keepSelection || entryUpdateRequest.keep_selection);
+    const nextQueueSource = sourceEntryId
+      ? transferStickyQueueSource(sourceEntryId, nextEntry.id, selectedQueueSource)
+      : resolveStickyQueueSource(nextEntry.id, selectedQueueSource);
 
     if (shouldSelectUpdatedEntry) {
       if (keepSelection) {
         keepSelectionEntryIdRef.current = nextEntry.id;
       }
-      invalidateRecommendationQueue({ loading: true });
+      invalidateRecommendationQueue({ loading: true, reseed: false });
       setEntries((prev) => {
         const sourceFile = normalizeVocabularyLaunchWord(entryUpdateRequest.source_file || '');
         const sourceCategory = String(entryUpdateRequest.source_category || entryUpdateRequest.sourceCategory || targetCategory).trim();
@@ -1912,7 +2066,7 @@ export default function VocabularyReview({
 
       setSelectedEntryId(nextEntry.id);
       setSelectedEntrySnapshot(nextEntry);
-      setSelectedQueueSource('');
+      setSelectedQueueSource(nextQueueSource);
       setDetailCategory(targetCategory);
       if (entryUpdateRequest.data) {
         setDetailData(entryUpdateRequest.data);
@@ -1937,11 +2091,13 @@ export default function VocabularyReview({
 
     queueMicrotask(() => {
       if (shouldSelectUpdatedEntry && !keepSelection) {
-        void handleSelectEntry(nextEntry, targetCategory, [nextEntry, ...entries], { queueSource: 'manual' });
+        void handleSelectEntry(nextEntry, targetCategory, [nextEntry, ...entries], {
+          queueSource: nextQueueSource || 'manual',
+        });
       }
-      void refreshVocabularyPool({ resetQueue: true });
+      void refreshVocabularyPool({ resetQueue: true, reseed: false });
     });
-  }, [entries, entryUpdateRequest, handleSelectEntry, invalidateRecommendationQueue, refreshVocabularyPool, selectedCategory, selectedEntryId]);
+  }, [entries, entryUpdateRequest, handleSelectEntry, invalidateRecommendationQueue, refreshVocabularyPool, resolveStickyQueueSource, selectedCategory, selectedEntryId, selectedQueueSource, transferStickyQueueSource]);
 
   useEffect(() => {
     const updateToken = String(prefetchedRefineRequest?.token || '');
@@ -2000,12 +2156,22 @@ export default function VocabularyReview({
     }
 
     try {
-      window.speechSynthesis.cancel();
+      const synth = window.speechSynthesis;
       const formattedText = String(text || '').replace(/-/g, ' ');
+      if (!formattedText.trim()) return;
+      if (!speechPrimedRef.current) {
+        warmSpeechVoices(synth);
+        speechPrimedRef.current = true;
+      }
+      synth.cancel();
       const utterance = new SpeechSynthesisUtterance(formattedText);
       utterance.lang = type === 2 ? 'en-US' : 'en-GB';
       utterance.rate = 0.9;
-      window.speechSynthesis.speak(utterance);
+      const voice = pickPreferredVoice(synth.getVoices(), utterance.lang, ttsConfigRef.current);
+      if (voice) {
+        utterance.voice = voice;
+      }
+      synth.speak(utterance);
     } catch (error) {
       console.error('本地语音播放失败:', error);
     }
@@ -2174,6 +2340,7 @@ export default function VocabularyReview({
       category: selectedCategory,
       filter: entryFilter,
       query: normalizedWordQuery,
+      sort: manualSortOrder,
       entries: visibleEntries,
     });
     onQueueSnapshotChange({
@@ -2181,8 +2348,16 @@ export default function VocabularyReview({
       manualSyncKey,
       random: randomSelectionMode ? buildVisibleRandomQueue(visibleRecommendationQueue, fallbackRandomQueue, randomQueueLimit) : null,
       randomSyncKey,
+      randomSeed: randomSelectionMode ? randomQueueSeed : '',
+      randomScope: randomSelectionMode
+        ? (recommendScope === ALL_RECOMMEND_SCOPE ? ALL_CATEGORIES_VALUE : recommendScope)
+        : '',
+      randomFilter: randomSelectionMode ? entryFilter : '',
+      randomQuery: randomSelectionMode ? normalizedWordQuery : '',
+      randomLimit: randomSelectionMode ? randomQueueLimit : '',
+      randomPreferences: randomSelectionMode ? recommendationPreferencesKey(recommendPreferences) : '',
     });
-  }, [entryFilter, normalizedWordQuery, onQueueSnapshotChange, randomQueueLimit, randomQueueSeed, randomSelectionMode, recommendPreferences, recommendScope, selectedCategory, visibleEntries, visibleRecommendationQueue]);
+  }, [entryFilter, manualSortOrder, normalizedWordQuery, onQueueSnapshotChange, randomQueueLimit, randomQueueSeed, randomSelectionMode, recommendPreferences, recommendScope, selectedCategory, visibleEntries, visibleRecommendationQueue]);
 
   useEffect(() => {
     const token = String(queueJumpRequest?.token || '').trim();
@@ -2509,6 +2684,7 @@ export default function VocabularyReview({
     const currentEntry = detailEntry || selectedEntry || resolveEntryCandidate(detailData?.word, selectedCategory, entries);
     const currentEntryCategory = detailCategory || resolveEntryCategory(currentEntry, selectedCategory);
     if (detailLoading || !detailData || !currentEntry?.file || !currentEntryCategory) return false;
+    const currentActionQueueSource = resolveCurrentActionQueueSource(currentEntry?.id, selectedQueueSource);
 
     const shouldAdvanceForThisScore = options?.autoAdvance !== false && randomSelectionModeRef.current;
     setSavingReviewScore(true);
@@ -2517,10 +2693,7 @@ export default function VocabularyReview({
     try {
       await submitReviewScore(currentEntryCategory, currentEntry.file, score, getTodayLocalDateString());
       const res = await getVocabularyDetail(currentEntry.key || currentEntry.file || currentEntry.word, currentEntryCategory);
-      if (res?.data) {
-        setDetailData(res.data);
-        setDetailEntry(currentEntry);
-      }
+      applyDetailResponse(res, currentEntry, currentEntryCategory, currentActionQueueSource);
       shouldAdvance = shouldAdvanceForThisScore && randomSelectionModeRef.current;
       saved = true;
     } catch (error) {
@@ -2533,12 +2706,13 @@ export default function VocabularyReview({
       }
     }
     return saved;
-  }, [detailCategory, detailData, detailEntry, detailLoading, entries, handleRecommendationNext, resolveEntryCandidate, resolveEntryCategory, selectedCategory, selectedEntry, visibleEntries]);
+  }, [applyDetailResponse, detailCategory, detailData, detailEntry, detailLoading, entries, handleRecommendationNext, resolveCurrentActionQueueSource, resolveEntryCandidate, resolveEntryCategory, selectedCategory, selectedEntry, selectedQueueSource, visibleEntries]);
 
   const handleToggleReviewSuppression = useCallback(async () => {
     const currentEntry = detailEntry || selectedEntry || resolveEntryCandidate(detailData?.word, selectedCategory, entries);
     const currentEntryCategory = detailCategory || resolveEntryCategory(currentEntry, selectedCategory);
     if (detailLoading || !detailData || !currentEntry?.file || !currentEntryCategory) return false;
+    const currentActionQueueSource = resolveCurrentActionQueueSource(currentEntry?.id, selectedQueueSource);
 
     const currentScore = Number(detailData?.review_suppression?.score || detailData?.reviewSuppression?.score || 0) || 0;
     const nextScore = currentScore > 0 ? 0 : 5;
@@ -2548,11 +2722,8 @@ export default function VocabularyReview({
         suppressionScore: nextScore,
       });
       const res = await getVocabularyDetail(currentEntry.key || currentEntry.file || currentEntry.word, currentEntryCategory);
-      if (res?.data) {
-        setDetailData(res.data);
-        setDetailEntry(currentEntry);
-      }
-      invalidateRecommendationQueue({ loading: true });
+      applyDetailResponse(res, currentEntry, currentEntryCategory, currentActionQueueSource);
+      invalidateRecommendationQueue({ loading: true, reseed: false });
       return true;
     } catch (error) {
       console.error('更新词条抑制失败', error);
@@ -2561,7 +2732,7 @@ export default function VocabularyReview({
     } finally {
       setSavingReviewScore(false);
     }
-  }, [detailCategory, detailData, detailEntry, detailLoading, entries, invalidateRecommendationQueue, resolveEntryCandidate, resolveEntryCategory, selectedCategory, selectedEntry]);
+  }, [applyDetailResponse, detailCategory, detailData, detailEntry, detailLoading, entries, invalidateRecommendationQueue, resolveCurrentActionQueueSource, resolveEntryCandidate, resolveEntryCategory, selectedCategory, selectedEntry, selectedQueueSource]);
 
   useEffect(() => {
     if (!mobileSimple || !randomSelectionMode || !recommendPreferenceHydrated) return;
@@ -2724,7 +2895,7 @@ export default function VocabularyReview({
       const targetId = currentEntry.id;
       detailRequestRef.current += 1;
       keepSelectionEntryIdRef.current = '';
-      invalidateRecommendationQueue({ loading: true });
+      invalidateRecommendationQueue({ loading: true, reseed: false });
       setEntries((prev) => prev.filter((item) => item.id !== targetId));
       setSelectedEntryId('');
       setSelectedEntrySnapshot(null);
@@ -2743,7 +2914,7 @@ export default function VocabularyReview({
           : current
       ));
       queueMicrotask(() => {
-        void refreshVocabularyPool({ resetQueue: true });
+        void refreshVocabularyPool({ resetQueue: true, reseed: false });
       });
     } catch (error) {
       console.error('删除词条失败', error);
@@ -2788,6 +2959,9 @@ export default function VocabularyReview({
     || resolveEntryCategory(currentActionEntry, selectedCategory);
   const currentActionFile = currentActionEntry?.file || '';
   const currentActionWord = String(detailData?.word || currentActionEntry?.word || currentActionFile || '').replace(/\.json$/i, '');
+  const currentActionQueueSource = currentActionEntry?.id
+    ? (String(queueSourceByEntryIdRef.current.get(currentActionEntry.id) || '').trim() || String(selectedQueueSource || '').trim())
+    : String(selectedQueueSource || '').trim();
 
   useEffect(() => {
     if (typeof onCurrentEntryActionsChange !== 'function') return undefined;
@@ -2799,7 +2973,7 @@ export default function VocabularyReview({
       categoryLabel: currentActionCategory ? formatCategoryLabel(currentActionCategory) : '',
       file: currentActionFile,
       word: currentActionWord,
-      queueSource: selectedQueueSource,
+      queueSource: currentActionQueueSource,
       marked: Boolean(detailData?.marked),
       latestScore: latestReviewScore,
       savingMarked,
@@ -2830,7 +3004,7 @@ export default function VocabularyReview({
     onCurrentEntryActionsChange,
     savingMarked,
     savingReviewScore,
-    selectedQueueSource,
+    currentActionQueueSource,
   ]);
 
   const activeFilterOption = ENTRY_FILTER_OPTIONS.find((item) => item.value === entryFilter) || ENTRY_FILTER_OPTIONS[0];

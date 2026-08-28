@@ -22,6 +22,8 @@ class ConfigResetTests(unittest.TestCase):
                 "MASTER_SERVER_LLM_MODEL",
                 "MASTER_SERVER_LLM_API_KEY",
                 "MASTER_SERVER_BACKEND_PORT",
+                "MASTER_SERVER_TTS_VOICE_SOURCE_PREFERENCE",
+                "MASTER_SERVER_TTS_VOICE_PRIORITY",
             )
         }
 
@@ -30,6 +32,8 @@ class ConfigResetTests(unittest.TestCase):
         os.environ["MASTER_SERVER_LLM_MODEL"] = "env-model"
         os.environ["MASTER_SERVER_LLM_API_KEY"] = "env-key"
         os.environ["MASTER_SERVER_BACKEND_PORT"] = "19090"
+        os.environ.pop("MASTER_SERVER_TTS_VOICE_SOURCE_PREFERENCE", None)
+        os.environ.pop("MASTER_SERVER_TTS_VOICE_PRIORITY", None)
 
     def tearDown(self):
         config.CONFIG_FILE = self.original_config_file
@@ -75,6 +79,47 @@ class ConfigResetTests(unittest.TestCase):
             resolve_chat_completions_url(result["data"]["provider"]),
             "https://env.example/v1/chat/completions",
         )
+
+    def test_tts_voice_config_is_saved_and_reset_with_public_data(self):
+        os.environ["MASTER_SERVER_TTS_VOICE_SOURCE_PREFERENCE"] = "remote_first"
+        os.environ["MASTER_SERVER_TTS_VOICE_PRIORITY"] = "Env Voice, local:en-US"
+
+        initial = routes.get_config()
+
+        self.assertEqual(initial["tts_voice_source_preference"], "remote_first")
+        self.assertEqual(initial["tts_voice_priority"], "Env Voice, local:en-US")
+
+        saved = routes.update_config(
+            {
+                "tts_voice_source_preference": "browser_default",
+                "tts_voice_priority": "  Microsoft Aria, en-GB  ",
+            }
+        )
+
+        self.assertEqual(saved["status"], "success")
+        self.assertEqual(saved["data"]["tts_voice_source_preference"], "browser_default")
+        self.assertEqual(saved["data"]["tts_voice_priority"], "Microsoft Aria, en-GB")
+        self.assertNotIn("api_key", saved["data"])
+
+        raw_saved = json.loads(self.config_file.read_text(encoding="utf-8"))
+        self.assertEqual(raw_saved["tts_voice_source_preference"], "browser_default")
+        self.assertEqual(raw_saved["tts_voice_priority"], "Microsoft Aria, en-GB")
+
+        reset = routes.reset_config()
+
+        self.assertEqual(reset["data"]["tts_voice_source_preference"], "remote_first")
+        self.assertEqual(reset["data"]["tts_voice_priority"], "Env Voice, local:en-US")
+
+    def test_invalid_tts_voice_source_falls_back_to_default(self):
+        saved = routes.update_config(
+            {
+                "tts_voice_source_preference": "not-a-source",
+                "tts_voice_priority": "  ",
+            }
+        )
+
+        self.assertEqual(saved["data"]["tts_voice_source_preference"], "local_first")
+        self.assertEqual(saved["data"]["tts_voice_priority"], "")
 
 
 if __name__ == "__main__":

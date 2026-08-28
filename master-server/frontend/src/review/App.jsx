@@ -6,6 +6,12 @@ import UiIcon from '../components/UiIcon';
 import './index.css';
 import { FOCUS_TOKEN_REGEX as TOKEN_REGEX, tokenizeNonSpace } from './focusTokens';
 import {
+  DEFAULT_TTS_CONFIG,
+  normalizeTtsConfig,
+  pickPreferredVoice,
+  warmSpeechVoices,
+} from '../utils/tts.js';
+import {
   fetchCategories,
   fetchConfig,
   fetchFiles,
@@ -934,20 +940,6 @@ function buildYoudaoUrl(word) {
   const normalized = String(word || '').trim();
   if (!normalized) return '';
   return `https://www.youdao.com/result?word=${encodeURIComponent(normalized)}&lang=en`;
-}
-
-function pickPreferredVoice(voices, lang) {
-  const normalizedLang = String(lang || '').toLowerCase();
-  if (!Array.isArray(voices) || !normalizedLang) return null;
-
-  const exact = voices.find((voice) => String(voice?.lang || '').toLowerCase() === normalizedLang);
-  if (exact) return exact;
-
-  const baseLang = normalizedLang.split('-')[0];
-  const sameBase = voices.find((voice) => String(voice?.lang || '').toLowerCase().startsWith(`${baseLang}-`));
-  if (sameBase) return sameBase;
-
-  return voices.find((voice) => String(voice?.lang || '').toLowerCase().startsWith('en')) || null;
 }
 
 function sanitizeDraftForSave(draft, fallbackWord, context = {}) {
@@ -3224,6 +3216,7 @@ export default function App({
   ));
   const [recommendPreferencesReady, setRecommendPreferencesReady] = useState(false);
   const [savingRecommendPreferences, setSavingRecommendPreferences] = useState(false);
+  const [ttsConfig, setTtsConfig] = useState(() => normalizeTtsConfig(DEFAULT_TTS_CONFIG));
 
   const [detail, setDetail] = useState(null);
   const [draft, setDraft] = useState(null);
@@ -3259,6 +3252,8 @@ export default function App({
   const entriesFetchByCategoryRef = useRef(new Map());
   const manualMergeTargetTokenRef = useRef(0);
   const speechRequestRef = useRef(0);
+  const speechPrimedRef = useRef(false);
+  const ttsConfigRef = useRef(normalizeTtsConfig(DEFAULT_TTS_CONFIG));
   const recommendPreferenceHydratedRef = useRef(false);
   const savedRecommendPreferenceKeyRef = useRef('');
   const recommendPreferenceSaveTimerRef = useRef(null);
@@ -3311,6 +3306,10 @@ export default function App({
   const ttsSupported = typeof window !== 'undefined'
     && 'speechSynthesis' in window
     && typeof window.SpeechSynthesisUtterance === 'function';
+
+  useEffect(() => {
+    ttsConfigRef.current = normalizeTtsConfig(ttsConfig);
+  }, [ttsConfig]);
 
   const showNotice = (message) => {
     setError('');
@@ -3415,6 +3414,35 @@ export default function App({
     },
   ), [apiCategory, filename]);
 
+  const applyDetailRedirect = useCallback((detailRes, requestedCategory = apiCategory, requestedFilename = filename) => {
+    const redirectTarget = detailRes?.redirect?.resolved && typeof detailRes.redirect.resolved === 'object'
+      ? detailRes.redirect.resolved
+      : null;
+    if (!redirectTarget) return false;
+
+    const resolvedCategory = normalizeCategoryValue(detailRes?.category || redirectTarget.category || requestedCategory);
+    const resolvedFilename = normalizeFilename(detailRes?.file || redirectTarget.file || requestedFilename);
+    if (!resolvedCategory || !resolvedFilename || isSameVocabularyFile(requestedCategory, requestedFilename, resolvedCategory, resolvedFilename)) {
+      return false;
+    }
+
+    pendingSelectionRef.current = { category: resolvedCategory, filename: resolvedFilename };
+    if (typeof onSelectionChange === 'function') {
+      onSelectionChange({
+        category: resolvedCategory,
+        word: resolvedFilename,
+        filename: resolvedFilename,
+      });
+    }
+    if (resolvedCategory !== apiCategory) {
+      setFilename('');
+      setCategory(resolvedCategory);
+    } else {
+      setFilename(resolvedFilename);
+    }
+    return true;
+  }, [apiCategory, filename, onSelectionChange]);
+
   useEffect(() => {
     if (!notice) return undefined;
     const timer = window.setTimeout(() => setNotice(''), 2400);
@@ -3450,11 +3478,30 @@ export default function App({
   }, []);
 
   useEffect(() => {
+    const synth = typeof window !== 'undefined' ? window.speechSynthesis : null;
+    if (!synth) return undefined;
+
+    warmSpeechVoices(synth);
+    const handleVoicesChanged = () => warmSpeechVoices(synth);
+    if (typeof synth.addEventListener === 'function') {
+      synth.addEventListener('voiceschanged', handleVoicesChanged);
+      return () => synth.removeEventListener('voiceschanged', handleVoicesChanged);
+    }
+    synth.onvoiceschanged = handleVoicesChanged;
+    return () => {
+      if (synth.onvoiceschanged === handleVoicesChanged) {
+        synth.onvoiceschanged = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     let cancelled = false;
 
     fetchConfig()
       .then((config) => {
         if (cancelled) return;
+        setTtsConfig(normalizeTtsConfig(config || {}));
         const nextPreferences = recommendationPreferencesFromConfig(config || {});
         savedRecommendPreferenceKeyRef.current = recommendationPreferencesKey(nextPreferences);
         setRecommendPreferences(nextPreferences);
@@ -3473,6 +3520,21 @@ export default function App({
     return () => {
       cancelled = true;
     };
+  }, []);
+
+  useEffect(() => {
+    const handleTtsConfigUpdate = () => {
+      fetchConfig()
+        .then((config) => {
+          setTtsConfig(normalizeTtsConfig(config || {}));
+        })
+        .catch((err) => {
+          showError(`读取语音偏好失败: ${err.message}`);
+        });
+    };
+
+    window.addEventListener('config-updated', handleTtsConfigUpdate);
+    return () => window.removeEventListener('config-updated', handleTtsConfigUpdate);
   }, []);
 
   useEffect(() => {
@@ -3736,6 +3798,7 @@ export default function App({
     ])
       .then(([detailRes, reviewRes]) => {
         if (cancelled) return;
+        applyDetailRedirect(detailRes, apiCategory, filename);
         hydrateDetailAndDraft(detailRes.data || null);
         setReviewData(reviewRes || null);
       })
@@ -3746,7 +3809,7 @@ export default function App({
     return () => {
       cancelled = true;
     };
-  }, [apiCategory, category, filename, hasSelection]);
+  }, [apiCategory, applyDetailRedirect, category, filename, hasSelection]);
 
   useEffect(() => {
     if (!hasSelection || typeof onSelectionChange !== 'function') return;
@@ -4599,6 +4662,7 @@ export default function App({
       setReviewData(reviewRes);
 
       const detailRes = await fetchVocabDetail(apiCategory, filename);
+      applyDetailRedirect(detailRes, apiCategory, filename);
       hydrateDetailAndDraft(detailRes.data || null);
       showNotice(`已记录评分 ${score}`);
     } catch (err) {
@@ -4622,6 +4686,7 @@ export default function App({
       setReviewData(reviewRes);
 
       const detailRes = await fetchVocabDetail(apiCategory, filename);
+      applyDetailRedirect(detailRes, apiCategory, filename);
       hydrateDetailAndDraft(detailRes.data || null);
       showNotice(nextScore > 0 ? '已近期抑制当前词条' : '已取消近期抑制');
     } catch (err) {
@@ -4643,6 +4708,10 @@ export default function App({
     const requestId = speechRequestRef.current + 1;
     speechRequestRef.current = requestId;
     setTtsVoiceLabel('');
+    if (!speechPrimedRef.current) {
+      warmSpeechVoices(synth);
+      speechPrimedRef.current = true;
+    }
     synth.cancel();
 
     const utterance = new window.SpeechSynthesisUtterance(word);
@@ -4650,7 +4719,7 @@ export default function App({
     utterance.rate = 0.92;
     utterance.pitch = 1;
 
-    const preferredVoice = pickPreferredVoice(synth.getVoices(), lang);
+    const preferredVoice = pickPreferredVoice(synth.getVoices(), lang, ttsConfigRef.current);
     if (preferredVoice) {
       utterance.voice = preferredVoice;
     }

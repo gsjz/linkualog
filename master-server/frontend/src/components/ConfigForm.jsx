@@ -1,6 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 import { fetchConfig, resetConfig, saveConfig, testLlmConfig } from '../api/client';
+import {
+  DEFAULT_TTS_CONFIG,
+  TTS_VOICE_SOURCE_PREFERENCES,
+  formatTtsVoiceLabel,
+  loadSpeechVoices,
+  normalizeTtsConfig,
+  pickPreferredVoice,
+} from '../utils/tts.js';
 
 const DEFAULT_PROVIDER = 'https://dashscope.aliyuncs.com/compatible-mode/v1';
 const DEFAULT_MODEL = 'qwen3.5-flash';
@@ -12,7 +20,7 @@ const VOCAB_WORKSPACE_AUTO_LLM_KEY = 'vocabWorkspaceAutoLlmOnOpen';
 const PAGES = [
   { id: 'llm', label: 'API' },
   { id: 'review', label: '参数' },
-  { id: 'ui', label: '界面' },
+  { id: 'ui', label: '界面/语音' },
 ];
 const LLM_TEST_LABELS = {
   connectivity: '连通性测试',
@@ -50,14 +58,20 @@ export default function ConfigForm({ onClose }) {
   const [saving, setSaving] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [testingKind, setTestingKind] = useState('');
+  const [ttsTestingLang, setTtsTestingLang] = useState('');
   const [llmTestResult, setLlmTestResult] = useState(null);
+  const [ttsTestResult, setTtsTestResult] = useState(null);
+  const [ttsTestText, setTtsTestText] = useState('example');
   const [statusMsg, setStatusMsg] = useState('');
   const [statusKind, setStatusKind] = useState('success');
+  const ttsTestRequestRef = useRef(0);
+  const modalBusyRef = useRef(false);
   const [config, setConfig] = useState({
     provider: DEFAULT_PROVIDER,
     model: DEFAULT_MODEL,
     api_key: '',
     hasKey: false,
+    ...DEFAULT_TTS_CONFIG,
     review_llm_timeout_seconds: 75,
     review_folder_merge_llm_timeout_seconds: 90,
     review_folder_merge_llm_max_tokens: 900,
@@ -109,11 +123,15 @@ export default function ConfigForm({ onClose }) {
   }, []);
 
   useEffect(() => {
+    modalBusyRef.current = saving || resetting || Boolean(testingKind || ttsTestingLang);
+  }, [saving, resetting, testingKind, ttsTestingLang]);
+
+  useEffect(() => {
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
 
     const handleKeyDown = (event) => {
-      if (event.key === 'Escape' && !saving && !resetting && !testingKind) {
+      if (event.key === 'Escape' && !modalBusyRef.current) {
         onClose();
       }
     };
@@ -122,13 +140,20 @@ export default function ConfigForm({ onClose }) {
     return () => {
       document.body.style.overflow = previousOverflow;
       window.removeEventListener('keydown', handleKeyDown);
+      ttsTestRequestRef.current += 1;
+      if (typeof window !== 'undefined' && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
     };
-  }, [onClose, saving, resetting, testingKind]);
+  }, [onClose]);
 
   const setField = (key, value) => {
     setConfig((prev) => ({ ...prev, [key]: value }));
     if (key === 'provider' || key === 'model' || key === 'api_key') {
       setLlmTestResult(null);
+    }
+    if (key === 'tts_voice_source_preference' || key === 'tts_voice_priority') {
+      setTtsTestResult(null);
     }
   };
 
@@ -154,6 +179,7 @@ export default function ConfigForm({ onClose }) {
     review_recommend_score_weight: numberValue(config.review_recommend_score_weight, 0.75),
     review_recommend_created_order: config.review_recommend_created_order === 'oldest' ? 'oldest' : 'recent',
     review_recommend_score_order: config.review_recommend_score_order === 'high' ? 'high' : 'low',
+    ...normalizeTtsConfig(config),
   });
 
   const handleRunLlmTest = async (testType) => {
@@ -183,6 +209,81 @@ export default function ConfigForm({ onClose }) {
       });
     } finally {
       setTestingKind('');
+    }
+  };
+
+  const handleRunTtsTest = async (lang, label) => {
+    const requestId = ttsTestRequestRef.current + 1;
+    ttsTestRequestRef.current = requestId;
+    setTtsTestingLang(lang);
+    setTtsTestResult(null);
+    setStatusMsg('');
+
+    if (!('speechSynthesis' in window) || typeof window.SpeechSynthesisUtterance !== 'function') {
+      setTtsTestingLang('');
+      setStatusKind('error');
+      setStatusMsg('当前浏览器不支持语音朗读。');
+      setTtsTestResult({ ok: false, error: '当前浏览器不支持语音朗读。' });
+      return;
+    }
+
+    try {
+      const synth = window.speechSynthesis;
+      const text = String(ttsTestText || '').trim() || 'example';
+      const voices = await loadSpeechVoices(synth);
+      if (ttsTestRequestRef.current !== requestId) return;
+      synth.cancel();
+
+      const ttsSelectionConfig = normalizeTtsConfig(config);
+      const voice = pickPreferredVoice(voices, lang, ttsSelectionConfig);
+      const utterance = new window.SpeechSynthesisUtterance(text);
+      utterance.lang = lang;
+      utterance.rate = 0.9;
+      if (voice) {
+        utterance.voice = voice;
+      }
+
+      const voiceLabel = formatTtsVoiceLabel(voice);
+      utterance.onend = () => {
+        if (ttsTestRequestRef.current === requestId) {
+          setTtsTestingLang('');
+        }
+      };
+      utterance.onerror = (event) => {
+        if (ttsTestRequestRef.current !== requestId) return;
+        setTtsTestingLang('');
+        const error = event?.error || '播放失败';
+        setStatusKind('error');
+        setStatusMsg(`语音测试失败: ${error}`);
+        setTtsTestResult({ ok: false, error, lang, label, voiceLabel });
+      };
+
+      setStatusKind('success');
+      setStatusMsg(`语音测试已开始: ${voiceLabel}`);
+      setTtsTestResult({
+        ok: true,
+        lang,
+        label,
+        text,
+        voiceLabel,
+        voiceName: voice?.name || '',
+        voiceLang: voice?.lang || '',
+        voiceSource: voice ? (voice.localService === false || voice.remote ? 'remote' : 'local') : 'browser_default',
+        voiceCount: voices.length,
+      });
+      synth.speak(utterance);
+    } catch (err) {
+      setStatusKind('error');
+      setStatusMsg(`语音测试失败: ${err.message}`);
+      setTtsTestResult({ ok: false, error: err.message, lang, label });
+    } finally {
+      if (ttsTestRequestRef.current === requestId) {
+        window.setTimeout(() => {
+          if (ttsTestRequestRef.current === requestId) {
+            setTtsTestingLang('');
+          }
+        }, 1200);
+      }
     }
   };
 
@@ -265,7 +366,7 @@ export default function ConfigForm({ onClose }) {
 
   const labelStyle = { display: 'flex', flexDirection: 'column', fontSize: '13px', color: 'var(--ms-text)', fontWeight: '600', width: '100%' };
   const rowStyle = { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '12px' };
-  const isTesting = Boolean(testingKind);
+  const isTesting = Boolean(testingKind || ttsTestingLang);
   const serverBusy = loading || saving || resetting || isTesting;
   const modalBusy = saving || resetting || isTesting;
 
@@ -276,7 +377,7 @@ export default function ConfigForm({ onClose }) {
           <div>
             <h2 className="config-modal-title">全局设置</h2>
             <div className="config-modal-subtitle">
-              所有设置都会写入本地配置文件。
+              服务端配置写入本地配置文件，界面偏好保存在当前浏览器。
             </div>
           </div>
           <button type="button" className="config-modal-close" onClick={onClose} disabled={modalBusy}>✕</button>
@@ -482,8 +583,78 @@ export default function ConfigForm({ onClose }) {
                   />
                   打开生词本编辑/连接面板时自动生成 LLM 建议
                 </label>
+                <div style={{ height: '1px', background: 'var(--ms-border)' }} />
+                <label style={labelStyle}>
+                  语音来源
+                  <select
+                    value={config.tts_voice_source_preference}
+                    onChange={(e) => setField('tts_voice_source_preference', e.target.value)}
+                    style={inputStyle(modalBusy)}
+                    disabled={modalBusy}
+                  >
+                    {TTS_VOICE_SOURCE_PREFERENCES.map((item) => (
+                      <option key={item.value} value={item.value}>{item.label}</option>
+                    ))}
+                  </select>
+                </label>
+                <label style={labelStyle}>
+                  语音优先级
+                  <textarea
+                    value={config.tts_voice_priority}
+                    onChange={(e) => setField('tts_voice_priority', e.target.value)}
+                    placeholder="如: Microsoft Aria Online, local:en-US, en-GB"
+                    style={{ ...inputStyle(modalBusy), minHeight: '74px', resize: 'vertical' }}
+                    disabled={modalBusy}
+                  />
+                </label>
+                <label style={labelStyle}>
+                  测试文本
+                  <input
+                    type="text"
+                    value={ttsTestText}
+                    onChange={(e) => setTtsTestText(e.target.value)}
+                    style={inputStyle(modalBusy)}
+                    disabled={modalBusy}
+                  />
+                </label>
+                <div className="config-test-actions">
+                  <button
+                    type="button"
+                    className="master-secondary-button"
+                    onClick={() => handleRunTtsTest('en-US', '美音')}
+                    disabled={modalBusy}
+                  >
+                    {ttsTestingLang === 'en-US' ? '测试中...' : '测试美音'}
+                  </button>
+                  <button
+                    type="button"
+                    className="master-secondary-button"
+                    onClick={() => handleRunTtsTest('en-GB', '英音')}
+                    disabled={modalBusy}
+                  >
+                    {ttsTestingLang === 'en-GB' ? '测试中...' : '测试英音'}
+                  </button>
+                </div>
+                {ttsTestResult ? (
+                  <div className={`config-test-result${ttsTestResult.ok ? ' is-success' : ' is-error'}`}>
+                    <div className="config-test-result-title">
+                      {ttsTestResult.ok ? '语音测试已发送' : '语音测试失败'}
+                    </div>
+                    {ttsTestResult.ok ? (
+                      <dl className="config-test-result-grid">
+                        <dt>目标</dt>
+                        <dd>{ttsTestResult.label} · {ttsTestResult.lang}</dd>
+                        <dt>声音</dt>
+                        <dd>{ttsTestResult.voiceLabel}</dd>
+                        <dt>可用声音</dt>
+                        <dd>{ttsTestResult.voiceCount}</dd>
+                      </dl>
+                    ) : null}
+                    {ttsTestResult.error ? <div className="config-test-error">{ttsTestResult.error}</div> : null}
+                  </div>
+                ) : null}
                 <div className="config-info-box">
-                  这一页保存的是浏览器本地界面偏好，立即生效。
+                  界面偏好保存在当前浏览器；语音设置会写入全局配置，保存后复习页立即使用。
                 </div>
               </>
             ) : null}

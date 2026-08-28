@@ -67,6 +67,15 @@ const getStoredQueueLimits = () => {
 
 const buildAutoLlmLaunchToken = () => `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
+const randomSnapshotMetaKey = (snapshot) => [
+  String(snapshot?.randomSeed || ''),
+  String(snapshot?.randomScope || ''),
+  String(snapshot?.randomFilter || ''),
+  String(snapshot?.randomQuery || ''),
+  String(snapshot?.randomLimit || ''),
+  String(snapshot?.randomPreferences || ''),
+].join('\u0001');
+
 const sleep = (ms) => new Promise((resolve) => {
   window.setTimeout(resolve, ms);
 });
@@ -196,6 +205,7 @@ export default function VocabularyWorkspace({
   const [currentEntryActions, setCurrentEntryActions] = useState(null);
   const [queueSettingsOpen, setQueueSettingsOpen] = useState(false);
   const overlayReadyAutoLoadRef = useRef({ editor: '', connection: '' });
+  const randomSnapshotMetaKeyRef = useRef('');
   const {
     activeQueue,
     nextQueue,
@@ -217,6 +227,7 @@ export default function VocabularyWorkspace({
     clearTodo,
     getNextEntry,
     skipQueueItem,
+    replaceQueueItem,
   } = useVocabularyQueues();
   const reviewSurfaceMobileSimple = mobileSimple;
 
@@ -395,7 +406,20 @@ export default function VocabularyWorkspace({
       syncQueue('manual', snapshot.manual, 'manual', { syncKey: snapshot?.manualSyncKey });
     }
     if (Array.isArray(snapshot?.random)) {
-      syncQueue('random', snapshot.random, 'random', { syncKey: snapshot?.randomSyncKey });
+      const nextRandomMetaKey = randomSnapshotMetaKey(snapshot);
+      const preserveRandomOrder = Boolean(
+        nextRandomMetaKey
+        && randomSnapshotMetaKeyRef.current
+        && randomSnapshotMetaKeyRef.current === nextRandomMetaKey
+      );
+      randomSnapshotMetaKeyRef.current = nextRandomMetaKey;
+      syncQueue('random', snapshot.random, 'random', {
+        syncKey: snapshot?.randomSyncKey,
+        preserveOrder: preserveRandomOrder,
+        preserveSkipped: preserveRandomOrder,
+      });
+    } else {
+      randomSnapshotMetaKeyRef.current = '';
     }
   }, [syncQueue]);
 
@@ -522,6 +546,43 @@ export default function VocabularyWorkspace({
       token: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
     };
     setReviewEntryUpdate(nextUpdate);
+
+    const sourceCategory = String(change?.source_category || change?.sourceCategory || normalizedCategory).trim();
+    const sourceFilename = normalizeVocabularyLaunchWord(
+      change?.source_file
+      || change?.sourceFile
+      || change?.source_filename
+      || change?.sourceFilename
+      || ''
+    );
+    if (change?.deleted) {
+      replaceQueueItem({
+        category: normalizedCategory,
+        file: nextUpdate.file,
+        word: change?.word || savedFilename,
+      }, null);
+      if (typeof onSelectionChange === 'function') {
+        onSelectionChange({
+          category: '',
+          word: '',
+          fileKey: '',
+          filename: '',
+          queueSource: '',
+        });
+      }
+      setEditorSurface('');
+      return;
+    } else if (sourceCategory && sourceFilename) {
+      replaceQueueItem({
+        category: sourceCategory,
+        file: sourceFilename.endsWith('.json') ? sourceFilename : `${sourceFilename}.json`,
+        word: change?.source_word || change?.sourceWord || sourceFilename,
+      }, {
+        category: normalizedCategory,
+        file: nextUpdate.file,
+        word: change?.data?.word || change?.target_word || change?.targetWord || change?.word || savedFilename,
+      });
+    }
 
     if (typeof onSelectionChange === 'function') {
       onSelectionChange({

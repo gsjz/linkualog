@@ -20,7 +20,7 @@ const normalizeFile = (value) => {
   return file.endsWith('.json') ? file : `${file}.json`;
 };
 
-const normalizeQueueItem = (item, source = '') => {
+export const normalizeQueueItem = (item, source = '') => {
   const category = String(item?.category || '').trim();
   const file = normalizeFile(item?.file || item?.filename || item?.key || item?.word);
   if (!category || !file) return null;
@@ -51,6 +51,114 @@ const dedupeItems = (items) => {
     }
   });
   return [...map.values()];
+};
+
+export const reconcileQueueItems = (currentItems, incomingItems) => {
+  const incomingById = new Map((Array.isArray(incomingItems) ? incomingItems : [])
+    .filter(Boolean)
+    .map((item) => [item.id, item]));
+  const used = new Set();
+  const reconciled = (Array.isArray(currentItems) ? currentItems : [])
+    .filter((item) => item?.id && incomingById.has(item.id))
+    .map((item) => {
+      used.add(item.id);
+      return {
+        ...item,
+        ...incomingById.get(item.id),
+        addedAt: item.addedAt || incomingById.get(item.id)?.addedAt || nowIso(),
+      };
+    });
+
+  incomingItems.forEach((item) => {
+    if (!item?.id || used.has(item.id)) return;
+    reconciled.push(item);
+  });
+
+  return reconciled;
+};
+
+export const replaceQueueItems = (currentState, sourceItem, targetItem = null) => {
+  const source = normalizeQueueItem(sourceItem, sourceItem?.source);
+  const target = targetItem ? normalizeQueueItem(targetItem, targetItem?.source || source?.source || 'manual') : null;
+  if (!source?.id) return currentState;
+
+  let changed = false;
+  const nextQueues = { ...currentState.queues };
+  const nextCursor = { ...currentState.cursor };
+  const nextSkipped = { ...currentState.skipped };
+
+  QUEUE_NAMES.forEach((queueName) => {
+    const queue = Array.isArray(currentState.queues?.[queueName]) ? currentState.queues[queueName] : [];
+    const sourceIndex = queue.findIndex((item) => item.id === source.id);
+    const targetIndex = target?.id ? queue.findIndex((item) => item.id === target.id) : -1;
+    if (sourceIndex < 0 && targetIndex < 0) return;
+
+    let nextQueue = [...queue];
+    if (target?.id) {
+      if (sourceIndex >= 0) {
+        if (targetIndex >= 0 && targetIndex !== sourceIndex) {
+          nextQueue.splice(targetIndex, 1);
+          if (nextCursor[queueName] !== undefined && targetIndex < (nextCursor[queueName] || 0)) {
+            nextCursor[queueName] = Math.max(0, (nextCursor[queueName] || 0) - 1);
+          }
+        }
+        const adjustedSourceIndex = targetIndex >= 0 && targetIndex < sourceIndex
+          ? sourceIndex - 1
+          : sourceIndex;
+        const existingSource = nextQueue[adjustedSourceIndex] || {};
+        nextQueue[adjustedSourceIndex] = {
+          ...existingSource,
+          ...target,
+          source: existingSource.source || target.source || queueName,
+          addedAt: existingSource.addedAt || target.addedAt || nowIso(),
+          updatedAt: nowIso(),
+        };
+      } else {
+        nextQueue[targetIndex] = {
+          ...nextQueue[targetIndex],
+          ...target,
+          source: nextQueue[targetIndex]?.source || target.source || queueName,
+          addedAt: nextQueue[targetIndex]?.addedAt || target.addedAt || nowIso(),
+          updatedAt: nowIso(),
+        };
+      }
+    } else if (sourceIndex >= 0) {
+      nextQueue.splice(sourceIndex, 1);
+      if (nextCursor[queueName] !== undefined) {
+        const currentCursor = nextCursor[queueName] || 0;
+        nextCursor[queueName] = sourceIndex < currentCursor
+          ? Math.max(0, currentCursor - 1)
+          : Math.min(currentCursor, Math.max(0, nextQueue.length - 1));
+      }
+    }
+
+    if (nextCursor[queueName] !== undefined) {
+      nextCursor[queueName] = Math.min(
+        Math.max(0, nextCursor[queueName] || 0),
+        Math.max(0, nextQueue.length - 1),
+      );
+    }
+    nextQueues[queueName] = nextQueue;
+    changed = true;
+  });
+
+  NAV_QUEUE_NAMES.forEach((queueName) => {
+    const skipped = normalizeIdList(currentState.skipped?.[queueName]);
+    if (!skipped.includes(source.id)) return;
+    nextSkipped[queueName] = target?.id
+      ? normalizeIdList(skipped.map((id) => (id === source.id ? target.id : id)))
+      : skipped.filter((id) => id !== source.id);
+    changed = true;
+  });
+
+  return changed
+    ? {
+        ...currentState,
+        queues: nextQueues,
+        cursor: nextCursor,
+        skipped: nextSkipped,
+      }
+    : currentState;
 };
 
 const normalizeIdList = (items) => (
@@ -237,12 +345,17 @@ export function useVocabularyQueues() {
       ...(() => {
         const nextSyncKey = String(options?.syncKey || '');
         const syncKeyChanged = nextSyncKey !== String(current.syncKey?.[queueName] || '');
+        const shouldReplaceItems = Boolean(options?.replace)
+          || (syncKeyChanged && options?.preserveOrder !== true);
+        const mergedItems = shouldReplaceItems
+          ? normalizedItems
+          : reconcileQueueItems(current.queues?.[queueName] || [], normalizedItems);
         const validIds = new Set(normalizedItems.map((item) => item.id));
-        const skippedIds = syncKeyChanged
+        const skippedIds = syncKeyChanged && options?.preserveSkipped !== true
           ? []
           : normalizeIdList(current.skipped?.[queueName]).filter((id) => validIds.has(id));
         const skippedSet = new Set(skippedIds);
-        const visibleItems = normalizedItems.filter((item) => !skippedSet.has(item.id));
+        const visibleItems = mergedItems.filter((item) => !skippedSet.has(item.id));
         return {
           queues: {
             ...current.queues,
@@ -295,6 +408,10 @@ export function useVocabularyQueues() {
         },
       };
     });
+  }, []);
+
+  const replaceQueueItem = useCallback((sourceItem, targetItem = null) => {
+    setState((current) => replaceQueueItems(current, sourceItem, targetItem));
   }, []);
 
   const addToTodo = useCallback((items) => {
@@ -385,6 +502,7 @@ export function useVocabularyQueues() {
     setMobileSheet,
     syncQueue,
     skipQueueItem,
+    replaceQueueItem,
     addToTodo,
     removeTodo,
     clearTodo,

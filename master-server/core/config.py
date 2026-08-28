@@ -211,6 +211,17 @@ def _specs() -> dict[str, dict]:
             "default": "low",
             "choices": ["low", "high"],
         },
+        "tts_voice_source_preference": {
+            "kind": "choice",
+            "env": ["MASTER_SERVER_TTS_VOICE_SOURCE_PREFERENCE"],
+            "default": "local_first",
+            "choices": ["local_first", "remote_first", "browser_default"],
+        },
+        "tts_voice_priority": {
+            "kind": "str_allow_empty",
+            "env": ["MASTER_SERVER_TTS_VOICE_PRIORITY"],
+            "default": "",
+        },
     }
 
 
@@ -224,6 +235,8 @@ def _normalize_value(key: str, value):
 
     if kind == "str":
         return str(value or "").strip() or str(default)
+    if kind == "str_allow_empty":
+        return str(value or "").strip()
     if kind == "bool":
         return _read_bool(value, bool(default))
     if kind == "port":

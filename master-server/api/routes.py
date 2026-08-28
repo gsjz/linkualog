@@ -32,6 +32,7 @@ from core.refine_cache import (
     has_relation_suggest_cache_for_entry,
 )
 from core.vocabulary_quality import vocabulary_entry_needs_processing
+from core.vocabulary_redirects import resolve_redirect
 from core.vocabulary import (
     get_vocab_path,
     merge_or_create_vocab,
@@ -810,19 +811,82 @@ def list_vocabulary(category: str = ""):
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+def _normalize_merged_from_lookup(value: str) -> str:
+    return re.sub(r'[\s_]+', '-', normalize_vocab_lookup_word(value).lower()).strip("-")
+
+
+def _find_merged_from_target(category: str, word: str) -> tuple[str, dict] | None:
+    lookup = _normalize_merged_from_lookup(word)
+    if not lookup:
+        return None
+
+    for filename in list_vocab_filenames(category):
+        payload = load_vocab(filename, category) or {}
+        merged_from = payload.get("mergedFrom") if isinstance(payload.get("mergedFrom"), list) else []
+        aliases = {
+            _normalize_merged_from_lookup(item)
+            for item in merged_from
+            if str(item or "").strip()
+        }
+        if lookup in aliases:
+            return filename, payload
+    return None
+
+
 @router.get("/api/vocabulary/detail/{word}")
 def get_vocab_detail(word: str, category: str = ""):
     try:
         normalized_word = normalize_vocab_lookup_word(word)
         data = load_vocab(normalized_word, category)
+        redirect = None
+        resolved_category = category
+        resolved_word = normalized_word
+        resolved_file = f"{normalized_word}.json"
+
+        if not data:
+            resolved = resolve_redirect(category, normalized_word)
+            target = resolved.get("resolved") if isinstance(resolved.get("resolved"), dict) else None
+            if resolved.get("status") == "redirected" and target:
+                target_category = str(target.get("category") or "").strip()
+                target_file = str(target.get("file") or "").strip()
+                target_word = normalize_vocab_lookup_word(target_file)
+                data = load_vocab(target_word, target_category)
+                if data:
+                    resolved_category = target_category
+                    resolved_word = target_word
+                    resolved_file = target_file if target_file.endswith(".json") else f"{target_file}.json"
+                    redirect = resolved
+
+        if not data:
+            merged_from_target = _find_merged_from_target(category, normalized_word)
+            if merged_from_target:
+                target_file, target_data = merged_from_target
+                target_word = normalize_vocab_lookup_word(target_file)
+                resolved_category = category
+                resolved_word = target_word
+                resolved_file = target_file if target_file.endswith(".json") else f"{target_file}.json"
+                data = target_data
+                redirect = {
+                    "status": "redirected",
+                    "original_id": f"{category}/{normalized_word}.json" if category else f"{normalized_word}.json",
+                    "resolved": {
+                        "category": category,
+                        "file": resolved_file,
+                        "word": str(target_data.get("word") or target_word).strip() or target_word,
+                    },
+                    "chain": [],
+                    "source": "mergedFrom",
+                }
+
         if not data:
             raise HTTPException(status_code=404, detail="单词不存在或已删除")
         return {
             "status": "success",
-            "category": category,
-            "word": normalized_word,
-            "file": f"{normalized_word}.json",
+            "category": resolved_category,
+            "word": resolved_word,
+            "file": resolved_file,
             "data": data,
+            "redirect": redirect,
         }
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
