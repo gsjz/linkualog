@@ -1,14 +1,21 @@
 {
-  "word": "pranced",
+  "word": "prance",
   "createdAt": "2026-06-12",
-  "reviews": [],
-  "definitions": [],
+  "reviews": [
+    {
+      "date": "2026-08-28",
+      "score": 1
+    }
+  ],
+  "definitions": [
+    "轻快地走；蹦蹦跳跳地走；神气地走（prance）"
+  ],
   "examples": [
     {
       "text": "Smiling, the Buddha declared he would grant that wish— if Sun Wukong could somersault out of his palm. The Monkey King gladly pranced onto the Buddha’s hand and shot into the air, landing in a far-off region where five pink pillars seemed to mark the edge of the Heavens.",
-      "explanation": "",
+      "explanation": "这里 pranced 是 prance 的过去式，描写孙悟空高兴又有点神气地跳上佛祖的手掌，强调动作轻快、得意。",
       "focusWords": [
-        "pranced"
+        "prance"
       ],
       "source": {
         "text": "The tale of the Monkey King and the Buddha - Ji Hao",

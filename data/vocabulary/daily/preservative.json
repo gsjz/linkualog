@@ -1,12 +1,20 @@
 {
   "word": "preservative",
   "createdAt": "2026-07-08",
-  "reviews": [],
-  "definitions": [],
+  "reviews": [
+    {
+      "date": "2026-08-29",
+      "score": 2
+    }
+  ],
+  "definitions": [
+    "防腐剂；用于抑制微生物生长、延缓食物或液体变质的物质",
+    "preserve"
+  ],
   "examples": [
     {
-      "text": "and keeping water fresh for the crews was a challenge. Adding a bucket of brandy to a water barrel kept water fresh longer because alcohol is a preservative that kills harmful microbes. So by the 1600s, alcohol had gone from simply giving animals a buzz",
-      "explanation": "",
+      "text": "Adding a bucket of brandy to a water barrel kept water fresh longer because alcohol is a preservative that kills harmful microbes.",
+      "explanation": "在这里，preservative 指“防腐剂”。酒精能够杀死有害微生物，因此可以延缓桶中水的变质。",
       "focusWords": [
         "preservative"
       ],

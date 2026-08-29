@@ -5,6 +5,10 @@
     {
       "date": "2026-06-08",
       "score": 3
+    },
+    {
+      "date": "2026-08-29",
+      "score": 2
     }
   ],
   "definitions": [
@@ -25,6 +29,18 @@
         "url": "https://www.youtube.com/watch?v=fKnAJCSGSdk",
         "timestamp": 60
       }
+    }
+  ],
+  "relations": [
+    {
+      "type": "related",
+      "target": {
+        "category": "cet",
+        "file": "ensue.json",
+        "word": "ensue"
+      },
+      "reason": "advent 表示重要事物的出现或到来，ensue 表示随后发生；两者都用于描述事件在时间上的发生过程，适合建立语义关联。",
+      "source": "llm"
     }
   ]
 }
