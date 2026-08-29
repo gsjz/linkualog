@@ -8,7 +8,7 @@ from unittest.mock import patch
 import core.review_vocabulary as review_vocabulary
 from core import refine_cache
 from core.review_analysis_jobs import reset_analysis_jobs_for_tests, wait_for_analysis_job
-from core.vocabulary_redirects import prune_resolved_redirects, reset_redirects_for_tests
+from core.vocabulary_redirects import prune_resolved_redirects, reset_redirects_for_tests, resolve_redirect
 from core.vocabulary_preprocess_queue import (
     active_preprocess_entry,
     get_preprocess_queue,
@@ -741,7 +741,7 @@ class VocabularyRelationTests(unittest.TestCase):
         self.assertEqual(miss["suggestions"], [])
         self.assertEqual(miss["meta"]["candidate_count"], 0)
 
-    def test_merge_cleans_redirect_and_stale_relation_target_cache_when_references_are_rewritten(self):
+    def test_merge_cleans_stale_relation_target_cache_and_keeps_navigation_redirect(self):
         write_vocab(
             self.root,
             "daily",
@@ -831,9 +831,12 @@ class VocabularyRelationTests(unittest.TestCase):
         mocked_select.assert_not_called()
         self.assertEqual(result["cache"]["status"], "miss")
         self.assertEqual(result["suggestions"], [])
-        self.assertFalse((self.root / ".vocabulary_redirects.json").exists())
+        self.assertTrue((self.root / ".vocabulary_redirects.json").exists())
+        redirect = resolve_redirect("daily", "old-target.json")
+        self.assertEqual(redirect["status"], "redirected")
+        self.assertEqual(redirect["resolved"]["file"], "new-target.json")
 
-    def test_merge_cleans_redirect_and_stale_relation_source_cache(self):
+    def test_merge_cleans_stale_relation_source_cache_and_keeps_navigation_redirect(self):
         amplified_payload = {
             "word": "amplified",
             "createdAt": "2026-05-17",
@@ -919,7 +922,7 @@ class VocabularyRelationTests(unittest.TestCase):
             )
 
         self.assertIn("404", str(ctx.exception))
-        self.assertFalse((self.root / ".vocabulary_redirects.json").exists())
+        self.assertTrue((self.root / ".vocabulary_redirects.json").exists())
         self.assertIsNone(
             refine_cache.load_latest_relation_cache_for_entry("daily", "amplified.json")
         )
@@ -980,7 +983,7 @@ class VocabularyRelationTests(unittest.TestCase):
             )
         )
 
-        self.assertFalse((self.root / ".vocabulary_redirects.json").exists())
+        self.assertTrue((self.root / ".vocabulary_redirects.json").exists())
 
         redirect_path = self.root / ".vocabulary_redirects.json"
         redirect_path.write_text(

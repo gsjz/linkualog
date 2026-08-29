@@ -27,7 +27,6 @@ from core.refine_cache import (
     save_refine_cache,
 )
 from core.vocabulary_redirects import (
-    prune_resolved_redirects,
     resolve_redirect,
     save_redirect,
 )
@@ -665,9 +664,6 @@ def _record_deleted_entry_redirect_and_cleanup(
     )
     delete_relation_suggest_caches_referencing_entry(source_category, source_filename)
     delete_relation_suggest_caches_referencing_entry(target_category, target_filename)
-    prune_result = prune_resolved_redirects({_entry_ref_id(_build_entry_ref(source_category, source_filename, source_word))})
-    if isinstance(redirect, dict):
-        redirect["cleanup"] = prune_result
     return redirect
 
 
