@@ -22,5 +22,17 @@
         "url": ""
       }
     }
+  ],
+  "relations": [
+    {
+      "type": "related",
+      "target": {
+        "category": "daily",
+        "file": "advent.json",
+        "word": "advent"
+      },
+      "reason": "advent 表示重要事物的出现或到来，ensue 表示随后发生；两者都用于描述事件在时间上的发生过程，适合建立语义关联。",
+      "source": "llm"
+    }
   ]
 }

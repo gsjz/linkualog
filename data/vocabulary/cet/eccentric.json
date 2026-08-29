@@ -13,6 +13,10 @@
     {
       "date": "2026-05-30",
       "score": 2
+    },
+    {
+      "date": "2026-08-28",
+      "score": 2
     }
   ],
   "definitions": [
@@ -29,6 +33,18 @@
         "text": "CET6 23 12 1 听力",
         "url": ""
       }
+    }
+  ],
+  "relations": [
+    {
+      "type": "antonym",
+      "target": {
+        "category": "daily",
+        "file": "mundane.json",
+        "word": "mundane"
+      },
+      "reason": "eccentric 表示“古怪的、反常的、不合常规的”，而 mundane 表示“平凡的、日常的、普通的”，两者在“是否普通/是否偏离常规”这一语义维度上形成有学习价值的反义关系。",
+      "source": "llm"
     }
   ]
 }
