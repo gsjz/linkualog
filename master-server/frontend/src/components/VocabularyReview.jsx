@@ -1308,6 +1308,7 @@ export default function VocabularyReview({
   const handledEntryUpdateTokenRef = useRef('');
   const handledPrefetchedRefineTokenRef = useRef('');
   const handledPrefetchedRelationTokenRef = useRef('');
+  const handledQueueJumpTokenRef = useRef('');
   const handledLaunchRequestKeyRef = useRef('');
   const recommendPreferenceHydratedRef = useRef(false);
   const recommendPreferenceDirtyRef = useRef(false);
@@ -1885,6 +1886,55 @@ export default function VocabularyReview({
 
     const launchRequestKey = buildLaunchRequestKey(launchRequest);
     if (!launchRequestKey || handledLaunchRequestKeyRef.current === launchRequestKey) return;
+    const updateTargetCategory = String(entryUpdateRequest?.category || '').trim();
+    const updateTargetFile = normalizeVocabularyLaunchWord(
+      entryUpdateRequest?.file
+      || entryUpdateRequest?.target_file
+      || entryUpdateRequest?.filename
+      || entryUpdateRequest?.fileKey
+      || entryUpdateRequest?.word,
+    );
+    const launchTargetCategory = String(launchRequest?.category || '').trim();
+    const launchTargetFile = normalizeVocabularyLaunchWord(
+      launchRequest?.fileKey || launchRequest?.filename || launchRequest?.word,
+    );
+    const updateSourceCategory = String(
+      entryUpdateRequest?.source_category
+      || entryUpdateRequest?.sourceCategory
+      || updateTargetCategory,
+    ).trim();
+    const updateSourceFile = normalizeVocabularyLaunchWord(
+      entryUpdateRequest?.source_file
+      || entryUpdateRequest?.sourceFile
+      || entryUpdateRequest?.source_filename
+      || entryUpdateRequest?.sourceFilename,
+    );
+    const launchMatchesUpdateTarget = Boolean(
+      updateTargetFile
+      && buildVocabularyWordKey(updateTargetFile) === buildVocabularyWordKey(launchTargetFile)
+      && (!updateTargetCategory || !launchTargetCategory || updateTargetCategory === launchTargetCategory)
+    );
+    const launchMatchesUpdateSource = Boolean(
+      updateSourceFile
+      && buildVocabularyWordKey(updateSourceFile) === buildVocabularyWordKey(launchTargetFile)
+      && (!updateSourceCategory || !launchTargetCategory || updateSourceCategory === launchTargetCategory)
+    );
+    if (
+      entryUpdateRequest?.data
+      && (launchMatchesUpdateTarget || launchMatchesUpdateSource)
+    ) {
+      if (
+        launchMatchesUpdateTarget
+        && selectedEntryId === buildVocabularyEntryId(updateTargetCategory || launchTargetCategory, updateTargetFile)
+      ) {
+        const nextQueueSource = resolveStickyQueueSource(selectedEntryId, launchRequest?.queueSource);
+        if (nextQueueSource && selectedQueueSource !== nextQueueSource) {
+          setSelectedQueueSource(nextQueueSource);
+        }
+      }
+      handledLaunchRequestKeyRef.current = launchRequestKey;
+      return;
+    }
     handledLaunchRequestKeyRef.current = launchRequestKey;
 
     const targetCategory = String(launchRequest.category || '').trim();
@@ -1942,7 +1992,7 @@ export default function VocabularyReview({
         { queueSource: launchQueueSource || 'manual' },
       );
     });
-  }, [applySelectedCategory, detailCategory, entries, handleSelectEntry, launchRequest, onSelectionChange, resolveEntryCandidate, resolveEntryCategory, resolveStickyQueueSource, selectedCategory, selectedEntryId, selectedQueueSource]);
+  }, [applySelectedCategory, detailCategory, entries, entryUpdateRequest, handleSelectEntry, launchRequest, onSelectionChange, resolveEntryCandidate, resolveEntryCategory, resolveStickyQueueSource, selectedCategory, selectedEntryId, selectedQueueSource]);
 
   useEffect(() => {
     const pendingLaunch = pendingLaunchRef.current;
@@ -2034,11 +2084,15 @@ export default function VocabularyReview({
     const browsingAllCategories = isAllCategoriesValue(selectedCategory);
     const shouldSelectUpdatedEntry = browsingAllCategories || selectedCategory === targetCategory;
     const keepSelection = Boolean(entryUpdateRequest.keepSelection || entryUpdateRequest.keep_selection);
+    const requestedUpdateQueueSource = QUEUE_SOURCE_NAMES.has(entryUpdateRequest?.queueSource)
+      ? entryUpdateRequest.queueSource
+      : selectedQueueSource;
     const nextQueueSource = sourceEntryId
-      ? transferStickyQueueSource(sourceEntryId, nextEntry.id, selectedQueueSource)
-      : resolveStickyQueueSource(nextEntry.id, selectedQueueSource);
+      ? transferStickyQueueSource(sourceEntryId, nextEntry.id, requestedUpdateQueueSource)
+      : resolveStickyQueueSource(nextEntry.id, requestedUpdateQueueSource);
 
     if (shouldSelectUpdatedEntry) {
+      detailRequestRef.current += 1;
       if (keepSelection) {
         keepSelectionEntryIdRef.current = nextEntry.id;
       }
@@ -2347,6 +2401,7 @@ export default function VocabularyReview({
       manual: visibleEntries,
       manualSyncKey,
       random: randomSelectionMode ? buildVisibleRandomQueue(visibleRecommendationQueue, fallbackRandomQueue, randomQueueLimit) : null,
+      randomPool: randomSelectionMode ? visibleEntries : null,
       randomSyncKey,
       randomSeed: randomSelectionMode ? randomQueueSeed : '',
       randomScope: randomSelectionMode
@@ -2364,6 +2419,8 @@ export default function VocabularyReview({
     const category = String(queueJumpRequest?.category || '').trim();
     const file = String(queueJumpRequest?.file || queueJumpRequest?.filename || '').trim();
     if (!token || !category || !file) return;
+    if (handledQueueJumpTokenRef.current === token) return;
+    handledQueueJumpTokenRef.current = token;
     const entry = resolveEntryCandidate({ category, file, key: file, word: queueJumpRequest?.word || file }, category, entries)
       || normalizeVocabularyEntry({ category, file, key: file, word: queueJumpRequest?.word || file }, category);
     const sourceQueue = QUEUE_SOURCE_NAMES.has(queueJumpRequest?.sourceQueue)
@@ -2952,13 +3009,18 @@ export default function VocabularyReview({
   const latestReviewScore = latestReview ? normalizeReviewScore(latestReview.score) : null;
   const loadedDetailEntry = detailEntry || selectedEntry || resolveEntryCandidate(detailData?.word, selectedCategory, entries);
   const currentActionEntry = detailLoading
-    ? (detailEntry || resolveEntryCandidate(detailData?.word, selectedCategory, entries))
+    ? (detailLoadingEntry || detailEntry || resolveEntryCandidate(detailData?.word, selectedCategory, entries))
     : loadedDetailEntry;
-  const currentActionCategory = (detailLoading && detailEntry?.category)
+  const currentActionCategory = (detailLoading && currentActionEntry?.category)
     || detailCategory
     || resolveEntryCategory(currentActionEntry, selectedCategory);
   const currentActionFile = currentActionEntry?.file || '';
-  const currentActionWord = String(detailData?.word || currentActionEntry?.word || currentActionFile || '').replace(/\.json$/i, '');
+  const currentActionWord = String(
+    (detailLoading ? currentActionEntry?.word : detailData?.word)
+    || currentActionEntry?.word
+    || currentActionFile
+    || '',
+  ).replace(/\.json$/i, '');
   const currentActionQueueSource = currentActionEntry?.id
     ? (String(queueSourceByEntryIdRef.current.get(currentActionEntry.id) || '').trim() || String(selectedQueueSource || '').trim())
     : String(selectedQueueSource || '').trim();
@@ -2997,6 +3059,7 @@ export default function VocabularyReview({
     detailData,
     detailEntry,
     detailLoading,
+    detailLoadingEntry,
     handleDeleteCurrentEntry,
     handleSubmitReviewScore,
     handleToggleMarked,

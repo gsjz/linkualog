@@ -1382,6 +1382,512 @@ body.is-raft-theme-body #root {
   }
 }
 
+/* Vocabulary workbench: carry the Raft paper system into editor surfaces. */
+body.is-raft-theme-body .vocab-editor-backdrop {
+  background: rgba(20, 17, 17, 0.46) !important;
+}
+
+body.is-raft-theme-body .vocab-editor-panel {
+  width: min(1120px, calc(100vw - 32px)) !important;
+  border: 2px solid var(--raft-ink) !important;
+  border-radius: 0 !important;
+  background:
+    linear-gradient(rgba(20, 17, 17, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(20, 17, 17, 0.025) 1px, transparent 1px),
+    var(--raft-cream) !important;
+  background-size: 32px 32px !important;
+  box-shadow: 6px 6px 0 var(--raft-ink) !important;
+}
+
+body.is-raft-theme-body .vocab-editor-panel-header {
+  border: 0 !important;
+  border-bottom: 2px solid var(--raft-ink) !important;
+  background: #fff !important;
+}
+
+body.is-raft-theme-body .vocab-editor-panel-header-main {
+  min-height: 74px;
+  padding: 12px 18px 10px !important;
+}
+
+body.is-raft-theme-body .vocab-editor-panel-heading {
+  position: relative;
+  padding-left: 14px;
+}
+
+body.is-raft-theme-body .vocab-editor-panel-heading::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 5px;
+  border: 1px solid var(--raft-ink);
+  background: var(--raft-pink);
+  content: "";
+  transform: rotate(-2deg);
+}
+
+body.is-raft-theme-body .vocab-editor-panel-eyebrow,
+body.is-raft-theme-body .vocab-editor-panel-current,
+body.is-raft-theme-body .workspace-page.overlay-mode label,
+body.is-raft-theme-body .workspace-page.overlay-mode .badge,
+body.is-raft-theme-body .workspace-page.overlay-mode .editor-disclosure-meta,
+body.is-raft-theme-body .workspace-page.overlay-mode .relation-suggestion-meta {
+  font-family: "Space Mono", ui-monospace, monospace !important;
+}
+
+body.is-raft-theme-body .vocab-editor-panel-eyebrow {
+  color: var(--raft-ink) !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.08em !important;
+}
+
+body.is-raft-theme-body .vocab-editor-panel-title {
+  color: var(--raft-ink) !important;
+  font-size: 21px !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.02em !important;
+}
+
+body.is-raft-theme-body .vocab-editor-panel-caption {
+  color: var(--ms-text-muted) !important;
+  font-weight: 600 !important;
+}
+
+body.is-raft-theme-body .vocab-editor-panel-actions {
+  gap: 10px !important;
+}
+
+body.is-raft-theme-body .vocab-editor-auto-llm-toggle,
+body.is-raft-theme-body .vocab-editor-panel-close {
+  min-height: 38px !important;
+  border: 2px solid var(--raft-ink) !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+  color: var(--raft-ink) !important;
+  box-shadow: var(--raft-shadow-sm) !important;
+}
+
+body.is-raft-theme-body .vocab-editor-auto-llm-toggle.is-active {
+  background: var(--raft-pink) !important;
+}
+
+body.is-raft-theme-body .vocab-editor-auto-llm-switch {
+  border: 2px solid var(--raft-ink);
+  border-radius: 0 !important;
+  background: var(--raft-stone) !important;
+}
+
+body.is-raft-theme-body .vocab-editor-auto-llm-switch span {
+  top: 2px;
+  left: 2px;
+  border: 1px solid var(--raft-ink);
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+body.is-raft-theme-body .vocab-editor-auto-llm-toggle.is-active .vocab-editor-auto-llm-switch {
+  background: var(--raft-ink) !important;
+}
+
+body.is-raft-theme-body .vocab-editor-panel-toolbar {
+  min-height: 52px;
+  padding: 7px 18px !important;
+  border-top: 0 !important;
+  background: rgba(255, 250, 239, 0.92) !important;
+}
+
+body.is-raft-theme-body .vocab-editor-panel-tabs {
+  gap: 0 !important;
+  padding: 0 !important;
+  border: 2px solid var(--raft-ink) !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+  box-shadow: none !important;
+}
+
+body.is-raft-theme-body .vocab-editor-panel-tabs button {
+  min-width: 94px;
+  min-height: 34px;
+  border: 0 !important;
+  border-right: 2px solid var(--raft-ink) !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+  color: var(--raft-ink) !important;
+  font-weight: 800 !important;
+}
+
+body.is-raft-theme-body .vocab-editor-panel-tabs button:last-child {
+  border-right: 0 !important;
+}
+
+body.is-raft-theme-body .vocab-editor-panel-tabs button.is-active {
+  background: var(--raft-pink) !important;
+  color: var(--raft-ink) !important;
+  box-shadow: inset 0 -4px 0 rgba(20, 17, 17, 0.14) !important;
+}
+
+body.is-raft-theme-body .vocab-editor-panel-current {
+  padding: 0 2px;
+  color: var(--raft-ink) !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase;
+}
+
+body.is-raft-theme-body .vocab-editor-panel-action-host .badge,
+body.is-raft-theme-body .vocab-editor-panel-action-host button {
+  min-height: 32px !important;
+  border: 2px solid var(--raft-ink) !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+  color: var(--raft-ink) !important;
+  box-shadow: none !important;
+  font-weight: 800 !important;
+}
+
+body.is-raft-theme-body .vocab-editor-panel-action-host .badge.high,
+body.is-raft-theme-body .vocab-editor-panel-action-host .saved-dot {
+  background: #dcf3df !important;
+  color: var(--raft-ink) !important;
+}
+
+body.is-raft-theme-body .vocab-editor-panel-action-host .badge.medium {
+  background: #fff0cf !important;
+  color: var(--raft-ink) !important;
+}
+
+body.is-raft-theme-body .vocab-editor-panel-action-host button.primary {
+  background: var(--raft-pink) !important;
+  color: var(--raft-ink) !important;
+  box-shadow: var(--raft-shadow-sm) !important;
+}
+
+body.is-raft-theme-body .vocab-editor-panel-action-host button.danger {
+  background: #fff !important;
+  color: var(--raft-red) !important;
+}
+
+body.is-raft-theme-body .vocab-editor-panel-body,
+body.is-raft-theme-body .vocab-editor-panel-body .review-scope,
+body.is-raft-theme-body .workspace-page.overlay-mode,
+body.is-raft-theme-body .workspace-page.overlay-mode .overlay-editor-stack,
+body.is-raft-theme-body .workspace-page.overlay-mode .workspace-surface-body {
+  background: transparent !important;
+}
+
+body.is-raft-theme-body .workspace-page.overlay-mode .overlay-editor-stack,
+body.is-raft-theme-body .workspace-page.overlay-mode .workspace-surface-body {
+  padding: 16px !important;
+}
+
+body.is-raft-theme-body .workspace-page.overlay-mode .overlay-editor-stack .workspace-surface-body {
+  padding: 0 !important;
+}
+
+body.is-raft-theme-body .workspace-page.overlay-mode .organize-panel {
+  border: 2px solid var(--raft-ink) !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+  box-shadow: var(--raft-shadow-sm) !important;
+}
+
+body.is-raft-theme-body .workspace-page.overlay-mode .organize-panel > .panel-header {
+  display: flex !important;
+  min-height: 58px;
+  padding: 10px 14px !important;
+  border: 0 !important;
+  border-bottom: 2px solid var(--raft-ink) !important;
+  background: #fff !important;
+  box-shadow: inset 7px 0 0 var(--raft-pink) !important;
+}
+
+body.is-raft-theme-body .workspace-page.overlay-mode .organize-panel .panel-title-with-icon {
+  color: var(--raft-ink) !important;
+  font-size: 17px !important;
+  font-weight: 900 !important;
+}
+
+body.is-raft-theme-body .workspace-page.overlay-mode .organize-panel .panel-caption {
+  color: rgba(20, 17, 17, 0.68) !important;
+  font-family: "Space Mono", ui-monospace, monospace !important;
+  font-size: 10px !important;
+}
+
+body.is-raft-theme-body .workspace-page.overlay-mode .organize-panel .panel-header-actions .badge {
+  border: 2px solid var(--raft-ink) !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+  color: var(--raft-ink) !important;
+  box-shadow: var(--raft-shadow-sm) !important;
+}
+
+body.is-raft-theme-body .workspace-page.overlay-mode .organize-body {
+  padding: 13px !important;
+}
+
+body.is-raft-theme-body .workspace-page.overlay-mode .workspace-form-section,
+body.is-raft-theme-body .workspace-page.overlay-mode .manual-merge-panel {
+  padding: 13px !important;
+  border: 1px solid rgba(20, 17, 17, 0.58) !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+  box-shadow: none !important;
+}
+
+body.is-raft-theme-body .workspace-page.overlay-mode .manual-merge-panel {
+  border-color: var(--raft-ink) !important;
+  background: #fffaf0 !important;
+  box-shadow: inset 6px 0 0 var(--raft-pink) !important;
+}
+
+body.is-raft-theme-body .workspace-page.overlay-mode .editor-title-row {
+  padding-bottom: 9px;
+  border-bottom: 1px solid rgba(20, 17, 17, 0.72);
+}
+
+body.is-raft-theme-body .workspace-page.overlay-mode .editor-title-row h4,
+body.is-raft-theme-body .workspace-page.overlay-mode .manual-merge-head h4,
+body.is-raft-theme-body .workspace-page.overlay-mode .editor-disclosure {
+  color: var(--raft-ink) !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.01em !important;
+}
+
+body.is-raft-theme-body .workspace-page.overlay-mode .editor-subtitle {
+  color: var(--ms-text-muted) !important;
+  font-weight: 600 !important;
+}
+
+body.is-raft-theme-body .workspace-page.overlay-mode label {
+  color: var(--raft-ink) !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+}
+
+body.is-raft-theme-body .workspace-page.overlay-mode input:not([type="checkbox"]),
+body.is-raft-theme-body .workspace-page.overlay-mode select,
+body.is-raft-theme-body .workspace-page.overlay-mode textarea,
+body.is-raft-theme-body .workspace-page.overlay-mode .field {
+  border: 1px solid rgba(20, 17, 17, 0.72) !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+  color: var(--raft-ink) !important;
+  box-shadow: none !important;
+  font-family: "Space Grotesk", "Noto Sans SC", sans-serif !important;
+  font-weight: 650 !important;
+}
+
+body.is-raft-theme-body .workspace-page.overlay-mode button.ghost,
+body.is-raft-theme-body .workspace-page.overlay-mode button.primary,
+body.is-raft-theme-body .workspace-page.overlay-mode button.danger {
+  border: 1px solid var(--raft-ink) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  font-weight: 800 !important;
+}
+
+body.is-raft-theme-body .workspace-page.overlay-mode button.ghost {
+  background: #fff !important;
+  color: var(--raft-ink) !important;
+}
+
+body.is-raft-theme-body .workspace-page.overlay-mode button.primary {
+  background: var(--raft-pink) !important;
+  color: var(--raft-ink) !important;
+  border-width: 2px !important;
+  box-shadow: var(--raft-shadow-sm) !important;
+}
+
+body.is-raft-theme-body .workspace-page.overlay-mode button.danger {
+  background: #fff !important;
+  color: var(--raft-red) !important;
+}
+
+body.is-raft-theme-body .workspace-page.overlay-mode button:hover:enabled {
+  transform: translateY(-1px) !important;
+  box-shadow: var(--raft-shadow-sm) !important;
+}
+
+body.is-raft-theme-body .workspace-page.overlay-mode button:disabled {
+  opacity: 0.42 !important;
+  box-shadow: none !important;
+}
+
+body.is-raft-theme-body .workspace-page.overlay-mode .organize-toolbar {
+  padding: 0 0 12px !important;
+  border-bottom: 1px solid rgba(20, 17, 17, 0.72) !important;
+}
+
+body.is-raft-theme-body .workspace-page.overlay-mode .organize-actions button:first-child {
+  background: var(--raft-ink) !important;
+  color: #fff !important;
+}
+
+body.is-raft-theme-body .workspace-page.overlay-mode .organize-summary-item {
+  border: 1px solid rgba(20, 17, 17, 0.55) !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+}
+
+body.is-raft-theme-body .workspace-page.overlay-mode .organize-summary-item:first-child {
+  border-color: var(--raft-ink) !important;
+  background: #fff1d8 !important;
+  box-shadow: inset 4px 0 0 var(--raft-pink) !important;
+}
+
+body.is-raft-theme-body .workspace-page.overlay-mode .organize-summary-item strong {
+  font-family: "Space Mono", ui-monospace, monospace !important;
+  font-weight: 700 !important;
+}
+
+body.is-raft-theme-body .workspace-page.overlay-mode .organize-empty-state,
+body.is-raft-theme-body .workspace-page.overlay-mode .empty {
+  border: 1px dashed rgba(20, 17, 17, 0.72) !important;
+  border-radius: 0 !important;
+  background: #fffdf8 !important;
+  color: var(--ms-text-muted) !important;
+}
+
+body.is-raft-theme-body .workspace-page.overlay-mode .organize-empty-state.is-complete {
+  background: #dcf3df !important;
+}
+
+body.is-raft-theme-body .workspace-page.overlay-mode .example-editor-card,
+body.is-raft-theme-body .workspace-page.overlay-mode .organize-suggestion-card,
+body.is-raft-theme-body .workspace-page.overlay-mode .organize-note-card,
+body.is-raft-theme-body .workspace-page.overlay-mode .relation-editor-card {
+  border: 1px solid rgba(20, 17, 17, 0.62) !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+  box-shadow: inset 4px 0 0 var(--raft-pink) !important;
+}
+
+body.is-raft-theme-body .workspace-page.overlay-mode .relation-suggestion-card {
+  background: #e8f6ed !important;
+  box-shadow: inset 4px 0 0 #45a866 !important;
+}
+
+body.is-raft-theme-body .workspace-page.overlay-mode .relation-suggestion-card.is-stale {
+  background: var(--raft-stone) !important;
+  box-shadow: inset 4px 0 0 #817a70 !important;
+}
+
+body.is-raft-theme-body .workspace-page.overlay-mode .example-source-row,
+body.is-raft-theme-body .workspace-page.overlay-mode .manual-merge-preview,
+body.is-raft-theme-body .workspace-page.overlay-mode .relation-path-preview,
+body.is-raft-theme-body .workspace-page.overlay-mode .focus-preview-text,
+body.is-raft-theme-body .workspace-page.overlay-mode .focus-picker,
+body.is-raft-theme-body .workspace-page.overlay-mode .json-box {
+  border: 1px solid rgba(20, 17, 17, 0.62) !important;
+  border-radius: 0 !important;
+  background: #fffaf0 !important;
+  box-shadow: none !important;
+}
+
+body.is-raft-theme-body .workspace-page.overlay-mode .badge,
+body.is-raft-theme-body .workspace-page.overlay-mode .dirty-dot,
+body.is-raft-theme-body .workspace-page.overlay-mode .saved-dot,
+body.is-raft-theme-body .workspace-page.overlay-mode .organize-kind,
+body.is-raft-theme-body .workspace-page.overlay-mode .relation-target-match-chip {
+  border: 1px solid var(--raft-ink) !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+  color: var(--raft-ink) !important;
+  box-shadow: none !important;
+}
+
+@media (min-width: 900px) {
+  body.is-raft-theme-body .workspace-page.overlay-mode .connection-body {
+    grid-template-columns: minmax(0, 1.12fr) minmax(320px, 0.88fr) !important;
+    align-items: start !important;
+    gap: 14px !important;
+  }
+
+  body.is-raft-theme-body .workspace-page.overlay-mode .connection-body > .workspace-form-section {
+    min-height: 0 !important;
+    align-self: start !important;
+  }
+
+  body.is-raft-theme-body .workspace-page.overlay-mode .connection-body .relation-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+body.is-raft-theme-body .workspace-page.overlay-mode .badge.high,
+body.is-raft-theme-body .workspace-page.overlay-mode .saved-dot {
+  background: #dcf3df !important;
+}
+
+body.is-raft-theme-body .workspace-page.overlay-mode .badge.medium,
+body.is-raft-theme-body .workspace-page.overlay-mode .dirty-dot {
+  background: #fff0cf !important;
+}
+
+body.is-raft-theme-body .workspace-page.overlay-mode .editor-disclosure {
+  min-height: 32px;
+}
+
+body.is-raft-theme-body .workspace-page.overlay-mode .editor-disclosure::before {
+  color: var(--raft-ink) !important;
+}
+
+body.is-raft-theme-body .workspace-page.overlay-mode .raw-json-section,
+body.is-raft-theme-body .workspace-page.overlay-mode .editor-collapsible-section {
+  overflow: hidden;
+}
+
+@media (max-width: 760px) {
+  body.is-raft-theme-body .vocab-editor-panel {
+    width: auto !important;
+    box-shadow: 3px 3px 0 var(--raft-ink) !important;
+  }
+
+  body.is-raft-theme-body .vocab-editor-panel-header-main {
+    min-height: 60px;
+    padding: 10px 10px 8px !important;
+  }
+
+  body.is-raft-theme-body .vocab-editor-panel-heading {
+    padding-left: 11px;
+  }
+
+  body.is-raft-theme-body .vocab-editor-panel-title {
+    font-size: 18px !important;
+  }
+
+  body.is-raft-theme-body .vocab-editor-panel-toolbar {
+    padding: 7px 9px !important;
+  }
+
+  body.is-raft-theme-body .vocab-editor-panel-tabs button {
+    min-width: 0;
+  }
+
+  body.is-raft-theme-body .workspace-page.overlay-mode .overlay-editor-stack,
+  body.is-raft-theme-body .workspace-page.overlay-mode .workspace-surface-body {
+    padding: 10px !important;
+  }
+
+  body.is-raft-theme-body .workspace-page.overlay-mode .overlay-editor-stack .workspace-surface-body {
+    padding: 0 !important;
+  }
+
+  body.is-raft-theme-body .workspace-page.overlay-mode .workspace-form-section,
+  body.is-raft-theme-body .workspace-page.overlay-mode .manual-merge-panel,
+  body.is-raft-theme-body .workspace-page.overlay-mode .organize-body {
+    padding: 9px !important;
+  }
+
+  body.is-raft-theme-body .workspace-page.overlay-mode .organize-panel > .panel-header {
+    padding: 9px 10px !important;
+    box-shadow: inset 5px 0 0 var(--raft-pink) !important;
+  }
+
+  body.is-raft-theme-body .workspace-page.overlay-mode .organize-panel .panel-title-with-icon {
+    font-size: 15px !important;
+  }
+}
+
 @media (max-width: 768px) {
   .master-announcement-bar {
     flex-basis: 30px;

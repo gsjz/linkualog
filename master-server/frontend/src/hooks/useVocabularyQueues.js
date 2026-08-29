@@ -53,28 +53,50 @@ const dedupeItems = (items) => {
   return [...map.values()];
 };
 
-export const reconcileQueueItems = (currentItems, incomingItems) => {
+export const applyQueueIdentityRedirects = (items, redirects) => {
+  if (!Array.isArray(items) || !(redirects instanceof Map) || !redirects.size) return items;
+  const transformed = items.map((item) => {
+    let current = item;
+    const seen = new Set();
+    for (let depth = 0; depth < 12; depth += 1) {
+      const itemId = normalizeQueueItem(current, current?.source)?.id || '';
+      if (!itemId || seen.has(itemId)) break;
+      seen.add(itemId);
+      const redirect = redirects.get(itemId);
+      if (!redirect) break;
+      current = { ...current, ...redirect };
+    }
+    return current;
+  });
+  return transformed;
+};
+
+export const reconcileQueueItems = (currentItems, incomingItems, validItems = incomingItems, maxItems = Infinity) => {
   const incomingById = new Map((Array.isArray(incomingItems) ? incomingItems : [])
+    .filter(Boolean)
+    .map((item) => [item.id, item]));
+  const validById = new Map((Array.isArray(validItems) ? validItems : [])
     .filter(Boolean)
     .map((item) => [item.id, item]));
   const used = new Set();
   const reconciled = (Array.isArray(currentItems) ? currentItems : [])
-    .filter((item) => item?.id && incomingById.has(item.id))
+    .filter((item) => item?.id && validById.has(item.id))
     .map((item) => {
       used.add(item.id);
+      const updatedItem = incomingById.get(item.id) || validById.get(item.id);
       return {
         ...item,
-        ...incomingById.get(item.id),
-        addedAt: item.addedAt || incomingById.get(item.id)?.addedAt || nowIso(),
+        ...updatedItem,
+        addedAt: item.addedAt || updatedItem?.addedAt || nowIso(),
       };
     });
 
   incomingItems.forEach((item) => {
-    if (!item?.id || used.has(item.id)) return;
+    if (!item?.id || used.has(item.id) || reconciled.length >= maxItems) return;
     reconciled.push(item);
   });
 
-  return reconciled;
+  return reconciled.slice(0, maxItems);
 };
 
 export const replaceQueueItems = (currentState, sourceItem, targetItem = null) => {
@@ -167,7 +189,7 @@ const normalizeIdList = (items) => (
     .filter(Boolean))]
 );
 
-const pickQueueEntry = (queue, cursor = 0, options = {}) => {
+export const pickQueueEntry = (queue, cursor = 0, options = {}) => {
   const items = Array.isArray(queue) ? queue.filter(Boolean) : [];
   if (!items.length) return null;
 
@@ -340,6 +362,9 @@ export function useVocabularyQueues() {
     if (!QUEUE_NAMES.includes(queueName)) return;
     const normalizedItems = dedupeItems((Array.isArray(items) ? items : [])
       .map((item) => ({ ...item, source })));
+    const normalizedValidItems = Array.isArray(options?.validItems)
+      ? dedupeItems(options.validItems.map((item) => ({ ...item, source })))
+      : normalizedItems;
     setState((current) => ({
       ...current,
       ...(() => {
@@ -349,13 +374,19 @@ export function useVocabularyQueues() {
           || (syncKeyChanged && options?.preserveOrder !== true);
         const mergedItems = shouldReplaceItems
           ? normalizedItems
-          : reconcileQueueItems(current.queues?.[queueName] || [], normalizedItems);
-        const validIds = new Set(normalizedItems.map((item) => item.id));
+          : reconcileQueueItems(
+              current.queues?.[queueName] || [],
+              normalizedItems,
+              normalizedValidItems,
+            );
+        const validIds = new Set(normalizedValidItems.map((item) => item.id));
         const skippedIds = syncKeyChanged && options?.preserveSkipped !== true
           ? []
           : normalizeIdList(current.skipped?.[queueName]).filter((id) => validIds.has(id));
         const skippedSet = new Set(skippedIds);
-        const visibleItems = mergedItems.filter((item) => !skippedSet.has(item.id));
+        const visibleItems = mergedItems
+          .filter((item) => !skippedSet.has(item.id))
+          .slice(0, normalizedItems.length);
         return {
           queues: {
             ...current.queues,

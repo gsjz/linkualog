@@ -1532,7 +1532,7 @@ function EditorPanel({
   const rawSource = rawDirty ? rawText : JSON.stringify(draft, null, 2);
 
   return (
-    <div className="panel-body list-body editor-panel">
+    <div className="panel-body list-body editor-panel workspace-surface-body">
       <ManualMergePanel
         key={`manual-merge-${currentCategory}-${currentFilename}`}
         activeWord={activeWord}
@@ -1546,15 +1546,18 @@ function EditorPanel({
         onManualMerge={onManualMerge}
       />
 
-      <section className="editor-section">
+      <section className="editor-section workspace-form-section">
         <div className="editor-title-row">
-          <h4>词条主信息</h4>
+          <div>
+            <h4>词条信息</h4>
+            <div className="editor-subtitle">维护显示词形与创建日期。</div>
+          </div>
           {dirty ? <span className="dirty-dot">未保存</span> : <span className="saved-dot">已同步</span>}
         </div>
 
         <div className="editor-grid">
           <label>
-            Word
+            单词
             <input
               className="field"
               value={draft.word || ''}
@@ -1562,7 +1565,7 @@ function EditorPanel({
             />
           </label>
           <label>
-            Created At
+            创建日期
             <input
               className="field"
               type="date"
@@ -1573,15 +1576,15 @@ function EditorPanel({
         </div>
       </section>
 
-      <details className="editor-section editor-collapsible-section">
+      <details className="editor-section editor-collapsible-section workspace-form-section">
         <summary className="editor-disclosure">
-          <span>Definitions</span>
+          <span>释义</span>
           <span className="editor-disclosure-meta">{definitions.length ? `${definitions.length} 条释义` : '暂无释义'}</span>
         </summary>
 
         <div className="editor-section-body">
           <div className="editor-title-row">
-            <h4>Definitions</h4>
+            <h4>释义</h4>
             <button type="button" className="ghost" onClick={onDefinitionAdd}>新增释义</button>
           </div>
 
@@ -1602,9 +1605,12 @@ function EditorPanel({
         </div>
       </details>
 
-      <section className="editor-section">
+      <section className="editor-section workspace-form-section">
         <div className="editor-title-row">
-          <h4>Examples</h4>
+          <div>
+            <h4>例句</h4>
+            <div className="editor-subtitle">编辑原文、解析、来源与重点词位置。</div>
+          </div>
           <button type="button" className="ghost" onClick={onExampleAdd}>新增例句</button>
         </div>
 
@@ -1794,8 +1800,11 @@ function EditorPanel({
         </div>
       </section>
 
-      <details className="editor-section raw-json-section">
-        <summary className="editor-disclosure">Raw JSON (高级快速编辑)</summary>
+      <details className="editor-section raw-json-section workspace-form-section">
+        <summary className="editor-disclosure">
+          <span>原始 JSON</span>
+          <span className="editor-disclosure-meta">高级快速编辑</span>
+        </summary>
 
         <textarea
           className="field textarea raw-editor"
@@ -1905,8 +1914,15 @@ function ConnectionPanel({
     : Number(relationSuggestMeta?.skipped || 0);
   const renderDraftActions = (className = 'connection-draft-actions') => (
     <div className={className}>
-      <button type="button" className="ghost" onClick={onReset} disabled={!dirty || saving}>重置草稿</button>
-      <button type="button" className="primary" onClick={onSave} disabled={!dirty || saving}>{saving ? '保存中...' : '保存到 data'}</button>
+      <span className={`badge ${dirty ? 'medium' : 'high'}`}>{dirty ? '未保存' : '已同步'}</span>
+      <button type="button" className="ghost" onClick={onReset} disabled={!dirty || saving}>
+        <UiIcon name="refresh" size={14} />
+        <span>重置草稿</span>
+      </button>
+      <button type="button" className="primary" onClick={onSave} disabled={!dirty || saving}>
+        <UiIcon name="save" size={14} />
+        <span>{saving ? '保存中...' : '保存到 data'}</span>
+      </button>
     </div>
   );
   const draftActionsNode = renderDraftActions();
@@ -1938,7 +1954,7 @@ function ConnectionPanel({
             <span className="badge medium">待选择</span>
           </div>
         </div>
-        <div className="panel-body list-body connection-body">
+        <div className="panel-body list-body connection-body workspace-surface-body">
           <div className="empty">请选择词条后建立连接。</div>
         </div>
       </div>
@@ -1963,8 +1979,8 @@ function ConnectionPanel({
       </div>
       {draftActionsPortal}
 
-      <div className="panel-body list-body connection-body">
-        <section className="editor-section relation-editor-section">
+      <div className="panel-body list-body connection-body workspace-surface-body">
+        <section className="editor-section relation-editor-section workspace-form-section">
           <div className="editor-title-row">
             <div>
               <h4>LLM 连边建议</h4>
@@ -2046,7 +2062,7 @@ function ConnectionPanel({
           </div>
         </section>
 
-        <section className="editor-section relation-editor-section">
+        <section className="editor-section relation-editor-section workspace-form-section">
           <div className="editor-title-row">
             <div>
               <h4>手动连边</h4>
@@ -4840,20 +4856,36 @@ export default function App({
     setDrawerOpen(true);
   };
 
+  const renderEditorActions = (className = 'editor-header-actions') => (
+    <div className={`panel-header-actions ${className}`}>
+      {draft ? <span className={`badge ${draftDirty ? 'medium' : 'high'}`}>{draftDirty ? '未保存' : '已同步'}</span> : null}
+      <button type="button" className="danger" onClick={handleDeleteDraft} disabled={deletingDraft || savingDraft || !hasSelection}>
+        <UiIcon name="trash" size={14} />
+        <span>{deletingDraft ? '删除中...' : '删除词条'}</span>
+      </button>
+      <button type="button" className="ghost" onClick={handleDraftReset} disabled={!draftDirty || savingDraft || deletingDraft}>
+        <UiIcon name="refresh" size={14} />
+        <span>重置草稿</span>
+      </button>
+      <button type="button" className="primary" onClick={() => handleDraftSave({ closeEditor: overlayMode })} disabled={!draftDirty || savingDraft || deletingDraft}>
+        <UiIcon name="save" size={14} />
+        <span>{savingDraft ? '保存中...' : '保存到 data'}</span>
+      </button>
+    </div>
+  );
+
   const renderEditorSurface = () => (
-    <div className="panel">
+    <div className="panel editor-workbench-panel">
       <div className="panel-header">
         <h3 className="panel-title-with-icon editor-panel-title">
           <UiIcon name="edit" size={20} />
           <span>手动整理</span>
         </h3>
-        <div className="panel-header-actions editor-header-actions">
-          {draft ? <span className={`badge ${draftDirty ? 'medium' : 'high'}`}>{draftDirty ? 'draft' : 'synced'}</span> : null}
-          <button type="button" className="danger" onClick={handleDeleteDraft} disabled={deletingDraft || savingDraft || !hasSelection}>{deletingDraft ? '删除中...' : '删除词条'}</button>
-          <button type="button" className="ghost" onClick={handleDraftReset} disabled={!draftDirty || savingDraft || deletingDraft}>重置草稿</button>
-          <button type="button" className="primary" onClick={() => handleDraftSave({ closeEditor: overlayMode })} disabled={!draftDirty || savingDraft || deletingDraft}>{savingDraft ? '保存中...' : '保存到 data'}</button>
-        </div>
+        {renderEditorActions()}
       </div>
+      {overlayMode && overlayFocus === 'editor' && headerActionsHost
+        ? createPortal(renderEditorActions('editor-header-actions is-surface-actions'), headerActionsHost)
+        : null}
       <EditorPanel
         key={`editor-${editorSyncToken}`}
         draft={draft}
