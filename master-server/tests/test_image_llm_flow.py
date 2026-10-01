@@ -2,6 +2,7 @@ import base64
 import os
 import tempfile
 import unittest
+from contextlib import nullcontext
 from unittest.mock import patch
 
 from PIL import Image
@@ -79,7 +80,7 @@ class ImageLLMFlowTests(unittest.TestCase):
 
             with (
                 patch.object(routes, "load_tasks", return_value=tasks),
-                patch.object(routes, "save_tasks") as save_tasks,
+                patch.object(routes, "edit_tasks", side_effect=lambda: nullcontext(tasks)) as edit_tasks,
                 patch.object(
                     routes,
                     "process_image_region",
@@ -129,7 +130,7 @@ class ImageLLMFlowTests(unittest.TestCase):
                 {"left": 0.1, "top": 0.2, "width": 0.4, "height": 0.5},
             )
             self.assertTrue(response["marks"][0]["sourceRegionId"].startswith("page-0-local-"))
-            save_tasks.assert_called_once()
+            edit_tasks.assert_called_once()
 
     def test_image_processing_continues_when_connectivity_probe_fails(self):
         captured_payloads = []

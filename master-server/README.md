@@ -88,6 +88,28 @@ cd /path/to/linkualog/master-server
 uv run --no-sync python -m unittest discover -s tests -v
 ```
 
+前端异步交互回归测试位于 `frontend/tests/`，覆盖任务切换、上传失败恢复、
+词条切换与设置读取失败。先用 `make rebuild-master` 更新 Docker 页面，再运行：
+
+```bash
+# 在仓库根目录执行；Playwright 依赖和浏览器都留在一次性容器中。
+docker run --rm --network host \
+  -v "$PWD:/work" -w /tmp \
+  -e NODE_PATH=/tmp/node_modules \
+  -e BASE_URL=http://127.0.0.1:18080 \
+  -e OUT_DIR=/work/.tmp-layout-check/bug-audit \
+  mcr.microsoft.com/playwright:v1.60.0-noble \
+  bash -lc 'npm install --no-save playwright@1.60.0 &&
+    node /work/master-server/frontend/tests/task-races.cjs &&
+    FULL_MATRIX=1 node /work/master-server/frontend/tests/vocabulary-races.cjs &&
+    FULL_MATRIX=1 node /work/master-server/frontend/tests/editor-launch.cjs &&
+    node /work/master-server/frontend/tests/config-recovery.cjs &&
+    node /work/master-server/frontend/tests/task-popovers.cjs'
+```
+
+这些回归通过浏览器拦截模拟延迟和失败，不调用真实 LLM，也不修改运行数据。
+截图和结果写入 `.tmp-layout-check/bug-audit/`。
+
 ## 说明
 
 - Docker 镜像已安装 `poppler-utils`，PDF 分页可直接使用。

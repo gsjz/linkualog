@@ -3,6 +3,7 @@ import logging
 import asyncio
 import threading
 from pathlib import Path
+from contextlib import asynccontextmanager
 
 import requests
 import uvicorn
@@ -109,6 +110,7 @@ os.environ.setdefault("MAX_SIZE_BYTES", str(1 * 1024 * 1024 * 1024))
 os.environ.setdefault("MAX_SCAN_FILES", "2000")
 
 from core.config import get_config_data, is_running_in_docker
+from core.tasks import recover_interrupted_tasks
 from api.routes import router as master_router
 from api.review_routes import router as review_router
 from utils.runner import start_frontend_dev
@@ -265,7 +267,15 @@ class EndpointFilter(logging.Filter):
 
 logging.getLogger("uvicorn.access").addFilter(EndpointFilter())
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    recovered = await asyncio.to_thread(recover_interrupted_tasks)
+    if recovered:
+        logging.getLogger("master_server").info("Recovered %s interrupted OCR tasks; awaiting user retry", recovered)
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,

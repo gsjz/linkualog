@@ -9,10 +9,11 @@ from typing import List
 from fastapi import APIRouter, UploadFile, File, Form, BackgroundTasks, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
+from filelock import Timeout
 
 from core.config import get_public_config_data, reset_config_data, save_config_data
 from core.storage import save_temp_file
-from core.tasks import load_tasks, save_tasks, create_task
+from core.tasks import load_tasks, edit_tasks, create_task, task_processing_lock
 from services.llm import (
     normalize_unit_bbox,
     process_image,
@@ -329,52 +330,74 @@ def test_llm_config(req: LlmConfigTestRequest):
 
 
 def process_task_background(task_id: str):
-    tasks = load_tasks()
-    task = tasks.get(task_id)
-    if not task: 
+    worker_lock = task_processing_lock(task_id)
+    try:
+        worker_lock.acquire()
+    except Timeout:
+        # Repeated resume requests must not run the same paid OCR twice.
         return
-    
-    task["status"] = "processing"
-    save_tasks(tasks)
+    try:
+        while True:
+            with edit_tasks() as tasks:
+                task = tasks.get(task_id)
+                if not task:
+                    worker_lock.release()
+                    return
+                sub_tasks = task.get("sub_tasks", [])
+                task["completed"] = sum(sub.get("status") == "completed" for sub in sub_tasks)
+                index = next((i for i, sub in enumerate(sub_tasks) if sub.get("status") != "completed"), None)
+                if index is None:
+                    task["status"] = "finished"
+                    # Release before publishing the terminal state so a new
+                    # regeneration cannot be stranded behind this worker.
+                    worker_lock.release()
+                    return
+                task["status"] = "processing"
+                sub_tasks[index]["status"] = "processing"
+                sub_tasks[index]["generation"] = sub_tasks[index].get("generation", 0) + 1
+                image_path = sub_tasks[index]["path"]
 
-    for sub in task["sub_tasks"]:
-        if sub.get("status") == "completed": 
-            continue
-        
-        try:
-            if not os.path.exists(sub["path"]):
-                raise FileNotFoundError(f"找不到本地文件: {sub['path']}")
-                
-            with open(sub["path"], "rb") as f: 
-                image_bytes = f.read()
-            
-            mime = mimetypes.guess_type(sub["path"])[0] or "image/jpeg"
-            reply = process_image(
-                image_bytes,
-                os.path.basename(sub["path"]),
-                mime,
-                experimental_coordinates=True
-            )
-            
-            sub["result"] = reply["raw"]
-            sub["parsed_result"] = reply["parsed"]
-            sub["result_meta"] = reply.get("meta", {})
-            sub["status"] = "completed"
-            sub.pop("error", None)
-            task["completed"] += 1
-            save_tasks(tasks)
-            
-        except Exception as e:
-            print(f"\n❌ [后台任务] 任务 {task_id} 处理子项异常!")
-            traceback.print_exc()
-            sub["status"] = "failed"
-            sub["error"] = str(e)
-            task["status"] = "paused"
-            save_tasks(tasks)
-            return
+            error = None
+            try:
+                with open(image_path, "rb") as f:
+                    image_bytes = f.read()
+                mime = mimetypes.guess_type(image_path)[0] or "image/jpeg"
+                reply = process_image(
+                    image_bytes,
+                    os.path.basename(image_path),
+                    mime,
+                    experimental_coordinates=True,
+                )
+                result = {
+                    "result": reply["raw"],
+                    "parsed_result": reply["parsed"],
+                    "result_meta": reply.get("meta", {}),
+                }
+            except Exception as exc:
+                print(f"\n❌ [后台任务] 任务 {task_id} 处理子项异常!")
+                traceback.print_exc()
+                error = str(exc)
 
-    task["status"] = "finished"
-    save_tasks(tasks)
+            # OCR may take minutes. Always merge into fresh state so uploads,
+            # renames, page edits and deletions made meanwhile are retained.
+            with edit_tasks() as tasks:
+                task = tasks.get(task_id)
+                if not task:
+                    worker_lock.release()
+                    return
+                sub = task["sub_tasks"][index]
+                if error is not None:
+                    sub["status"] = "failed"
+                    sub["error"] = error
+                    task["status"] = "paused"
+                    worker_lock.release()
+                    return
+                sub.update(result)
+                sub["status"] = "completed"
+                sub.pop("error", None)
+                task["completed"] = sum(item.get("status") == "completed" for item in task["sub_tasks"])
+    finally:
+        worker_lock.release()
 
 
 @router.post("/api/upload_resource")
@@ -432,6 +455,12 @@ def get_task_status(task_id: str):
 
 @router.post("/api/task/{task_id}/resume")
 def resume_task(task_id: str, background_tasks: BackgroundTasks):
+    with edit_tasks() as tasks:
+        task = tasks.get(task_id)
+        if not task:
+            raise HTTPException(status_code=404, detail="任务不存在")
+        if task.get("status") != "finished":
+            task["status"] = "processing"
     background_tasks.add_task(process_task_background, task_id)
     return {"status": "resumed"}
 
@@ -459,13 +488,21 @@ def get_image(path: str):
 
 @router.delete("/api/task/{task_id}")
 def delete_task(task_id: str):
-    tasks = load_tasks()
-    if task_id in tasks:
-        _cleanup_task_files(tasks[task_id])
-        del tasks[task_id]
-        save_tasks(tasks)
-        return {"status": "success"}
-    return {"error": "任务不存在"}
+    with edit_tasks() as tasks:
+        task = tasks.pop(task_id, None)
+        if task is None:
+            return {"error": "任务不存在"}
+        # Older uploads may share paths. Keep any file still used by a task.
+        referenced = {
+            os.path.abspath(sub["path"])
+            for other in tasks.values() for sub in other.get("sub_tasks", [])
+            if sub.get("path")
+        }
+        _cleanup_task_files({"sub_tasks": [
+            sub for sub in task.get("sub_tasks", [])
+            if sub.get("path") and os.path.abspath(sub["path"]) not in referenced
+        ]})
+    return {"status": "success"}
 
 class RegenerateRequest(BaseModel):
     index: int 
@@ -578,31 +615,28 @@ def recommend_resource_task_name(req: TaskNameRecommendRequest):
 
 @router.patch("/api/task/{task_id}")
 def rename_task(task_id: str, req: TaskRenameRequest):
-    tasks = load_tasks()
-    task = tasks.get(task_id)
-    if not task:
-        raise HTTPException(status_code=404, detail="任务不存在")
-
     final_name = req.name.strip() if req.name and req.name.strip() else "资源解析任务"
-    task["name"] = final_name
-    save_tasks(tasks)
+    with edit_tasks() as tasks:
+        task = tasks.get(task_id)
+        if not task:
+            raise HTTPException(status_code=404, detail="任务不存在")
+        task["name"] = final_name
     return {"status": "success", "name": final_name}
 
 
 @router.patch("/api/task/{task_id}/page/{index}/parsed_result")
 def update_task_page_parsed_result(task_id: str, index: int, req: TaskPageParsedResultRequest):
-    tasks = load_tasks()
-    task = tasks.get(task_id)
-    if not task:
-        raise HTTPException(status_code=404, detail="任务不存在")
-
-    sub_tasks = task.get("sub_tasks", [])
-    if index < 0 or index >= len(sub_tasks):
-        raise HTTPException(status_code=400, detail="参数错误，索引越界")
-
     normalized_result = _normalize_parsed_result_focus(req.parsed_result)
-    sub_tasks[index]["parsed_result"] = normalized_result
-    save_tasks(tasks)
+    with edit_tasks() as tasks:
+        task = tasks.get(task_id)
+        if not task:
+            raise HTTPException(status_code=404, detail="任务不存在")
+        sub_tasks = task.get("sub_tasks", [])
+        if index < 0 or index >= len(sub_tasks):
+            raise HTTPException(status_code=400, detail="参数错误，索引越界")
+        if sub_tasks[index].get("status") == "processing":
+            raise HTTPException(status_code=409, detail="本页正在识别，请完成后再编辑")
+        sub_tasks[index]["parsed_result"] = normalized_result
     return {"status": "success", "parsed_result": normalized_result}
 
 
@@ -618,6 +652,9 @@ def recognize_task_page_region(task_id: str, index: int, req: LocalRecognitionRe
         raise HTTPException(status_code=400, detail="参数错误，索引越界")
 
     sub = sub_tasks[index]
+    if sub.get("status") == "processing":
+        raise HTTPException(status_code=409, detail="本页正在识别，请完成后再进行局部识别")
+    generation = sub.get("generation", 0)
     image_path = str(sub.get("path") or "").strip()
     if not image_path or not os.path.exists(image_path):
         raise HTTPException(status_code=404, detail="页面图片不存在")
@@ -645,23 +682,28 @@ def recognize_task_page_region(task_id: str, index: int, req: LocalRecognitionRe
 
         region_id = _make_local_region_id(index, normalized_region)
         local_marks = reply.get("parsed", {}).get("marked_text", [])
-        next_parsed_result = _merge_local_region_marks(
-            page_parsed_result,
-            local_marks,
-            normalized_region,
-            region_id,
-        )
-        normalized_result = _normalize_parsed_result_focus(next_parsed_result)
-
-        sub["parsed_result"] = normalized_result
-        sub.setdefault("local_recognition_history", [])
-        sub["local_recognition_history"].append({
-            "regionId": region_id,
-            "region": normalized_region,
-            "count": len(local_marks) if isinstance(local_marks, list) else 0,
-            "meta": reply.get("meta", {}),
-        })
-        save_tasks(tasks)
+        with edit_tasks() as tasks:
+            task = tasks.get(task_id)
+            if not task:
+                raise HTTPException(status_code=404, detail="任务已删除")
+            sub = task["sub_tasks"][index]
+            if sub.get("status") == "processing" or sub.get("generation", 0) != generation:
+                raise HTTPException(status_code=409, detail="本页已开始重新生成，请完成后重试局部识别")
+            next_parsed_result = _merge_local_region_marks(
+                _ensure_page_parsed_result(sub),
+                local_marks,
+                normalized_region,
+                region_id,
+            )
+            normalized_result = _normalize_parsed_result_focus(next_parsed_result)
+            sub["parsed_result"] = normalized_result
+            sub.setdefault("local_recognition_history", [])
+            sub["local_recognition_history"].append({
+                "regionId": region_id,
+                "region": normalized_region,
+                "count": len(local_marks) if isinstance(local_marks, list) else 0,
+                "meta": reply.get("meta", {}),
+            })
 
         appended_marks = [
             mark for mark in normalized_result.get("marked_text", [])
@@ -676,6 +718,8 @@ def recognize_task_page_region(task_id: str, index: int, req: LocalRecognitionRe
             "raw": reply.get("raw", ""),
             "meta": reply.get("meta", {}),
         }
+    except HTTPException:
+        raise
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -683,31 +727,27 @@ def recognize_task_page_region(task_id: str, index: int, req: LocalRecognitionRe
 
 @router.post("/api/task/{task_id}/regenerate")
 def regenerate_task_item(task_id: str, req: RegenerateRequest, background_tasks: BackgroundTasks):
-    tasks = load_tasks()
-    task = tasks.get(task_id)
-    if not task:
-        return {"error": "任务不存在"}
-        
-    sub_tasks = task.get("sub_tasks", [])
-    if req.index < 0 or req.index >= len(sub_tasks):
-        return {"error": "参数错误，索引越界"}
-        
-    sub = sub_tasks[req.index]
-    if sub.get("status") == "completed":
-        task["completed"] = max(0, task.get("completed", 1) - 1)
-        
-    sub["status"] = "pending" 
-    sub["result"] = None
-    sub.pop("parsed_result", None)
-    sub.pop("result_meta", None)
-    if "error" in sub:
-        del sub["error"]
-        
-    task["status"] = "processing"
-    save_tasks(tasks)
+    with edit_tasks() as tasks:
+        task = tasks.get(task_id)
+        if not task:
+            return {"error": "任务不存在"}
+        sub_tasks = task.get("sub_tasks", [])
+        if req.index < 0 or req.index >= len(sub_tasks):
+            return {"error": "参数错误，索引越界"}
+        sub = sub_tasks[req.index]
+        if sub.get("status") == "processing":
+            return {"status": "success", "message": "本页正在识别中"}
+        sub["status"] = "pending"
+        sub["result"] = None
+        sub["generation"] = sub.get("generation", 0) + 1
+        for key in ("parsed_result", "result_meta", "error", "local_recognition_history"):
+            sub.pop(key, None)
+        task["completed"] = sum(item.get("status") == "completed" for item in sub_tasks)
+        task["status"] = "processing"
+        page_number = task.get("start_page", 1) + req.index
     
     background_tasks.add_task(process_task_background, task_id)
-    return {"status": "success", "message": f"已将第 {req.index} 项加入重新生成队列"}
+    return {"status": "success", "message": f"已将第 {page_number} 页加入重新生成队列"}
 
 class VocabAddRequest(BaseModel):
     word: str
