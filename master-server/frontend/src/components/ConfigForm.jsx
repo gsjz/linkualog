@@ -55,6 +55,9 @@ function inputStyle(disabled = false) {
 export default function ConfigForm({ onClose }) {
   const [page, setPage] = useState(PAGES[0].id);
   const [loading, setLoading] = useState(true);
+  const [configLoaded, setConfigLoaded] = useState(false);
+  const [loadError, setLoadError] = useState('');
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [saving, setSaving] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [testingKind, setTestingKind] = useState('');
@@ -97,6 +100,8 @@ export default function ConfigForm({ onClose }) {
     let cancelled = false;
 
     setLoading(true);
+    setConfigLoaded(false);
+    setLoadError('');
     fetchConfig()
       .then((data) => {
         if (cancelled) return;
@@ -107,11 +112,11 @@ export default function ConfigForm({ onClose }) {
           model: data.model || prev.model,
           hasKey: Boolean(data.hasKey),
         }));
+        setConfigLoaded(true);
       })
       .catch((err) => {
         if (cancelled) return;
-        setStatusKind('error');
-        setStatusMsg(`读取配置失败: ${err.message}`);
+        setLoadError(`读取配置失败: ${err.message}`);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -120,7 +125,7 @@ export default function ConfigForm({ onClose }) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [loadAttempt]);
 
   useEffect(() => {
     modalBusyRef.current = saving || resetting || Boolean(testingKind || ttsTestingLang);
@@ -149,6 +154,7 @@ export default function ConfigForm({ onClose }) {
 
   const setField = (key, value) => {
     setConfig((prev) => ({ ...prev, [key]: value }));
+    setStatusMsg('');
     if (key === 'provider' || key === 'model' || key === 'api_key') {
       setLlmTestResult(null);
     }
@@ -183,6 +189,7 @@ export default function ConfigForm({ onClose }) {
   });
 
   const handleRunLlmTest = async (testType) => {
+    if (!configLoaded || loading || modalBusyRef.current) return;
     setTestingKind(testType);
     setStatusMsg('');
     setLlmTestResult(null);
@@ -289,6 +296,7 @@ export default function ConfigForm({ onClose }) {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (!configLoaded || loading || modalBusyRef.current) return;
     setSaving(true);
     setStatusMsg('');
 
@@ -309,9 +317,6 @@ export default function ConfigForm({ onClose }) {
       }));
       setStatusKind('success');
       setStatusMsg('设置已保存。');
-      setTimeout(() => {
-        onClose();
-      }, 1000);
     } catch (err) {
       setStatusKind('error');
       setStatusMsg(`保存配置失败: ${err.message}`);
@@ -321,6 +326,7 @@ export default function ConfigForm({ onClose }) {
   };
 
   const handleResetDefaults = async () => {
+    if (!configLoaded || loading || modalBusyRef.current) return;
     setResetting(true);
     setStatusMsg('');
 
@@ -367,12 +373,12 @@ export default function ConfigForm({ onClose }) {
   const labelStyle = { display: 'flex', flexDirection: 'column', fontSize: '13px', color: 'var(--ms-text)', fontWeight: '600', width: '100%' };
   const rowStyle = { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '12px' };
   const isTesting = Boolean(testingKind || ttsTestingLang);
-  const serverBusy = loading || saving || resetting || isTesting;
+  const serverBusy = loading || !configLoaded || saving || resetting || isTesting;
   const modalBusy = saving || resetting || isTesting;
 
   return (
     <div className="config-modal">
-      <div className="config-modal-card">
+      <div className="config-modal-card" role="dialog" aria-modal="true" aria-label="全局设置">
         <div className="config-modal-header">
           <div>
             <h2 className="config-modal-title">全局设置</h2>
@@ -380,7 +386,7 @@ export default function ConfigForm({ onClose }) {
               服务端配置写入本地配置文件，界面偏好保存在当前浏览器。
             </div>
           </div>
-          <button type="button" className="config-modal-close" onClick={onClose} disabled={modalBusy}>✕</button>
+          <button type="button" className="config-modal-close" aria-label="关闭全局设置" onClick={onClose} disabled={modalBusy}>✕</button>
         </div>
 
         <div className="config-modal-tabs">
@@ -398,6 +404,20 @@ export default function ConfigForm({ onClose }) {
 
         <form onSubmit={handleSubmit} className="config-modal-form">
           <div className="config-modal-body">
+            {loadError ? (
+              <div className="config-info-box" role="alert">
+                <div>{loadError}</div>
+                <div>请重新读取配置后再保存，以免覆盖已有设置。</div>
+                <button
+                  type="button"
+                  className="master-secondary-button"
+                  onClick={() => setLoadAttempt((attempt) => attempt + 1)}
+                  disabled={loading}
+                >
+                  重新读取配置
+                </button>
+              </div>
+            ) : null}
             {page === 'llm' ? (
               <>
                 <label style={labelStyle}>
@@ -589,8 +609,8 @@ export default function ConfigForm({ onClose }) {
                   <select
                     value={config.tts_voice_source_preference}
                     onChange={(e) => setField('tts_voice_source_preference', e.target.value)}
-                    style={inputStyle(modalBusy)}
-                    disabled={modalBusy}
+                    style={inputStyle(serverBusy)}
+                    disabled={serverBusy}
                   >
                     {TTS_VOICE_SOURCE_PREFERENCES.map((item) => (
                       <option key={item.value} value={item.value}>{item.label}</option>
@@ -603,8 +623,8 @@ export default function ConfigForm({ onClose }) {
                     value={config.tts_voice_priority}
                     onChange={(e) => setField('tts_voice_priority', e.target.value)}
                     placeholder="如: Microsoft Aria Online, local:en-US, en-GB"
-                    style={{ ...inputStyle(modalBusy), minHeight: '74px', resize: 'vertical' }}
-                    disabled={modalBusy}
+                    style={{ ...inputStyle(serverBusy), minHeight: '74px', resize: 'vertical' }}
+                    disabled={serverBusy}
                   />
                 </label>
                 <label style={labelStyle}>
@@ -666,7 +686,7 @@ export default function ConfigForm({ onClose }) {
             </div>
             <div className="config-actions">
               <button type="button" className="master-secondary-button" onClick={onClose} disabled={modalBusy}>
-                取消
+                关闭
               </button>
               <button type="button" className="master-secondary-button" onClick={handleResetDefaults} disabled={serverBusy}>
                 {resetting ? '同步中...' : '同步默认设置'}

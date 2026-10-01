@@ -1,0 +1,131 @@
+/* Focused hierarchy for the vocabulary editor. Kept separate so the workspace theme remains stable. */
+.workspace-page .editor-panel {
+  gap: 10px;
+}
+
+.workspace-page .editor-panel > .workspace-form-section {
+  padding: 13px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-strong, #fff);
+}
+
+.workspace-page .editor-panel > .workspace-form-section:first-child {
+  border-color: color-mix(in srgb, var(--line) 70%, var(--accent, #47735d));
+}
+
+.workspace-page .editor-panel > .workspace-form-section > .editor-title-row {
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+.workspace-page .editor-panel .advanced-editor-section,
+.workspace-page .editor-panel .raw-json-section {
+  padding: 10px 13px;
+  background: var(--surface-muted, #f6f6f1);
+}
+
+.workspace-page .editor-panel .advanced-editor-section[open],
+.workspace-page .editor-panel .raw-json-section[open] {
+  background: var(--surface-strong, #fff);
+}
+
+.workspace-page .advanced-editor-section .editor-section-body {
+  gap: 8px;
+}
+
+.workspace-page .editor-help-text {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.workspace-page .advanced-editor-section .manual-merge-panel {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.workspace-page .editor-panel label {
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 680;
+}
+
+.workspace-page .editor-panel input,
+.workspace-page .editor-panel textarea,
+.workspace-page .editor-panel select {
+  margin-top: 3px;
+}
+
+.workspace-page .organize-panel .organize-body {
+  gap: 8px;
+}
+
+.workspace-page .organize-panel .organize-toolbar {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.workspace-page .organize-panel .organize-actions {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.workspace-page .organize-panel .organize-actions button:not(.organize-run-current) {
+  display: none;
+}
+
+.workspace-page .organize-panel .llm-custom-prompt-field {
+  order: 2;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface-muted, #f6f6f1);
+}
+
+.workspace-page .organize-panel .llm-custom-prompt-input {
+  min-height: 42px;
+}
+
+.workspace-page .organize-panel .organize-summary-strip {
+  order: 3;
+  padding-top: 2px;
+}
+
+.workspace-page .organize-panel .organize-empty-state {
+  order: 4;
+  min-height: 0;
+  padding: 10px 12px;
+}
+
+.workspace-page .organize-panel .organize-suggestions {
+  order: 4;
+}
+
+@media (max-width: 620px) {
+  .workspace-page .editor-panel > .workspace-form-section {
+    padding: 10px;
+  }
+
+  .workspace-page .editor-panel .editor-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .workspace-page .editor-panel .editor-item .field {
+    flex: 1 1 100%;
+  }
+
+  .workspace-page .organize-panel .panel-body {
+    padding: 9px !important;
+  }
+
+  .workspace-page .organize-panel .organize-summary-item {
+    padding: 6px 8px;
+  }
+
+  .workspace-page .organize-panel .organize-summary-item strong {
+    font-size: 17px;
+  }
+}

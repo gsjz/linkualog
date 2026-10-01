@@ -9,6 +9,7 @@ import UiIcon from './components/UiIcon';
 import { getVocabularyCategories } from './api/client';
 import './App.css';
 import './raft-theme.css';
+import './ui-polish.css';
 
 const COMPACT_LAYOUT_MEDIA_QUERY = '(max-width: 1180px)';
 const DESKTOP_MINIMAL_MODE_KEY = 'linkualogDesktopMinimalMode';

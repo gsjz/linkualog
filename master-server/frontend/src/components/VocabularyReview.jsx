@@ -1305,6 +1305,8 @@ export default function VocabularyReview({
   const selectedCategoryRef = useRef(selectedCategory);
   const entriesRequestRef = useRef(0);
   const detailRequestRef = useRef(0);
+  // Marking saves the whole entry, so do not overlap it with a review write.
+  const entryMutationPendingRef = useRef(false);
   const handledEntryUpdateTokenRef = useRef('');
   const handledPrefetchedRefineTokenRef = useRef('');
   const handledPrefetchedRelationTokenRef = useRef('');
@@ -1327,7 +1329,7 @@ export default function VocabularyReview({
   const randomSelectionModeRef = useRef(randomSelectionMode);
   const infoButtonRef = useRef(null);
   const sidebarWordListRef = useRef(null);
-  const detailDataRef = useRef(null);
+  const loadedDetailRef = useRef(null);
   const speechPrimedRef = useRef(false);
   const [mobileInfoPanelPosition, setMobileInfoPanelPosition] = useState(null);
   const desktopOverviewLeftRef = useRef(null);
@@ -1656,7 +1658,7 @@ export default function VocabularyReview({
     const requestCategory = resolveEntryCategory(resolvedEntry, normalizedCategory);
     if (!requestCategory) return;
     const keepDetailWhileLoading = Boolean(options?.keepDetailWhileLoading);
-    const hasPreviousDetail = Boolean(detailDataRef.current);
+    const hasPreviousDetail = Boolean(loadedDetailRef.current?.data);
     const shouldKeepDetailWhileLoading = keepDetailWhileLoading || hasPreviousDetail;
     const normalizedQueueSource = resolveStickyQueueSource(resolvedEntry.id, options?.queueSource);
     const requestId = detailRequestRef.current + 1;
@@ -1669,8 +1671,8 @@ export default function VocabularyReview({
     setDetailLoadingEntry(resolvedEntry);
     if (!shouldKeepDetailWhileLoading) {
       setDetailData(null);
+      setDetailCategory(requestCategory);
     }
-    setDetailCategory(requestCategory);
     if (typeof onSelectionChange === 'function') {
       onSelectionChange({
         category: requestCategory,
@@ -1687,24 +1689,50 @@ export default function VocabularyReview({
       setDetailLoadingEntry(null);
     } catch (error) {
       if (detailRequestRef.current !== requestId) return;
-      const categoryChanged = selectedCategoryRef.current !== normalizedCategory
-        && !isAllCategoriesValue(selectedCategoryRef.current);
-      if (!shouldKeepDetailWhileLoading) {
+      const previousDetail = loadedDetailRef.current;
+      if (previousDetail?.data && previousDetail?.entry) {
+        setSelectedEntryId(previousDetail.entry.id);
+        setSelectedEntrySnapshot(previousDetail.entry);
+        setSelectedQueueSource(previousDetail.queueSource);
+        setDetailCategory(previousDetail.category);
+        if (typeof onSelectionChange === 'function') {
+          onSelectionChange({
+            category: previousDetail.category,
+            word: previousDetail.entry.key || previousDetail.entry.file || previousDetail.entry.word,
+            fileKey: previousDetail.entry.file || previousDetail.entry.key || previousDetail.entry.word,
+            queueSource: previousDetail.queueSource,
+          });
+        }
+      } else {
+        setSelectedEntryId('');
+        setSelectedEntrySnapshot(null);
+        setSelectedQueueSource('');
         setDetailCategory('');
         setDetailData(null);
         setDetailEntry(null);
       }
       setDetailLoading(false);
       setDetailLoadingEntry(null);
-      if (categoryChanged) return;
       console.error('加载详情失败', error);
-      alert('加载详情失败');
+      alert(`加载 ${resolvedEntry.word || resolvedEntry.file} 失败${previousDetail?.data ? '，已保留原词条' : ''}，请重试。`);
     }
   }, [applyDetailResponse, entries, onSelectionChange, resolveEntryCandidate, resolveEntryCategory, resolveStickyQueueSource, selectedCategory]);
 
   useEffect(() => {
-    detailDataRef.current = detailData;
-  }, [detailData]);
+    if (detailLoading) return;
+    loadedDetailRef.current = detailData && detailEntry
+      ? {
+          data: detailData,
+          entry: detailEntry,
+          category: detailEntry.category || detailCategory,
+          queueSource: resolveCurrentActionQueueSource(detailEntry.id, selectedQueueSource),
+        }
+      : null;
+  }, [detailCategory, detailData, detailEntry, detailLoading, resolveCurrentActionQueueSource, selectedQueueSource]);
+
+  useEffect(() => () => {
+    detailRequestRef.current += 1;
+  }, []);
 
   useEffect(() => {
     selectedCategoryRef.current = selectedCategory;
@@ -2739,24 +2767,30 @@ export default function VocabularyReview({
 
   const handleSubmitReviewScore = useCallback(async (score, options = {}) => {
     const currentEntry = detailEntry || selectedEntry || resolveEntryCandidate(detailData?.word, selectedCategory, entries);
-    const currentEntryCategory = detailCategory || resolveEntryCategory(currentEntry, selectedCategory);
-    if (detailLoading || !detailData || !currentEntry?.file || !currentEntryCategory) return false;
+    const currentEntryCategory = currentEntry?.category || detailCategory || resolveEntryCategory(currentEntry, selectedCategory);
+    if (entryMutationPendingRef.current || detailLoading || !detailData || !currentEntry?.file || !currentEntryCategory) return false;
     const currentActionQueueSource = resolveCurrentActionQueueSource(currentEntry?.id, selectedQueueSource);
+    const selectionRequestId = detailRequestRef.current;
 
     const shouldAdvanceForThisScore = options?.autoAdvance !== false && randomSelectionModeRef.current;
+    entryMutationPendingRef.current = true;
     setSavingReviewScore(true);
     let shouldAdvance = false;
     let saved = false;
     try {
       await submitReviewScore(currentEntryCategory, currentEntry.file, score, getTodayLocalDateString());
+      // Also stop the queue dock's auto-advance when the user already moved on.
+      if (detailRequestRef.current !== selectionRequestId) return false;
       const res = await getVocabularyDetail(currentEntry.key || currentEntry.file || currentEntry.word, currentEntryCategory);
+      if (detailRequestRef.current !== selectionRequestId) return false;
       applyDetailResponse(res, currentEntry, currentEntryCategory, currentActionQueueSource);
       shouldAdvance = shouldAdvanceForThisScore && randomSelectionModeRef.current;
       saved = true;
     } catch (error) {
       console.error('记录熟练度失败', error);
-      alert('记录熟练度失败');
+      alert(`记录 ${currentEntry.word || currentEntry.file} 熟练度失败，请重试。`);
     } finally {
+      entryMutationPendingRef.current = false;
       setSavingReviewScore(false);
       if (shouldAdvance && visibleEntries.length > 1) {
         queueMicrotask(() => handleRecommendationNext(visibleEntries));
@@ -2767,26 +2801,31 @@ export default function VocabularyReview({
 
   const handleToggleReviewSuppression = useCallback(async () => {
     const currentEntry = detailEntry || selectedEntry || resolveEntryCandidate(detailData?.word, selectedCategory, entries);
-    const currentEntryCategory = detailCategory || resolveEntryCategory(currentEntry, selectedCategory);
-    if (detailLoading || !detailData || !currentEntry?.file || !currentEntryCategory) return false;
+    const currentEntryCategory = currentEntry?.category || detailCategory || resolveEntryCategory(currentEntry, selectedCategory);
+    if (entryMutationPendingRef.current || detailLoading || !detailData || !currentEntry?.file || !currentEntryCategory) return false;
     const currentActionQueueSource = resolveCurrentActionQueueSource(currentEntry?.id, selectedQueueSource);
+    const selectionRequestId = detailRequestRef.current;
 
     const currentScore = Number(detailData?.review_suppression?.score || detailData?.reviewSuppression?.score || 0) || 0;
     const nextScore = currentScore > 0 ? 0 : 5;
+    entryMutationPendingRef.current = true;
     setSavingReviewScore(true);
     try {
       await submitReviewScore(currentEntryCategory, currentEntry.file, null, getTodayLocalDateString(), {
         suppressionScore: nextScore,
       });
-      const res = await getVocabularyDetail(currentEntry.key || currentEntry.file || currentEntry.word, currentEntryCategory);
-      applyDetailResponse(res, currentEntry, currentEntryCategory, currentActionQueueSource);
       invalidateRecommendationQueue({ loading: true, reseed: false });
+      if (detailRequestRef.current !== selectionRequestId) return false;
+      const res = await getVocabularyDetail(currentEntry.key || currentEntry.file || currentEntry.word, currentEntryCategory);
+      if (detailRequestRef.current !== selectionRequestId) return false;
+      applyDetailResponse(res, currentEntry, currentEntryCategory, currentActionQueueSource);
       return true;
     } catch (error) {
       console.error('更新词条抑制失败', error);
-      alert('更新词条抑制失败');
+      alert(`更新 ${currentEntry.word || currentEntry.file} 抑制失败，请重试。`);
       return false;
     } finally {
+      entryMutationPendingRef.current = false;
       setSavingReviewScore(false);
     }
   }, [applyDetailResponse, detailCategory, detailData, detailEntry, detailLoading, entries, invalidateRecommendationQueue, resolveCurrentActionQueueSource, resolveEntryCandidate, resolveEntryCategory, selectedCategory, selectedEntry, selectedQueueSource]);
@@ -2889,9 +2928,11 @@ export default function VocabularyReview({
 
   const handleToggleMarked = useCallback(async () => {
     const currentEntry = detailEntry || selectedEntry || resolveEntryCandidate(detailData?.word, selectedCategory, entries);
-    const currentEntryCategory = detailCategory || resolveEntryCategory(currentEntry, selectedCategory);
-    if (detailLoading || !detailData || !currentEntry?.file || !currentEntryCategory) return;
+    const currentEntryCategory = currentEntry?.category || detailCategory || resolveEntryCategory(currentEntry, selectedCategory);
+    if (entryMutationPendingRef.current || detailLoading || !detailData || !currentEntry?.file || !currentEntryCategory) return;
+    const selectionRequestId = detailRequestRef.current;
 
+    entryMutationPendingRef.current = true;
     setSavingMarked(true);
     try {
       const payload = {
@@ -2900,7 +2941,6 @@ export default function VocabularyReview({
       };
       const res = await saveVocabularyDetail(currentEntryCategory, currentEntry.file, payload);
       const nextData = res?.data || payload;
-      setDetailData(nextData);
       setEntries((prev) => prev.map((item) => (
         item.id === currentEntry.id
           ? {
@@ -2910,6 +2950,8 @@ export default function VocabularyReview({
             }
           : item
       )));
+      if (detailRequestRef.current !== selectionRequestId) return;
+      setDetailData(nextData);
       setSelectedEntrySnapshot((prev) => (
         prev?.id === currentEntry.id
           ? {
@@ -2930,38 +2972,31 @@ export default function VocabularyReview({
       ));
     } catch (error) {
       console.error('更新词条标记失败', error);
-      alert('更新词条标记失败');
+      alert(`更新 ${currentEntry.word || currentEntry.file} 标记失败，请重试。`);
     } finally {
+      entryMutationPendingRef.current = false;
       setSavingMarked(false);
     }
   }, [detailCategory, detailData, detailEntry, detailLoading, entries, resolveEntryCandidate, resolveEntryCategory, selectedCategory, selectedEntry]);
 
   const handleDeleteCurrentEntry = useCallback(async () => {
     const currentEntry = detailEntry || selectedEntry || resolveEntryCandidate(detailData?.word, selectedCategory, entries);
-    const currentEntryCategory = detailCategory || resolveEntryCategory(currentEntry, selectedCategory);
-    if (detailLoading || !currentEntry?.file || !currentEntryCategory) return;
+    const currentEntryCategory = currentEntry?.category || detailCategory || resolveEntryCategory(currentEntry, selectedCategory);
+    if (entryMutationPendingRef.current || detailLoading || !currentEntry?.file || !currentEntryCategory) return;
+    const selectionRequestId = detailRequestRef.current;
 
     const label = `${formatCategoryLabel(currentEntryCategory)} / ${currentEntry.file}`;
     if (!window.confirm(`确定删除当前词条吗？\n\n${label}\n\n删除后会同步清理其它词条指向它的连接。`)) {
       return;
     }
 
+    entryMutationPendingRef.current = true;
     setSavingMarked(true);
     try {
       await deleteVocabularyDetail(currentEntryCategory, currentEntry.file);
       const targetId = currentEntry.id;
-      detailRequestRef.current += 1;
-      keepSelectionEntryIdRef.current = '';
       invalidateRecommendationQueue({ loading: true, reseed: false });
       setEntries((prev) => prev.filter((item) => item.id !== targetId));
-      setSelectedEntryId('');
-      setSelectedEntrySnapshot(null);
-      setDetailData(null);
-      setDetailLoading(false);
-      setDetailLoadingEntry(null);
-      setDetailEntry(null);
-      setDetailCategory('');
-      setRelationGraphData(null);
       setSemanticSearchResults((current) => (
         current
           ? {
@@ -2970,13 +3005,26 @@ export default function VocabularyReview({
             }
           : current
       ));
+      if (detailRequestRef.current !== selectionRequestId) return;
+      detailRequestRef.current += 1;
+      keepSelectionEntryIdRef.current = '';
+      setSelectedEntryId('');
+      setSelectedEntrySnapshot(null);
+      setSelectedQueueSource('');
+      setDetailData(null);
+      setDetailLoading(false);
+      setDetailLoadingEntry(null);
+      setDetailEntry(null);
+      setDetailCategory('');
+      setRelationGraphData(null);
       queueMicrotask(() => {
         void refreshVocabularyPool({ resetQueue: true, reseed: false });
       });
     } catch (error) {
       console.error('删除词条失败', error);
-      alert('删除词条失败');
+      alert(`删除 ${currentEntry.word || currentEntry.file} 失败，请重试。`);
     } finally {
+      entryMutationPendingRef.current = false;
       setSavingMarked(false);
     }
   }, [detailCategory, detailData?.word, detailEntry, detailLoading, entries, invalidateRecommendationQueue, refreshVocabularyPool, resolveEntryCandidate, resolveEntryCategory, selectedCategory, selectedEntry]);
@@ -3038,8 +3086,8 @@ export default function VocabularyReview({
       queueSource: currentActionQueueSource,
       marked: Boolean(detailData?.marked),
       latestScore: latestReviewScore,
-      savingMarked,
-      savingScore: savingReviewScore || detailLoading,
+      savingMarked: savingMarked || savingReviewScore,
+      savingScore: savingReviewScore || savingMarked || detailLoading,
       onSubmitScore: (score, options = {}) => {
         return handleSubmitReviewScore(score, { autoAdvance: false, ...options });
       },
@@ -3138,7 +3186,7 @@ export default function VocabularyReview({
               type="button"
               className="score-btn"
               onClick={() => void handleSubmitReviewScore(score)}
-              disabled={detailLoading || savingReviewScore}
+              disabled={detailLoading || savingReviewScore || savingMarked}
             >
               <strong>{score}</strong>
               <span>{SCORE_SHORT_LABELS[score]}</span>
@@ -3153,7 +3201,7 @@ export default function VocabularyReview({
             type="button"
             className={`vocab-review-mark-button${detailData?.marked ? ' is-active' : ''}`}
             onClick={() => void handleToggleMarked()}
-            disabled={detailLoading || savingMarked}
+            disabled={detailLoading || savingMarked || savingReviewScore}
           >
             <UiIcon name="star" size={14} />
             <span>{savingMarked ? '保存中' : (detailData?.marked ? '已标记' : '标记')}</span>
@@ -3164,7 +3212,7 @@ export default function VocabularyReview({
             type="button"
             className="vocab-review-mark-button vocab-review-delete-button"
             onClick={() => void handleDeleteCurrentEntry()}
-            disabled={detailLoading || savingMarked}
+            disabled={detailLoading || savingMarked || savingReviewScore}
           >
             <UiIcon name="trash" size={14} />
             <span>删除</span>
@@ -3175,7 +3223,7 @@ export default function VocabularyReview({
             type="button"
             className={`vocab-review-mark-button vocab-review-suppress-button${currentSuppressed ? ' is-active' : ''}`}
             onClick={() => void handleToggleReviewSuppression()}
-            disabled={detailLoading || savingReviewScore}
+            disabled={detailLoading || savingReviewScore || savingMarked}
             data-tooltip={currentSuppressed ? '取消近期抑制' : '近期尽量不推荐这个词'}
           >
             <UiIcon name={currentSuppressed ? 'check' : 'filter'} size={14} />
@@ -3453,7 +3501,7 @@ export default function VocabularyReview({
               type="button"
               className="score-btn vocab-review-desktop-score-button"
               onClick={() => void handleSubmitReviewScore(score)}
-              disabled={detailLoading || savingReviewScore}
+              disabled={detailLoading || savingReviewScore || savingMarked}
             >
               <strong>{score}</strong>
               <span>{SCORE_SHORT_LABELS[score]}</span>
@@ -3468,7 +3516,7 @@ export default function VocabularyReview({
             type="button"
             className={`vocab-review-mark-button${detailData?.marked ? ' is-active' : ''}`}
             onClick={() => void handleToggleMarked()}
-            disabled={detailLoading || savingMarked}
+            disabled={detailLoading || savingMarked || savingReviewScore}
           >
             <UiIcon name="star" size={14} />
             <span>{savingMarked ? '保存中' : (detailData?.marked ? '已标记' : '标记')}</span>
@@ -3479,7 +3527,7 @@ export default function VocabularyReview({
             type="button"
             className="vocab-review-mark-button vocab-review-delete-button"
             onClick={() => void handleDeleteCurrentEntry()}
-            disabled={detailLoading || savingMarked}
+            disabled={detailLoading || savingMarked || savingReviewScore}
           >
             <UiIcon name="trash" size={14} />
             <span>删除</span>
@@ -4157,7 +4205,7 @@ export default function VocabularyReview({
                 type="button"
                 className="score-btn"
                 onClick={() => void handleSubmitReviewScore(score)}
-                disabled={savingReviewScore}
+                disabled={detailLoading || savingReviewScore || savingMarked}
                 style={{
                   padding: '12px 10px',
                   borderRadius: '6px',
@@ -4305,8 +4353,6 @@ export default function VocabularyReview({
         </div>
       ) : (
         <>
-          {relationGraphNode}
-
           <div className="vocab-review-sections vocab-review-card vocab-review-definition-card" style={{ ...metaCardStyle, gap: '12px' }}>
             <div className="vocab-review-disclosure-summary">
               <span>释义 {definitions.length}</span>
@@ -4334,6 +4380,16 @@ export default function VocabularyReview({
               )}
             </div>
           </div>
+
+          {relationGraphNode ? (
+            <section className="vocab-review-mobile-relation-section" aria-label="关联词">
+              <div className="vocab-review-mobile-relation-heading">
+                <span>关联词</span>
+                <span>点击词条可继续查看</span>
+              </div>
+              {relationGraphNode}
+            </section>
+          ) : null}
 
           <div className="vocab-review-sections vocab-review-examples-section" style={{ gap: '16px' }}>
             <h3 style={sectionTitleStyle}>例句</h3>

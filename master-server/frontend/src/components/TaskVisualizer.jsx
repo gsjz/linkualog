@@ -1,8 +1,9 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import UiIcon from './UiIcon';
 import VocabQueueWidget, { PREFILL_VOCAB_MANUAL_EVENT } from './VocabQueueWidget';
 import VocabularyContextExtractPanel from './VocabularyContextExtractPanel.jsx';
+import './task-polish.css';
 import {
   uploadResource,
   recommendTaskName,
@@ -1599,6 +1600,10 @@ export default function TaskVisualizer({
   const [vocabQueueOpen, setVocabQueueOpen] = useState(false);
   const [vocabQueueStats, setVocabQueueStats] = useState({ total: 0, pending: 0, failed: 0 });
   const [taskToolsOpen, setTaskToolsOpen] = useState(false);
+  const floatingTriggerRef = useRef(null);
+  const floatingLayerRef = useRef(null);
+  const floatingPanelRef = useRef(null);
+  const [floatingPanelStyle, setFloatingPanelStyle] = useState({});
 
   const [historyTasks, setHistoryTasks] = useState([]);
   const [tasksListLoaded, setTasksListLoaded] = useState(false);
@@ -1632,6 +1637,7 @@ export default function TaskVisualizer({
   const [loadingCurrentVocabWords, setLoadingCurrentVocabWords] = useState(false);
 
   const [isUploading, setIsUploading] = useState(false);
+  const uploadInFlightRef = useRef(false);
   const [regeneratingPages, setRegeneratingPages] = useState({});
   const [editingTaskName, setEditingTaskName] = useState('');
   const [isSavingTaskName, setIsSavingTaskName] = useState(false);
@@ -1643,7 +1649,64 @@ export default function TaskVisualizer({
   const saveTimersRef = useRef({});
   const selectedTaskIdRef = useRef(selectedTaskId);
   const taskDetailRequestRef = useRef(0);
+  const taskNameEditRevisionRef = useRef(0);
   const taskRestoredRef = useRef(false);
+
+  useLayoutEffect(() => {
+    if (!createToolsOpen && !createMetaOpen && !uploadBatchOpen && !taskToolsOpen) return;
+    const layer = floatingLayerRef.current;
+    const panel = floatingPanelRef.current;
+    const trigger = floatingTriggerRef.current;
+    if (!layer || !panel || !trigger) return;
+    const header = document.querySelector('.master-header');
+    const viewport = window.visualViewport;
+    const updatePosition = () => {
+      const layerRect = layer.getBoundingClientRect();
+      if (!layerRect.width || !layerRect.height) return;
+      // Convert viewport measurements back to CSS pixels, including CSS zoom.
+      const scaleX = layerRect.width / (layer.clientWidth || layerRect.width);
+      const scaleY = layerRect.height / (layer.clientHeight || layerRect.height);
+      const viewLeft = viewport?.offsetLeft || 0;
+      const viewTop = viewport?.offsetTop || 0;
+      const viewRight = viewLeft + (viewport?.width || window.innerWidth);
+      const viewBottom = viewTop + (viewport?.height || window.innerHeight);
+      const gap = 8;
+      const headerBottom = header?.getBoundingClientRect().bottom || viewTop;
+      const minTop = Math.min(Math.max(viewTop, headerBottom) + gap, viewBottom - gap);
+      const triggerRect = trigger.getBoundingClientRect();
+      const width = Math.min(300 * scaleX, viewRight - viewLeft - gap * 2);
+      const height = Math.min(panel.scrollHeight * scaleY, viewBottom - minTop - gap);
+      let top = Math.max(minTop, triggerRect.bottom + gap);
+      if (top + height > viewBottom - gap) {
+        top = Math.max(minTop, triggerRect.top - height - gap);
+      }
+      top = Math.min(top, Math.max(minTop, viewBottom - height - gap));
+      const left = Math.max(viewLeft + gap, Math.min(triggerRect.right - width, viewRight - width - gap));
+      const nextStyle = {
+        '--task-floating-top': `${(top - layerRect.top) / scaleY}px`,
+        '--task-floating-left': `${(left - layerRect.left) / scaleX}px`,
+        '--task-floating-width': `${width / scaleX}px`,
+        '--task-floating-max-height': `${Math.max(0, viewBottom - top - gap) / scaleY}px`,
+      };
+      setFloatingPanelStyle((previous) => (
+        Object.keys(nextStyle).every((key) => previous[key] === nextStyle[key]) ? previous : nextStyle
+      ));
+    };
+    updatePosition();
+    const observer = new ResizeObserver(updatePosition);
+    [layer, panel, trigger, header].filter(Boolean).forEach((element) => observer.observe(element));
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
+    viewport?.addEventListener('resize', updatePosition);
+    viewport?.addEventListener('scroll', updatePosition);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
+      viewport?.removeEventListener('resize', updatePosition);
+      viewport?.removeEventListener('scroll', updatePosition);
+    };
+  }, [createToolsOpen, createMetaOpen, uploadBatchOpen, taskToolsOpen]);
 
   const foldedKeysConfig = (localStorage.getItem('defaultFoldedKeys') !== null
     ? localStorage.getItem('defaultFoldedKeys')
@@ -1688,22 +1751,32 @@ export default function TaskVisualizer({
 
   useEffect(() => {
     let detailInterval;
+    let cancelled = false;
+    let requestPending = false;
     if (selectedTaskId && !taskDetailLoadingId && taskData?.status !== 'finished' && taskData?.status !== 'paused') {
       const intervalTaskId = selectedTaskId;
+      const requestId = taskDetailRequestRef.current;
       detailInterval = setInterval(async () => {
+        if (requestPending) return;
+        requestPending = true;
         try {
           const data = await getTaskStatus(intervalTaskId);
-          if (selectedTaskIdRef.current !== intervalTaskId || taskDetailLoadingId) return;
+          if (cancelled || selectedTaskIdRef.current !== intervalTaskId || taskDetailRequestRef.current !== requestId) return;
           if (data?.error) throw new Error(data.error);
           setTaskData(data);
           setLoadedTaskId(intervalTaskId);
           fetchTasksList();
         } catch {
           // ignore
+        } finally {
+          requestPending = false;
         }
       }, 5000);
     }
-    return () => clearInterval(detailInterval);
+    return () => {
+      cancelled = true;
+      clearInterval(detailInterval);
+    };
   }, [selectedTaskId, taskData?.status, taskDetailLoadingId]);
 
   useEffect(() => {
@@ -1749,8 +1822,21 @@ export default function TaskVisualizer({
   };
 
   useEffect(() => () => {
+    taskDetailRequestRef.current += 1;
     clearAllSaveTimers();
   }, []);
+
+  // A request may finish after navigating away and back to the same task.
+  const isCurrentTaskRequest = (taskId, requestId) => (
+    selectedTaskIdRef.current === taskId && taskDetailRequestRef.current === requestId
+  );
+
+  const handleTaskNameChange = (event) => {
+    taskNameEditRevisionRef.current += 1;
+    setEditingTaskName(event.target.value);
+    setExistingTaskNameSuggestion(null);
+    setExistingTaskNameSuggestionError('');
+  };
 
   useEffect(() => {
     const handleConfigUpdate = (event) => {
@@ -1837,13 +1923,14 @@ export default function TaskVisualizer({
     const nextParsedResult = buildContentWithEditedMarks(pageContent, marks);
     if (!nextParsedResult || typeof nextParsedResult !== 'object' || Array.isArray(nextParsedResult)) return;
 
+    const requestId = taskDetailRequestRef.current;
     clearSaveTimerForPage(pageIndex);
     saveTimersRef.current[pageIndex] = setTimeout(async () => {
-      if (selectedTaskIdRef.current !== taskId) return;
+      if (!isCurrentTaskRequest(taskId, requestId)) return;
       setSavingPages((prev) => ({ ...prev, [pageIndex]: true }));
       try {
         const result = await updateTaskPageParsedResult(taskId, pageIndex, nextParsedResult);
-        if (selectedTaskIdRef.current !== taskId) return;
+        if (!isCurrentTaskRequest(taskId, requestId)) return;
         const savedParsedResult = (result && typeof result.parsed_result === 'object')
           ? result.parsed_result
           : nextParsedResult;
@@ -1858,7 +1945,7 @@ export default function TaskVisualizer({
       } catch (error) {
         console.error(`页面 ${pageIndex + 1} 的编辑结果保存失败:`, error);
       } finally {
-        if (selectedTaskIdRef.current === taskId) {
+        if (isCurrentTaskRequest(taskId, requestId)) {
           setSavingPages((prev) => ({ ...prev, [pageIndex]: false }));
         }
       }
@@ -1887,6 +1974,9 @@ export default function TaskVisualizer({
     setDraftRegionByPage({});
     setSelectedRegionByPage({});
     setRecognizingRegionByPage({});
+    setRegeneratingPages({});
+    setIsSavingTaskName(false);
+    setIsRecommendingExistingTaskName(false);
     setLayoutHeightByPage({});
     setSavingPages({});
     setExistingTaskNameSuggestion(null);
@@ -1933,9 +2023,15 @@ export default function TaskVisualizer({
 
   const handleDeleteTask = async () => {
     if (!selectedTaskId || isTaskDetailPending) return;
-    if (window.confirm('确定要永久删除该任务及记录吗？')) {
+    if (!window.confirm('确定要永久删除该任务及记录吗？')) return;
+    const taskId = selectedTaskId;
+    const requestId = taskDetailRequestRef.current;
+    try {
+      await deleteTask(taskId);
+      void fetchTasksList();
+      if (!isCurrentTaskRequest(taskId, requestId)) return;
       clearAllSaveTimers();
-      await deleteTask(selectedTaskId);
+      taskDetailRequestRef.current += 1;
       localStorage.removeItem(SELECTED_TASK_STORAGE_KEY);
       setSelectedTaskId(null);
       selectedTaskIdRef.current = null;
@@ -1954,42 +2050,62 @@ export default function TaskVisualizer({
       setRecognizingRegionByPage({});
       setLayoutHeightByPage({});
       setSavingPages({});
-      fetchTasksList();
+    } catch (error) {
+      if (isCurrentTaskRequest(taskId, requestId)) alert(`删除任务失败: ${error.message}`);
     }
   };
 
   const handleRenameTask = async () => {
-    if (!selectedTaskId || !taskData || isTaskDetailPending) return;
+    if (!selectedTaskId || !taskData || isTaskDetailPending || isSavingTaskName) return;
+    const taskId = selectedTaskId;
+    const requestId = taskDetailRequestRef.current;
+    const editRevision = taskNameEditRevisionRef.current;
+    const submittedName = editingTaskName;
     setIsSavingTaskName(true);
     try {
-      const result = await renameTask(selectedTaskId, editingTaskName);
-      const updatedName = result.name || (editingTaskName || '').trim() || '资源解析任务';
+      const result = await renameTask(taskId, submittedName);
+      void fetchTasksList();
+      if (!isCurrentTaskRequest(taskId, requestId)) return;
+      const updatedName = result.name || (submittedName || '').trim() || '资源解析任务';
       setTaskData((prev) => (prev ? { ...prev, name: updatedName } : prev));
-      setEditingTaskName(updatedName);
-      setExistingTaskNameSuggestion(null);
-      setExistingTaskNameSuggestionError('');
-      fetchTasksList();
+      if (taskNameEditRevisionRef.current === editRevision) {
+        setEditingTaskName(updatedName);
+        setExistingTaskNameSuggestion(null);
+        setExistingTaskNameSuggestionError('');
+      }
     } catch (error) {
-      alert(`任务名更新失败: ${error.message}`);
+      if (isCurrentTaskRequest(taskId, requestId)) alert(`任务名更新失败: ${error.message}`);
     } finally {
-      setIsSavingTaskName(false);
+      if (isCurrentTaskRequest(taskId, requestId)) setIsSavingTaskName(false);
     }
   };
 
   const handleResume = async () => {
     if (!selectedTaskId || isTaskDetailPending) return;
-    await resumeTask(selectedTaskId);
-    setTaskData({ ...taskData, status: 'processing' });
-    fetchTasksList();
+    const taskId = selectedTaskId;
+    const requestId = taskDetailRequestRef.current;
+    try {
+      await resumeTask(taskId);
+      void fetchTasksList();
+      if (!isCurrentTaskRequest(taskId, requestId)) return;
+      setTaskData((prev) => (prev ? { ...prev, status: 'processing' } : prev));
+    } catch (error) {
+      if (isCurrentTaskRequest(taskId, requestId)) alert(`继续任务失败: ${error.message}`);
+    }
   };
 
   const handleRegenerate = async (index) => {
-    if (!selectedTaskId || isTaskDetailPending) return;
+    if (!selectedTaskId || isTaskDetailPending || regeneratingPages[index]) return;
+    const taskId = selectedTaskId;
+    const requestId = taskDetailRequestRef.current;
     clearSaveTimerForPage(index);
     setRegeneratingPages((prev) => ({ ...prev, [index]: true }));
     try {
-      await regenerateTaskPage(selectedTaskId, index);
-      const data = await getTaskStatus(selectedTaskId);
+      await regenerateTaskPage(taskId, index);
+      if (!isCurrentTaskRequest(taskId, requestId)) return;
+      const data = await getTaskStatus(taskId);
+      if (!isCurrentTaskRequest(taskId, requestId)) return;
+      if (data?.error) throw new Error(data.error);
       setTaskData(data);
       setEditedMarksByPage((prev) => {
         const next = { ...prev };
@@ -2029,9 +2145,11 @@ export default function TaskVisualizer({
         return next;
       });
     } catch (error) {
-      alert(`重新生成请求失败: ${error.message}`);
+      if (isCurrentTaskRequest(taskId, requestId)) alert(`重新生成请求失败: ${error.message}`);
     } finally {
-      setRegeneratingPages((prev) => ({ ...prev, [index]: false }));
+      if (isCurrentTaskRequest(taskId, requestId)) {
+        setRegeneratingPages((prev) => ({ ...prev, [index]: false }));
+      }
     }
   };
 
@@ -2142,7 +2260,9 @@ export default function TaskVisualizer({
   };
 
   const handleRecognizeRegion = async (pageIndex) => {
-    if (!selectedTaskId || isTaskDetailPending) return;
+    if (!selectedTaskId || isTaskDetailPending || recognizingRegionByPage[pageIndex]) return;
+    const taskId = selectedTaskId;
+    const requestId = taskDetailRequestRef.current;
     const region = normalizeDraftRegion(selectedRegionByPage[pageIndex]);
     if (!isUsableRegion(region)) {
       alert('请先在左侧图片上拖出一个局部识别矩形。');
@@ -2151,7 +2271,8 @@ export default function TaskVisualizer({
 
     setRecognizingRegionByPage((prev) => ({ ...prev, [pageIndex]: true }));
     try {
-      const result = await recognizeTaskPageRegion(selectedTaskId, pageIndex, region);
+      const result = await recognizeTaskPageRegion(taskId, pageIndex, region);
+      if (!isCurrentTaskRequest(taskId, requestId)) return;
       const nextParsedResult = (result && typeof result.parsed_result === 'object')
         ? result.parsed_result
         : null;
@@ -2185,13 +2306,18 @@ export default function TaskVisualizer({
         return next;
       });
     } catch (error) {
-      alert(`局部识别失败: ${error instanceof Error ? error.message : '未知错误'}`);
+      if (isCurrentTaskRequest(taskId, requestId)) {
+        alert(`局部识别失败: ${error instanceof Error ? error.message : '未知错误'}`);
+      }
     } finally {
-      setRecognizingRegionByPage((prev) => ({ ...prev, [pageIndex]: false }));
+      if (isCurrentTaskRequest(taskId, requestId)) {
+        setRecognizingRegionByPage((prev) => ({ ...prev, [pageIndex]: false }));
+      }
     }
   };
 
   const handleChooseFiles = (e) => {
+    if (uploadInFlightRef.current) return;
     const files = Array.from(e.target.files || []);
     e.target.value = '';
     if (!files.length) return;
@@ -2199,7 +2325,10 @@ export default function TaskVisualizer({
   };
 
   const handleRecommendTaskName = async () => {
-    if (!selectedTaskId || !taskData || isTaskDetailPending) return;
+    if (!selectedTaskId || !taskData || isTaskDetailPending || isRecommendingExistingTaskName) return;
+    const taskId = selectedTaskId;
+    const requestId = taskDetailRequestRef.current;
+    const editRevision = taskNameEditRevisionRef.current;
     const subject = (editingTaskName || '').trim();
     const beforeName = subject || '未填写';
     const context = formattedResults
@@ -2217,6 +2346,7 @@ export default function TaskVisualizer({
     setExistingTaskNameSuggestionError('');
     try {
       const result = await recommendTaskName(subject, context);
+      if (!isCurrentTaskRequest(taskId, requestId) || taskNameEditRevisionRef.current !== editRevision) return;
       const suggestion = result?.data || {};
       if (!suggestion?.name) {
         throw new Error('未返回可用任务名');
@@ -2228,14 +2358,17 @@ export default function TaskVisualizer({
       });
       setEditingTaskName(suggestion.name);
     } catch (error) {
-      setExistingTaskNameSuggestion(null);
-      setExistingTaskNameSuggestionError(error instanceof Error ? error.message : '推荐失败');
+      if (isCurrentTaskRequest(taskId, requestId) && taskNameEditRevisionRef.current === editRevision) {
+        setExistingTaskNameSuggestion(null);
+        setExistingTaskNameSuggestionError(error instanceof Error ? error.message : '推荐失败');
+      }
     } finally {
-      setIsRecommendingExistingTaskName(false);
+      if (isCurrentTaskRequest(taskId, requestId)) setIsRecommendingExistingTaskName(false);
     }
   };
 
   const moveStagedFile = (index, delta) => {
+    if (uploadInFlightRef.current) return;
     const nextIndex = index + delta;
     setStagedFiles((prev) => {
       if (nextIndex < 0 || nextIndex >= prev.length) return prev;
@@ -2247,20 +2380,24 @@ export default function TaskVisualizer({
   };
 
   const removeOneStagedFile = (id) => {
+    if (uploadInFlightRef.current) return;
     setStagedFiles((prev) => prev.filter((item) => item.id !== id));
     setSelectedUploadIds((prev) => prev.filter((x) => x !== id));
   };
 
   const clearAllStagedFiles = () => {
+    if (uploadInFlightRef.current) return;
     setStagedFiles([]);
     setSelectedUploadIds([]);
   };
 
   const toggleSelectUpload = (id) => {
+    if (uploadInFlightRef.current) return;
     setSelectedUploadIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   };
 
   const toggleSelectAllUploads = () => {
+    if (uploadInFlightRef.current) return;
     if (selectedUploadIds.length === stagedFiles.length) {
       setSelectedUploadIds([]);
     } else {
@@ -2269,6 +2406,7 @@ export default function TaskVisualizer({
   };
 
   const removeSelectedUploads = () => {
+    if (uploadInFlightRef.current) return;
     if (!selectedUploadIds.length) return;
     const selected = new Set(selectedUploadIds);
     setStagedFiles((prev) => prev.filter((item) => !selected.has(item.id)));
@@ -2276,8 +2414,10 @@ export default function TaskVisualizer({
   };
 
   const handleCreateTask = async () => {
+    if (uploadInFlightRef.current) return;
     if (!stagedFiles.length) return alert('请先选择文件。');
 
+    uploadInFlightRef.current = true;
     setIsUploading(true);
     try {
       const formData = new FormData();
@@ -2286,22 +2426,27 @@ export default function TaskVisualizer({
       formData.append('startPage', createStartPage);
 
       const result = await uploadResource(formData);
+      if (!result?.task_id) throw new Error(result?.error || '服务器未返回任务编号');
       setCreateTaskName('');
       setCreateStartPage(1);
-      clearAllStagedFiles();
+      setStagedFiles([]);
+      setSelectedUploadIds([]);
+      await fetchTasksList();
 
       if (simpleCreateOnly) {
-        await fetchTasksList();
         window.alert('任务已创建，可稍后在桌面端查看解析结果。');
         return;
       }
 
-      await fetchTasksList();
-      await handleSelectTask(result.task_id);
-      setPageMode('browse');
+      try {
+        await handleSelectTask(result.task_id);
+      } catch (error) {
+        alert(`任务已创建，但结果暂时加载失败: ${error.message}。请在历史任务中重新打开，无需重复创建。`);
+      }
     } catch (error) {
       alert(`创建任务失败: ${error.message}`);
     } finally {
+      uploadInFlightRef.current = false;
       setIsUploading(false);
     }
   };
@@ -2420,12 +2565,12 @@ export default function TaskVisualizer({
       <label className="task-primary-button task-upload-picker task-icon-text-button">
         <UiIcon name="image" size={17} />
         <span>选择图片</span>
-        <input className="task-file-input task-file-input-hidden" type="file" multiple accept="image/*" onChange={handleChooseFiles} />
+        <input className="task-file-input task-file-input-hidden" type="file" disabled={isUploading} multiple accept="image/*" onChange={handleChooseFiles} />
       </label>
       <label className="task-secondary-button task-upload-picker task-icon-text-button">
         <UiIcon name="file" size={17} />
         <span>选择 PDF</span>
-        <input className="task-file-input task-file-input-hidden" type="file" multiple accept="application/pdf" onChange={handleChooseFiles} />
+        <input className="task-file-input task-file-input-hidden" type="file" disabled={isUploading} multiple accept="application/pdf" onChange={handleChooseFiles} />
       </label>
     </div>
   );
@@ -2433,11 +2578,11 @@ export default function TaskVisualizer({
     <div className="task-create-meta-row">
       <label className="task-control-field task-control-field-name">
         <span className="task-inline-label" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ms-text)' }}>任务名</span>
-        <input className="task-inline-input" value={createTaskName} onChange={(e) => setCreateTaskName(e.target.value)} placeholder="任务名称（选填）" style={{ padding: '6px 10px', border: '1px solid var(--ms-border)', borderRadius: '6px', fontSize: '13px', width: '220px', outline: 'none', background: '#fff' }} />
+        <input className="task-inline-input" value={createTaskName} disabled={isUploading} onChange={(e) => setCreateTaskName(e.target.value)} placeholder="任务名称（选填）" style={{ padding: '6px 10px', border: '1px solid var(--ms-border)', borderRadius: '6px', fontSize: '13px', width: '220px', outline: 'none', background: '#fff' }} />
       </label>
       <label className="task-control-field task-control-field-small">
         <span className="task-inline-label is-muted" style={{ fontSize: '13px', color: 'var(--ms-text-muted)' }}>起始页</span>
-        <input className="task-inline-input task-inline-input-small" type="number" min="1" value={createStartPage} onChange={(e) => setCreateStartPage(Math.max(1, parseInt(e.target.value, 10) || 1))} style={{ padding: '6px 10px', border: '1px solid var(--ms-border)', borderRadius: '6px', fontSize: '13px', width: '90px', outline: 'none', background: '#fff' }} />
+        <input className="task-inline-input task-inline-input-small" type="number" min="1" value={createStartPage} disabled={isUploading} onChange={(e) => setCreateStartPage(Math.max(1, parseInt(e.target.value, 10) || 1))} style={{ padding: '6px 10px', border: '1px solid var(--ms-border)', borderRadius: '6px', fontSize: '13px', width: '90px', outline: 'none', background: '#fff' }} />
       </label>
     </div>
   );
@@ -2529,7 +2674,7 @@ export default function TaskVisualizer({
   );
 
   return (
-    <div className="task-layout" style={{ position: 'relative', height: '100%', width: '100%', minHeight: 0, overflow: 'hidden', background: '#fff' }}>
+    <div className="task-layout task-polish-upload" style={{ position: 'relative', height: '100%', width: '100%', minHeight: 0, overflow: 'hidden', background: '#fff' }}>
       <div className="task-main" style={{ height: '100%', minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column', background: '#fff', overflow: 'hidden', paddingRight: simpleCreateOnly ? 0 : (isRightPanelCollapsed ? '52px' : '344px') }}>
         {currentPageMode === 'create' ? (
           <div className="task-page-body" style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '20px' }}>
@@ -2545,7 +2690,8 @@ export default function TaskVisualizer({
                       <button
                         type="button"
                         className={`task-icon-button${createToolsOpen ? ' is-active' : ''}`}
-                        onClick={() => {
+                        onClick={(event) => {
+                          floatingTriggerRef.current = event.currentTarget;
                           setCreateToolsOpen((open) => !open);
                           setCreateMetaOpen(false);
                           setUploadBatchOpen(false);
@@ -2559,7 +2705,8 @@ export default function TaskVisualizer({
                       <button
                         type="button"
                         className={`task-icon-button${createMetaOpen ? ' is-active' : ''}`}
-                        onClick={() => {
+                        onClick={(event) => {
+                          floatingTriggerRef.current = event.currentTarget;
                           setCreateMetaOpen((open) => !open);
                           setCreateToolsOpen(false);
                           setUploadBatchOpen(false);
@@ -2577,7 +2724,7 @@ export default function TaskVisualizer({
                 <div className="task-create-header-actions">
                   {renderVocabQueueButton()}
                   {createTaskIsOcr ? (
-                    <button className="task-primary-button task-create-submit-inline" onClick={handleCreateTask} disabled={createTaskDisabled} style={{ padding: '8px 16px', border: '1px solid transparent', borderRadius: '6px', fontSize: '13px', cursor: createTaskDisabled ? 'not-allowed' : 'pointer', background: createTaskDisabled ? 'var(--ms-surface-inset)' : '#111111', color: createTaskDisabled ? 'var(--ms-text-faint)' : '#fff' }}>{isUploading ? '处理中...' : '确认并创建任务'}</button>
+                    <button className="task-primary-button task-create-submit-inline" onClick={handleCreateTask} disabled={createTaskDisabled} style={{ padding: '8px 16px', border: '1px solid transparent', borderRadius: '6px', fontSize: '13px', cursor: createTaskDisabled ? 'not-allowed' : 'pointer', background: createTaskDisabled ? 'var(--ms-surface-inset)' : '#111111', color: createTaskDisabled ? 'var(--ms-text-faint)' : '#fff' }}>{isUploading ? '正在上传…' : '开始识别'}</button>
                   ) : null}
                 </div>
               </div>
@@ -2585,9 +2732,9 @@ export default function TaskVisualizer({
               {showCreateKindSwitch ? renderCreateKindSwitch() : null}
 
               {(createToolsOpen || createMetaOpen || uploadBatchOpen) ? (
-                <div className="task-floating-layer" role="presentation">
+                <div ref={floatingLayerRef} className="task-floating-layer" role="presentation">
                   <button type="button" className="task-floating-backdrop" aria-label="关闭任务浮层" onClick={closeTaskPopovers} />
-                  <section className="task-floating-panel task-create-floating-panel" role="dialog" aria-modal="false" aria-label="任务工具">
+                  <section ref={floatingPanelRef} style={floatingPanelStyle} className="task-floating-panel task-create-floating-panel" role="dialog" aria-modal="false" aria-label="任务工具">
                     <div className="task-floating-header">
                       <div>
                         <div className="task-floating-title">{createToolsOpen ? '上传文件' : createMetaOpen ? '任务参数' : '批量整理'}</div>
@@ -2602,11 +2749,11 @@ export default function TaskVisualizer({
                     {uploadBatchOpen ? (
                       <div className="task-floating-stack">
                         <label className="task-inline-toggle">
-                          <input type="checkbox" checked={allUploadsSelected} onChange={toggleSelectAllUploads} />
+                          <input type="checkbox" checked={allUploadsSelected} disabled={isUploading} onChange={toggleSelectAllUploads} />
                           全选
                         </label>
-                        <button className="task-secondary-button" onClick={removeSelectedUploads} disabled={!selectedUploadIds.length}>删选中</button>
-                        <button className="task-secondary-button task-danger-button" onClick={clearAllStagedFiles} disabled={!stagedFiles.length}>清空</button>
+                        <button className="task-secondary-button" onClick={removeSelectedUploads} disabled={isUploading || !selectedUploadIds.length}>删选中</button>
+                        <button className="task-secondary-button task-danger-button" onClick={clearAllStagedFiles} disabled={isUploading || !stagedFiles.length}>清空</button>
                       </div>
                     ) : null}
                   </section>
@@ -2620,25 +2767,27 @@ export default function TaskVisualizer({
 
                     <div className="task-upload-dropzone">
                       <div className="task-upload-dropzone-copy">
-                        <div className="task-upload-dropzone-title">上传图片或 PDF</div>
+                        <div className="task-upload-dropzone-title">选择要识别的图片或 PDF</div>
+                        <div className="task-upload-dropzone-hint">支持 JPG、PNG 和 PDF，可一次选择多个文件</div>
                       </div>
                       {renderCreateFileControls()}
                     </div>
                   </div>
 
-                  <div className="task-upload-toolbar" style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', padding: '10px 12px', border: '1px solid #e4e4e7', borderRadius: '6px', background: '#fafafa' }}>
+                  <div className={`task-upload-toolbar${stagedFiles.length ? '' : ' is-empty'}`} style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', padding: '10px 12px', border: '1px solid #e4e4e7', borderRadius: '6px', background: '#fafafa' }}>
                     <label className="task-upload-toolbar-selection" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--ms-text)' }}>
-                      <input type="checkbox" checked={allUploadsSelected} onChange={toggleSelectAllUploads} />
+                      <input type="checkbox" checked={allUploadsSelected} disabled={isUploading} onChange={toggleSelectAllUploads} />
                       全选
                     </label>
                     <div className="task-upload-toolbar-actions">
-                      <button className="task-secondary-button" onClick={removeSelectedUploads} disabled={!selectedUploadIds.length} style={{ padding: '4px 10px', border: '1px solid #e4e4e7', borderRadius: '4px', background: '#fff', fontSize: '12px', cursor: selectedUploadIds.length ? 'pointer' : 'not-allowed', color: selectedUploadIds.length ? '#09090b' : '#a1a1aa' }}>删除选中</button>
-                      <button className="task-secondary-button" onClick={clearAllStagedFiles} disabled={!stagedFiles.length} style={{ padding: '4px 10px', border: '1px solid var(--ms-border)', borderRadius: '4px', background: '#fff', fontSize: '12px', cursor: stagedFiles.length ? 'pointer' : 'not-allowed', color: stagedFiles.length ? 'var(--ms-text)' : 'var(--ms-border)' }}>全部删除</button>
+                      <button className="task-secondary-button" onClick={removeSelectedUploads} disabled={isUploading || !selectedUploadIds.length} style={{ padding: '4px 10px', border: '1px solid #e4e4e7', borderRadius: '4px', background: '#fff', fontSize: '12px', cursor: selectedUploadIds.length ? 'pointer' : 'not-allowed', color: selectedUploadIds.length ? '#09090b' : '#a1a1aa' }}>删除选中</button>
+                      <button className="task-secondary-button" onClick={clearAllStagedFiles} disabled={isUploading || !stagedFiles.length} style={{ padding: '4px 10px', border: '1px solid var(--ms-border)', borderRadius: '4px', background: '#fff', fontSize: '12px', cursor: stagedFiles.length ? 'pointer' : 'not-allowed', color: stagedFiles.length ? 'var(--ms-text)' : 'var(--ms-border)' }}>全部删除</button>
                     </div>
-                    <button
+                      {stagedFiles.length > 0 ? <button
                       type="button"
                       className={`task-icon-button task-upload-mobile-batch${uploadBatchOpen ? ' is-active' : ''}`}
-                      onClick={() => {
+                      onClick={(event) => {
+                        floatingTriggerRef.current = event.currentTarget;
                         setUploadBatchOpen((open) => !open);
                         setCreateToolsOpen(false);
                         setCreateMetaOpen(false);
@@ -2646,32 +2795,34 @@ export default function TaskVisualizer({
                       }}
                       aria-label="打开批量整理"
                       aria-expanded={uploadBatchOpen}
-                    >
-                      <UiIcon name="sliders" size={16} />
-                    </button>
-                    <span className="task-upload-count" style={{ marginLeft: 'auto', fontSize: '12px', color: '#71717a' }}>已上传 {stagedFiles.length} 个文件</span>
+                      >
+                        <UiIcon name="sliders" size={16} />
+                      </button> : null}
+                    <span className="task-upload-count" style={{ marginLeft: 'auto', fontSize: '12px', color: '#71717a' }}>待上传 {stagedFiles.length} 个文件</span>
                   </div>
 
                   <div className="task-upload-list" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    {stagedFiles.length === 0 && <div className="task-empty-state" style={{ color: '#a1a1aa', textAlign: 'center', padding: '28px 0' }}>待上传</div>}
+                    {stagedFiles.length === 0 && <div className="task-empty-state task-upload-empty" style={{ color: '#a1a1aa', textAlign: 'center', padding: '28px 0' }}><strong>还没有文件</strong><span>从上方选择图片或 PDF，文件会出现在这里</span></div>}
                     {stagedFiles.map((item, index) => {
                       const selected = selectedUploadIds.includes(item.id);
                       return (
                         <div key={item.id} className={`task-upload-item${selected ? ' is-selected' : ''}`} style={{ border: '1px solid #e4e4e7', borderRadius: '6px', padding: '10px', display: 'flex', gap: '12px', alignItems: 'center', background: selected ? 'var(--ms-surface-muted)' : '#fff' }}>
-                          <input type="checkbox" checked={selected} onChange={() => toggleSelectUpload(item.id)} />
+                          <input type="checkbox" checked={selected} disabled={isUploading} onChange={() => toggleSelectUpload(item.id)} />
                           <div className="task-upload-preview" style={{ width: '84px', height: '64px', border: '1px solid #e4e4e7', borderRadius: '6px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fafafa', flexShrink: 0 }}>
                             {item.previewUrl
                               ? <img src={item.previewUrl} alt={item.file.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                               : <span className="task-upload-preview-label" style={{ fontSize: '11px', color: '#71717a' }}>PDF</span>}
                           </div>
                           <div className="task-upload-meta" style={{ minWidth: 0, flex: 1 }}>
-                            <div className="task-upload-name" style={{ fontSize: '13px', color: '#09090b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{index + 1}. {item.file.name}</div>
+                            <div className="task-upload-name" title={item.file.name} style={{ fontSize: '13px', color: '#09090b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{index + 1}. {item.file.name}</div>
                             <div className="task-upload-size" style={{ fontSize: '11px', color: '#71717a' }}>{Math.round(item.file.size / 1024)} KB</div>
                           </div>
                           <div className="task-upload-actions" style={{ display: 'flex', gap: '6px' }}>
-                            <button className="task-secondary-button" onClick={() => moveStagedFile(index, -1)} disabled={index === 0} style={{ padding: '4px 8px', border: '1px solid #e4e4e7', borderRadius: '4px', background: '#fff', fontSize: '12px', cursor: index === 0 ? 'not-allowed' : 'pointer', color: index === 0 ? '#a1a1aa' : '#09090b' }}>上移</button>
-                            <button className="task-secondary-button" onClick={() => moveStagedFile(index, 1)} disabled={index === stagedFiles.length - 1} style={{ padding: '4px 8px', border: '1px solid #e4e4e7', borderRadius: '4px', background: '#fff', fontSize: '12px', cursor: index === stagedFiles.length - 1 ? 'not-allowed' : 'pointer', color: index === stagedFiles.length - 1 ? '#a1a1aa' : '#09090b' }}>下移</button>
-                            <button className="task-secondary-button task-danger-button" onClick={() => removeOneStagedFile(item.id)} style={{ padding: '4px 8px', border: '1px solid var(--ms-border)', borderRadius: '4px', background: '#fff', fontSize: '12px', cursor: 'pointer', color: 'var(--ms-text)' }}>删除</button>
+                            {stagedFiles.length > 1 ? <>
+                              <button className="task-secondary-button" onClick={() => moveStagedFile(index, -1)} disabled={isUploading || index === 0} style={{ padding: '4px 8px', border: '1px solid #e4e4e7', borderRadius: '4px', background: '#fff', fontSize: '12px', cursor: index === 0 ? 'not-allowed' : 'pointer', color: index === 0 ? '#a1a1aa' : '#09090b' }}>上移</button>
+                              <button className="task-secondary-button" onClick={() => moveStagedFile(index, 1)} disabled={isUploading || index === stagedFiles.length - 1} style={{ padding: '4px 8px', border: '1px solid #e4e4e7', borderRadius: '4px', background: '#fff', fontSize: '12px', cursor: index === stagedFiles.length - 1 ? 'not-allowed' : 'pointer', color: index === stagedFiles.length - 1 ? '#a1a1aa' : '#09090b' }}>下移</button>
+                            </> : null}
+                            <button className="task-secondary-button task-danger-button" onClick={() => removeOneStagedFile(item.id)} disabled={isUploading} style={{ padding: '4px 8px', border: '1px solid var(--ms-border)', borderRadius: '4px', background: '#fff', fontSize: '12px', cursor: 'pointer', color: 'var(--ms-text)' }}>删除</button>
                           </div>
                         </div>
                       );
@@ -2683,7 +2834,7 @@ export default function TaskVisualizer({
                       {stagedFiles.length ? `准备创建 ${stagedFiles.length} 个文件` : '先选择文件，再创建任务'}
                     </div>
                     <button className="task-primary-button task-create-submit" onClick={handleCreateTask} disabled={createTaskDisabled}>
-                      {isUploading ? '处理中...' : '确认并创建任务'}
+                      {isUploading ? '正在上传…' : '开始识别'}
                     </button>
                   </div>
                 </>
@@ -2730,7 +2881,7 @@ export default function TaskVisualizer({
             <div className="task-toolbar" style={{ padding: '10px 16px', borderBottom: '1px solid #e4e4e7', background: '#fafafa', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
               <div className="task-status-bar" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', fontSize: '12px', color: '#71717a' }}>
                 <span>任务名</span>
-                <input className="task-inline-input" value={editingTaskName} disabled={isTaskDetailPending} onChange={(e) => { setEditingTaskName(e.target.value); setExistingTaskNameSuggestion(null); setExistingTaskNameSuggestionError(''); }} onKeyDown={(e) => { if (e.key === 'Enter' && isTaskNameDirty && !isSavingTaskName && !isTaskDetailPending) handleRenameTask(); }} style={{ padding: '4px 8px', border: '1px solid #e4e4e7', borderRadius: '4px', fontSize: '12px', width: '220px', outline: 'none' }} />
+                <input className="task-inline-input" value={editingTaskName} disabled={isTaskDetailPending} onChange={handleTaskNameChange} onKeyDown={(e) => { if (e.key === 'Enter' && isTaskNameDirty && !isSavingTaskName && !isTaskDetailPending) handleRenameTask(); }} style={{ padding: '4px 8px', border: '1px solid #e4e4e7', borderRadius: '4px', fontSize: '12px', width: '220px', outline: 'none' }} />
                 <button
                   type="button"
                   className="task-secondary-button task-name-recommend-button task-icon-text-button"
@@ -2755,7 +2906,7 @@ export default function TaskVisualizer({
               <button
                 type="button"
                 className={`task-icon-button task-toolbar-mobile-trigger${taskToolsOpen ? ' is-active' : ''}`}
-                onClick={() => setTaskToolsOpen((open) => !open)}
+                onClick={(event) => { floatingTriggerRef.current = event.currentTarget; setTaskToolsOpen((open) => !open); }}
                 disabled={isTaskDetailPending}
                 aria-label="打开任务工具"
                 aria-expanded={taskToolsOpen}
@@ -2765,9 +2916,9 @@ export default function TaskVisualizer({
             </div>
 
             {taskToolsOpen ? (
-              <div className="task-floating-layer" role="presentation">
+              <div ref={floatingLayerRef} className="task-floating-layer" role="presentation">
                 <button type="button" className="task-floating-backdrop" aria-label="关闭任务工具" onClick={() => setTaskToolsOpen(false)} />
-                <section className="task-floating-panel task-detail-floating-panel" role="dialog" aria-modal="false" aria-label="任务工具">
+                <section ref={floatingPanelRef} style={floatingPanelStyle} className="task-floating-panel task-detail-floating-panel" role="dialog" aria-modal="false" aria-label="任务工具">
                   <div className="task-floating-header">
                     <div>
                       <div className="task-floating-title">任务工具</div>
@@ -2780,7 +2931,7 @@ export default function TaskVisualizer({
                   <div className="task-floating-stack">
                     <label className="task-control-field">
                       <span className="task-inline-label">任务名</span>
-                      <input className="task-inline-input" value={editingTaskName} disabled={isTaskDetailPending} onChange={(e) => { setEditingTaskName(e.target.value); setExistingTaskNameSuggestion(null); setExistingTaskNameSuggestionError(''); }} onKeyDown={(e) => { if (e.key === 'Enter' && isTaskNameDirty && !isSavingTaskName && !isTaskDetailPending) handleRenameTask(); }} />
+                      <input className="task-inline-input" value={editingTaskName} disabled={isTaskDetailPending} onChange={handleTaskNameChange} onKeyDown={(e) => { if (e.key === 'Enter' && isTaskNameDirty && !isSavingTaskName && !isTaskDetailPending) handleRenameTask(); }} />
                     </label>
                     <button
                       type="button"
@@ -3008,7 +3159,7 @@ export default function TaskVisualizer({
                   <div
                     key={task.id}
                     className={`task-history-item${isSelected ? ' is-selected' : ''}${isLoadingTarget ? ' is-loading' : ''}`}
-                    onClick={() => { if (!isLoadingTarget) handleSelectTask(task.id); }}
+                    onClick={() => { if (!isLoadingTarget) void handleSelectTask(task.id).catch((error) => alert(`加载任务失败: ${error.message}`)); }}
                     aria-busy={isLoadingTarget}
                     style={{ padding: '10px 12px', borderBottom: '1px solid #e4e4e7', cursor: isLoadingTarget ? 'progress' : 'pointer', background: isSelected ? '#e4e4e7' : 'transparent' }}
                   >

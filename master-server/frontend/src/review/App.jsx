@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import ConfigDrawer from './components/ConfigDrawer';
 import UiIcon from '../components/UiIcon';
 import './index.css';
+import './editor-polish.css';
 import { FOCUS_TOKEN_REGEX as TOKEN_REGEX, tokenizeNonSpace } from './focusTokens';
 import {
   DEFAULT_TTS_CONFIG,
@@ -1524,7 +1525,7 @@ function EditorPanel({
   const [rawError, setRawError] = useState('');
 
   if (!draft) {
-    return <div className="empty">请选择词条后可编辑内容并保存到 data。</div>;
+    return <div className="empty">请选择词条后编辑内容。</div>;
   }
 
   const definitions = Array.isArray(draft.definitions) ? draft.definitions : [];
@@ -1533,19 +1534,6 @@ function EditorPanel({
 
   return (
     <div className="panel-body list-body editor-panel workspace-surface-body">
-      <ManualMergePanel
-        key={`manual-merge-${currentCategory}-${currentFilename}`}
-        activeWord={activeWord}
-        categories={categories}
-        entries={entries}
-        currentCategory={currentCategory}
-        currentFilename={currentFilename}
-        targetRequest={manualMergeTargetRequest}
-        loading={manualMergeLoading}
-        hasDraft={Boolean(draft)}
-        onManualMerge={onManualMerge}
-      />
-
       <section className="editor-section workspace-form-section">
         <div className="editor-title-row">
           <div>
@@ -1576,7 +1564,7 @@ function EditorPanel({
         </div>
       </section>
 
-      <details className="editor-section editor-collapsible-section workspace-form-section">
+      <details className="editor-section editor-collapsible-section workspace-form-section" open>
         <summary className="editor-disclosure">
           <span>释义</span>
           <span className="editor-disclosure-meta">{definitions.length ? `${definitions.length} 条释义` : '暂无释义'}</span>
@@ -1635,7 +1623,7 @@ function EditorPanel({
                 </div>
 
                 <label>
-                  text
+                  例句原文
                   <textarea
                     className="field textarea"
                     rows={3}
@@ -1645,7 +1633,7 @@ function EditorPanel({
                 </label>
 
                 <div className="example-focus-preview">
-                  <div className="row-sub">Focus 渲染</div>
+                      <div className="row-sub">重点词预览</div>
                   {focusPreviewHtml ? (
                     <div className="focus-preview-text example-focus-render" dangerouslySetInnerHTML={{ __html: focusPreviewHtml }} />
                   ) : (
@@ -1675,7 +1663,7 @@ function EditorPanel({
 
                 <details className="editor-section editor-collapsible-section example-config-section">
                   <summary className="editor-disclosure">
-                    <span>来源与跳转</span>
+                      <span>来源与跳转（可选）</span>
                     <span className="editor-disclosure-meta">
                       {hasExplanation ? '已填解析' : '未填解析'} · {hasSource ? '有来源' : '无来源'} · {hasYoutube ? `YouTube ${formatYouTubeLabel(youtube.timestamp)}` : '无 YouTube'}{intentionalBlank ? ' · 留白保护' : ''}
                     </span>
@@ -1692,7 +1680,7 @@ function EditorPanel({
                     </label>
 
                     <label>
-                      explanation
+                      解释
                       <textarea
                         className="field textarea"
                         rows={2}
@@ -1703,7 +1691,7 @@ function EditorPanel({
 
                     <div className="editor-grid">
                       <label>
-                        source text
+                        来源文字
                         <input
                           className="field"
                           value={source.text}
@@ -1713,7 +1701,7 @@ function EditorPanel({
                       </label>
 
                       <label>
-                        source url
+                        来源链接
                         <input
                           className="field"
                           value={source.url}
@@ -1725,7 +1713,7 @@ function EditorPanel({
 
                     <div className="editor-grid">
                       <label>
-                        youtube url
+                        YouTube 链接
                         <input
                           className="field"
                           value={youtube.url}
@@ -1735,7 +1723,7 @@ function EditorPanel({
                       </label>
 
                       <label>
-                        youtube timestamp 秒
+                        YouTube 时间（秒）
                         <input
                           className="field"
                           type="number"
@@ -1757,14 +1745,14 @@ function EditorPanel({
 
                 <details className="editor-section editor-collapsible-section example-config-section">
                   <summary className="editor-disclosure">
-                    <span>Focus 编辑</span>
+                    <span>重点词标记</span>
                     <span className="editor-disclosure-meta">{focusSummary}</span>
                   </summary>
 
                   <div className="editor-section-body">
                     <div className="editor-grid">
                       <label>
-                        focusWords (逗号分隔)
+                        重点词（逗号分隔）
                         <input
                           className="field"
                           value={Array.isArray(example.focusWords) ? example.focusWords.join(', ') : ''}
@@ -1773,7 +1761,7 @@ function EditorPanel({
                       </label>
 
                       <label>
-                        focusPositions (逗号分隔)
+                        重点位置（逗号分隔）
                         <input
                           className="field"
                           value={normalizeExampleFocusPositions(
@@ -1799,6 +1787,28 @@ function EditorPanel({
           })}
         </div>
       </section>
+
+      <details className="editor-section editor-collapsible-section workspace-form-section advanced-editor-section">
+        <summary className="editor-disclosure">
+          <span>合并词条</span>
+          <span className="editor-disclosure-meta">高级操作</span>
+        </summary>
+        <div className="editor-section-body">
+          <p className="editor-help-text">将当前内容合并到另一个词条，适合处理重复或拼写变体。</p>
+          <ManualMergePanel
+            key={`manual-merge-${currentCategory}-${currentFilename}`}
+            activeWord={activeWord}
+            categories={categories}
+            entries={entries}
+            currentCategory={currentCategory}
+            currentFilename={currentFilename}
+            targetRequest={manualMergeTargetRequest}
+            loading={manualMergeLoading}
+            hasDraft={Boolean(draft)}
+            onManualMerge={onManualMerge}
+          />
+        </div>
+      </details>
 
       <details className="editor-section raw-json-section workspace-form-section">
         <summary className="editor-disclosure">
@@ -1830,7 +1840,7 @@ function EditorPanel({
         {rawError ? (
           <div className="error">JSON 错误: {rawError}</div>
         ) : (
-          <div className="muted">输入合法 JSON 后会自动同步到草稿，再正常保存到 data。</div>
+          <div className="muted">输入合法 JSON 后会同步到草稿，确认无误后保存。</div>
         )}
       </details>
     </div>
@@ -1921,7 +1931,7 @@ function ConnectionPanel({
       </button>
       <button type="button" className="primary" onClick={onSave} disabled={!dirty || saving}>
         <UiIcon name="save" size={14} />
-        <span>{saving ? '保存中...' : '保存到 data'}</span>
+        <span>{saving ? '保存中...' : '保存修改'}</span>
       </button>
     </div>
   );
@@ -2589,7 +2599,7 @@ function OrganizePanel({
   );
 
   return (
-    <div className="panel organize-panel">
+    <div className={`panel organize-panel${cleanData ? ' has-organize-data' : ' is-idle'}`}>
       <div className="panel-header">
         <div className="panel-heading">
           <h3 className="panel-title-with-icon">
@@ -2609,35 +2619,53 @@ function OrganizePanel({
       </div>
 
       <div className="panel-body list-body organize-body">
-        <div className="organize-toolbar">
-          {renderOrganizeActions()}
-        </div>
-        <label className="llm-custom-prompt-field">
-          <span>本次整理提示词</span>
-          <textarea
-            className="field textarea llm-custom-prompt-input"
-            value={customPrompt}
-            onChange={(event) => onCustomPromptChange(event.target.value)}
-            placeholder="例如：更保守地保留原例句；只在释义明显缺失时补充，不要主动重写。"
-            disabled={loading}
-          />
-        </label>
-        <div className="organize-summary-strip" aria-label="整理结果摘要">
-          {renderSummaryItem('entry', '词条', llmEntry.length, '重命名')}
-          {renderSummaryItem('definition', '释义', llmDefinitions.length, '可直接应用')}
-          {renderSummaryItem('example', '例句', llmExamples.length, '可直接应用')}
-          {renderSummaryItem('note', '备注', llmNotes.length, sourceLabel)}
-        </div>
-
         {!cleanData ? (
-          <div className="organize-empty-state">
-            <UiIcon name="wand" size={20} />
-            <div>
-              <strong>暂无整理结果</strong>
-              <span>生成后会在这里按词条、释义和例句分组展示。</span>
+          <details className="organize-intent">
+            <summary className="organize-intent-summary">
+              <span className="organize-intent-title"><UiIcon name="wand" size={16} />辅助整理</span>
+              <span className="editor-disclosure-meta">按需生成建议，不会自动修改词条</span>
+            </summary>
+            <div className="organize-intent-body">
+              <div className="organize-toolbar">{renderOrganizeActions()}</div>
+              <label className="llm-custom-prompt-field">
+                <span>整理要求（可选）</span>
+                <textarea
+                  className="field textarea llm-custom-prompt-input"
+                  value={customPrompt}
+                  onChange={(event) => onCustomPromptChange(event.target.value)}
+                  placeholder="例如：保留原例句，只补充明显缺失的释义。"
+                  disabled={loading}
+                />
+              </label>
             </div>
-          </div>
+          </details>
         ) : (
+          <>
+            <div className="organize-toolbar">{renderOrganizeActions()}</div>
+            <details className="organize-prompt-details">
+              <summary>整理要求（可选）</summary>
+              <label className="llm-custom-prompt-field">
+                <textarea
+                  className="field textarea llm-custom-prompt-input"
+                  value={customPrompt}
+                  onChange={(event) => onCustomPromptChange(event.target.value)}
+                  placeholder="例如：保留原例句，只补充明显缺失的释义。"
+                  disabled={loading}
+                />
+              </label>
+            </details>
+            {hasSuggestions ? (
+              <div className="organize-summary-strip" aria-label="整理结果摘要">
+                {renderSummaryItem('entry', '词条', llmEntry.length, '重命名')}
+                {renderSummaryItem('definition', '释义', llmDefinitions.length, '可直接应用')}
+                {renderSummaryItem('example', '例句', llmExamples.length, '可直接应用')}
+                {renderSummaryItem('note', '备注', llmNotes.length, sourceLabel)}
+              </div>
+            ) : null}
+          </>
+        )}
+
+        {cleanData ? (
           <>
             {cleanData.llm ? (
               <>
@@ -2667,7 +2695,7 @@ function OrganizePanel({
 
             {cleanData.llm_error ? <div className="error">LLM 建议失败: {cleanData.llm_error}</div> : null}
           </>
-        )}
+        ) : null}
       </div>
     </div>
   );
@@ -3251,6 +3279,9 @@ export default function App({
 
   const [loadingCategories, setLoadingCategories] = useState(false);
   const [loadingFiles, setLoadingFiles] = useState(false);
+  const [loadingDetail, setLoadingDetail] = useState(false);
+  const [detailLoadError, setDetailLoadError] = useState('');
+  const [detailReloadToken, setDetailReloadToken] = useState(0);
   const [loadingRecommendation, setLoadingRecommendation] = useState(false);
   const [loadingClean, setLoadingClean] = useState(false);
   const [loadingRelationSuggest, setLoadingRelationSuggest] = useState(false);
@@ -3451,7 +3482,7 @@ export default function App({
       });
     }
     if (resolvedCategory !== apiCategory) {
-      setFilename('');
+      setFilename(resolvedFilename);
       setCategory(resolvedCategory);
     } else {
       setFilename(resolvedFilename);
@@ -3618,7 +3649,7 @@ export default function App({
         category: normalizedCategory,
         filename: normalizedFilename,
       };
-      setFilename('');
+      setFilename(normalizedFilename);
       setCategory(normalizedCategory);
       return true;
     }
@@ -3713,8 +3744,6 @@ export default function App({
     let cancelled = false;
 
     setEntries([]);
-    setFilename('');
-    resetEntryState();
     setLoadingFiles(false);
 
     if (!apiCategory) {
@@ -3729,19 +3758,7 @@ export default function App({
       .then((res) => {
         if (cancelled) return;
         const list = cacheEntriesForCategory(apiCategory, normalizeVocabularyListResult(res));
-        const filenames = list.map((item) => item.file);
-        let nextFilename = '';
         setEntries(list);
-        const pendingSelection = pendingSelectionRef.current;
-        if (pendingSelection.category === apiCategory && pendingSelection.filename && filenames.includes(pendingSelection.filename)) {
-          nextFilename = pendingSelection.filename;
-        }
-        if (pendingSelection.category === apiCategory) {
-          pendingSelectionRef.current = { category: apiCategory, filename: '' };
-        }
-        if (nextFilename) {
-          setFilename(nextFilename);
-        }
       })
       .catch((err) => {
         if (!cancelled) showError(err.message);
@@ -3803,29 +3820,44 @@ export default function App({
   }, [mode]);
 
   useEffect(() => {
-    if (!hasSelection) return undefined;
-
     let cancelled = false;
     resetEntryState();
+    setDetailLoadError('');
+    setLoadingDetail(hasSelection);
+    if (!hasSelection) return undefined;
 
-    Promise.all([
-      fetchVocabDetail(apiCategory, filename),
-      getReviewAdvice(apiCategory, filename),
-    ])
-      .then(([detailRes, reviewRes]) => {
+    // A known file can load immediately; directory listings and review advice
+    // are auxiliary and must not keep the editor blank when slow or unavailable.
+    fetchVocabDetail(apiCategory, filename)
+      .then((detailRes) => {
         if (cancelled) return;
         applyDetailRedirect(detailRes, apiCategory, filename);
         hydrateDetailAndDraft(detailRes.data || null);
-        setReviewData(reviewRes || null);
       })
       .catch((err) => {
-        if (!cancelled) showError(err.message);
+        if (!cancelled) setDetailLoadError(err.message);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingDetail(false);
       });
 
     return () => {
       cancelled = true;
     };
-  }, [apiCategory, applyDetailRedirect, category, filename, hasSelection]);
+  }, [apiCategory, applyDetailRedirect, category, detailReloadToken, filename, hasSelection]);
+
+  useEffect(() => {
+    if (!hasSelection) return undefined;
+    let cancelled = false;
+    getReviewAdvice(apiCategory, filename)
+      .then((res) => {
+        if (!cancelled) setReviewData(res || null);
+      })
+      .catch((err) => {
+        if (!cancelled) showError(`读取复习建议失败: ${err.message}`);
+      });
+    return () => { cancelled = true; };
+  }, [apiCategory, detailReloadToken, filename, hasSelection]);
 
   useEffect(() => {
     if (!hasSelection || typeof onSelectionChange !== 'function') return;
@@ -4415,7 +4447,7 @@ export default function App({
       pendingSelectionRef.current = { category: savedCategory, filename: savedFilename };
 
       if (savedCategory !== apiCategory) {
-        setFilename('');
+        setFilename(savedFilename);
         resetEntryState();
         setCategory(savedCategory);
       } else {
@@ -4869,7 +4901,7 @@ export default function App({
       </button>
       <button type="button" className="primary" onClick={() => handleDraftSave({ closeEditor: overlayMode })} disabled={!draftDirty || savingDraft || deletingDraft}>
         <UiIcon name="save" size={14} />
-        <span>{savingDraft ? '保存中...' : '保存到 data'}</span>
+        <span>{savingDraft ? '保存中...' : '保存修改'}</span>
       </button>
     </div>
   );
@@ -5091,6 +5123,9 @@ export default function App({
 
   const renderCombinedEditorSurface = () => (
     <div className="overlay-editor-stack">
+      <div className="overlay-editor-stack-item">
+        {renderEditorSurface()}
+      </div>
       <div ref={organizePanelRef} className="overlay-editor-stack-item overlay-focus-organize">
         <OrganizePanel
           key={`organize-${apiCategory}-${filename}`}
@@ -5109,9 +5144,6 @@ export default function App({
           savingDraft={savingDraft}
           analyzedFrom={cleanData?.analyzed_from || 'file'}
         />
-      </div>
-      <div className="overlay-editor-stack-item">
-        {renderEditorSurface()}
       </div>
     </div>
   );
@@ -5282,6 +5314,14 @@ export default function App({
           </section>
           ) : null}
 
+          {loadingDetail ? (
+            <div className="empty" role="status">正在加载词条 {filenameToWord(filename)}…</div>
+          ) : detailLoadError ? (
+            <div className="empty" role="alert">
+              <p>词条加载失败：{detailLoadError}</p>
+              <button type="button" className="primary" onClick={() => setDetailReloadToken((token) => token + 1)}>重试</button>
+            </div>
+          ) : (
           <div className={`workspace-columns${overlayMode ? ` is-overlay-focus-${overlayFocus}` : ''}`}>
             {overlayMode ? null : (
             <aside className="editor-column">
@@ -5338,6 +5378,7 @@ export default function App({
               ) : null}
             </section>
           </div>
+          )}
         </section>
       </main>
 

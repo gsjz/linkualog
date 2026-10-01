@@ -1,0 +1,68 @@
+/* Small touch-first refinements layered after the theme. Keep the existing raft
+   palette and borders while making the first useful content easier to reach. */
+
+.master-shell.is-raft-theme .vocab-review.vocab-review-mobile-simple .vocab-review-hero-meta {
+  flex-wrap: wrap !important;
+  overflow: visible !important;
+  gap: 6px !important;
+  padding: 0 0 8px !important;
+  max-width: 100%;
+}
+
+.master-shell.is-raft-theme .vocab-review.vocab-review-mobile-simple .vocab-review-hero-meta .vocab-review-chip {
+  flex: 0 1 auto !important;
+  max-width: 100% !important;
+}
+
+.master-shell.is-raft-theme .vocab-review-mobile-relation-section {
+  display: grid;
+  gap: 5px;
+  margin-top: 12px;
+}
+
+.master-shell.is-raft-theme .vocab-review-mobile-relation-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 2px;
+  color: var(--raft-ink);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.master-shell.is-raft-theme .vocab-review-mobile-relation-heading span:last-child {
+  color: var(--ms-text-muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+@media (max-width: 600px) {
+  .master-shell.is-raft-theme .master-tabs,
+  .master-shell.is-raft-theme.is-desktop-minimal .master-tabs {
+    gap: 3px !important;
+  }
+
+  .master-shell.is-raft-theme .master-tab,
+  .master-shell.is-raft-theme.is-desktop-minimal .master-tab {
+    width: auto !important;
+    min-width: 0 !important;
+    height: 36px !important;
+    min-height: 36px !important;
+    padding: 0 7px !important;
+    gap: 4px !important;
+    font-size: 11px !important;
+  }
+
+  .master-shell.is-raft-theme .master-tab-icon,
+  .master-shell.is-raft-theme.is-desktop-minimal .master-tab-icon {
+    display: inline-flex !important;
+    flex: 0 0 auto;
+  }
+
+  .master-shell.is-raft-theme .master-tab-label,
+  .master-shell.is-raft-theme.is-desktop-minimal .master-tab-label {
+    display: inline !important;
+    line-height: 1 !important;
+  }
+}

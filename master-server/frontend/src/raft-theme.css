@@ -397,6 +397,7 @@ body.is-raft-theme-body #root {
 }
 
 .master-primary-button:disabled,
+.master-shell .config-modal .master-primary-button:disabled,
 .master-secondary-button:disabled,
 .master-icon-button:disabled,
 .task-primary-button:disabled,

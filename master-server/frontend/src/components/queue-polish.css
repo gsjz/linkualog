@@ -1,0 +1,50 @@
+/* Keep the study controls readable without hover, including on touch screens. */
+.master-shell .vocab-queue-dock .vocab-queue-score-button {
+  grid-template-rows: auto auto;
+  align-content: center;
+  gap: 3px;
+  min-height: 42px;
+  padding: 4px 2px !important;
+}
+
+.master-shell .vocab-queue-dock .vocab-queue-score-number {
+  font-size: 14px;
+  font-weight: 750;
+  line-height: 1;
+}
+
+.master-shell .vocab-queue-dock .vocab-queue-score-label {
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.master-shell .vocab-queue-dock .vocab-queue-current-status {
+  max-width: 100%;
+  white-space: normal;
+}
+
+.master-shell .vocab-queue-dock .vocab-queue-current-status span {
+  overflow: visible;
+  white-space: normal;
+  line-height: 1.4;
+}
+
+.master-shell .vocab-queue-dock .vocab-queue-tab {
+  padding: 4px 2px !important;
+  font-size: 11px;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.master-shell .vocab-queue-dock .vocab-queue-item-details {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.master-shell .vocab-queue-dock .vocab-queue-item-details .vocab-queue-status {
+  flex: 0 0 auto;
+}

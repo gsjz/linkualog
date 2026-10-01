@@ -1,0 +1,185 @@
+/* Upload flow polish. Scoped to this component so the shared workspace keeps its layout. */
+.task-layout.task-polish-upload .task-upload-dropzone-hint {
+  margin-top: 5px;
+  color: var(--ms-text-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.task-layout.task-polish-upload .task-upload-empty {
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-height: 72px;
+  justify-content: center;
+  color: var(--ms-text-muted) !important;
+}
+
+.task-layout.task-polish-upload .task-upload-empty strong {
+  color: var(--ms-text);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.task-layout.task-polish-upload .task-upload-empty span {
+  font-size: 12px;
+}
+
+.task-layout.task-polish-upload .task-upload-toolbar.is-empty {
+  display: none !important;
+}
+
+.task-layout.task-polish-upload .task-upload-item {
+  grid-template-columns: auto 72px minmax(0, 1fr) auto !important;
+  gap: 10px !important;
+  padding: 9px !important;
+}
+
+.task-layout.task-polish-upload .task-upload-preview {
+  width: 72px !important;
+  height: 54px !important;
+  background: var(--ms-surface-muted) !important;
+}
+
+.task-layout.task-polish-upload .task-upload-name {
+  line-height: 1.35;
+}
+
+.task-layout.task-polish-upload .task-upload-actions {
+  flex-wrap: nowrap !important;
+}
+
+@media (max-width: 640px) {
+  /* Keep the useful controls in the page flow; the floating icons become redundant here. */
+  .task-layout.task-polish-upload .task-create-mobile-actions > .task-icon-button:not(.task-vocab-queue-trigger) {
+    display: none !important;
+  }
+
+  .task-layout.task-polish-upload .task-create-controls {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+    padding: 10px !important;
+  }
+
+  .task-layout.task-polish-upload .task-create-meta-row {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 82px !important;
+    gap: 8px !important;
+    width: 100% !important;
+    flex: 0 0 auto !important;
+    height: auto !important;
+  }
+
+  .task-layout.task-polish-upload .task-control-field,
+  .task-layout.task-polish-upload .task-control-field-name,
+  .task-layout.task-polish-upload .task-control-field-small {
+    width: auto !important;
+    min-width: 0 !important;
+    flex: none !important;
+  }
+
+  .task-layout.task-polish-upload .task-control-field .task-inline-input {
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 40px !important;
+    height: 40px !important;
+    align-self: start !important;
+  }
+
+  .task-layout.task-polish-upload .task-upload-dropzone {
+    min-width: 0 !important;
+    width: 100% !important;
+    flex: 0 0 auto !important;
+    min-height: 0 !important;
+    padding: 10px !important;
+    gap: 9px !important;
+  }
+
+  .task-layout.task-polish-upload .task-upload-dropzone-title {
+    font-size: 13px !important;
+  }
+
+  .task-layout.task-polish-upload .task-upload-dropzone-hint {
+    font-size: 11px !important;
+  }
+
+  .task-layout.task-polish-upload .task-upload-dropzone-actions {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 7px !important;
+    width: 100% !important;
+  }
+
+  .task-layout.task-polish-upload .task-upload-picker {
+    min-height: 36px !important;
+    padding: 0 7px !important;
+    font-size: 12px !important;
+  }
+
+  .task-layout.task-polish-upload .task-upload-item {
+    grid-template-columns: auto 58px minmax(0, 1fr) !important;
+    align-items: start !important;
+    gap: 8px !important;
+    padding: 8px !important;
+  }
+
+  .task-layout.task-polish-upload .task-upload-preview {
+    width: 58px !important;
+    height: 46px !important;
+  }
+
+  .task-layout.task-polish-upload .task-upload-meta {
+    grid-column: auto !important;
+    min-width: 0 !important;
+    align-self: center !important;
+  }
+
+  .task-layout.task-polish-upload .task-upload-name {
+    overflow: hidden !important;
+    display: -webkit-box !important;
+    -webkit-box-orient: vertical !important;
+    -webkit-line-clamp: 2 !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  .task-layout.task-polish-upload .task-upload-actions {
+    grid-column: 1 / -1 !important;
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    width: 100% !important;
+  }
+
+  .task-layout.task-polish-upload .task-upload-actions > button:only-child {
+    grid-column: 1 / -1 !important;
+  }
+
+  .task-layout.task-polish-upload .task-upload-actions > button {
+    min-height: 32px !important;
+  }
+
+  .task-layout.task-polish-upload .task-create-sticky-bar {
+    gap: 6px !important;
+  }
+}
+
+@media (min-width: 641px) {
+  .task-layout.task-polish-upload .task-create-controls {
+    gap: 12px !important;
+  }
+}
+
+@media (max-width: 760px) {
+  /* The older compact rule hid this area and left only icon popovers. On a
+     phone the two upload choices are the primary action, so keep them visible. */
+  .task-layout.task-polish-upload .task-create-controls {
+    display: flex !important;
+  }
+
+  .task-layout.task-polish-upload .task-upload-toolbar.is-empty {
+    display: none !important;
+  }
+}

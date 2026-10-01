@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 
 import UiIcon from './UiIcon.jsx';
 import { QUEUE_LABELS } from '../hooks/useVocabularyQueues.js';
+import './queue-polish.css';
 
 const SCORE_SHORT_LABELS = {
   0: '忘了',
@@ -12,20 +13,11 @@ const SCORE_SHORT_LABELS = {
   5: '熟练',
 };
 
-const SCORE_EMOJIS = {
-  0: '😵',
-  1: '😣',
-  2: '😵‍💫',
-  3: '🤔',
-  4: '🤓',
-  5: '😋',
-};
-
 const TABS = [
-  { key: 'random', icon: 'shuffle', label: '随机' },
-  { key: 'manual', icon: 'book', label: '顺序' },
-  { key: 'todo', icon: 'clipboard-list', label: 'todo' },
-  { key: 'preprocess', icon: 'sparkles', label: 'init' },
+  { key: 'random', label: '随机' },
+  { key: 'manual', label: '顺序' },
+  { key: 'todo', label: '待处理' },
+  { key: 'preprocess', label: '预处理' },
 ];
 
 const NAV_QUEUES = new Set(['random', 'manual', 'todo']);
@@ -34,14 +26,15 @@ const SCORE_AUTO_NEXT_STORAGE_KEY = 'linkualog:vocab-queue-score-auto-next';
 
 const statusLabel = (item) => {
   const explicit = String(item?.stageLabel || item?.statusLabel || '').trim();
-  if (explicit) return explicit;
+  if (explicit && explicit.toLowerCase() !== 'ready') return explicit;
   const status = String(item?.status || '').trim();
   if (status === 'queued') return '等待';
   if (status === 'running') return '进行中';
   if (status === 'locked') return '锁定';
   if (status === 'success' || status === 'done') return '完成';
   if (status === 'error') return '失败';
-  return status || '就绪';
+  if (status === 'skipped') return '已跳过';
+  return status && status.toLowerCase() !== 'ready' ? status : '';
 };
 
 const useIsMobileQueueDock = () => {
@@ -64,15 +57,8 @@ const useIsMobileQueueDock = () => {
 const latestReviewLabel = (actions) => {
   if (actions?.loadingDetail) return '正在切换词条';
   const score = actions?.latestScore;
-  if (score === 0 || score) return `最近 ${score}/5`;
-  return actions?.hasDetail ? '记录今天熟练度' : '尚未选择词条';
-};
-
-const latestReviewEmoji = (actions) => {
-  if (actions?.loadingDetail) return '⏳';
-  const score = actions?.latestScore;
-  if (score === 0 || score) return SCORE_EMOJIS[score] || '📊';
-  return actions?.hasDetail ? '📝' : '▫️';
+  if (score === 0 || score) return `最近 ${score}/5 · ${SCORE_SHORT_LABELS[score] || ''}`;
+  return actions?.hasDetail ? '尚未打分' : '尚未选择词条';
 };
 
 const normalizeFile = (value) => {
@@ -151,7 +137,6 @@ export default function VocabularyQueueDock({
   );
   const latestScore = actions?.latestScore;
   const scoreStatusLabel = actions.savingScore ? '保存中' : latestReviewLabel(actions);
-  const scoreStatusEmoji = actions.savingScore ? '⏳' : latestReviewEmoji(actions);
   const resolvedMobileSheet = mobileSheet === 'expanded' ? 'expanded' : 'compact';
   const mobileExpanded = isMobile && resolvedMobileSheet === 'expanded';
   const queueListVisible = !isMobile || mobileExpanded;
@@ -297,7 +282,7 @@ export default function VocabularyQueueDock({
             <div className="vocab-queue-current-head">
               <div className="vocab-queue-current-title">
                 <strong>{actions.word || actions.file || '当前词条'}</strong>
-                <span>{hasCurrentEntry || entryBusy ? `${actions.categoryLabel || actions.category || '目录'} / ${actions.file || ''}` : '选择词条后可在这里处理'}</span>
+                <span>{hasCurrentEntry || entryBusy ? (actions.categoryLabel || actions.category || '目录') : '选择词条后可在这里处理'}</span>
               </div>
               <div className="vocab-queue-current-meta">
                 <div
@@ -305,8 +290,7 @@ export default function VocabularyQueueDock({
                   aria-label={scoreStatusLabel}
                   data-tooltip={scoreStatusLabel}
                 >
-                  <span>最近</span>
-                  <strong aria-hidden="true">{scoreStatusEmoji}</strong>
+                  <span>{scoreStatusLabel}</span>
                 </div>
                 <label
                   className="vocab-queue-auto-next-toggle"
@@ -333,10 +317,12 @@ export default function VocabularyQueueDock({
                   className={`vocab-queue-score-button${latestScore === score ? ' is-latest' : ''}`}
                   onClick={() => { void handleScoreClick(score); }}
                   disabled={!hasCurrentEntry || entryBusy || actions.savingScore}
+                  aria-pressed={latestScore === score}
                   aria-label={`${score}: ${SCORE_SHORT_LABELS[score]}`}
                   data-tooltip={`${score}: ${SCORE_SHORT_LABELS[score]}`}
                 >
-                  <strong className="vocab-queue-score-emoji" aria-hidden="true">{SCORE_EMOJIS[score]}</strong>
+                  <strong className="vocab-queue-score-number" aria-hidden="true">{score}</strong>
+                  <span className="vocab-queue-score-label">{SCORE_SHORT_LABELS[score]}</span>
                 </button>
               ))}
             </div>
@@ -416,7 +402,7 @@ export default function VocabularyQueueDock({
                     aria-label={tabTitle}
                     data-tooltip={tabTitle}
                   >
-                    <UiIcon name={tab.icon} size={14} />
+                    <span>{tab.label}</span>
                   </button>
                 );
               })}
@@ -424,8 +410,8 @@ export default function VocabularyQueueDock({
             <button
               type="button"
               className="vocab-queue-control-button vocab-queue-prefetch-button"
-              aria-label={prefetchBlockedByPreprocessQueue ? 'init 队列只展示预处理状态' : '预生成当前范围内的整理和连接建议'}
-              data-tooltip={prefetchBlockedByPreprocessQueue ? 'init 队列只展示预处理状态，切回随机/顺序/todo 后再预生成' : prefetchTitle}
+              aria-label={prefetchBlockedByPreprocessQueue ? '预处理队列只展示预处理状态' : '预生成当前范围内的整理和连接建议'}
+              data-tooltip={prefetchBlockedByPreprocessQueue ? '预处理队列只展示状态，切回随机、顺序或待处理后再预生成' : prefetchTitle}
               onClick={() => {
                 if (prefetchBlockedByPreprocessQueue) return;
                 onPrefetchVisible?.();
@@ -477,6 +463,7 @@ export default function VocabularyQueueDock({
               const activeCursor = activeQueue !== 'preprocess' && index === currentCursor;
               const currentEntry = activeQueueHasCurrentEntry && item.id === currentEntryId;
               const inTodo = todoIds?.has?.(item.id);
+              const itemStatus = statusLabel(item);
               return (
                 <div
                   key={`${activeQueue}-${item.id}-${item.addedAt || ''}`}
@@ -491,10 +478,10 @@ export default function VocabularyQueueDock({
                     data-tooltip={`${item.category} / ${item.file}`}
                   >
                     <span className="vocab-queue-word">{item.word || item.file}</span>
-                    <span className="vocab-queue-meta">
-                      {item.category} / {item.file}
+                    <span className="vocab-queue-item-details">
+                      <span className="vocab-queue-meta">{item.category}</span>
+                      {itemStatus ? <span className="vocab-queue-status">{itemStatus}</span> : null}
                     </span>
-                    <span className="vocab-queue-status">{statusLabel(item)}</span>
                   </button>
                   {activeQueue === 'todo' ? (
                     <button

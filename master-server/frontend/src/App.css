@@ -11649,6 +11649,16 @@
     padding: 10px !important;
   }
 
+  .task-layout .task-floating-panel {
+    top: var(--task-floating-top, calc(100px + env(safe-area-inset-top))) !important;
+    left: var(--task-floating-left, 8px) !important;
+    right: auto !important;
+    width: var(--task-floating-width, min(300px, calc(100vw - 16px))) !important;
+    max-height: var(--task-floating-max-height, calc(100dvh - 116px)) !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+  }
+
   .task-layout .task-floating-header,
   .vocab-review-floating-header {
     gap: 8px !important;
