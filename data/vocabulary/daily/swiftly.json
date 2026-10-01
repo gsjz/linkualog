@@ -1,7 +1,12 @@
 {
   "word": "swiftly",
   "createdAt": "2026-06-12",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-09-01",
+      "score": 3
+    }
+  ],
   "definitions": [
     "迅速地；很快地"
   ],

@@ -1,7 +1,12 @@
 {
   "word": "distinction",
   "createdAt": "2026-06-12",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-08-29",
+      "score": 3
+    }
+  ],
   "definitions": [
     "区别；差别；特征；优秀/荣誉"
   ],

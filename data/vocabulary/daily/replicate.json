@@ -1,7 +1,12 @@
 {
   "word": "replicate",
   "createdAt": "2026-06-02",
-  "reviews": [],
+  "reviews": [
+    {
+      "date": "2026-09-01",
+      "score": 3
+    }
+  ],
   "definitions": [
     "复制；复现，重复制造（尤指精确地再现）"
   ],

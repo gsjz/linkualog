@@ -1,12 +1,19 @@
 {
   "word": "tactical",
   "createdAt": "2026-06-15",
-  "reviews": [],
-  "definitions": [],
+  "reviews": [
+    {
+      "date": "2026-09-01",
+      "score": 2
+    }
+  ],
+  "definitions": [
+    "战术的；与具体行动策略或作战部署有关的"
+  ],
   "examples": [
     {
-      "text": "Counter-Strike has shaped every tactical shooter since its release in 1998 as a mod for halflife nowadays the most recent iteration of the franchise Counterstrike 2 breaks player records regularly and routinely shatters",
-      "explanation": "",
+      "text": "Counter-Strike has shaped every tactical shooter since its release in 1998 as a mod for Half-Life.",
+      "explanation": "《反恐精英》自1998年作为《半条命》的模组发布以来，影响了此后的每一款战术射击游戏。这里的 tactical 修饰 shooter，表示强调团队配合、策略和战术执行的“战术射击游戏”。",
       "focusWords": [
         "tactical"
       ],

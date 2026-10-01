@@ -1,0 +1,19 @@
+{
+  "redirects": {
+    "daily/alliances.json": {
+      "status": "merged",
+      "from": {
+        "category": "daily",
+        "file": "alliances.json",
+        "word": "alliances"
+      },
+      "to": {
+        "category": "daily",
+        "file": "alliance.json",
+        "word": "alliance"
+      },
+      "reason": "rename",
+      "created_at": "2026-08-29T08:55:04.827286+00:00"
+    }
+  }
+}

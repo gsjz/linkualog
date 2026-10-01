@@ -5,6 +5,10 @@
     {
       "date": "2026-07-09",
       "score": 1
+    },
+    {
+      "date": "2026-09-01",
+      "score": 1
     }
   ],
   "definitions": [
@@ -12,7 +16,7 @@
   ],
   "examples": [
     {
-      "text": "In South America, people made chicha from grains, sometimes adding hallucinogenic herbs. In what’s now Mexico, pulque, made from cactus sap, was the drink of choice, while East Africans made banana and palm beer.",
+      "text": "In what’s now Mexico, pulque, made from cactus sap, was the drink of choice.",
       "explanation": "这里 cactus 出现在 “cactus sap” 中，意思是“仙人掌汁液”。句子说，在现在的墨西哥地区，人们用仙人掌汁液制作的 pulque 是当时常见的饮品。",
       "focusWords": [
         "cactus"
