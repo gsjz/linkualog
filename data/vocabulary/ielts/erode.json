@@ -37,5 +37,17 @@
   "mergedFrom": [
     "eroded"
   ],
-  "marked": false
+  "marked": false,
+  "relations": [
+    {
+      "type": "same_scene",
+      "target": {
+        "category": "ielts",
+        "file": "silt.json",
+        "word": "silt"
+      },
+      "reason": "侵蚀作用会从河床、河岸或海岸带走细小颗粒并形成、搬运 silt；当前例句也直接描述河水侵蚀河床和河岸后卷走淤泥，二者属于同一地貌过程。",
+      "source": "llm"
+    }
+  ]
 }

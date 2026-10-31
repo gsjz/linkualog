@@ -67,6 +67,16 @@
       },
       "reason": "clay 和 silt 都可指细颗粒的土壤/沉积物类型，但 clay 更偏黏土、陶土，silt 更偏淤泥、粉砂；二者属于地质、土壤材料中的同类词，且有区分价值。",
       "source": "llm"
+    },
+    {
+      "type": "same_scene",
+      "target": {
+        "category": "ielts",
+        "file": "erode.json",
+        "word": "erode"
+      },
+      "reason": "侵蚀作用会从河床、河岸或海岸带走细小颗粒并形成、搬运 silt；当前例句也直接描述河水侵蚀河床和河岸后卷走淤泥，二者属于同一地貌过程。",
+      "source": "llm"
     }
   ]
 }
